@@ -40,6 +40,9 @@ Planned for later phases: `route`, `passengers`, `scoring`, `traffic`,
 
 ## Key decisions
 
+**Right-hand traffic.** Vehicles drive on the right, as in mainland Europe. The
+bus has its driver on the left and its doors on the right, set in `BusSpec`.
+
 **Custom handling instead of Godot's vehicle physics.** The bus is a kinematic
 bicycle model pivoting on the rear axle, moved by a `CharacterBody3D`. It is
 cheap on phones, gives the same result at any frame rate, and can be tuned and
