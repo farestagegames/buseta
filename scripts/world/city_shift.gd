@@ -43,6 +43,9 @@ func _ready() -> void:
 	for stop in route.stops:
 		network.add_bay(stop.road, stop.along, stop.dir)
 	ground = MapLoader.build_ground(map_data, network)
+	for feature: Dictionary in ground.features:
+		if feature["kind"] == "bump":
+			route.add_hazard(feature["position"])
 
 	_city.build(map_data, network, ground, route)
 	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)

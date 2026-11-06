@@ -7,8 +7,8 @@ extends RefCounted
 const STIFFNESS := 95.0
 const DAMPING := 12.0
 ## Wheel movement faster than this, in m/s, counts as a jolt for passengers.
-## It allows a speed bump to be taken at about 15 km/h.
-const JOLT_THRESHOLD := 1.35
+## It allows a speed bump to be taken at about 20 km/h.
+const JOLT_THRESHOLD := 1.75
 
 var height: float = 0.0 ## Body height at the rear axle.
 var pitch: float = 0.0 ## Radians, positive is nose up.

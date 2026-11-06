@@ -7,7 +7,7 @@ extends RefCounted
 const ON_TIME_EARLY := 30.0
 const ON_TIME_LATE := 30.0
 ## Punctuality reaches zero this far outside the on-time window.
-const ZERO_SCORE_MARGIN := 150.0
+const ZERO_SCORE_MARGIN := 300.0
 
 var due_times: PackedFloat32Array = PackedFloat32Array()
 
@@ -25,13 +25,9 @@ static func is_on_time(late: float) -> bool:
 	return late >= -ON_TIME_EARLY and late <= ON_TIME_LATE
 
 
-## 100 inside the on-time window, falling to 0 outside it.
+## 100 when on time or ahead of time, falling gently the later the bus runs.
 static func punctuality_score(late: float) -> float:
-	var outside := 0.0
-	if late > ON_TIME_LATE:
-		outside = late - ON_TIME_LATE
-	elif late < -ON_TIME_EARLY:
-		outside = -ON_TIME_EARLY - late
+	var outside := maxf(late - ON_TIME_LATE, 0.0)
 	return clampf(100.0 * (1.0 - outside / ZERO_SCORE_MARGIN), 0.0, 100.0)
 
 

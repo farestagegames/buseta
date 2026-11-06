@@ -1,5 +1,5 @@
 [
-  {"id": "no_harsh_brakes", "text": "Complete a shift with zero harsh braking", "counter": "harsh_brakes", "max": 0},
+  {"id": "no_harsh_brakes", "text": "Complete a shift with no emergency stops", "counter": "harsh_brakes", "max": 0},
   {"id": "no_collisions", "text": "Complete a shift with no collisions", "counter": "collisions", "max": 0},
   {"id": "kerb_free", "text": "Complete a shift without striking a kerb", "counter": "kerbs", "max": 0},
   {"id": "by_the_book", "text": "Signal every turn on your shift", "counter": "indicators", "max": 0},

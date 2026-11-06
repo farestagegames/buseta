@@ -99,9 +99,26 @@ func test_crooked_bus_is_not_aligned() -> void:
 	assert_false(stop.is_aligned(stop.position, stop.heading + 0.6))
 
 
-func test_accuracy_falls_with_distance() -> void:
+func test_stopping_near_the_middle_counts_as_perfect() -> void:
 	var stop := runner.current_stop()
-	assert_almost_eq(stop.accuracy(stop.position + stop.forward() * 2.5), 0.5, 0.01)
+	assert_eq(stop.accuracy(stop.position + stop.forward() * 1.2), 1.0)
+
+
+func test_accuracy_falls_gently_to_a_fair_floor() -> void:
+	var stop := runner.current_stop()
+	var right := Vector2(-stop.forward().y, stop.forward().x)
+	assert_between(stop.accuracy(stop.position + stop.forward() * 3.0), 0.75, 0.9)
+	assert_almost_eq(stop.accuracy(stop.position + right * RouteStop.LATERAL_TOLERANCE), RouteStop.EDGE_ACCURACY, 0.01)
+
+
+func test_bump_warning_shows_shortly_before_it() -> void:
+	runner.add_hazard(Vector2(100.0, 0.0))
+	runner.update_position(Vector2(20.0, 2.0))
+	assert_false(runner.hazard_ahead())
+	runner.update_position(Vector2(60.0, 2.0))
+	assert_true(runner.hazard_ahead())
+	runner.update_position(Vector2(110.0, 2.0))
+	assert_false(runner.hazard_ahead())
 
 
 func test_stop_counts_as_passed_only_when_well_beyond_it() -> void:

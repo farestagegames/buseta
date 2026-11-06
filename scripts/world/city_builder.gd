@@ -55,6 +55,7 @@ var _lines: LowPolyBuilder
 var _pavements: LowPolyBuilder
 var _woodland: LowPolyBuilder
 var _stop_spots: Array[Vector2] = []
+var _signs: Array[Dictionary] = []
 
 
 func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, route: RouteRunner) -> void:
@@ -343,9 +344,26 @@ func _feature_visual(feature: Dictionary) -> void:
 		_strip(_lines, feature["road"], along - 0.45, along + 0.45, -RoadNetwork.ROAD_HALF_WIDTH, RoadNetwork.ROAD_HALF_WIDTH, YELLOW, LIFT_LINE + 0.05)
 		for lateral in range(-3, 4, 2):
 			_strip(_lines, feature["road"], along - 0.46, along + 0.46, lateral - 0.4, lateral + 0.4, Color(0.1, 0.1, 0.1), LIFT_LINE + 0.06)
+		for warning: float in [-1.0, 1.0]:
+			_bump_warning(feature["road"], along + warning * 30.0, warning)
 	else:
 		var placed: Dictionary = _network.sample(feature["road"], feature["along"], feature["lateral"], feature["dir"])
 		_lines.disc(placed["position"], MapLoader.POTHOLE_RADIUS, LIFT_LINE, _height_of, Color(0.09, 0.09, 0.1), 9)
+
+
+## Painted bars across the lane and a warning sign, so a bump is never a surprise.
+## approach is -1 for traffic heading along the road, and 1 for the opposite way.
+func _bump_warning(road_id: String, along: float, approach: float) -> void:
+	var side := -approach
+	for i in 3:
+		var at := along + approach * float(i) * 2.2
+		var low := minf(0.15 * side, 3.4 * side)
+		var high := maxf(0.15 * side, 3.4 * side)
+		_strip(_lines, road_id, at, at + 0.5, low, high, YELLOW)
+	var placed: Dictionary = _network.sample(road_id, along, (RoadNetwork.ROAD_HALF_WIDTH + 0.9) * side)
+	var spot: Vector2 = placed["position"]
+	var y := _ground.terrain_height(spot)
+	_signs.append({"spot": spot, "y": y, "yaw": placed["heading"]})
 
 
 func _build_scenery(route: RouteRunner) -> LowPolyBuilder:
@@ -360,6 +378,12 @@ func _build_scenery(route: RouteRunner) -> LowPolyBuilder:
 		_line_with_trees(b, road)
 		_line_with_lamps(road)
 	_tree_line(b)
+	for sign_data: Dictionary in _signs:
+		var spot: Vector2 = sign_data["spot"]
+		var y: float = sign_data["y"]
+		var yaw: float = sign_data["yaw"]
+		b.turned_box(_at(spot, y + 1.3), Vector3(0.09, 2.6, 0.09), yaw, Color(0.25, 0.26, 0.28))
+		b.turned_box(_at(spot, y + 2.6), Vector3(0.75, 0.75, 0.05), yaw + PI / 4.0, YELLOW)
 	return b
 
 

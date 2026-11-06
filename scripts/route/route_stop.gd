@@ -8,6 +8,9 @@ const HEADING_TOLERANCE := deg_to_rad(20.0)
 ## How far past a stop the bus can go before the stop counts as missed.
 const MISSED_DISTANCE := 22.0
 const MISSED_LATERAL := 14.0
+const PERFECT_ALONG := 1.5
+const PERFECT_LATERAL := 0.6
+const EDGE_ACCURACY := 0.6
 
 var stop_name: String = ""
 var road: String = ""
@@ -46,9 +49,10 @@ func is_passed(bus_centre: Vector2) -> bool:
 	return offset.x > MISSED_DISTANCE and absf(offset.y) < MISSED_LATERAL
 
 
-## 1 is perfect, 0 is at the edge of the tolerance. Scoring uses this later.
+## 1 anywhere near the middle of the bay, falling gently to a floor at the edge
+## of the tolerance. Any stop that lets passengers on is a decent stop.
 func accuracy(bus_centre: Vector2) -> float:
 	var offset := offset_of(bus_centre)
-	var along_share := absf(offset.x) / ALONG_TOLERANCE
-	var lateral_share := absf(offset.y) / LATERAL_TOLERANCE
-	return clampf(1.0 - maxf(along_share, lateral_share), 0.0, 1.0)
+	var along := inverse_lerp(PERFECT_ALONG, ALONG_TOLERANCE, absf(offset.x))
+	var lateral := inverse_lerp(PERFECT_LATERAL, LATERAL_TOLERANCE, absf(offset.y))
+	return lerpf(1.0, EDGE_ACCURACY, clampf(maxf(along, lateral), 0.0, 1.0))

@@ -40,7 +40,7 @@ func test_buying_takes_coins_and_adds_the_item() -> void:
 	profile.coins = 2000
 	var route := catalog.find(Catalog.ROUTES, "route_02")
 	assert_true(profile.buy(Catalog.ROUTES, route))
-	assert_eq(profile.coins, 500)
+	assert_eq(profile.coins, 1500)
 	assert_true(profile.owns(Catalog.ROUTES, "route_02"))
 
 
@@ -55,7 +55,7 @@ func test_cannot_pay_twice_for_the_same_item() -> void:
 	var route := catalog.find(Catalog.ROUTES, "route_02")
 	profile.buy(Catalog.ROUTES, route)
 	assert_false(profile.buy(Catalog.ROUTES, route))
-	assert_eq(profile.coins, 3500)
+	assert_eq(profile.coins, 4500)
 
 
 func test_cannot_select_what_you_do_not_own() -> void:
@@ -210,7 +210,7 @@ func test_a_few_good_shifts_buy_the_first_unlock() -> void:
 	var per_shift := score.coins(28)
 	var route_cost: int = catalog.find(Catalog.ROUTES, "route_02")["cost"]
 	var shifts := ceili(float(route_cost) / float(per_shift))
-	assert_between(shifts, 2, 5, "Second route should take a few shifts")
+	assert_between(shifts, 1, 3, "Second route should come quickly")
 
 
 func test_settings_round_trip_and_ignore_bad_values() -> void:

@@ -6,12 +6,15 @@ extends RefCounted
 const SEARCH_AHEAD := 30
 const TURN_WARNING_DISTANCE := 90.0
 const TURN_ANGLE := deg_to_rad(35.0)
+const HAZARD_WARNING_DISTANCE := 55.0
+const HAZARD_ON_ROUTE_RADIUS := 7.0
 
 var route_name: String = ""
 var stops: Array[RouteStop] = []
 var polyline: PackedVector2Array = PackedVector2Array()
 var distances: PackedFloat32Array = PackedFloat32Array()
 var turns: Array[Dictionary] = [] ## distance: float, text: String
+var hazards: PackedFloat32Array = PackedFloat32Array() ## Route distance of each bump.
 var start_position: Vector2 = Vector2.ZERO
 var start_heading: float = 0.0
 var stop_index: int = 0
@@ -63,6 +66,25 @@ func upcoming_turn() -> String:
 		if ahead > -5.0 and ahead < TURN_WARNING_DISTANCE:
 			return turn["text"]
 	return ""
+
+
+## Records every place the route crosses this point, for warnings.
+func add_hazard(point: Vector2) -> void:
+	for i in polyline.size() - 1:
+		var closest := Geometry2D.get_closest_point_to_segment(point, polyline[i], polyline[i + 1])
+		if closest.distance_to(point) < HAZARD_ON_ROUTE_RADIUS:
+			var distance := distances[i] + closest.distance_to(polyline[i])
+			if hazards.is_empty() or absf(hazards[hazards.size() - 1] - distance) > 20.0:
+				hazards.append(distance)
+
+
+## True when a bump is coming up on the road ahead.
+func hazard_ahead() -> bool:
+	for distance in hazards:
+		var ahead := distance - progress
+		if ahead > 0.0 and ahead < HAZARD_WARNING_DISTANCE:
+			return true
+	return false
 
 
 ## Nearest point on the route to where the bus is now, for recovery.

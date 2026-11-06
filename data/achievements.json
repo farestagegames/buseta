@@ -4,7 +4,7 @@
   {"id": "fifty_shifts", "name": "Old Hand", "description": "Complete 50 shifts", "stat": "shifts", "target": 50},
   {"id": "five_stars", "name": "Five Star Service", "description": "Earn 5 stars on a shift", "stat": "best_stars", "target": 5},
   {"id": "clean_shift", "name": "Not a Scratch", "description": "Finish a shift with no collisions", "stat": "clean_shifts", "target": 1},
-  {"id": "smooth_operator", "name": "Smooth Operator", "description": "Finish a shift with no harsh braking", "stat": "smooth_shifts", "target": 1},
+  {"id": "smooth_operator", "name": "Smooth Operator", "description": "Finish a shift with no emergency stops", "stat": "smooth_shifts", "target": 1},
   {"id": "hundred_passengers", "name": "Full House", "description": "Carry 100 passengers", "stat": "passengers", "target": 100},
   {"id": "thousand_passengers", "name": "Backbone of the City", "description": "Carry 1,000 passengers", "stat": "passengers", "target": 1000}
 ]

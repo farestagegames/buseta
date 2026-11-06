@@ -32,10 +32,8 @@
     {"x": -120, "z": 330, "radius": 170, "height": 8}
   ],
   "features": [
-    {"type": "speed_bump", "road": "mill_lane", "along": 70},
     {"type": "speed_bump", "road": "mill_lane", "along": 205},
     {"type": "speed_bump", "road": "station_road", "along": 60},
-    {"type": "speed_bump", "road": "depot_road", "along": 45},
     {"type": "pothole", "road": "high_street", "along": 70, "lateral": 1.4, "dir": 1},
     {"type": "pothole", "road": "high_street", "along": 215, "lateral": 2.4, "dir": 1},
     {"type": "pothole", "road": "river_road", "along": 180, "lateral": 2.2, "dir": 1},

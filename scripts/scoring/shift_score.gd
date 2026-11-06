@@ -10,29 +10,31 @@ const WEIGHTS := {
 const STAR_THRESHOLDS: Array[int] = [35, 50, 70, 88] ## Score for 2, 3, 4 and 5 stars.
 ## How quickly a category falls. Losses level off, so a few bad moments cost a
 ## lot less than the whole category, and a rough shift can still recover.
-const CATEGORY_SOFTNESS := 70.0
+const CATEGORY_SOFTNESS := 90.0
 
-const HARSH_BRAKE_POINTS := 4.0
-const HARSH_ACCEL_POINTS := 1.5
-const JOLT_POINTS := 1.5
+const HARSH_BRAKE_POINTS := 2.5
+const JOLT_POINTS := 1.0
 const JOLT_COOLDOWN := 1.0
+## Long stretches of speeding or being off road stop adding up after this much.
+const SPEEDING_MAX_POINTS := 10.0
+const OFF_ROAD_MAX_POINTS := 15.0
 
-const COLLISION_POINTS := 7.0
-const COLLISION_POINTS_PER_SPEED := 0.8 ## Extra per m/s of impact.
-const COLLISION_MAX_POINTS := 14.0
-const KNOCKED_POINTS := 1.5
-const RED_LIGHT_POINTS := 10.0
-const SPEEDING_POINTS_PER_SECOND := 0.4
-const OFF_ROAD_POINTS_PER_SECOND := 1.0
-const KERB_POINTS := 1.0
-const INDICATOR_POINTS := 1.0
+const COLLISION_POINTS := 6.0
+const COLLISION_POINTS_PER_SPEED := 0.6 ## Extra per m/s of impact.
+const COLLISION_MAX_POINTS := 12.0
+const KNOCKED_POINTS := 1.0
+const RED_LIGHT_POINTS := 8.0
+const SPEEDING_POINTS_PER_SECOND := 0.25
+const OFF_ROAD_POINTS_PER_SECOND := 0.6
+const KERB_POINTS := 0.5
+const INDICATOR_POINTS := 0.75
 
-const SATISFACTION_BRAKE := 1.5
+const SATISFACTION_BRAKE := 1.0
 const SATISFACTION_JOLT := 1.0
-const SATISFACTION_COLLISION := 4.0
-const SATISFACTION_LATE_STOP := 2.0
-const SATISFACTION_LEFT_BEHIND := 1.5
-const SATISFACTION_MISSED_STOP := 6.0
+const SATISFACTION_COLLISION := 3.0
+const SATISFACTION_LATE_STOP := 1.5
+const SATISFACTION_LEFT_BEHIND := 1.0
+const SATISFACTION_MISSED_STOP := 5.0
 
 const BASE_COINS := 50
 const COINS_PER_POINT := 2
@@ -40,7 +42,7 @@ const COINS_PER_PASSENGER := 3
 const COINS_PER_STAR := 40
 
 var counts: Dictionary = {
-	"harsh_brakes": 0, "harsh_accels": 0, "jolts": 0, "collisions": 0, "knocked": 0,
+	"harsh_brakes": 0, "jolts": 0, "collisions": 0, "knocked": 0,
 	"red_lights": 0, "kerbs": 0, "indicators": 0, "missed_stops": 0, "left_behind": 0,
 }
 var speeding_seconds: float = 0.0
@@ -77,11 +79,6 @@ func add_harsh_brake() -> void:
 	counts["harsh_brakes"] += 1
 	_smoothness_lost += HARSH_BRAKE_POINTS
 	_satisfaction_lost += SATISFACTION_BRAKE
-
-
-func add_harsh_accel() -> void:
-	counts["harsh_accels"] += 1
-	_smoothness_lost += HARSH_ACCEL_POINTS
 
 
 ## Returns true if this counted. One bump shakes each axle, so repeats are ignored.
@@ -125,10 +122,8 @@ func add_time(dt: float, speeding: bool, off_road: bool) -> void:
 	_jolt_cooldown = maxf(_jolt_cooldown - dt, 0.0)
 	if speeding:
 		speeding_seconds += dt
-		_rules_lost += SPEEDING_POINTS_PER_SECOND * dt
 	if off_road:
 		off_road_seconds += dt
-		_rules_lost += OFF_ROAD_POINTS_PER_SECOND * dt
 
 
 ## Each category from 0 to 100.
@@ -137,7 +132,7 @@ func categories() -> Dictionary:
 		"punctuality": _average(_punctuality),
 		"accuracy": _average(_accuracy),
 		"smoothness": _after_losses(_smoothness_lost),
-		"rules": _after_losses(_rules_lost),
+		"rules": _after_losses(_rules_lost + _time_losses()),
 		"satisfaction": _after_losses(_satisfaction_lost),
 	}
 
@@ -161,6 +156,24 @@ func stars() -> int:
 
 func coins(passengers_carried: int) -> int:
 	return BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER + stars() * COINS_PER_STAR
+
+
+## The category that cost the most points, for the report's advice.
+func weakest_category() -> String:
+	var values := categories()
+	var weakest := ""
+	var lowest := INF
+	for key: String in WEIGHTS:
+		var lost := (100.0 - float(values[key])) * float(WEIGHTS[key])
+		if float(values[key]) < 95.0 and -lost < lowest:
+			lowest = -lost
+			weakest = key
+	return weakest
+
+
+func _time_losses() -> float:
+	return minf(speeding_seconds * SPEEDING_POINTS_PER_SECOND, SPEEDING_MAX_POINTS) \
+		+ minf(off_road_seconds * OFF_ROAD_POINTS_PER_SECOND, OFF_ROAD_MAX_POINTS)
 
 
 func _after_losses(lost: float) -> float:

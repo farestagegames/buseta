@@ -23,7 +23,6 @@ func setup(network: RoadNetwork, spec: BusSpec) -> void:
 	_network = network
 	_spec = spec
 	monitor.harsh_brake.connect(_on_harsh_brake)
-	monitor.harsh_accel.connect(_on_harsh_accel)
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.bus_collided.connect(_on_collided)
 	GameEvents.obstacle_hit.connect(_on_obstacle_hit)
@@ -68,12 +67,7 @@ func _check_kerb(rear: Vector2, heading: float, speed: float) -> void:
 
 func _on_harsh_brake() -> void:
 	score.add_harsh_brake()
-	GameEvents.penalty_shown.emit("Harsh braking")
-
-
-func _on_harsh_accel() -> void:
-	score.add_harsh_accel()
-	GameEvents.penalty_shown.emit("Harsh acceleration")
+	GameEvents.penalty_shown.emit("Emergency stop")
 
 
 func _on_jolted(_strength: float) -> void:
@@ -128,6 +122,7 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	report["categories"] = score.categories()
 	report["details"] = _details(summary)
 	report["counts"] = score.counts.duplicate()
+	report["weakest"] = score.weakest_category()
 	GameEvents.shift_report_ready.emit(report)
 
 
@@ -136,8 +131,8 @@ func _details(summary: Dictionary) -> String:
 	var notes: Array[String] = [_count(summary["carried"], "passenger carried", "passengers carried")]
 	var labels := {
 		"collisions": ["collision", "collisions"], "red_lights": ["red light", "red lights"],
-		"knocked": ["object hit", "objects hit"], "harsh_brakes": ["harsh stop", "harsh stops"],
-		"harsh_accels": ["harsh start", "harsh starts"], "jolts": ["hard bump", "hard bumps"],
+		"knocked": ["object hit", "objects hit"], "harsh_brakes": ["emergency stop", "emergency stops"],
+		"jolts": ["hard bump", "hard bumps"],
 		"kerbs": ["kerb strike", "kerb strikes"], "indicators": ["turn not signalled", "turns not signalled"],
 		"missed_stops": ["stop missed", "stops missed"], "left_behind": ["person left waiting", "people left waiting"],
 	}

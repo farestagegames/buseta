@@ -159,7 +159,7 @@ func _publish_status(data: BusTelemetry, centre: Vector2) -> void:
 	var stop := runner.current_stop()
 	_status["next_stop"] = stop.stop_name
 	_status["distance"] = runner.distance_to_next_stop()
-	_status["turn"] = runner.upcoming_turn()
+	_status["turn"] = "Speed bump ahead" if runner.hazard_ahead() else runner.upcoming_turn()
 	_status["onboard"] = ledger.count()
 	_status["prompt"] = _prompt(stop, data, centre)
 	_status["stop_position"] = stop.position

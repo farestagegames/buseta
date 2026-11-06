@@ -28,9 +28,13 @@ func test_on_time_window() -> void:
 	assert_false(ShiftSchedule.is_on_time(-40.0))
 
 
+func test_running_early_is_never_penalised() -> void:
+	assert_eq(ShiftSchedule.punctuality_score(-120.0), 100.0)
+
+
 func test_punctuality_falls_with_lateness() -> void:
 	assert_eq(ShiftSchedule.punctuality_score(25.0), 100.0)
-	assert_almost_eq(ShiftSchedule.punctuality_score(105.0), 50.0, 0.01)
+	assert_almost_eq(ShiftSchedule.punctuality_score(180.0), 50.0, 0.01)
 	assert_eq(ShiftSchedule.punctuality_score(600.0), 0.0)
 
 
@@ -50,7 +54,7 @@ func test_collision_costs_rule_points_and_satisfaction() -> void:
 	_clean_stops()
 	score.add_collision(4.0)
 	var values := score.categories()
-	assert_gt(float(values["rules"]), 80.0)
+	assert_gt(float(values["rules"]), 85.0)
 	assert_lt(float(values["rules"]), 95.0)
 	assert_lt(float(values["satisfaction"]), 100.0)
 
@@ -86,7 +90,7 @@ func test_speeding_costs_points_over_time() -> void:
 	for i in 600:
 		score.add_time(DT, true, false)
 	assert_lt(float(score.categories()["rules"]), 100.0)
-	assert_gt(float(score.categories()["rules"]), 90.0, "Ten seconds should not be a disaster")
+	assert_gt(float(score.categories()["rules"]), 95.0, "Ten seconds should not be a disaster")
 
 
 func test_one_bump_counts_once() -> void:
@@ -120,6 +124,63 @@ func test_losses_level_off_rather_than_hitting_zero() -> void:
 	for i in 100:
 		score.add_red_light()
 	assert_gte(float(score.categories()["rules"]), 0.0)
+
+
+## The fairness benchmark. This is a realistic drive by someone still learning:
+## running two minutes behind, not perfectly lined up in the bays, with a few
+## knocks along the way. It must feel like a decent result, not a failure.
+func test_an_imperfect_learner_shift_earns_three_or_four_stars() -> void:
+	for i in 7:
+		score.add_stop(0.75, 120.0)
+	for i in 3:
+		score.add_collision(4.0)
+	for i in 6:
+		score.add_knocked()
+	for i in 8:
+		score.add_kerb()
+	score.add_red_light()
+	score.add_harsh_brake()
+	for i in 2:
+		score.add_missed_indicator()
+	for i in 3:
+		score.add_jolt()
+		score.add_time(2.0, false, false)
+	for i in 1800:
+		score.add_time(DT, true, false)
+	for i in 300:
+		score.add_time(DT, false, true)
+	assert_gt(score.total(), 69, "A learner who finishes deserves 4 stars or close to it")
+	assert_lt(score.total(), 88, "Five stars must still be earned")
+
+
+func test_a_very_rough_shift_still_scores_something_fair() -> void:
+	for i in 7:
+		score.add_stop(0.6, 240.0)
+	for i in 6:
+		score.add_collision(6.0)
+	for i in 20:
+		score.add_knocked()
+		score.add_kerb()
+	for i in 3:
+		score.add_red_light()
+	assert_gt(score.total(), 49, "Even a rough finished shift earns 3 stars")
+
+
+func test_long_speeding_and_off_road_stop_adding_up() -> void:
+	for i in 60000:
+		score.add_time(DT, true, true)
+	assert_gt(float(score.categories()["rules"]), 70.0)
+
+
+func test_weakest_category_points_at_the_biggest_loss() -> void:
+	for i in 7:
+		score.add_stop(1.0, 300.0)
+	assert_eq(score.weakest_category(), "punctuality")
+
+
+func test_no_advice_after_a_clean_shift() -> void:
+	_clean_stops()
+	assert_eq(score.weakest_category(), "")
 
 
 func test_a_rough_but_finished_shift_earns_a_fair_score() -> void:
@@ -163,21 +224,22 @@ func test_weights_add_up() -> void:
 	assert_almost_eq(sum, 1.0, 0.001)
 
 
-func test_monitor_needs_a_sustained_stop_to_count_as_harsh() -> void:
+func test_monitor_needs_a_sustained_emergency_stop() -> void:
 	var monitor := DrivingMonitor.new()
 	watch_signals(monitor)
-	monitor.update(-4.0, DT)
+	for i in 10:
+		monitor.update(-4.0, DT)
 	assert_signal_not_emitted(monitor, "harsh_brake")
 	for i in 20:
 		monitor.update(-4.0, DT)
 	assert_signal_emit_count(monitor, "harsh_brake", 1)
 
 
-func test_monitor_ignores_normal_braking() -> void:
+func test_monitor_ignores_normal_and_firm_braking() -> void:
 	var monitor := DrivingMonitor.new()
 	watch_signals(monitor)
-	for i in 120:
-		monitor.update(-2.0, DT)
+	for i in 300:
+		monitor.update(-3.2, DT)
 	assert_signal_not_emitted(monitor, "harsh_brake")
 
 
@@ -185,42 +247,13 @@ func test_monitor_counts_one_event_per_hard_stop() -> void:
 	var monitor := DrivingMonitor.new()
 	watch_signals(monitor)
 	for i in 120:
-		monitor.update(-3.5, DT)
+		monitor.update(-4.0, DT)
 	assert_signal_emit_count(monitor, "harsh_brake", 1)
 	for i in 10:
 		monitor.update(0.0, DT)
-	for i in 20:
-		monitor.update(-3.5, DT)
+	for i in 30:
+		monitor.update(-4.0, DT)
 	assert_signal_emit_count(monitor, "harsh_brake", 2)
-
-
-func test_monitor_sees_harsh_acceleration() -> void:
-	var monitor := DrivingMonitor.new()
-	watch_signals(monitor)
-	for i in 180:
-		monitor.update(1.5, DT)
-	assert_signal_emit_count(monitor, "harsh_accel", 1)
-
-
-func test_normal_pulling_away_is_not_harsh() -> void:
-	var monitor := DrivingMonitor.new()
-	watch_signals(monitor)
-	for i in 600:
-		monitor.update(1.2, DT)
-	for i in 100:
-		monitor.update(1.5, DT)
-	assert_signal_not_emitted(monitor, "harsh_accel")
-
-
-func test_harsh_acceleration_cannot_repeat_straight_away() -> void:
-	var monitor := DrivingMonitor.new()
-	watch_signals(monitor)
-	for launch in 3:
-		for i in 180:
-			monitor.update(1.5, DT)
-		for i in 60:
-			monitor.update(0.0, DT)
-	assert_signal_emit_count(monitor, "harsh_accel", 1)
 
 
 func test_speeding_has_a_small_grace() -> void:

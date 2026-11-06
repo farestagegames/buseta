@@ -120,7 +120,7 @@ func test_bus_knocks_a_cone_flying_and_passes() -> void:
 
 
 func test_speed_bump_jolts_a_fast_bus() -> void:
-	var bump := scene.network.sample("mill_lane", 70.0, 1.9, 1)
+	var bump := scene.network.sample("mill_lane", 205.0, 1.9, 1)
 	var forward: Vector2 = bump["forward"]
 	GameEvents.bus_relocate_requested.emit(bump["position"] - forward * 16.0, bump["heading"])
 	bus.model.speed = 12.0
@@ -349,7 +349,7 @@ func test_bus_signal_reports_the_light_ahead() -> void:
 func test_hard_braking_and_a_crash_show_in_the_score() -> void:
 	bus.model.speed = 12.0
 	GameEvents.ui_pedals_changed.emit(0.0, 1.0)
-	await wait_physics_frames(60)
+	await wait_physics_frames(80)
 	assert_eq(int(keeper.score.counts["harsh_brakes"]), 1)
 	GameEvents.bus_collided.emit(4.0)
 	assert_eq(int(keeper.score.counts["collisions"]), 1)
