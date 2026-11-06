@@ -5,7 +5,7 @@ extends RefCounted
 
 ## Arriving this early or late still counts as on time.
 const ON_TIME_EARLY := 30.0
-const ON_TIME_LATE := 45.0
+const ON_TIME_LATE := 30.0
 ## Punctuality reaches zero this far outside the on-time window.
 const ZERO_SCORE_MARGIN := 150.0
 

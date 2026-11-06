@@ -6,7 +6,9 @@ extends Node3D
 const MAX_WAITING := 8
 const SPAWN_DISTANCE := 260.0
 const WALK_SPEED := 1.7
-const QUEUE_GAP := 0.75
+const QUEUE_GAP := 0.8
+## Keep at least this far apart, in metres.
+const PERSONAL_SPACE := 0.62
 const LOOK_VARIETY := 18
 const LOOK_PACES: Array[float] = [1.0, 1.05, 0.95, 1.1, 1.0, 0.65, 1.0, 1.05, 0.95, 1.1, 1.0, 0.65, 1.0, 1.05, 0.95, 1.1, 1.0, 0.65]
 
@@ -104,6 +106,27 @@ func setup(route: RouteRunner, ground: GroundSurface) -> void:
 	GameEvents.stop_served.connect(_on_stop_finished.unbind(3))
 
 
+## Moves two people apart along the line between them. Pure, so it can be tested.
+## Returns how far each should move, as a pair of offsets.
+static func separation(a: Vector2, b: Vector2, space: float) -> Array[Vector2]:
+	var gap := b - a
+	var distance := gap.length()
+	if distance >= space:
+		return [Vector2.ZERO, Vector2.ZERO]
+	var direction := gap / distance if distance > 0.001 else Vector2.RIGHT
+	var push := direction * (space - distance) / 2.0
+	return [-push, push]
+
+
+## People join the queue in the order they stand from the door, so nobody cuts in.
+static func queue_order(door: Vector2, spots: Array[Vector2]) -> Array[int]:
+	var order: Array[int] = []
+	for i in spots.size():
+		order.append(i)
+	order.sort_custom(func(a: int, b: int) -> bool: return door.distance_squared_to(spots[a]) < door.distance_squared_to(spots[b]))
+	return order
+
+
 func _process(dt: float) -> void:
 	for i in waiting.size():
 		var walker := waiting[i]
@@ -119,6 +142,21 @@ func _process(dt: float) -> void:
 		if leaving[i].step(dt, WALK_SPEED, _ground):
 			_release(leaving[i])
 			leaving.remove_at(i)
+	_keep_apart()
+
+
+func _keep_apart() -> void:
+	var everyone: Array[Walker] = []
+	everyone.append_array(waiting)
+	everyone.append_array(boarding)
+	everyone.append_array(leaving)
+	for i in everyone.size():
+		for j in range(i + 1, everyone.size()):
+			var first := everyone[i]
+			var second := everyone[j]
+			var moves := separation(Vector2(first.position.x, first.position.z), Vector2(second.position.x, second.position.z), PERSONAL_SPACE)
+			first.position += Vector3(moves[0].x, 0.0, moves[0].y)
+			second.position += Vector3(moves[1].x, 0.0, moves[1].y)
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
@@ -151,12 +189,19 @@ func _queue_point(place: int) -> Vector3:
 		return _door
 	var forward := stop.forward()
 	var right := Vector2(-forward.y, forward.x)
-	var spot := Vector2(_door.x, _door.z) + right * 0.7 - forward * (float(place) * QUEUE_GAP)
+	var spot := Vector2(_door.x, _door.z) + right * 0.6 - forward * (float(place + 1) * QUEUE_GAP)
 	return Vector3(spot.x, _door.y, spot.y)
 
 
 func _on_session_started(_stop_index: int, _alighting: int, _boarding: int) -> void:
 	_queueing = true
+	var spots: Array[Vector2] = []
+	for walker in waiting:
+		spots.append(Vector2(walker.position.x, walker.position.z))
+	var ordered: Array[Walker] = []
+	for index in queue_order(Vector2(_door.x, _door.z), spots):
+		ordered.append(waiting[index])
+	waiting = ordered
 
 
 func _on_boarded(_stop_index: int) -> void:
@@ -172,7 +217,8 @@ func _on_alighted(_stop_index: int) -> void:
 	var right := Vector2(-forward.y, forward.x)
 	var walker := _take_walker()
 	walker.position = _door
-	var goal := Vector2(_door.x, _door.z) + right * 3.5 + forward * _random.randf_range(-9.0, 9.0)
+	# Queue is behind the door, so people getting off walk forward and clear of it.
+	var goal := Vector2(_door.x, _door.z) + right * _random.randf_range(2.6, 4.0) + forward * _random.randf_range(3.0, 10.0)
 	walker.target = Vector3(goal.x, _door.y, goal.y)
 	leaving.append(walker)
 

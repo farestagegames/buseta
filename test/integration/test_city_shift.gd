@@ -410,3 +410,40 @@ func test_report_reads_naturally_and_clears_the_hud() -> void:
 	assert_string_contains(keeper._details({"carried": 1}), "1 collision")
 	assert_false(keeper._details({"carried": 1}).contains("1 collisions"))
 	assert_false(hud.gauge.visible, "The report should not sit over the HUD")
+
+
+func _car_touching_bus() -> TrafficAgent:
+	var heading := bus.model.heading
+	var forward := Vector2(-sin(heading), -cos(heading))
+	var rear := Vector2(bus.global_position.x, bus.global_position.z)
+	var agent: TrafficAgent = traffic.agents[0]
+	var lane_index := 0
+	for i in traffic.graph.lanes.size():
+		if (traffic.graph.lanes[i] as TrafficLane).road == "high_street":
+			lane_index = i
+			break
+	agent.lane = lane_index
+	agent.next_lane = -1
+	agent.distance = 60.0
+	var lane: TrafficLane = traffic.graph.lanes[lane_index]
+	var spot := lane.point_at(60.0)
+	var along := lane.forward_at(60.0)
+	GameEvents.bus_relocate_requested.emit(spot - along * 1.0, RoadNetwork.heading_of(along))
+	return agent
+
+
+func test_car_driving_into_a_stopped_bus_stops_and_it_is_not_the_drivers_fault() -> void:
+	var agent := _car_touching_bus()
+	agent.speed = 6.0
+	await wait_physics_frames(3)
+	assert_eq(agent.speed, 0.0, "Car should stop on contact")
+	assert_eq(int(keeper.score.counts["collisions"]), 0)
+
+
+func test_reversing_slowly_into_a_car_counts_as_a_hit() -> void:
+	var agent := _car_touching_bus()
+	agent.speed = 0.0
+	await wait_physics_frames(2)
+	bus.model.speed = -1.5
+	await wait_physics_frames(2)
+	assert_gt(agent.stunned, 1.0, "Car should react to the contact")

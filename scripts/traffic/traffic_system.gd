@@ -15,6 +15,10 @@ const ONCOMING_CLEARANCE := 32.0
 const SIGNAL_RANGE := 75.0
 const CROSSING_REACH := 5.0 ## Sideways reach of a stop line, in metres.
 const LAMP_HEIGHT := 4.3
+const CONTACT_CHECK_RADIUS := 14.0
+const BUS_FAULT_SPEED := 0.3 ## Slower than this, the bus is not to blame.
+const HIT_REPEAT_SECONDS := 1.0
+const SEPARATION_PER_TICK := 0.06
 
 const CAR_COLOURS: Array[Color] = [
 	Color(0.2, 0.3, 0.55), Color(0.75, 0.75, 0.78), Color(0.17, 0.17, 0.2), Color(0.55, 0.15, 0.15),
@@ -219,21 +223,29 @@ func _gap_to_bus(agent: TrafficAgent, lane: TrafficLane) -> float:
 	return BusFootprint.gap_ahead(_bus_position, _bus_heading, _spec, _position_of(agent), forward, CAR_HALF_LENGTH, CAR_HALF_WIDTH)
 
 
-## The bus runs into cars the same way it runs into parked ones.
+## Any contact between the bus and a car counts, whoever is moving. Only a bus
+## that was moving is at fault. A car running into a parked bus just stops.
 func _check_bus_hits() -> void:
-	if absf(_bus_speed) < 0.5:
-		return
 	var forward := Vector2(-sin(_bus_heading), -cos(_bus_heading))
+	var bus_velocity := forward * _bus_speed
+	var centre := BusFootprint.body_centre(_bus_position, _bus_heading, _spec)
 	for agent in agents:
-		if agent.stunned > TrafficAgent.STUN_SECONDS - 1.0:
+		var spot := _position_of(agent)
+		if spot.distance_squared_to(centre) > CONTACT_CHECK_RADIUS * CONTACT_CHECK_RADIUS:
 			continue
 		var car_forward := (graph.lanes[agent.lane] as TrafficLane).forward_at(agent.distance)
-		if BusFootprint.touches_car(_bus_position, _bus_heading, _spec, _position_of(agent), car_forward):
-			agent.hit_by_bus(forward * _bus_speed)
+		if not BusFootprint.touches_car(_bus_position, _bus_heading, _spec, spot, car_forward):
+			continue
+		var away := (spot - centre).normalized()
+		var closing := (bus_velocity - car_forward * agent.speed).length()
+		if absf(_bus_speed) >= BUS_FAULT_SPEED and agent.stunned <= TrafficAgent.STUN_SECONDS - HIT_REPEAT_SECONDS:
+			agent.hit_by_bus(bus_velocity)
 			var loss := absf(_bus_speed) * ObstacleField.CAR_LOSS_HEAD_ON * 0.7
 			GameEvents.obstacle_hit.emit("car", loss)
 			if loss > 0.5:
 				GameEvents.bus_collided.emit(loss)
+		elif closing > 0.0:
+			agent.stop_against_bus(away * SEPARATION_PER_TICK)
 
 
 func _check_red_lights() -> void:

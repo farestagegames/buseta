@@ -222,3 +222,26 @@ func test_route_has_no_corners_tighter_than_a_bus_can_take() -> void:
 			if turn > 0.01:
 				tightest = minf(tightest, (before.length() + after.length()) / 2.0 / turn)
 	assert_gt(tightest, 22.0, "Bends should take a bus at about 25 km/h")
+
+
+func test_people_too_close_are_pushed_apart() -> void:
+	var moves := PassengerCrowd.separation(Vector2.ZERO, Vector2(0.2, 0.0), 0.6)
+	assert_lt(moves[0].x, 0.0)
+	assert_gt(moves[1].x, 0.0)
+	var apart := (Vector2(0.2, 0.0) + moves[1]).distance_to(moves[0])
+	assert_almost_eq(apart, 0.6, 0.001)
+
+
+func test_people_with_space_are_left_alone() -> void:
+	var moves := PassengerCrowd.separation(Vector2.ZERO, Vector2(2.0, 0.0), 0.6)
+	assert_eq(moves[0], Vector2.ZERO)
+
+
+func test_two_people_in_one_spot_still_separate() -> void:
+	var moves := PassengerCrowd.separation(Vector2.ONE, Vector2.ONE, 0.6)
+	assert_ne(moves[0], moves[1])
+
+
+func test_queue_starts_with_whoever_is_nearest_the_door() -> void:
+	var spots: Array[Vector2] = [Vector2(5.0, 0.0), Vector2(1.0, 0.0), Vector2(3.0, 0.0)]
+	assert_eq(PassengerCrowd.queue_order(Vector2.ZERO, spots), [1, 2, 0] as Array[int])

@@ -56,6 +56,13 @@ func hit_by_bus(bus_velocity: Vector2) -> void:
 	nudge_velocity = bus_velocity * 0.75
 
 
+## Touching the bus without a real crash: stop, and be pushed back out of it.
+func stop_against_bus(push: Vector2) -> void:
+	stunned = maxf(stunned, 1.5)
+	speed = 0.0
+	nudge += push
+
+
 func _settle_nudge(dt: float) -> void:
 	nudge += nudge_velocity * dt
 	var remaining := maxf(nudge_velocity.length() - KnockableProp.SKID_DECEL * dt, 0.0)
