@@ -38,7 +38,13 @@ func _draw() -> void:
 		_fill_style.bg_color = Color(colour, 0.85)
 		draw_style_box(_fill_style, Rect2(0.0, size.y - fill_height, size.x, fill_height))
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(0.0, size.y / 2.0 + 10.0), label, HORIZONTAL_ALIGNMENT_CENTER, size.x, 26, Color.WHITE)
+	draw_string(font, Vector2(0.0, size.y / 2.0 + 10.0), tr(label), HORIZONTAL_ALIGNMENT_CENTER, size.x, 26, Color.WHITE)
+
+
+func _notification(what: int) -> void:
+	super(what)
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		queue_redraw()
 
 
 func _touch_down(point: Vector2) -> void:

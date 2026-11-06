@@ -34,6 +34,7 @@ static func punctuality_score(late: float) -> float:
 ## Readable lateness for the driver, such as "On time" or "1:05 late".
 static func status_text(late: float) -> String:
 	if is_on_time(late):
-		return "On time"
+		return String(TranslationServer.translate("On time"))
 	var seconds := absi(roundi(late))
-	return "%d:%02d %s" % [seconds / 60, seconds % 60, "late" if late > 0.0 else "early"]
+	var text := "%d:%02d late" if late > 0.0 else "%d:%02d early"
+	return String(TranslationServer.translate(text)) % [seconds / 60, seconds % 60]

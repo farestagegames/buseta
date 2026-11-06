@@ -23,9 +23,9 @@ func _ready() -> void:
 
 
 func _on_status(status: Dictionary) -> void:
-	var one := "Next: %s  (%d m)" % [status["next_stop"], roundi(float(status["distance"]) / 10.0) * 10]
-	var two := "Stop %d of %d   On board: %d" % [status["stop_number"], status["stop_count"], status["onboard"]]
-	var prompt: String = status["prompt"] if status["prompt"] != "" else status["turn"]
+	var one := tr("Next: %s  (%d m)") % [status["next_stop"], roundi(float(status["distance"]) / 10.0) * 10]
+	var two := tr("Stop %d of %d   On board: %d") % [status["stop_number"], status["stop_count"], status["onboard"]]
+	var prompt: String = status["prompt"] if status["prompt"] != "" else tr(status["turn"])
 	var late: float = status["seconds_late"]
 	var time_status := ShiftSchedule.status_text(late)
 	if one != _line_one or two != _line_two or prompt != _prompt or time_status != _time_status:

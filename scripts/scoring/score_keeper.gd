@@ -6,6 +6,14 @@ extends Node
 const KERB_COOLDOWN := 4.0
 const OFF_ROAD_MARGIN := 0.4
 const LOST_COLLISION_SPEED := 0.5
+const HIT_MESSAGES := {"cone": "Hit a cone", "bin": "Hit a bin", "crate": "Hit a crate", "barrier": "Hit a barrier"}
+const TIPS := {
+	"punctuality": "Tip: you lost the most time between stops. Keep moving when the road is clear.",
+	"accuracy": "Tip: stop with the bus in the middle of the bay.",
+	"smoothness": "Tip: slow down for speed bumps and avoid sudden stops.",
+	"rules": "Tip: watch the lights, the speed limit and the kerbs.",
+	"satisfaction": "Tip: avoid knocks and wait for everyone to board.",
+}
 ## Contact within this time is the same crash, however long the bus scrapes.
 const COLLISION_COOLDOWN := 2.5
 
@@ -83,9 +91,9 @@ func _on_collided(impact_speed: float) -> void:
 
 
 func _on_obstacle_hit(kind: String, _speed_loss: float) -> void:
-	if kind in ["cone", "bin", "crate", "barrier"]:
+	if HIT_MESSAGES.has(kind):
 		score.add_knocked()
-		GameEvents.penalty_shown.emit("Hit a %s" % kind)
+		GameEvents.penalty_shown.emit(HIT_MESSAGES[kind])
 
 
 func _on_red_light() -> void:
@@ -104,13 +112,13 @@ func _on_stop_arrived(_index: int, accuracy: float, seconds_late: float) -> void
 
 func _on_stop_missed(_index: int, stop_name: String) -> void:
 	score.add_missed_stop()
-	GameEvents.penalty_shown.emit("Missed %s" % stop_name)
+	GameEvents.penalty_shown.emit(tr("Missed %s") % stop_name)
 
 
 func _on_stop_served(_index: int, _name: String, left_behind: int) -> void:
 	if left_behind > 0:
 		score.add_left_behind(left_behind)
-		GameEvents.penalty_shown.emit("Left %d waiting" % left_behind)
+		GameEvents.penalty_shown.emit(tr("Left %d waiting") % left_behind)
 
 
 func _on_shift_completed(summary: Dictionary) -> void:
@@ -122,29 +130,31 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	report["categories"] = score.categories()
 	report["details"] = _details(summary)
 	report["counts"] = score.counts.duplicate()
-	report["weakest"] = score.weakest_category()
+	var weakest := score.weakest_category()
+	report["tip"] = tr(TIPS[weakest]) if weakest != "" else ""
 	GameEvents.shift_report_ready.emit(report)
 
 
 func _details(summary: Dictionary) -> String:
 	var counts := score.counts
-	var notes: Array[String] = [_count(summary["carried"], "passenger carried", "passengers carried")]
+	var notes: Array[String] = [_count(summary["carried"], "%d passenger carried", "%d passengers carried")]
 	var labels := {
-		"collisions": ["collision", "collisions"], "red_lights": ["red light", "red lights"],
-		"knocked": ["object hit", "objects hit"], "harsh_brakes": ["emergency stop", "emergency stops"],
-		"jolts": ["hard bump", "hard bumps"],
-		"kerbs": ["kerb strike", "kerb strikes"], "indicators": ["turn not signalled", "turns not signalled"],
-		"missed_stops": ["stop missed", "stops missed"], "left_behind": ["person left waiting", "people left waiting"],
+		"collisions": ["%d collision", "%d collisions"], "red_lights": ["%d red light", "%d red lights"],
+		"knocked": ["%d object hit", "%d objects hit"], "harsh_brakes": ["%d emergency stop", "%d emergency stops"],
+		"jolts": ["%d hard bump", "%d hard bumps"], "kerbs": ["%d kerb strike", "%d kerb strikes"],
+		"indicators": ["%d turn not signalled", "%d turns not signalled"],
+		"missed_stops": ["%d stop missed", "%d stops missed"],
+		"left_behind": ["%d person left waiting", "%d people left waiting"],
 	}
 	for key: String in labels:
 		if int(counts[key]) > 0:
 			notes.append(_count(counts[key], labels[key][0], labels[key][1]))
 	if score.speeding_seconds >= 1.0:
-		notes.append("%d s speeding" % roundi(score.speeding_seconds))
+		notes.append(tr("%d s speeding") % roundi(score.speeding_seconds))
 	if score.off_road_seconds >= 1.0:
-		notes.append("%d s off road" % roundi(score.off_road_seconds))
+		notes.append(tr("%d s off road") % roundi(score.off_road_seconds))
 	return ", ".join(notes)
 
 
 func _count(amount: int, one: String, many: String) -> String:
-	return "%d %s" % [amount, one if amount == 1 else many]
+	return tr(one if amount == 1 else many) % amount

@@ -94,9 +94,9 @@ func _header() -> Control:
 
 func _refresh_header() -> void:
 	var xp := Profile.data.xp
-	_level_label.text = "Level %d" % DriverLevel.level_for(xp)
+	_level_label.text = tr("Level %d") % DriverLevel.level_for(xp)
 	_level_bar.value = DriverLevel.progress(xp)
-	_coins_label.text = "%d coins" % Profile.data.coins
+	_coins_label.text = tr("%d coins") % Profile.data.coins
 
 
 func _navigation() -> Control:
@@ -123,9 +123,9 @@ func _home_tab() -> Control:
 	var card := _card()
 	var lines := VBoxContainer.new()
 	lines.add_child(_text(route["name"], 30, Color.WHITE))
-	lines.add_child(_text("%s, %s" % [bus["name"], livery["name"]], 22, MUTED))
+	lines.add_child(_text("%s, %s" % [bus["name"], tr(livery["name"])], 22, MUTED))
 	var best: int = Profile.data.best_scores.get(route["id"], -1)
-	lines.add_child(_text("Best score: %d" % best if best >= 0 else "Not driven yet", 22, MUTED))
+	lines.add_child(_text(tr("Best score: %d") % best if best >= 0 else tr("Not driven yet"), 22, MUTED))
 	card.add_child(lines)
 	column.add_child(card)
 
@@ -136,7 +136,7 @@ func _home_tab() -> Control:
 	var done := Profile.data.last_daily == today
 	daily_lines.add_child(_text("Daily challenge", 22, ACCENT))
 	daily_lines.add_child(_wrapped(challenge["text"], 24, Color.WHITE))
-	daily_lines.add_child(_text("Done today" if done else "Reward: %d coins" % DailyChallenge.REWARD_COINS, 20, GOOD if done else MUTED))
+	daily_lines.add_child(_text(tr("Done today") if done else tr("Reward: %d coins") % DailyChallenge.REWARD_COINS, 20, GOOD if done else MUTED))
 	daily_card.add_child(daily_lines)
 	column.add_child(daily_card)
 
@@ -204,7 +204,7 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 		button.text = "Select"
 		button.pressed.connect(_on_select.bind(kind, id))
 	else:
-		button.text = "Buy %d" % item["cost"]
+		button.text = tr("Buy %d") % item["cost"]
 		button.disabled = Profile.data.coins < int(item["cost"])
 		button.pressed.connect(_on_buy.bind(kind, id))
 	return button
@@ -245,11 +245,11 @@ func _driver_tab() -> Control:
 	var stats := Profile.data.stats
 	var card := _card()
 	var lines := VBoxContainer.new()
-	lines.add_child(_text("Level %d driver, %d XP" % [DriverLevel.level_for(Profile.data.xp), Profile.data.xp], 26, Color.WHITE))
-	lines.add_child(_text("Shifts completed: %d" % stats["shifts"], 22, MUTED))
-	lines.add_child(_text("Passengers carried: %d" % stats["passengers"], 22, MUTED))
-	lines.add_child(_text("Best stars: %d" % stats["best_stars"], 22, MUTED))
-	lines.add_child(_text("Shifts with no collisions: %d" % stats["clean_shifts"], 22, MUTED))
+	lines.add_child(_text(tr("Level %d driver, %d XP") % [DriverLevel.level_for(Profile.data.xp), Profile.data.xp], 26, Color.WHITE))
+	lines.add_child(_text(tr("Shifts completed: %d") % stats["shifts"], 22, MUTED))
+	lines.add_child(_text(tr("Passengers carried: %d") % stats["passengers"], 22, MUTED))
+	lines.add_child(_text(tr("Best stars: %d") % stats["best_stars"], 22, MUTED))
+	lines.add_child(_text(tr("Shifts with no collisions: %d") % stats["clean_shifts"], 22, MUTED))
 	card.add_child(lines)
 	rows.add_child(card)
 	rows.add_child(_text("Achievements", 26, ACCENT))

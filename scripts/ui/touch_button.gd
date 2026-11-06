@@ -36,7 +36,13 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	var line_height := font.get_height(font_size)
 	var baseline := (size.y - line_height) / 2.0 + font.get_ascent(font_size)
-	draw_string(font, Vector2(0.0, baseline), text, HORIZONTAL_ALIGNMENT_CENTER, size.x, font_size, TEXT)
+	draw_string(font, Vector2(0.0, baseline), tr(text), HORIZONTAL_ALIGNMENT_CENTER, size.x, font_size, TEXT)
+
+
+func _notification(what: int) -> void:
+	super(what)
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		queue_redraw()
 
 
 func _touch_down(_point: Vector2) -> void:

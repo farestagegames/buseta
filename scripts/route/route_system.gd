@@ -182,15 +182,15 @@ func _running_lateness() -> float:
 func _prompt(stop: RouteStop, data: BusTelemetry, centre: Vector2) -> String:
 	if session != null:
 		if session.is_complete():
-			return "All aboard: close the doors"
-		return "Passengers getting off" if session.stage == StopSession.Stage.ALIGHTING else "Passengers boarding"
+			return tr("All aboard: close the doors")
+		return tr("Passengers getting off") if session.stage == StopSession.Stage.ALIGHTING else tr("Passengers boarding")
 	var offset := stop.offset_of(centre)
 	if absf(offset.x) > 30.0:
 		return ""
 	if _aligned:
 		if absf(data.speed) >= BusPhysicsModel.STOPPED_SPEED:
-			return "Stop here"
-		return "Stop reached" if stop.is_final else "Open the doors"
+			return tr("Stop here")
+		return tr("Stop reached") if stop.is_final else tr("Open the doors")
 	if absf(offset.x) > RouteStop.ALONG_TOLERANCE:
-		return "Pull forward %d m" % ceili(-offset.x - RouteStop.ALONG_TOLERANCE) if offset.x < 0.0 else "Too far forward"
-	return "Pull into the bay" if absf(offset.y) > RouteStop.LATERAL_TOLERANCE else "Straighten up"
+		return tr("Pull forward %d m") % ceili(-offset.x - RouteStop.ALONG_TOLERANCE) if offset.x < 0.0 else tr("Too far forward")
+	return tr("Pull into the bay") if absf(offset.y) > RouteStop.LATERAL_TOLERANCE else tr("Straighten up")

@@ -12,6 +12,7 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 [autoload]
 GameEvents="*res://scripts/core/game_events.gd"
 GameSettings="*res://scripts/core/game_settings.gd"
+Lang="*res://scripts/core/lang.gd"
 Profile="*res://scripts/core/profile.gd"
 
 [display]
@@ -28,6 +29,9 @@ enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 pointing/emulate_touch_from_mouse=true
 sensors/enable_accelerometer=true
 sensors/enable_gravity=true
+
+[internationalization]
+locale/include_text_server_data=true
 
 [physics]
 common/physics_ticks_per_second=60

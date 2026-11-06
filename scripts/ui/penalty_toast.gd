@@ -19,7 +19,7 @@ func _ready() -> void:
 
 
 func _on_penalty(message: String) -> void:
-	text = message
+	text = tr(message)
 	_timer = SHOW_SECONDS
 	visible = true
 	modulate.a = 1.0

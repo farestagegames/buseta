@@ -90,12 +90,13 @@ func show_report(report: Dictionary) -> void:
 	_stars.text = "★".repeat(stars_shown) + "☆".repeat(5 - stars_shown)
 	var minutes := int(report["time"]) / 60
 	var seconds := int(report["time"]) % 60
-	_headline.text = "Shift complete: %d points in %d:%02d" % [report["score"], minutes, seconds]
-	_coins.text = "%d coins earned" % report["coins"]
+	_headline.text = tr("Shift complete: %d points in %d:%02d") % [report["score"], minutes, seconds]
+	_coins.text = tr("%d coins earned") % report["coins"]
 	var categories: Dictionary = report["categories"]
 	for key: String in _bars:
 		(_bars[key] as ProgressBar).value = categories[key]
-	_details.text = report["details"]
+	var tip: String = report.get("tip", "")
+	_details.text = "%s\n%s" % [report["details"], tip] if tip != "" else report["details"]
 	var rewards: Dictionary = report["rewards"]
 	_coins_earned = rewards["coins"]
 	_rewards.text = _reward_lines(rewards)
@@ -104,15 +105,15 @@ func show_report(report: Dictionary) -> void:
 
 
 func _reward_lines(rewards: Dictionary) -> String:
-	var lines: Array[String] = ["+%d XP" % rewards["xp"]]
+	var lines: Array[String] = [tr("+%d XP") % rewards["xp"]]
 	if rewards["levelled_up"]:
-		lines.append("Level %d reached!" % rewards["level"])
+		lines.append(tr("Level %d reached!") % rewards["level"])
 	if rewards["new_best"]:
-		lines.append("New best score!")
+		lines.append(tr("New best score!"))
 	if int(rewards["daily_coins"]) > 0:
-		lines.append("Daily challenge done: +%d coins" % rewards["daily_coins"])
+		lines.append(tr("Daily challenge done: +%d coins") % rewards["daily_coins"])
 	for entry: Dictionary in rewards["achievements"]:
-		lines.append("Achievement: %s" % entry["name"])
+		lines.append(tr("Achievement: %s") % tr(entry["name"]))
 	return "   ".join(lines)
 
 
@@ -122,7 +123,7 @@ func _on_double_coins() -> void:
 		if earned:
 			Profile.data.coins += _coins_earned
 			Profile.save()
-			_coins.text = "%d coins earned" % (_coins_earned * 2))
+			_coins.text = tr("%d coins earned") % (_coins_earned * 2))
 
 
 func _action(text: String) -> Button:

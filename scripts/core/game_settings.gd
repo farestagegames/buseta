@@ -31,10 +31,17 @@ var graphics_quality: int = 1:
 		changed.emit()
 
 
+## A language code from Lang.LANGUAGES. Empty follows the phone's language.
+var language: String = "":
+	set(value):
+		language = value
+		changed.emit()
+
+
 func to_dict() -> Dictionary:
 	return {
 		"steering_mode": int(steering_mode), "sensitivity": sensitivity, "invert_tilt": invert_tilt,
-		"sound_volume": sound_volume, "graphics_quality": graphics_quality,
+		"sound_volume": sound_volume, "graphics_quality": graphics_quality, "language": language,
 	}
 
 
@@ -48,5 +55,6 @@ func apply_saved(saved: Dictionary) -> void:
 	invert_tilt = bool(saved.get("invert_tilt", invert_tilt))
 	sound_volume = float(saved.get("sound_volume", sound_volume))
 	graphics_quality = int(saved.get("graphics_quality", graphics_quality))
+	language = str(saved.get("language", language))
 	set_block_signals(false)
 	changed.emit()

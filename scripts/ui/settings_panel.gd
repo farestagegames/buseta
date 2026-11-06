@@ -99,8 +99,8 @@ func _shift_actions() -> Control:
 func _refresh() -> void:
 	for i in _mode_buttons.size():
 		_mode_buttons[i].set_pressed_no_signal(i == int(GameSettings.steering_mode))
-	_sensitivity_label.text = "Steering sensitivity: %.2f" % GameSettings.sensitivity
-	_volume_label.text = "Sound volume: %d%%" % roundi(GameSettings.sound_volume * 100.0)
+	_sensitivity_label.text = tr("Steering sensitivity: %.2f") % GameSettings.sensitivity
+	_volume_label.text = tr("Sound volume: %d%%") % roundi(GameSettings.sound_volume * 100.0)
 
 
 func _label(text: String, font_size: int) -> Label:

@@ -1,0 +1,1290 @@
+{
+"VIEW": [
+"VUE",
+"VISTA",
+"VISTA",
+"दृश्य",
+"عرض"
+],
+"MENU": [
+"MENU",
+"MENÚ",
+"MENU",
+"मेनू",
+"القائمة"
+],
+"◀ IND": [
+"◀ CLIGN",
+"◀ INTER",
+"◀ SETA",
+"◀ संकेत",
+"إشارة ◀"
+],
+"IND ▶": [
+"CLIGN ▶",
+"INTER ▶",
+"SETA ▶",
+"संकेत ▶",
+"▶ إشارة"
+],
+"DOORS": [
+"PORTES",
+"PUERTAS",
+"PORTAS",
+"दरवाज़े",
+"الأبواب"
+],
+"HORN": [
+"KLAXON",
+"BOCINA",
+"BUZINA",
+"हॉर्न",
+"البوق"
+],
+"GO": [
+"GAZ",
+"ACEL",
+"ACEL",
+"चलें",
+"انطلق"
+],
+"BRAKE": [
+"FREIN",
+"FRENO",
+"FREIO",
+"ब्रेक",
+"فرامل"
+],
+"Tilt the phone to steer": [
+"Inclinez le téléphone pour diriger",
+"Inclina el teléfono para girar",
+"Incline o celular para virar",
+"मोड़ने के लिए फ़ोन झुकाएँ",
+"أمِل الهاتف للتوجيه"
+],
+"km/h": [
+"km/h",
+"km/h",
+"km/h",
+"किमी/घं",
+"كم/س"
+],
+"DOORS OPEN": [
+"PORTES OUVERTES",
+"PUERTAS ABIERTAS",
+"PORTAS ABERTAS",
+"दरवाज़े खुले",
+"الأبواب مفتوحة"
+],
+"Cockpit": [
+"Cabine",
+"Cabina",
+"Cabine",
+"केबिन",
+"المقصورة"
+],
+"Close": [
+"Proche",
+"Cerca",
+"Perto",
+"पास",
+"قريب"
+],
+"Far": [
+"Loin",
+"Lejos",
+"Longe",
+"दूर",
+"بعيد"
+],
+"Next: %s  (%d m)": [
+"Prochain : %s  (%d m)",
+"Próxima: %s  (%d m)",
+"Próxima: %s  (%d m)",
+"अगला: %s  (%d मी)",
+"التالي: %s  (%d م)"
+],
+"Stop %d of %d   On board: %d": [
+"Arrêt %d sur %d   À bord : %d",
+"Parada %d de %d   A bordo: %d",
+"Parada %d de %d   A bordo: %d",
+"स्टॉप %d / %d   बस में: %d",
+"المحطة %d من %d   على المتن: %d"
+],
+"All aboard: close the doors": [
+"Tout le monde à bord : fermez les portes",
+"Todos a bordo: cierra las puertas",
+"Todos a bordo: feche as portas",
+"सब सवार: दरवाज़े बंद करें",
+"الجميع على المتن: أغلق الأبواب"
+],
+"Passengers getting off": [
+"Les passagers descendent",
+"Los pasajeros bajan",
+"Passageiros descendo",
+"यात्री उतर रहे हैं",
+"الركاب ينزلون"
+],
+"Passengers boarding": [
+"Les passagers montent",
+"Los pasajeros suben",
+"Passageiros embarcando",
+"यात्री चढ़ रहे हैं",
+"الركاب يصعدون"
+],
+"Stop here": [
+"Arrêtez-vous ici",
+"Detente aquí",
+"Pare aqui",
+"यहाँ रुकें",
+"توقف هنا"
+],
+"Stop reached": [
+"Arrêt atteint",
+"Parada alcanzada",
+"Parada alcançada",
+"स्टॉप पर पहुँचे",
+"وصلت إلى المحطة"
+],
+"Open the doors": [
+"Ouvrez les portes",
+"Abre las puertas",
+"Abra as portas",
+"दरवाज़े खोलें",
+"افتح الأبواب"
+],
+"Pull forward %d m": [
+"Avancez de %d m",
+"Avanza %d m",
+"Avance %d m",
+"%d मी आगे बढ़ें",
+"تقدم %d م"
+],
+"Too far forward": [
+"Trop loin",
+"Demasiado adelante",
+"Muito à frente",
+"बहुत आगे",
+"تقدمت كثيرًا"
+],
+"Pull into the bay": [
+"Entrez dans l'arrêt",
+"Entra en la parada",
+"Entre na baia",
+"बे में जाएँ",
+"ادخل إلى موقف الحافلة"
+],
+"Straighten up": [
+"Redressez le bus",
+"Endereza el autobús",
+"Endireite o ônibus",
+"बस सीधी करें",
+"اعدل الحافلة"
+],
+"Roundabout: go straight on": [
+"Rond-point : tout droit",
+"Rotonda: sigue recto",
+"Rotatória: siga em frente",
+"गोल चक्कर: सीधे जाएँ",
+"الدوار: استمر للأمام"
+],
+"Roundabout: exit right": [
+"Rond-point : sortez à droite",
+"Rotonda: sal a la derecha",
+"Rotatória: saia à direita",
+"गोल चक्कर: दाएँ निकलें",
+"الدوار: اخرج يمينًا"
+],
+"Roundabout: exit left": [
+"Rond-point : sortez à gauche",
+"Rotonda: sal a la izquierda",
+"Rotatória: saia à esquerda",
+"गोल चक्कर: बाएँ निकलें",
+"الدوار: اخرج يسارًا"
+],
+"Turn right": [
+"Tournez à droite",
+"Gira a la derecha",
+"Vire à direita",
+"दाएँ मुड़ें",
+"انعطف يمينًا"
+],
+"Turn left": [
+"Tournez à gauche",
+"Gira a la izquierda",
+"Vire à esquerda",
+"बाएँ मुड़ें",
+"انعطف يسارًا"
+],
+"Straight on at the junction": [
+"Tout droit au carrefour",
+"Recto en el cruce",
+"Siga reto no cruzamento",
+"चौराहे पर सीधे जाएँ",
+"استمر للأمام عند التقاطع"
+],
+"Speed bump ahead": [
+"Ralentisseur devant",
+"Badén adelante",
+"Lombada à frente",
+"आगे स्पीड ब्रेकर",
+"مطب أمامك"
+],
+"On time": [
+"À l'heure",
+"A tiempo",
+"No horário",
+"समय पर",
+"في الموعد"
+],
+"%d:%02d late": [
+"%d:%02d de retard",
+"%d:%02d de retraso",
+"%d:%02d de atraso",
+"%d:%02d देर",
+"تأخير %d:%02d"
+],
+"%d:%02d early": [
+"%d:%02d d'avance",
+"%d:%02d de adelanto",
+"%d:%02d adiantado",
+"%d:%02d जल्दी",
+"مبكر %d:%02d"
+],
+"Kerb strike": [
+"Trottoir touché",
+"Golpe al bordillo",
+"Batida no meio-fio",
+"फ़ुटपाथ से टक्कर",
+"اصطدام بالرصيف"
+],
+"Emergency stop": [
+"Arrêt d'urgence",
+"Frenada de emergencia",
+"Freada de emergência",
+"आपातकालीन ब्रेक",
+"توقف طارئ"
+],
+"Too fast over a bump": [
+"Ralentisseur pris trop vite",
+"Badén demasiado rápido",
+"Lombada rápido demais",
+"स्पीड ब्रेकर पर बहुत तेज़",
+"سرعة عالية فوق المطب"
+],
+"Collision": [
+"Collision",
+"Colisión",
+"Colisão",
+"टक्कर",
+"تصادم"
+],
+"Hit a cone": [
+"Cône touché",
+"Cono golpeado",
+"Cone atingido",
+"कोन से टक्कर",
+"اصطدام بمخروط"
+],
+"Hit a bin": [
+"Poubelle touchée",
+"Contenedor golpeado",
+"Lixeira atingida",
+"कूड़ेदान से टक्कर",
+"اصطدام بحاوية"
+],
+"Hit a crate": [
+"Caisse touchée",
+"Caja golpeada",
+"Caixote atingido",
+"क्रेट से टक्कर",
+"اصطدام بصندوق"
+],
+"Hit a barrier": [
+"Barrière touchée",
+"Barrera golpeada",
+"Barreira atingida",
+"बैरियर से टक्कर",
+"اصطدام بحاجز"
+],
+"Ran a red light": [
+"Feu rouge grillé",
+"Semáforo en rojo saltado",
+"Avançou o sinal vermelho",
+"लाल बत्ती पार की",
+"تجاوز الإشارة الحمراء"
+],
+"No indicator": [
+"Pas de clignotant",
+"Sin intermitente",
+"Sem seta",
+"संकेत नहीं दिया",
+"بدون إشارة"
+],
+"Missed %s": [
+"%s manqué",
+"%s perdida",
+"%s perdida",
+"%s छूट गया",
+"فاتتك %s"
+],
+"Left %d waiting": [
+"%d laissés sur place",
+"%d se quedaron esperando",
+"%d ficaram esperando",
+"%d प्रतीक्षा में छूटे",
+"تُرك %d في الانتظار"
+],
+"Punctuality": [
+"Ponctualité",
+"Puntualidad",
+"Pontualidade",
+"समय की पाबंदी",
+"الالتزام بالوقت"
+],
+"Stopping accuracy": [
+"Précision d'arrêt",
+"Precisión al parar",
+"Precisão de parada",
+"रुकने की सटीकता",
+"دقة التوقف"
+],
+"Smooth driving": [
+"Conduite souple",
+"Conducción suave",
+"Direção suave",
+"आरामदायक ड्राइविंग",
+"قيادة سلسة"
+],
+"Traffic rules": [
+"Code de la route",
+"Normas de tráfico",
+"Regras de trânsito",
+"यातायात नियम",
+"قواعد المرور"
+],
+"Passenger satisfaction": [
+"Satisfaction des passagers",
+"Satisfacción de pasajeros",
+"Satisfação dos passageiros",
+"यात्री संतुष्टि",
+"رضا الركاب"
+],
+"Shift complete: %d points in %d:%02d": [
+"Service terminé : %d points en %d:%02d",
+"Turno completado: %d puntos en %d:%02d",
+"Turno concluído: %d pontos em %d:%02d",
+"शिफ़्ट पूरी: %d अंक, समय %d:%02d",
+"انتهت الوردية: %d نقطة في %d:%02d"
+],
+"%d coins earned": [
+"%d pièces gagnées",
+"%d monedas ganadas",
+"%d moedas ganhas",
+"%d सिक्के मिले",
+"ربحت %d عملة"
+],
+"+%d XP": [
+"+%d XP",
+"+%d XP",
+"+%d XP",
+"+%d XP",
+"+%d نقطة خبرة"
+],
+"Level %d reached!": [
+"Niveau %d atteint !",
+"¡Nivel %d alcanzado!",
+"Nível %d alcançado!",
+"स्तर %d पर पहुँचे!",
+"وصلت إلى المستوى %d!"
+],
+"New best score!": [
+"Nouveau record !",
+"¡Nueva mejor puntuación!",
+"Novo recorde!",
+"नया सर्वश्रेष्ठ स्कोर!",
+"أفضل نتيجة جديدة!"
+],
+"Daily challenge done: +%d coins": [
+"Défi du jour réussi : +%d pièces",
+"Desafío diario superado: +%d monedas",
+"Desafio diário concluído: +%d moedas",
+"दैनिक चुनौती पूरी: +%d सिक्के",
+"اكتمل التحدي اليومي: +%d عملة"
+],
+"Achievement: %s": [
+"Succès : %s",
+"Logro: %s",
+"Conquista: %s",
+"उपलब्धि: %s",
+"إنجاز: %s"
+],
+"Drive again": [
+"Rejouer",
+"Conducir otra vez",
+"Dirigir de novo",
+"फिर चलाएँ",
+"قيادة مرة أخرى"
+],
+"Main menu": [
+"Menu principal",
+"Menú principal",
+"Menu principal",
+"मुख्य मेनू",
+"القائمة الرئيسية"
+],
+"Watch an ad: double coins": [
+"Regarder une pub : pièces doublées",
+"Ver un anuncio: monedas dobles",
+"Ver um anúncio: moedas em dobro",
+"विज्ञापन देखें: दोगुने सिक्के",
+"شاهد إعلانًا: ضعف العملات"
+],
+"%d passenger carried": [
+"%d passager transporté",
+"%d pasajero transportado",
+"%d passageiro transportado",
+"%d यात्री ले गए",
+"نقلت %d راكبًا"
+],
+"%d passengers carried": [
+"%d passagers transportés",
+"%d pasajeros transportados",
+"%d passageiros transportados",
+"%d यात्री ले गए",
+"نقلت %d راكبًا"
+],
+"%d collision": [
+"%d collision",
+"%d colisión",
+"%d colisão",
+"%d टक्कर",
+"%d تصادم"
+],
+"%d collisions": [
+"%d collisions",
+"%d colisiones",
+"%d colisões",
+"%d टक्करें",
+"%d تصادمات"
+],
+"%d red light": [
+"%d feu rouge",
+"%d semáforo en rojo",
+"%d sinal vermelho",
+"%d लाल बत्ती",
+"%d إشارة حمراء"
+],
+"%d red lights": [
+"%d feux rouges",
+"%d semáforos en rojo",
+"%d sinais vermelhos",
+"%d लाल बत्तियाँ",
+"%d إشارات حمراء"
+],
+"%d object hit": [
+"%d objet touché",
+"%d objeto golpeado",
+"%d objeto atingido",
+"%d वस्तु से टक्कर",
+"%d جسم مصطدم به"
+],
+"%d objects hit": [
+"%d objets touchés",
+"%d objetos golpeados",
+"%d objetos atingidos",
+"%d वस्तुओं से टक्कर",
+"%d أجسام مصطدم بها"
+],
+"%d emergency stop": [
+"%d arrêt d'urgence",
+"%d frenada de emergencia",
+"%d freada de emergência",
+"%d आपातकालीन ब्रेक",
+"%d توقف طارئ"
+],
+"%d emergency stops": [
+"%d arrêts d'urgence",
+"%d frenadas de emergencia",
+"%d freadas de emergência",
+"%d आपातकालीन ब्रेक",
+"%d توقفات طارئة"
+],
+"%d hard bump": [
+"%d ralentisseur brutal",
+"%d badén brusco",
+"%d lombada forte",
+"%d तेज़ झटका",
+"%d مطب قوي"
+],
+"%d hard bumps": [
+"%d ralentisseurs brutaux",
+"%d badenes bruscos",
+"%d lombadas fortes",
+"%d तेज़ झटके",
+"%d مطبات قوية"
+],
+"%d kerb strike": [
+"%d trottoir touché",
+"%d golpe al bordillo",
+"%d batida no meio-fio",
+"%d फ़ुटपाथ टक्कर",
+"%d اصطدام بالرصيف"
+],
+"%d kerb strikes": [
+"%d trottoirs touchés",
+"%d golpes al bordillo",
+"%d batidas no meio-fio",
+"%d फ़ुटपाथ टक्करें",
+"%d اصطدامات بالرصيف"
+],
+"%d turn not signalled": [
+"%d virage non signalé",
+"%d giro sin señalizar",
+"%d curva sem seta",
+"%d मोड़ बिना संकेत",
+"%d انعطاف بدون إشارة"
+],
+"%d turns not signalled": [
+"%d virages non signalés",
+"%d giros sin señalizar",
+"%d curvas sem seta",
+"%d मोड़ बिना संकेत",
+"%d انعطافات بدون إشارة"
+],
+"%d stop missed": [
+"%d arrêt manqué",
+"%d parada perdida",
+"%d parada perdida",
+"%d स्टॉप छूटा",
+"%d محطة فائتة"
+],
+"%d stops missed": [
+"%d arrêts manqués",
+"%d paradas perdidas",
+"%d paradas perdidas",
+"%d स्टॉप छूटे",
+"%d محطات فائتة"
+],
+"%d person left waiting": [
+"%d personne laissée sur place",
+"%d persona se quedó esperando",
+"%d pessoa ficou esperando",
+"%d व्यक्ति प्रतीक्षा में छूटा",
+"تُرك %d شخص في الانتظار"
+],
+"%d people left waiting": [
+"%d personnes laissées sur place",
+"%d personas se quedaron esperando",
+"%d pessoas ficaram esperando",
+"%d लोग प्रतीक्षा में छूटे",
+"تُرك %d أشخاص في الانتظار"
+],
+"%d s speeding": [
+"%d s en excès de vitesse",
+"%d s con exceso de velocidad",
+"%d s acima do limite",
+"%d से. तेज़ रफ़्तार",
+"%d ث تجاوز السرعة"
+],
+"%d s off road": [
+"%d s hors route",
+"%d s fuera de la vía",
+"%d s fora da pista",
+"%d से. सड़क से बाहर",
+"%d ث خارج الطريق"
+],
+"Tip: you lost the most time between stops. Keep moving when the road is clear.": [
+"Conseil : vous perdez surtout du temps entre les arrêts. Roulez quand la voie est libre.",
+"Consejo: pierdes más tiempo entre paradas. Avanza cuando la vía esté libre.",
+"Dica: você perde mais tempo entre as paradas. Siga quando a via estiver livre.",
+"सुझाव: स्टॉप के बीच सबसे ज़्यादा समय गया। सड़क खाली हो तो चलते रहें।",
+"نصيحة: تخسر معظم الوقت بين المحطات. تابع السير عندما يكون الطريق خاليًا."
+],
+"Tip: stop with the bus in the middle of the bay.": [
+"Conseil : arrêtez le bus au milieu de la zone d'arrêt.",
+"Consejo: detén el autobús en el centro de la parada.",
+"Dica: pare o ônibus no meio da baia.",
+"सुझाव: बस को बे के बीच में रोकें।",
+"نصيحة: أوقف الحافلة في منتصف الموقف."
+],
+"Tip: slow down for speed bumps and avoid sudden stops.": [
+"Conseil : ralentissez aux ralentisseurs et évitez les arrêts brusques.",
+"Consejo: reduce en los badenes y evita frenazos.",
+"Dica: reduza nas lombadas e evite freadas bruscas.",
+"सुझाव: स्पीड ब्रेकर पर धीमे चलें और अचानक न रुकें।",
+"نصيحة: خفف السرعة عند المطبات وتجنب التوقف المفاجئ."
+],
+"Tip: watch the lights, the speed limit and the kerbs.": [
+"Conseil : surveillez les feux, la vitesse et les trottoirs.",
+"Consejo: atento a semáforos, velocidad y bordillos.",
+"Dica: atenção aos sinais, à velocidade e ao meio-fio.",
+"सुझाव: बत्तियों, गति सीमा और फ़ुटपाथ पर ध्यान दें।",
+"نصيحة: انتبه للإشارات والسرعة والأرصفة."
+],
+"Tip: avoid knocks and wait for everyone to board.": [
+"Conseil : évitez les chocs et attendez que tout le monde soit monté.",
+"Consejo: evita golpes y espera a que todos suban.",
+"Dica: evite batidas e espere todos embarcarem.",
+"सुझाव: टक्कर से बचें और सबके चढ़ने का इंतज़ार करें।",
+"نصيحة: تجنب الاصطدامات وانتظر صعود الجميع."
+],
+"Paused": [
+"Pause",
+"Pausa",
+"Pausado",
+"रुका हुआ",
+"إيقاف مؤقت"
+],
+"Settings": [
+"Réglages",
+"Ajustes",
+"Configurações",
+"सेटिंग",
+"الإعدادات"
+],
+"Wheel": [
+"Volant",
+"Volante",
+"Volante",
+"स्टीयरिंग",
+"المقود"
+],
+"Tilt": [
+"Inclinaison",
+"Inclinación",
+"Inclinação",
+"झुकाव",
+"الإمالة"
+],
+"Buttons": [
+"Boutons",
+"Botones",
+"Botões",
+"बटन",
+"الأزرار"
+],
+"Steering sensitivity: %.2f": [
+"Sensibilité de direction : %.2f",
+"Sensibilidad de dirección: %.2f",
+"Sensibilidade da direção: %.2f",
+"स्टीयरिंग संवेदनशीलता: %.2f",
+"حساسية التوجيه: %.2f"
+],
+"Invert tilt": [
+"Inverser l'inclinaison",
+"Invertir inclinación",
+"Inverter inclinação",
+"झुकाव उलटें",
+"عكس الإمالة"
+],
+"Sound volume: %d%%": [
+"Volume sonore : %d%%",
+"Volumen: %d%%",
+"Volume: %d%%",
+"आवाज़: %d%%",
+"مستوى الصوت: %d%%"
+],
+"Resume": [
+"Reprendre",
+"Continuar",
+"Continuar",
+"जारी रखें",
+"متابعة"
+],
+"Recover bus": [
+"Replacer le bus",
+"Recuperar bus",
+"Recuperar ônibus",
+"बस वापस लाएँ",
+"إعادة الحافلة"
+],
+"Quit shift": [
+"Quitter",
+"Salir del turno",
+"Sair do turno",
+"शिफ़्ट छोड़ें",
+"إنهاء الوردية"
+],
+"Language": [
+"Langue",
+"Idioma",
+"Idioma",
+"भाषा",
+"اللغة"
+],
+"Graphics quality": [
+"Qualité graphique",
+"Calidad gráfica",
+"Qualidade gráfica",
+"ग्राफ़िक्स गुणवत्ता",
+"جودة الرسومات"
+],
+"Auto": [
+"Auto",
+"Auto",
+"Auto",
+"ऑटो",
+"تلقائي"
+],
+"Low": [
+"Basse",
+"Baja",
+"Baixa",
+"कम",
+"منخفضة"
+],
+"Medium": [
+"Moyenne",
+"Media",
+"Média",
+"मध्यम",
+"متوسطة"
+],
+"High": [
+"Haute",
+"Alta",
+"Alta",
+"उच्च",
+"عالية"
+],
+"Show performance": [
+"Afficher les performances",
+"Mostrar rendimiento",
+"Mostrar desempenho",
+"प्रदर्शन दिखाएँ",
+"إظهار الأداء"
+],
+"Replay tutorial": [
+"Rejouer le tutoriel",
+"Repetir tutorial",
+"Repetir tutorial",
+"ट्यूटोरियल दोहराएँ",
+"إعادة الدرس التعليمي"
+],
+"Home": [
+"Accueil",
+"Inicio",
+"Início",
+"होम",
+"الرئيسية"
+],
+"Routes": [
+"Lignes",
+"Rutas",
+"Rotas",
+"रूट",
+"المسارات"
+],
+"Garage": [
+"Garage",
+"Garaje",
+"Garagem",
+"गैराज",
+"المرآب"
+],
+"Driver": [
+"Chauffeur",
+"Conductor",
+"Motorista",
+"ड्राइवर",
+"السائق"
+],
+"Best score: %d": [
+"Meilleur score : %d",
+"Mejor puntuación: %d",
+"Melhor pontuação: %d",
+"सर्वश्रेष्ठ स्कोर: %d",
+"أفضل نتيجة: %d"
+],
+"Not driven yet": [
+"Pas encore conduit",
+"Aún sin conducir",
+"Ainda não dirigido",
+"अभी नहीं चलाया",
+"لم تتم قيادتها بعد"
+],
+"Daily challenge": [
+"Défi du jour",
+"Desafío diario",
+"Desafio diário",
+"दैनिक चुनौती",
+"التحدي اليومي"
+],
+"Done today": [
+"Réussi aujourd'hui",
+"Hecho hoy",
+"Feito hoje",
+"आज पूरा",
+"تم اليوم"
+],
+"Reward: %d coins": [
+"Récompense : %d pièces",
+"Recompensa: %d monedas",
+"Recompensa: %d moedas",
+"इनाम: %d सिक्के",
+"الجائزة: %d عملة"
+],
+"Start shift": [
+"Commencer le service",
+"Empezar turno",
+"Iniciar turno",
+"शिफ़्ट शुरू करें",
+"ابدأ الوردية"
+],
+"Buses": [
+"Bus",
+"Autobuses",
+"Ônibus",
+"बसें",
+"الحافلات"
+],
+"Liveries": [
+"Livrées",
+"Pinturas",
+"Pinturas",
+"रंग-रूप",
+"الألوان"
+],
+"Selected": [
+"Choisi",
+"Elegido",
+"Escolhido",
+"चुना गया",
+"مختار"
+],
+"Select": [
+"Choisir",
+"Elegir",
+"Escolher",
+"चुनें",
+"اختيار"
+],
+"Buy %d": [
+"Acheter %d",
+"Comprar %d",
+"Comprar %d",
+"%d में खरीदें",
+"شراء %d"
+],
+"Level %d": [
+"Niveau %d",
+"Nivel %d",
+"Nível %d",
+"स्तर %d",
+"المستوى %d"
+],
+"%d coins": [
+"%d pièces",
+"%d monedas",
+"%d moedas",
+"%d सिक्के",
+"%d عملة"
+],
+"Level %d driver, %d XP": [
+"Chauffeur niveau %d, %d XP",
+"Conductor nivel %d, %d XP",
+"Motorista nível %d, %d XP",
+"स्तर %d ड्राइवर, %d XP",
+"سائق المستوى %d، %d نقطة خبرة"
+],
+"Shifts completed: %d": [
+"Services terminés : %d",
+"Turnos completados: %d",
+"Turnos concluídos: %d",
+"पूरी शिफ़्ट: %d",
+"الورديات المكتملة: %d"
+],
+"Passengers carried: %d": [
+"Passagers transportés : %d",
+"Pasajeros transportados: %d",
+"Passageiros transportados: %d",
+"ले जाए गए यात्री: %d",
+"الركاب المنقولون: %d"
+],
+"Best stars: %d": [
+"Meilleures étoiles : %d",
+"Mejores estrellas: %d",
+"Melhores estrelas: %d",
+"सर्वश्रेष्ठ सितारे: %d",
+"أفضل نجوم: %d"
+],
+"Shifts with no collisions: %d": [
+"Services sans collision : %d",
+"Turnos sin colisiones: %d",
+"Turnos sem colisões: %d",
+"बिना टक्कर की शिफ़्ट: %d",
+"ورديات بلا تصادم: %d"
+],
+"Achievements": [
+"Succès",
+"Logros",
+"Conquistas",
+"उपलब्धियाँ",
+"الإنجازات"
+],
+"Skip": [
+"Passer",
+"Saltar",
+"Pular",
+"छोड़ें",
+"تخطي"
+],
+"Skip tutorial": [
+"Passer le tutoriel",
+"Saltar tutorial",
+"Pular tutorial",
+"ट्यूटोरियल छोड़ें",
+"تخطي الدرس"
+],
+"Northfield. A small town that runs on time.": [
+"Northfield. Une petite ville toujours à l'heure.",
+"Northfield. Un pequeño pueblo que va a su hora.",
+"Northfield. Uma cidadezinha que anda no horário.",
+"नॉर्थफ़ील्ड। एक छोटा शहर जो समय पर चलता है।",
+"نورثفيلد. بلدة صغيرة تسير في موعدها."
+],
+"Seven stops. One timetable. One driver.": [
+"Sept arrêts. Un horaire. Un chauffeur.",
+"Siete paradas. Un horario. Un conductor.",
+"Sete paradas. Um horário. Um motorista.",
+"सात स्टॉप। एक समय-सारणी। एक ड्राइवर।",
+"سبع محطات. جدول واحد. سائق واحد."
+],
+"Your first shift starts now.": [
+"Votre premier service commence.",
+"Tu primer turno empieza ahora.",
+"Seu primeiro turno começa agora.",
+"आपकी पहली शिफ़्ट अभी शुरू होती है।",
+"ورديتك الأولى تبدأ الآن."
+],
+"Welcome, driver! Press and hold GO to pull away. Press higher up for more power.": [
+"Bienvenue ! Maintenez GAZ pour démarrer. Plus haut, c'est plus de puissance.",
+"¡Bienvenido! Mantén ACEL para arrancar. Más arriba, más potencia.",
+"Bem-vindo! Segure ACEL para sair. Mais acima, mais força.",
+"स्वागत है! चलने के लिए चलें दबाकर रखें। ऊपर दबाने पर ज़्यादा ताकत।",
+"مرحبًا أيها السائق! اضغط مطولًا على انطلق للتحرك. اضغط أعلى لقوة أكبر."
+],
+"Steer to stay in the right-hand lane.": [
+"Dirigez pour rester sur la voie de droite.",
+"Gira para seguir en el carril derecho.",
+"Vire para ficar na pista da direita.",
+"दाईं लेन में रहने के लिए स्टीयर करें।",
+"وجّه الحافلة لتبقى في المسار الأيمن."
+],
+"Now press BRAKE to slow down. Higher up brakes harder.": [
+"Appuyez sur FREIN pour ralentir. Plus haut, freinage plus fort.",
+"Pulsa FRENO para reducir. Más arriba, frena más fuerte.",
+"Pressione FREIO para reduzir. Mais acima, freia mais forte.",
+"धीमा करने के लिए ब्रेक दबाएँ। ऊपर दबाने पर तेज़ ब्रेक।",
+"اضغط فرامل لتخفيف السرعة. كلما ضغطت أعلى زادت قوة الكبح."
+],
+"Tap VIEW to change the camera.": [
+"Touchez VUE pour changer de caméra.",
+"Pulsa VISTA para cambiar la cámara.",
+"Toque em VISTA para mudar a câmera.",
+"कैमरा बदलने के लिए दृश्य दबाएँ।",
+"اضغط عرض لتغيير الكاميرا."
+],
+"You turn right ahead. Tap the right indicator to signal.": [
+"Vous tournez à droite. Touchez le clignotant droit.",
+"Girarás a la derecha. Pulsa el intermitente derecho.",
+"Você vai virar à direita. Toque na seta direita.",
+"आगे दाएँ मुड़ना है। दायाँ संकेत दबाएँ।",
+"ستنعطف يمينًا. اضغط إشارة اليمين."
+],
+"Follow the orange line on the map to the green beacon.": [
+"Suivez la ligne orange de la carte jusqu'à la balise verte.",
+"Sigue la línea naranja del mapa hasta la baliza verde.",
+"Siga a linha laranja do mapa até o sinal verde.",
+"नक्शे की नारंगी रेखा पर हरे निशान तक जाएँ।",
+"اتبع الخط البرتقالي على الخريطة حتى المنارة الخضراء."
+],
+"Slow down, pull into the bay and stop inside the yellow box.": [
+"Ralentissez, entrez dans l'arrêt et stoppez dans le cadre jaune.",
+"Reduce, entra en la parada y detente en el recuadro amarillo.",
+"Reduza, entre na baia e pare dentro do quadro amarelo.",
+"धीमे होकर बे में जाएँ और पीले बॉक्स में रुकें।",
+"خفف السرعة وادخل الموقف وتوقف داخل المربع الأصفر."
+],
+"Stopped! Tap DOORS to open them.": [
+"Arrêté ! Touchez PORTES pour les ouvrir.",
+"¡Parado! Pulsa PUERTAS para abrirlas.",
+"Parado! Toque em PORTAS para abrir.",
+"रुक गए! खोलने के लिए दरवाज़े दबाएँ।",
+"توقفت! اضغط الأبواب لفتحها."
+],
+"Passengers get off first, then board and pay. Give them a moment.": [
+"Les passagers descendent, puis montent et paient. Patientez un instant.",
+"Primero bajan, luego suben y pagan. Dales un momento.",
+"Primeiro descem, depois embarcam e pagam. Aguarde um pouco.",
+"पहले यात्री उतरते हैं, फिर चढ़कर किराया देते हैं। थोड़ा रुकें।",
+"ينزل الركاب أولًا ثم يصعدون ويدفعون. امنحهم لحظة."
+],
+"All aboard. Tap DOORS to close them.": [
+"Tout le monde est là. Touchez PORTES pour les fermer.",
+"Todos a bordo. Pulsa PUERTAS para cerrarlas.",
+"Todos a bordo. Toque em PORTAS para fechar.",
+"सब सवार हैं। बंद करने के लिए दरवाज़े दबाएँ।",
+"الجميع على المتن. اضغط الأبواب لإغلاقها."
+],
+"That's it! Keep to the timetable, obey the lights and watch your speed. Good luck!": [
+"C'est tout ! Respectez l'horaire, les feux et la vitesse. Bonne route !",
+"¡Eso es todo! Cumple el horario, respeta semáforos y velocidad. ¡Suerte!",
+"É isso! Cumpra o horário, respeite sinais e velocidade. Boa sorte!",
+"बस इतना ही! समय, बत्तियों और गति का ध्यान रखें। शुभकामनाएँ!",
+"هذا كل شيء! التزم بالجدول والإشارات والسرعة. حظًا موفقًا!"
+],
+"Route 1: Northfield Loop": [
+"Ligne 1 : Boucle de Northfield",
+"Ruta 1: Circuito de Northfield",
+"Rota 1: Circuito Northfield",
+"रूट 1: नॉर्थफ़ील्ड लूप",
+"المسار 1: حلقة نورثفيلد"
+],
+"Route 2: Orchard Circular": [
+"Ligne 2 : Circulaire d'Orchard",
+"Ruta 2: Circular de Orchard",
+"Rota 2: Circular Orchard",
+"रूट 2: ऑर्चर्ड सर्कुलर",
+"المسار 2: دائرة أورتشارد"
+],
+"The full loop: roundabout, river road and hills.": [
+"La boucle complète : rond-point, route de la rivière et collines.",
+"El circuito completo: rotonda, carretera del río y colinas.",
+"O circuito completo: rotatória, estrada do rio e morros.",
+"पूरा लूप: गोल चक्कर, नदी की सड़क और पहाड़ियाँ।",
+"الحلقة الكاملة: دوار وطريق النهر وتلال."
+],
+"Quieter streets, a hilly back road and the roundabout from the south.": [
+"Rues calmes, route vallonnée et rond-point par le sud.",
+"Calles tranquilas, carretera con colinas y la rotonda desde el sur.",
+"Ruas calmas, estrada com morros e a rotatória pelo sul.",
+"शांत सड़कें, पहाड़ी रास्ता और दक्षिण से गोल चक्कर।",
+"شوارع هادئة وطريق جبلي والدوار من الجنوب."
+],
+"The depot's 12 metre workhorse. Heavy and steady.": [
+"Le bus de 12 mètres du dépôt. Lourd et stable.",
+"El autobús de 12 metros del depósito. Pesado y estable.",
+"O ônibus de 12 metros da garagem. Pesado e estável.",
+"डिपो की 12 मीटर की भरोसेमंद बस। भारी और स्थिर।",
+"حافلة المرآب بطول 12 مترًا. ثقيلة وثابتة."
+],
+"A nimble 10 metre bus with a tighter turning circle, but fewer seats.": [
+"Un bus agile de 10 mètres, plus maniable, mais avec moins de places.",
+"Un ágil autobús de 10 metros, gira mejor pero tiene menos asientos.",
+"Um ônibus ágil de 10 metros, vira melhor, mas tem menos lugares.",
+"10 मीटर की फुर्तीली बस, कम घेरे में मुड़ती है पर सीटें कम।",
+"حافلة رشيقة بطول 10 أمتار، تنعطف بسهولة لكن مقاعدها أقل."
+],
+"Classic Red": [
+"Rouge classique",
+"Rojo clásico",
+"Vermelho clássico",
+"क्लासिक लाल",
+"أحمر كلاسيكي"
+],
+"Harbour Blue": [
+"Bleu du port",
+"Azul puerto",
+"Azul porto",
+"बंदरगाह नीला",
+"أزرق الميناء"
+],
+"Park Green": [
+"Vert parc",
+"Verde parque",
+"Verde parque",
+"पार्क हरा",
+"أخضر الحديقة"
+],
+"Sunrise Orange": [
+"Orange aurore",
+"Naranja amanecer",
+"Laranja aurora",
+"सूर्योदय नारंगी",
+"برتقالي الشروق"
+],
+"City White": [
+"Blanc urbain",
+"Blanco ciudad",
+"Branco urbano",
+"सिटी सफ़ेद",
+"أبيض المدينة"
+],
+"Night Service": [
+"Service de nuit",
+"Servicio nocturno",
+"Serviço noturno",
+"रात्रि सेवा",
+"خدمة ليلية"
+],
+"First Day": [
+"Premier jour",
+"Primer día",
+"Primeiro dia",
+"पहला दिन",
+"اليوم الأول"
+],
+"Complete a shift": [
+"Terminer un service",
+"Completa un turno",
+"Conclua um turno",
+"एक शिफ़्ट पूरी करें",
+"أكمل وردية"
+],
+"Regular": [
+"Habitué",
+"Habitual",
+"Regular",
+"नियमित",
+"سائق منتظم"
+],
+"Complete 10 shifts": [
+"Terminer 10 services",
+"Completa 10 turnos",
+"Conclua 10 turnos",
+"10 शिफ़्ट पूरी करें",
+"أكمل 10 ورديات"
+],
+"Old Hand": [
+"Vieux routier",
+"Veterano",
+"Veterano",
+"अनुभवी",
+"خبير قديم"
+],
+"Complete 50 shifts": [
+"Terminer 50 services",
+"Completa 50 turnos",
+"Conclua 50 turnos",
+"50 शिफ़्ट पूरी करें",
+"أكمل 50 وردية"
+],
+"Five Star Service": [
+"Service cinq étoiles",
+"Servicio cinco estrellas",
+"Serviço cinco estrelas",
+"पाँच सितारा सेवा",
+"خدمة خمس نجوم"
+],
+"Earn 5 stars on a shift": [
+"Obtenir 5 étoiles sur un service",
+"Consigue 5 estrellas en un turno",
+"Ganhe 5 estrelas em um turno",
+"एक शिफ़्ट में 5 सितारे पाएँ",
+"احصل على 5 نجوم في وردية"
+],
+"Not a Scratch": [
+"Pas une égratignure",
+"Ni un rasguño",
+"Nem um arranhão",
+"एक खरोंच नहीं",
+"بلا خدش"
+],
+"Finish a shift with no collisions": [
+"Finir un service sans collision",
+"Termina un turno sin colisiones",
+"Termine um turno sem colisões",
+"बिना टक्कर शिफ़्ट पूरी करें",
+"أنهِ وردية بلا تصادم"
+],
+"Smooth Operator": [
+"Tout en douceur",
+"Conductor suave",
+"Motorista suave",
+"आरामदायक ड्राइवर",
+"سائق سلس"
+],
+"Finish a shift with no emergency stops": [
+"Finir un service sans arrêt d'urgence",
+"Termina un turno sin frenadas de emergencia",
+"Termine um turno sem freadas de emergência",
+"बिना आपातकालीन ब्रेक शिफ़्ट पूरी करें",
+"أنهِ وردية بلا توقف طارئ"
+],
+"Full House": [
+"Complet",
+"Lleno total",
+"Lotação máxima",
+"हाउसफ़ुल",
+"حافلة ممتلئة"
+],
+"Carry 100 passengers": [
+"Transporter 100 passagers",
+"Transporta 100 pasajeros",
+"Transporte 100 passageiros",
+"100 यात्री ले जाएँ",
+"انقل 100 راكب"
+],
+"Backbone of the City": [
+"Pilier de la ville",
+"Pilar de la ciudad",
+"Pilar da cidade",
+"शहर की रीढ़",
+"عماد المدينة"
+],
+"Carry 1,000 passengers": [
+"Transporter 1 000 passagers",
+"Transporta 1000 pasajeros",
+"Transporte 1.000 passageiros",
+"1,000 यात्री ले जाएँ",
+"انقل 1000 راكب"
+],
+"Complete a shift with no emergency stops": [
+"Terminez un service sans arrêt d'urgence",
+"Completa un turno sin frenadas de emergencia",
+"Conclua um turno sem freadas de emergência",
+"बिना आपातकालीन ब्रेक शिफ़्ट पूरी करें",
+"أكمل وردية بلا توقف طارئ"
+],
+"Complete a shift with no collisions": [
+"Terminez un service sans collision",
+"Completa un turno sin colisiones",
+"Conclua um turno sem colisões",
+"बिना टक्कर शिफ़्ट पूरी करें",
+"أكمل وردية بلا تصادم"
+],
+"Complete a shift without striking a kerb": [
+"Terminez un service sans toucher de trottoir",
+"Completa un turno sin tocar el bordillo",
+"Conclua um turno sem bater no meio-fio",
+"फ़ुटपाथ से टकराए बिना शिफ़्ट पूरी करें",
+"أكمل وردية دون الاصطدام بالرصيف"
+],
+"Signal every turn on your shift": [
+"Signalez tous vos virages",
+"Señaliza todos los giros del turno",
+"Sinalize todas as curvas do turno",
+"शिफ़्ट के हर मोड़ पर संकेत दें",
+"أشر عند كل انعطاف في ورديتك"
+],
+"Complete a shift without running a red light": [
+"Terminez un service sans griller de feu rouge",
+"Completa un turno sin saltarte un semáforo",
+"Conclua um turno sem avançar o sinal",
+"लाल बत्ती पार किए बिना शिफ़्ट पूरी करें",
+"أكمل وردية دون تجاوز إشارة حمراء"
+],
+"Complete a shift without hitting an object": [
+"Terminez un service sans toucher d'objet",
+"Completa un turno sin golpear objetos",
+"Conclua um turno sem atingir objetos",
+"किसी वस्तु से टकराए बिना शिफ़्ट पूरी करें",
+"أكمل وردية دون الاصطدام بأي جسم"
+],
+"Earn at least 4 stars on a shift": [
+"Obtenez au moins 4 étoiles sur un service",
+"Consigue al menos 4 estrellas en un turno",
+"Ganhe pelo menos 4 estrelas em um turno",
+"एक शिफ़्ट में कम से कम 4 सितारे पाएँ",
+"احصل على 4 نجوم على الأقل في وردية"
+],
+"Complete a shift with no hard bumps": [
+"Terminez un service sans ralentisseur brutal",
+"Completa un turno sin badenes bruscos",
+"Conclua um turno sem lombadas fortes",
+"बिना तेज़ झटके शिफ़्ट पूरी करें",
+"أكمل وردية بلا مطبات قوية"
+]
+}
