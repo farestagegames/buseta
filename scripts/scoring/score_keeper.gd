@@ -127,6 +127,7 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	report["coins"] = score.coins(carried)
 	report["categories"] = score.categories()
 	report["details"] = _details(summary)
+	report["counts"] = score.counts.duplicate()
 	GameEvents.shift_report_ready.emit(report)
 
 

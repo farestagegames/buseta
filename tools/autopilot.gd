@@ -38,6 +38,11 @@ var _off_road_places: Dictionary = {}
 
 
 func _ready() -> void:
+	Profile.load_from("user://autopilot_save.json")
+	var chosen := OS.get_environment("AUTOPILOT_ROUTE")
+	if chosen != "":
+		(Profile.data.owned[Catalog.ROUTES] as Array).append(chosen)
+		Profile.data.select(Catalog.ROUTES, chosen)
 	Engine.time_scale = TIME_SCALE
 	Engine.max_physics_steps_per_frame = 32
 	_city = (load(SCENE) as PackedScene).instantiate()

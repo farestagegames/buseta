@@ -4,6 +4,9 @@ extends PanelContainer
 
 signal closed
 
+## In a shift this is the pause menu. In the main menu it is just the controls.
+var in_shift: bool = false
+
 var _mode_buttons: Array[Button] = []
 var _sensitivity_label: Label
 var _volume_label: Label
@@ -22,7 +25,7 @@ func _ready() -> void:
 	margin.add_child(box)
 	add_child(margin)
 
-	box.add_child(_label("Controls", 34))
+	box.add_child(_label("Paused" if in_shift else "Settings", 34))
 	var modes := HBoxContainer.new()
 	modes.add_theme_constant_override("separation", 12)
 	for entry: Array in [["Wheel", SteeringMapper.Mode.WHEEL], ["Tilt", SteeringMapper.Mode.TILT], ["Buttons", SteeringMapper.Mode.BUTTONS]]:
@@ -65,22 +68,32 @@ func _ready() -> void:
 	volume.value_changed.connect(func(value: float) -> void: GameSettings.sound_volume = value)
 	box.add_child(volume)
 
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 12)
-	var reset := _button("Recover bus")
-	reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	reset.pressed.connect(func() -> void:
-		GameEvents.reset_requested.emit()
-		closed.emit())
-	var close := _button("Close")
-	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	close.pressed.connect(func() -> void: closed.emit())
-	actions.add_child(reset)
-	actions.add_child(close)
-	box.add_child(actions)
+	if in_shift:
+		box.add_child(_shift_actions())
 
 	GameSettings.changed.connect(_refresh)
 	_refresh()
+
+
+func _shift_actions() -> Control:
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 10)
+	var resume := _button("Resume")
+	resume.pressed.connect(func() -> void: closed.emit())
+	var recover := _button("Recover bus")
+	recover.pressed.connect(func() -> void:
+		closed.emit()
+		GameEvents.reset_requested.emit())
+	var quit := _button("Quit shift")
+	quit.pressed.connect(func() -> void:
+		get_tree().paused = false
+		Profile.save()
+		get_tree().change_scene_to_file(CityShift.MENU_SCENE))
+	for button: Button in [resume, recover, quit]:
+		button.custom_minimum_size.x = 170.0
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		actions.add_child(button)
+	return actions
 
 
 func _refresh() -> void:

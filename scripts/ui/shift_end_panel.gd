@@ -14,6 +14,9 @@ var _headline: Label
 var _coins: Label
 var _bars: Dictionary = {}
 var _details: Label
+var _rewards: Label
+var _double_coins: Button
+var _coins_earned: int = 0
 
 
 func _ready() -> void:
@@ -29,7 +32,7 @@ func _ready() -> void:
 	margin.add_child(box)
 	add_child(margin)
 
-	_stars = _label(52, Color(0.98, 0.72, 0.15))
+	_stars = _label(44, Color(0.98, 0.72, 0.15))
 	_stars.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(_stars)
 	_headline = _label(26, Color.WHITE)
@@ -45,12 +48,25 @@ func _ready() -> void:
 	_details.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(_details)
 
-	var again := Button.new()
-	again.text = "Drive again"
-	again.custom_minimum_size = Vector2(200.0, 78.0)
-	again.add_theme_font_size_override("font_size", 28)
+	_rewards = _label(21, Color(0.55, 0.95, 0.65))
+	_rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(_rewards)
+
+	_double_coins = _action("Watch an ad: double coins")
+	_double_coins.pressed.connect(_on_double_coins)
+	_double_coins.visible = false
+	box.add_child(_double_coins)
+
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 12)
+	var again := _action("Drive again")
 	again.pressed.connect(func() -> void: get_tree().reload_current_scene())
-	box.add_child(again)
+	var menu := _action("Main menu")
+	menu.pressed.connect(func() -> void: get_tree().change_scene_to_file(CityShift.MENU_SCENE))
+	for button: Button in [again, menu]:
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		actions.add_child(button)
+	box.add_child(actions)
 
 
 func _category_row(key: String) -> Control:
@@ -80,7 +96,41 @@ func show_report(report: Dictionary) -> void:
 	for key: String in _bars:
 		(_bars[key] as ProgressBar).value = categories[key]
 	_details.text = report["details"]
+	var rewards: Dictionary = report["rewards"]
+	_coins_earned = rewards["coins"]
+	_rewards.text = _reward_lines(rewards)
+	_double_coins.visible = Profile.ads.is_available()
 	visible = true
+
+
+func _reward_lines(rewards: Dictionary) -> String:
+	var lines: Array[String] = ["+%d XP" % rewards["xp"]]
+	if rewards["levelled_up"]:
+		lines.append("Level %d reached!" % rewards["level"])
+	if rewards["new_best"]:
+		lines.append("New best score!")
+	if int(rewards["daily_coins"]) > 0:
+		lines.append("Daily challenge done: +%d coins" % rewards["daily_coins"])
+	for entry: Dictionary in rewards["achievements"]:
+		lines.append("Achievement: %s" % entry["name"])
+	return "   ".join(lines)
+
+
+func _on_double_coins() -> void:
+	_double_coins.visible = false
+	Profile.ads.show_rewarded(func(earned: bool) -> void:
+		if earned:
+			Profile.data.coins += _coins_earned
+			Profile.save()
+			_coins.text = "%d coins earned" % (_coins_earned * 2))
+
+
+func _action(text: String) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.custom_minimum_size = Vector2(200.0, 72.0)
+	button.add_theme_font_size_override("font_size", 26)
+	return button
 
 
 func _label(font_size: int, colour: Color) -> Label:

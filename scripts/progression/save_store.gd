@@ -36,5 +36,7 @@ static func read(path: String) -> Dictionary:
 static func read_file(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return {}
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	return parsed if parsed is Dictionary else {}
+	var parser := JSON.new()
+	if parser.parse(FileAccess.get_file_as_string(path)) != OK:
+		return {}
+	return parser.data if parser.data is Dictionary else {}

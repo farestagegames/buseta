@@ -451,3 +451,55 @@ func test_reversing_slowly_into_a_car_counts_as_a_hit() -> void:
 	bus.model.speed = -1.5
 	await wait_physics_frames(2)
 	assert_gt(agent.stunned, 1.0, "Car should react to the contact")
+
+
+func test_finishing_a_shift_banks_rewards_and_saves() -> void:
+	var coins_before := Profile.data.coins
+	var shifts_before := int(Profile.data.stats["shifts"])
+	route_system.runner.stop_index = route_system.runner.stops.size() - 1
+	_park_at(route_system.runner.current_stop())
+	await wait_physics_frames(3)
+	assert_gt(Profile.data.coins, coins_before)
+	assert_eq(int(Profile.data.stats["shifts"]), shifts_before + 1)
+	var saved := PlayerProfile.from_dict(SaveStore.read("user://test_save_scene.json"))
+	assert_eq(saved.coins, Profile.data.coins, "Rewards should reach the disk at once")
+
+
+func test_pausing_stops_the_clock_and_resuming_restarts_it() -> void:
+	var hud: DriveHud = scene.get_node("Hud")
+	await wait_physics_frames(3)
+	hud._open_settings()
+	assert_true(get_tree().paused)
+	assert_true(hud.is_paused())
+	hud._close_settings()
+	assert_false(get_tree().paused)
+
+
+class FakeAds:
+	extends AdProvider
+
+	func is_available() -> bool:
+		return true
+
+	func show_rewarded(on_finished: Callable) -> void:
+		on_finished.call(true)
+
+
+func test_rewarded_ad_doubles_coins_only_through_the_interface() -> void:
+	var hud: DriveHud = scene.get_node("Hud")
+	Profile.ads = FakeAds.new()
+	route_system.runner.stop_index = route_system.runner.stops.size() - 1
+	_park_at(route_system.runner.current_stop())
+	await wait_physics_frames(3)
+	var before := Profile.data.coins
+	hud.shift_panel._on_double_coins()
+	Profile.ads = AdProvider.new()
+	assert_gt(Profile.data.coins, before)
+
+
+func test_no_ad_button_without_a_provider() -> void:
+	var hud: DriveHud = scene.get_node("Hud")
+	route_system.runner.stop_index = route_system.runner.stops.size() - 1
+	_park_at(route_system.runner.current_stop())
+	await wait_physics_frames(3)
+	assert_false(hud.shift_panel._double_coins.visible)

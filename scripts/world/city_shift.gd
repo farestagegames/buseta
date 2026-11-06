@@ -3,7 +3,7 @@ extends Node3D
 ## Level root. Loads the route and map data, then hands each module what it
 ## needs. This is the only script that knows about all of them.
 
-@export_file("*.json") var route_file: String = "res://data/routes/route_01.json"
+const MENU_SCENE := "res://scenes/main/main_menu.tscn"
 
 @onready var _bus: BusController = $Bus
 @onready var _city: CityBuilder = $City
@@ -19,8 +19,24 @@ var ground: GroundSurface
 var route: RouteRunner
 
 
+## Runs before the bus readies, so it builds with the player's choices.
+func _enter_tree() -> void:
+	var bus_item := Profile.selected_item(Catalog.BUSES)
+	var livery := Profile.selected_item(Catalog.LIVERIES)
+	var spec: BusSpec = (load(bus_item["file"]) as BusSpec).duplicate()
+	spec.body_colour = _colour(livery["body"])
+	spec.stripe_colour = _colour(livery["stripe"])
+	var bus: BusController = get_node("Bus")
+	bus.spec = spec
+	(bus.get_node("Visual") as BusVisual).spec = spec
+
+
+func _colour(values: Array) -> Color:
+	return Color(values[0], values[1], values[2])
+
+
 func _ready() -> void:
-	var route_data := MapLoader.read_json(route_file)
+	var route_data := MapLoader.read_json(Profile.selected_item(Catalog.ROUTES)["file"])
 	var map_data := MapLoader.read_json(route_data["map"])
 	network = RoadNetwork.from_data(map_data)
 	route = RouteRunner.build(route_data, network)

@@ -29,6 +29,7 @@ var _frame_rate: Label
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -66,6 +67,7 @@ func _ready() -> void:
 	root.add_child(minimap)
 
 	settings_panel = SettingsPanel.new()
+	settings_panel.in_shift = true
 	settings_panel.visible = false
 	settings_panel.closed.connect(_close_settings)
 	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-300.0, -310.0), Vector2(600.0, 620.0))
@@ -75,7 +77,7 @@ func _ready() -> void:
 	shift_panel.visible = false
 	_place(shift_panel, Vector2(0.5, 0.5), Vector2(-340.0, -345.0), Vector2(680.0, 690.0))
 	root.add_child(shift_panel)
-	GameEvents.shift_report_ready.connect(_on_shift_report)
+	GameEvents.shift_rewards_ready.connect(_on_shift_report)
 
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameSettings.changed.connect(_apply_mode)
@@ -184,16 +186,35 @@ func _apply_mode() -> void:
 	_tilt_hint.visible = mode == SteeringMapper.Mode.TILT
 
 
+## Pauses the shift, including the timetable.
 func _open_settings() -> void:
+	if shift_panel.visible:
+		return
 	_controls.visible = false
 	settings_panel.visible = true
-	GameEvents.ui_pedals_changed.emit(0.0, 1.0) # Hold the bus while in the menu.
+	GameEvents.ui_pedals_changed.emit(0.0, 0.0)
+	get_tree().paused = true
 
 
 func _close_settings() -> void:
 	settings_panel.visible = false
 	_controls.visible = true
-	GameEvents.ui_pedals_changed.emit(0.0, 0.0)
+	get_tree().paused = false
+
+
+func is_paused() -> bool:
+	return settings_panel.visible
+
+
+## A call, a swipe away or the back button pauses rather than loses the shift.
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT:
+			if OS.has_feature("mobile") and is_inside_tree() and settings_panel != null:
+				_open_settings()
+		NOTIFICATION_WM_GO_BACK_REQUEST:
+			if settings_panel != null:
+				_open_settings()
 
 
 func _on_shift_report(report: Dictionary) -> void:
