@@ -51,7 +51,7 @@ func _ready() -> void:
 
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 12)
-	var reset := _button("Reset bus")
+	var reset := _button("Recover bus")
 	reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reset.pressed.connect(func() -> void:
 		GameEvents.reset_requested.emit()

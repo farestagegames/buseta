@@ -24,6 +24,38 @@ func box(centre: Vector3, size: Vector3, colour: Color) -> void:
 		_triangle(a, d, c, normal, colour)
 
 
+## A box turned around the vertical axis. yaw follows bus heading.
+func turned_box(centre: Vector3, size: Vector3, yaw: float, colour: Color) -> void:
+	var half := size / 2.0
+	var basis := Basis(Vector3.UP, yaw)
+	for normal: Vector3 in [Vector3.RIGHT, Vector3.LEFT, Vector3.UP, Vector3.DOWN, Vector3.BACK, Vector3.FORWARD]:
+		var u := Vector3(normal.y, normal.z, normal.x)
+		var v := normal.cross(u)
+		var a := centre + basis * ((normal - u - v) * half)
+		var b := centre + basis * ((normal + u - v) * half)
+		var c := centre + basis * ((normal + u + v) * half)
+		var d := centre + basis * ((normal - u + v) * half)
+		var facing := basis * normal
+		_triangle(a, c, b, facing, colour)
+		_triangle(a, d, c, facing, colour)
+
+
+## A flat-shaded quad facing up. Corners run anticlockwise seen from above.
+func quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, colour: Color) -> void:
+	_triangle(a, c, b, Vector3.UP, colour)
+	_triangle(a, d, c, Vector3.UP, colour)
+
+
+## A flat disc facing up. height_of gives the height at each rim point.
+func disc(centre: Vector2, radius: float, lift: float, height_of: Callable, colour: Color, sides: int = 24) -> void:
+	var middle := Vector3(centre.x, float(height_of.call(centre)) + lift, centre.y)
+	for i in sides:
+		var p0 := centre + Vector2.RIGHT.rotated(TAU * i / sides) * radius
+		var p1 := centre + Vector2.RIGHT.rotated(TAU * (i + 1) / sides) * radius
+		_triangle(middle, Vector3(p0.x, float(height_of.call(p0)) + lift, p0.y),
+			Vector3(p1.x, float(height_of.call(p1)) + lift, p1.y), Vector3.UP, colour)
+
+
 ## A cylinder lying along the X axis. Alternate hub segments make rolling visible.
 func wheel(centre: Vector3, radius: float, width: float, tyre: Color, hub: Color, sides: int = 12) -> void:
 	var half := width / 2.0

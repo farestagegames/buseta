@@ -29,7 +29,7 @@ func _init(wheelbase: float, track: float) -> void:
 
 
 ## wheels is front left, front right, rear left, rear right.
-func snap(wheels: PackedFloat32Array) -> void:
+func snap(wheels: PackedFloat32Array, detail: PackedFloat32Array = PackedFloat32Array()) -> void:
 	var targets := _targets(wheels)
 	height = targets.x
 	pitch = targets.y
@@ -38,15 +38,19 @@ func snap(wheels: PackedFloat32Array) -> void:
 	_pitch_velocity = 0.0
 	_roll_velocity = 0.0
 	_previous_targets = targets
-	_last_wheels = wheels.duplicate()
+	_last_wheels = (wheels if detail.is_empty() else detail).duplicate()
 	jolt = 0.0
 
 
-func update(wheels: PackedFloat32Array, dt: float) -> void:
+## detail is the part of each wheel height from kerbs, bumps and potholes. Only
+## this can jolt passengers, because a smooth hill is not a jolt however fast
+## the bus climbs it. Left empty, the whole wheel height counts.
+func update(wheels: PackedFloat32Array, dt: float, detail: PackedFloat32Array = PackedFloat32Array()) -> void:
+	var felt := wheels if detail.is_empty() else detail
 	jolt = 0.0
 	for i in 4:
-		jolt = maxf(jolt, absf(wheels[i] - _last_wheels[i]) / dt)
-		_last_wheels[i] = wheels[i]
+		jolt = maxf(jolt, absf(felt[i] - _last_wheels[i]) / dt)
+		_last_wheels[i] = felt[i]
 
 	var targets := _targets(wheels)
 	var rates := (targets - _previous_targets) / dt

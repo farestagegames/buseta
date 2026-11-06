@@ -145,6 +145,17 @@ func test_faster_over_a_bump_is_a_harder_jolt() -> void:
 	assert_lt(slow, BusSuspension.JOLT_THRESHOLD, "A careful driver should not be jolted")
 
 
+func test_climbing_a_smooth_hill_fast_is_not_a_jolt() -> void:
+	var sprung := BusSuspension.new(6.0, 2.2)
+	sprung.snap(_flat_wheels(), _flat_wheels())
+	var height := 0.0
+	for i in 120:
+		height += 0.09 * 12.0 * DT
+		var wheels := PackedFloat32Array([height + 0.54, height + 0.54, height, height])
+		sprung.update(wheels, DT, _flat_wheels())
+		assert_false(sprung.is_jolt())
+
+
 func test_footprint_covers_nose_and_tail_only() -> void:
 	var spec := BusSpec.new()
 	var rear := Vector2.ZERO
@@ -157,3 +168,33 @@ func test_footprint_covers_nose_and_tail_only() -> void:
 func test_footprint_turns_with_the_bus() -> void:
 	var spec := BusSpec.new()
 	assert_true(BusFootprint.touches(Vector2.ZERO, -PI / 2.0, spec, Vector2(6.0, 0.0), 0.1), "Facing +X")
+
+
+func test_knocked_prop_flies_lands_and_rests() -> void:
+	var prop := KnockableProp.new("cone", Vector3.ZERO, 0.3)
+	prop.hit(Vector2(0.0, -8.0), Vector2(0.0, -1.0))
+	assert_true(prop.is_moving())
+	var highest := 0.0
+	for i in 600:
+		prop.update(DT, 0.0)
+		highest = maxf(highest, prop.position.y)
+	assert_gt(highest, 0.3, "Should leave the ground")
+	assert_eq(prop.state, KnockableProp.State.SETTLED)
+	assert_lt(prop.position.z, -1.0, "Should land ahead of the bus")
+
+
+func test_faster_hit_throws_a_prop_further() -> void:
+	var distances: Array[float] = []
+	for speed: float in [2.0, 12.0]:
+		var prop := KnockableProp.new("bin", Vector3.ZERO, 0.4)
+		prop.hit(Vector2(speed, 0.0), Vector2.RIGHT)
+		for i in 600:
+			prop.update(DT, 0.0)
+		distances.append(prop.position.x)
+	assert_gt(distances[1], distances[0] * 2.0)
+
+
+func test_standing_prop_does_not_move_on_its_own() -> void:
+	var prop := KnockableProp.new("cone", Vector3(1.0, 0.0, 1.0), 0.3)
+	prop.update(1.0, 0.0)
+	assert_eq(prop.position, Vector3(1.0, 0.0, 1.0))

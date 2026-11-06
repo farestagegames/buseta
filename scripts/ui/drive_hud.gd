@@ -14,6 +14,9 @@ var left_button: TouchButton
 var right_button: TouchButton
 var settings_panel: SettingsPanel
 var gauge: HudGauge
+var route_panel: RoutePanel
+var minimap: Minimap
+var shift_panel: ShiftEndPanel
 
 var _controls: Control
 var _tilt_hint: Label
@@ -46,14 +49,28 @@ func _ready() -> void:
 
 	_frame_rate = Label.new()
 	_frame_rate.add_theme_font_size_override("font_size", 18)
-	_place(_frame_rate, Vector2(1.0, 0.0), Vector2(-90.0, 8.0), Vector2(80.0, 24.0))
+	_place(_frame_rate, Vector2(0.5, 0.0), Vector2(200.0, 8.0), Vector2(80.0, 24.0))
 	root.add_child(_frame_rate)
+
+	route_panel = RoutePanel.new()
+	_place(route_panel, Vector2(0.5, 0.0), Vector2(-240.0, 124.0), Vector2(480.0, 84.0))
+	root.add_child(route_panel)
+
+	minimap = Minimap.new()
+	_place(minimap, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 8.0), Vector2(190.0, 190.0))
+	root.add_child(minimap)
 
 	settings_panel = SettingsPanel.new()
 	settings_panel.visible = false
 	settings_panel.closed.connect(_close_settings)
 	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-300.0, -280.0), Vector2(600.0, 560.0))
 	root.add_child(settings_panel)
+
+	shift_panel = ShiftEndPanel.new()
+	shift_panel.visible = false
+	_place(shift_panel, Vector2(0.5, 0.5), Vector2(-280.0, -240.0), Vector2(560.0, 480.0))
+	root.add_child(shift_panel)
+	GameEvents.shift_completed.connect(_on_shift_completed)
 
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameSettings.changed.connect(_apply_mode)
@@ -172,6 +189,13 @@ func _close_settings() -> void:
 	settings_panel.visible = false
 	_controls.visible = true
 	GameEvents.ui_pedals_changed.emit(0.0, 0.0)
+
+
+func _on_shift_completed(summary: Dictionary) -> void:
+	_controls.visible = false
+	settings_panel.visible = false
+	GameEvents.ui_pedals_changed.emit(0.0, 1.0)
+	shift_panel.show_summary(summary)
 
 
 func _on_telemetry(data: BusTelemetry) -> void:

@@ -2,8 +2,10 @@
 
 ## Art and audio
 
-Phase 1 uses no third-party art or audio. The bus and test ground are generated
-in code, and the interface uses Godot's built-in font.
+The game has no third-party art or audio so far. The bus, city, passengers and
+obstacles are generated in code, all sounds are synthesised by
+`tools/make_sounds.py` for this project, and the interface uses Godot's built-in
+font.
 
 CC0 assets added in later phases are listed here with their source and licence.
 

@@ -1,0 +1,82 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicle/bus.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/world/city_shift.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/camera/camera_rig.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/input/driver_input_router.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/ui/drive_hud.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/world/city_builder.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/world/obstacle_field.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/route/route_system.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/passengers/passenger_crowd.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/world/stop_beacon.gd" id="10"]
+[ext_resource type="Script" path="res://scripts/audio/audio_director.gd" id="11"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.32, 0.55, 0.85, 1)
+sky_horizon_color = Color(0.72, 0.8, 0.88, 1)
+ground_horizon_color = Color(0.72, 0.8, 0.88, 1)
+ground_bottom_color = Color(0.3, 0.33, 0.3, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+radiance_size = 1
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.74, 0.78, 1)
+ambient_light_energy = 0.55
+reflected_light_source = 1
+tonemap_mode = 0
+fog_enabled = true
+fog_light_color = Color(0.72, 0.8, 0.88, 1)
+fog_density = 0.0016
+
+[node name="CityShift" type="Node3D"]
+script = ExtResource("2")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8, 0.45, -0.39, 0, 0.66, 0.75, 0.6, -0.6, 0.52, 0, 30, 0)
+light_color = Color(1, 0.97, 0.9, 1)
+light_energy = 0.75
+shadow_enabled = true
+directional_shadow_mode = 0
+directional_shadow_max_distance = 70.0
+
+[node name="City" type="Node3D" parent="."]
+script = ExtResource("6")
+
+[node name="Obstacles" type="Node3D" parent="."]
+script = ExtResource("7")
+
+[node name="Bus" parent="." instance=ExtResource("1")]
+
+[node name="Crowd" type="Node3D" parent="."]
+script = ExtResource("9")
+
+[node name="Beacon" type="MeshInstance3D" parent="."]
+script = ExtResource("10")
+
+[node name="CameraRig" type="Camera3D" parent="."]
+current = true
+near = 0.2
+far = 900.0
+script = ExtResource("3")
+target_path = NodePath("../Bus")
+
+[node name="DriverInputRouter" type="Node" parent="."]
+script = ExtResource("4")
+
+[node name="RouteSystem" type="Node" parent="."]
+script = ExtResource("8")
+
+[node name="AudioDirector" type="Node" parent="."]
+script = ExtResource("11")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("5")

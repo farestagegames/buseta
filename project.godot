@@ -4,7 +4,7 @@ config_version=5
 [application]
 config/name="City Bus Shift"
 config/description="A bus driving simulator for Android."
-run/main_scene="res://scenes/test/test_drive.tscn"
+run/main_scene="res://scenes/main/city_shift.tscn"
 config/icon="res://assets/icon.png"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 

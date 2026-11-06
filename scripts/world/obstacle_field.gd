@@ -1,0 +1,124 @@
+class_name ObstacleField
+extends Node3D
+## Cones, bins, crates and barriers. Rendered as one instanced batch per kind,
+## and tested against the bus outline, so hundreds cost almost nothing.
+
+const KINDS := {
+	"cone": {"radius": 0.3, "speed_loss": 0.03},
+	"bin": {"radius": 0.42, "speed_loss": 0.35},
+	"crate": {"radius": 0.55, "speed_loss": 0.5},
+	"barrier": {"radius": 0.75, "speed_loss": 0.45},
+}
+## Below this the bus nudges past rather than knocking things over.
+const MIN_HIT_SPEED := 0.6
+const CHECK_RADIUS := 15.0
+
+var props: Array[KnockableProp] = []
+
+var _ground: GroundSurface
+var _spec: BusSpec
+var _batches: Dictionary = {} ## Kind to MultiMesh.
+var _indices: Dictionary = {} ## Prop to instance index.
+var _bus_position: Vector2 = Vector2.ZERO
+var _bus_heading: float = 0.0
+var _bus_speed: float = 0.0
+
+
+func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec) -> void:
+	_ground = ground
+	_spec = spec
+	for entry: Dictionary in map_data.get("knockables", []):
+		var placed: Dictionary = network.sample(entry["road"], entry["along"], entry["lateral"], entry["dir"])
+		_add_prop(entry["kind"], placed["position"], placed["heading"])
+	for line: Dictionary in map_data.get("cone_lines", []):
+		var along: float = line["from"]
+		while along <= float(line["to"]):
+			var placed: Dictionary = network.sample(line["road"], along, line["lateral"], line["dir"])
+			_add_prop("cone", placed["position"], 0.0)
+			along += float(line["spacing"])
+	_build_batches()
+	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
+
+
+func _add_prop(kind: String, ground_position: Vector2, yaw: float) -> void:
+	var height := _ground.height_at(ground_position) + 0.1
+	var start := Vector3(ground_position.x, height, ground_position.y)
+	props.append(KnockableProp.new(kind, start, KINDS[kind]["radius"], yaw))
+
+
+func _physics_process(dt: float) -> void:
+	for prop in props:
+		if prop.is_moving():
+			prop.update(dt, _ground.height_at(Vector2(prop.position.x, prop.position.z)) + 0.1)
+			_write_transform(prop)
+
+
+func _on_telemetry(data: BusTelemetry) -> void:
+	_bus_position = Vector2(data.position.x, data.position.z)
+	_bus_heading = data.heading
+	_bus_speed = data.speed
+	if absf(_bus_speed) < MIN_HIT_SPEED:
+		return
+	var forward := Vector2(-sin(_bus_heading), -cos(_bus_heading))
+	var centre := BusFootprint.body_centre(_bus_position, _bus_heading, _spec)
+	for prop in props:
+		if prop.state != KnockableProp.State.STANDING:
+			continue
+		var ground_position := Vector2(prop.position.x, prop.position.z)
+		if ground_position.distance_squared_to(centre) > CHECK_RADIUS * CHECK_RADIUS:
+			continue
+		if BusFootprint.touches(_bus_position, _bus_heading, _spec, ground_position, prop.radius):
+			prop.hit(forward * _bus_speed, ground_position - centre)
+			GameEvents.obstacle_hit.emit(prop.kind, float(KINDS[prop.kind]["speed_loss"]))
+
+
+func _build_batches() -> void:
+	var counts := {}
+	for prop in props:
+		counts[prop.kind] = int(counts.get(prop.kind, 0)) + 1
+	var material := LowPolyBuilder.vertex_colour_material()
+	for kind: String in counts:
+		var multi := MultiMesh.new()
+		multi.transform_format = MultiMesh.TRANSFORM_3D
+		multi.mesh = _mesh_for(kind).build(material)
+		multi.instance_count = counts[kind]
+		_batches[kind] = multi
+		var instance := MultiMeshInstance3D.new()
+		instance.multimesh = multi
+		instance.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+		instance.custom_aabb = AABB(Vector3(-2000.0, -200.0, -2000.0), Vector3(4000.0, 400.0, 4000.0))
+		add_child(instance)
+	var next := {}
+	for prop in props:
+		var index: int = next.get(prop.kind, 0)
+		next[prop.kind] = index + 1
+		_indices[prop] = index
+		_write_transform(prop)
+
+
+func _write_transform(prop: KnockableProp) -> void:
+	var multi: MultiMesh = _batches[prop.kind]
+	multi.set_instance_transform(_indices[prop], Transform3D(Basis.from_euler(prop.rotation), prop.position))
+
+
+func _mesh_for(kind: String) -> LowPolyBuilder:
+	var b := LowPolyBuilder.new()
+	match kind:
+		"cone":
+			b.box(Vector3(0.0, 0.03, 0.0), Vector3(0.5, 0.06, 0.5), Color(0.1, 0.1, 0.1))
+			b.box(Vector3(0.0, 0.2, 0.0), Vector3(0.32, 0.3, 0.32), Color(0.96, 0.42, 0.08))
+			b.box(Vector3(0.0, 0.42, 0.0), Vector3(0.22, 0.16, 0.22), Color(0.95, 0.95, 0.95))
+			b.box(Vector3(0.0, 0.6, 0.0), Vector3(0.14, 0.2, 0.14), Color(0.96, 0.42, 0.08))
+		"bin":
+			b.box(Vector3(0.0, 0.5, 0.0), Vector3(0.68, 1.0, 0.68), Color(0.15, 0.4, 0.25))
+			b.box(Vector3(0.0, 1.04, 0.0), Vector3(0.74, 0.1, 0.74), Color(0.1, 0.25, 0.16))
+		"crate":
+			b.box(Vector3(0.0, 0.45, 0.0), Vector3(0.9, 0.9, 0.9), Color(0.6, 0.42, 0.22))
+			b.box(Vector3(0.0, 0.9, 0.0), Vector3(0.94, 0.06, 0.94), Color(0.45, 0.3, 0.16))
+		_:
+			b.box(Vector3(0.0, 0.08, 0.0), Vector3(1.5, 0.16, 0.4), Color(0.2, 0.2, 0.2))
+			b.box(Vector3(0.0, 0.55, 0.0), Vector3(1.4, 0.3, 0.1), Color(0.92, 0.15, 0.12))
+			b.box(Vector3(0.0, 0.9, 0.0), Vector3(1.4, 0.3, 0.1), Color(0.95, 0.95, 0.95))
+			for side: float in [-0.6, 0.6]:
+				b.box(Vector3(side, 0.55, 0.0), Vector3(0.08, 1.0, 0.08), Color(0.25, 0.25, 0.25))
+	return b

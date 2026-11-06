@@ -62,6 +62,16 @@ func test_bay_widens_the_road() -> void:
 	assert_lt(network.edge_distance(spot), 0.0)
 
 
+func test_bay_on_a_bend_follows_the_road() -> void:
+	var via: Array[Vector2] = [Vector2(40.0, 60.0), Vector2(120.0, 70.0)]
+	network.add_road("bend", "a", "b", via)
+	network.add_bay("bend", 90.0, 1)
+	var inner := RoadNetwork.ROAD_HALF_WIDTH + 1.5
+	for along: float in [78.0, 90.0, 102.0]:
+		var spot: Vector2 = network.sample("bend", along, inner, 1)["position"]
+		assert_lte(network.edge_distance(spot), 0.0, "Bay at %d m" % along)
+
+
 func test_kerb_lifts_a_wheel_on_the_pavement_only() -> void:
 	var ground := GroundSurface.new()
 	ground.network = network

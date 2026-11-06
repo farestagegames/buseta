@@ -33,10 +33,14 @@ Tilt sensor, keyboard  ---------------------->        |
 | `scripts/input` | `SteeringMapper` for all three steering modes, `WheelTracker`, `DriverInputRouter` |
 | `scripts/camera` | `CameraRig` with cockpit, close and far views |
 | `scripts/ui` | Multi-touch controls, HUD and settings panel |
-| `scripts/world` | `LowPolyBuilder` mesh batching, `TestGround` |
+| `scripts/world` | `RoadNetwork`, `GroundSurface`, `MapLoader`, `CityBuilder`, `ObstacleField`, `KnockableProp`, `LowPolyBuilder`, `CityShift` level root, `TestGround` |
+| `scripts/route` | `RouteRunner` progress and turn hints, `RouteStop` alignment, `RouteSystem` shift flow |
+| `scripts/passengers` | `PassengerLedger`, `StopSession`, `PassengerCrowd` visuals |
+| `scripts/audio` | `AudioDirector`, driven only by events |
 
-Planned for later phases: `route`, `passengers`, `scoring`, `traffic`,
-`progression`, `save`, `audio`.
+Planned for later phases: `scoring`, `traffic`, `progression`, `save`.
+`CityShift` is the only script that knows every module. It wires them together
+at load time.
 
 ## Key decisions
 
@@ -49,6 +53,21 @@ cheap on phones, gives the same result at any frame rate, and can be tuned and
 tested without a scene. The body extending behind the pivot gives real rear
 overhang swing. Weight comes from pedal lag, limited steering speed, grip
 limits and spring-damped body movement.
+
+**Ground as a height function.** `GroundSurface` answers "how high is the ground
+here?" for each wheel. Terrain gives slope, which feeds gravity into the handling
+model. Kerbs, bumps and potholes are extra detail felt by the wheels. `BusSuspension`
+springs the body on the four wheel heights, so hills tilt it smoothly and bumps
+make it rock. No ground collision mesh is needed. Only detail counts as a jolt, so
+smooth hills never penalise passenger comfort.
+
+**Ballistic obstacles.** `KnockableProp` is simple maths tested against the bus
+outline, drawn with one `MultiMesh` per kind. Hundreds cost almost nothing, whereas
+a rigid body each would be heavy on a phone.
+
+**Autopilot check.** `tools/autopilot.sh` drives a whole shift through the real
+controls. Run it after changing a map, because a route that passes its data tests
+can still be impossible for a 12 m bus.
 
 **Custom multi-touch controls.** Standard Godot buttons follow one pointer. Each
 `TouchZone` tracks its own finger, so pedals and steering work at the same time,

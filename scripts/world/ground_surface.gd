@@ -39,7 +39,12 @@ func terrain_height(point: Vector2) -> float:
 
 ## Height a wheel rides on at this point.
 func height_at(point: Vector2) -> float:
-	return terrain_height(point) + _kerb_height(point) + _feature_height(point)
+	return terrain_height(point) + detail_height(point)
+
+
+## Kerbs, bumps and potholes only, without the hills.
+func detail_height(point: Vector2) -> float:
+	return _kerb_height(point) + _feature_height(point)
 
 
 func _kerb_height(point: Vector2) -> float:

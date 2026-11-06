@@ -59,6 +59,10 @@ func _ready() -> void:
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 
 
+func door_swing_angle() -> float:
+	return _door_front.rotation.y
+
+
 func _on_telemetry(data: BusTelemetry) -> void:
 	_body.rotation = Vector3(data.body_pitch + data.ground_pitch, 0.0, -data.body_roll - data.ground_roll)
 	for i in 4:

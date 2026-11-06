@@ -10,7 +10,7 @@ const SAMPLE_SPACING := 6.0
 const CELL_SIZE := 16.0
 ## How far outside the asphalt edge_distance needs to be accurate.
 const EDGE_REACH := 4.0
-const BAY_LENGTH := 22.0
+const BAY_LENGTH := 32.0
 const BAY_DEPTH := 3.3
 
 var nodes: Dictionary = {} ## id to {id, position, kind, radius, island}
@@ -74,11 +74,16 @@ static func heading_of(forward: Vector2) -> float:
 	return atan2(-forward.x, -forward.y)
 
 
+## Bays follow the road, so one on a bend is several short pieces.
 func add_bay(road_id: String, along: float, dir: int) -> void:
 	var middle := ROAD_HALF_WIDTH + BAY_DEPTH / 2.0 - 0.1
-	var a: Vector2 = sample(road_id, along - BAY_LENGTH / 2.0 * dir, middle, dir)["position"]
-	var b: Vector2 = sample(road_id, along + BAY_LENGTH / 2.0 * dir, middle, dir)["position"]
-	_add_capsule(a, b, BAY_DEPTH / 2.0 + 0.1)
+	var pieces := int(ceil(BAY_LENGTH / SAMPLE_SPACING))
+	var piece_length := BAY_LENGTH / float(pieces)
+	for i in pieces:
+		var start := along + (float(i) * piece_length - BAY_LENGTH / 2.0) * dir
+		var a: Vector2 = sample(road_id, start, middle, dir)["position"]
+		var b: Vector2 = sample(road_id, start + piece_length * dir, middle, dir)["position"]
+		_add_capsule(a, b, BAY_DEPTH / 2.0 + 0.1)
 
 
 ## Metres outside the asphalt. Zero or less is on the road, and roundabout

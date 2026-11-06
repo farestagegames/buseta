@@ -12,6 +12,12 @@ const VIEWS: Array[Dictionary] = [
 const START_VIEW := 1
 ## Cockpit view turns a little toward the bend, as a driver's head would.
 const COCKPIT_LOOK_INTO_TURN := 0.55
+## While the doors are open, follow views swing round to the front corner of the
+## bus and close in on the doorway, so doors and passengers face the player.
+const DOOR_ORBIT := 2.15
+const DOOR_ORBIT_RATE := 2.2
+const DOOR_ZOOM := 0.72
+const HEIGHT_RATE := 5.0
 
 @export var target_path: NodePath
 
@@ -21,6 +27,11 @@ var _bus: BusController
 var _visual: BusVisual
 var _follow_heading: float = 0.0
 var _steer_angle: float = 0.0
+var _door_amount: float = 0.0
+var _door_orbit: float = 0.0
+var _door_focus: float = 0.0
+var _door_position: Vector3 = Vector3.ZERO
+var _follow_height: float = 0.0
 
 
 func _ready() -> void:
@@ -30,9 +41,22 @@ func _ready() -> void:
 	_visual = _bus.get_node("Visual") as BusVisual
 	_follow_heading = _bus.rotation.y
 	GameEvents.camera_cycle_requested.connect(next_view)
-	GameEvents.bus_telemetry_updated.connect(func(data: BusTelemetry) -> void: _steer_angle = data.steer_angle)
-	GameEvents.reset_requested.connect(func() -> void: _follow_heading = _bus.rotation.y)
+	_follow_height = _bus.global_position.y
+	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
+	GameEvents.bus_relocate_requested.connect(_snap_to_bus.unbind(2))
+	GameEvents.reset_requested.connect(_snap_to_bus.call_deferred)
 	_announce_view.call_deferred() # After every listener in the scene is ready.
+
+
+func _on_telemetry(data: BusTelemetry) -> void:
+	_steer_angle = data.steer_angle
+	_door_amount = 0.0 if data.doors_closed else 1.0
+	_door_position = data.door_position
+
+
+func _snap_to_bus() -> void:
+	_follow_heading = _bus.rotation.y
+	_follow_height = _bus.global_position.y
 
 
 func next_view() -> void:
@@ -66,10 +90,19 @@ func _update_follow(view: Dictionary, dt: float) -> void:
 	var bus_heading := bus_transform.basis.get_euler().y
 	var blend := 1.0 - exp(-float(view["heading_rate"]) * dt)
 	_follow_heading = lerp_angle(_follow_heading, bus_heading, blend)
-	var behind := Vector3(sin(_follow_heading), 0.0, cos(_follow_heading))
-	global_position = centre + behind * float(view["distance"]) + Vector3.UP * float(view["height"])
-	var look_at_point := centre - behind * float(view["look_ahead"]) + Vector3.UP * float(view["look_height"])
-	look_at(look_at_point, Vector3.UP)
+	_follow_height = lerpf(_follow_height, bus_transform.origin.y, 1.0 - exp(-HEIGHT_RATE * dt))
+	var door_blend := 1.0 - exp(-DOOR_ORBIT_RATE * dt)
+	_door_orbit = lerpf(_door_orbit, _door_amount * DOOR_ORBIT * float(_bus.spec.door_side), door_blend)
+	_door_focus = lerpf(_door_focus, _door_amount, door_blend)
+	centre.y = _follow_height
+	if _door_focus > 0.001:
+		centre = centre.lerp(Vector3(_door_position.x, _follow_height, _door_position.z), _door_focus)
+	var orbit_heading := _follow_heading + _door_orbit
+	var behind := Vector3(sin(orbit_heading), 0.0, cos(orbit_heading))
+	var ahead := Vector3(sin(_follow_heading), 0.0, cos(_follow_heading)) * -float(view["look_ahead"]) * (1.0 - _door_focus)
+	var zoom := lerpf(1.0, DOOR_ZOOM, _door_focus)
+	global_position = centre + behind * float(view["distance"]) * zoom + Vector3.UP * float(view["height"]) * zoom
+	look_at(centre + ahead + Vector3.UP * float(view["look_height"]), Vector3.UP)
 
 
 func _announce_view() -> void:

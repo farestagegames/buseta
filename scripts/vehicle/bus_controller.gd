@@ -22,6 +22,7 @@ var _start_position: Vector2
 var _start_heading: float
 var _telemetry := BusTelemetry.new()
 var _wheels: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 0.0])
+var _wheel_detail: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 0.0])
 
 
 func _ready() -> void:
@@ -71,7 +72,7 @@ func _physics_process(dt: float) -> void:
 	_resolve_collisions()
 
 	_sample_ground()
-	suspension.update(_wheels, dt)
+	suspension.update(_wheels, dt, _wheel_detail)
 	global_position.y = suspension.height
 	if suspension.is_jolt():
 		GameEvents.bus_jolted.emit(suspension.jolt)
@@ -88,7 +89,7 @@ func _place(new_position: Vector2, new_heading: float) -> void:
 	rotation.y = new_heading
 	velocity = Vector3.ZERO
 	_sample_ground()
-	suspension.snap(_wheels)
+	suspension.snap(_wheels, _wheel_detail)
 	global_position.y = suspension.height
 	reset_physics_interpolation()
 
@@ -99,10 +100,16 @@ func _sample_ground() -> void:
 	var rear := Vector2(global_position.x, global_position.z)
 	var front := rear + forward * spec.wheelbase
 	var half_track := right * wheel_track() / 2.0
-	_wheels[0] = surface.height_at(front - half_track)
-	_wheels[1] = surface.height_at(front + half_track)
-	_wheels[2] = surface.height_at(rear - half_track)
-	_wheels[3] = surface.height_at(rear + half_track)
+	_set_wheel(0, front - half_track)
+	_set_wheel(1, front + half_track)
+	_set_wheel(2, rear - half_track)
+	_set_wheel(3, rear + half_track)
+
+
+func _set_wheel(index: int, point: Vector2) -> void:
+	var detail := surface.detail_height(point)
+	_wheel_detail[index] = detail
+	_wheels[index] = surface.terrain_height(point) + detail
 
 
 ## Uses smooth terrain only, so a kerb rocks the body but does not stop the bus.
