@@ -18,3 +18,11 @@ var door_open_amount: float = 0.0
 var doors_closed: bool = true
 var indicator_side: int = 0
 var indicator_lamp_on: bool = false
+var position: Vector3 = Vector3.ZERO ## Rear axle, in world space.
+var heading: float = 0.0
+var door_position: Vector3 = Vector3.ZERO ## Doorway at pavement level.
+var body_height: float = 0.0 ## Height of the sprung body at the rear axle.
+var ground_pitch: float = 0.0 ## Sprung body pitch from the road, radians.
+var ground_roll: float = 0.0 ## Sprung body roll from the road, radians.
+## Ground height under each wheel: front left, front right, rear left, rear right.
+var wheel_heights: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 0.0])

@@ -13,6 +13,7 @@ enum Direction { FORWARD = 1, REVERSE = -1 }
 
 ## Below this speed the bus counts as stopped for gear changes and doors.
 const STOPPED_SPEED := 0.3
+const GRAVITY := 9.81
 
 var position: Vector2 = Vector2.ZERO ## X and Z on the ground plane.
 var heading: float = 0.0
@@ -20,6 +21,7 @@ var speed: float = 0.0
 var steer_angle: float = 0.0 ## Road wheel angle in radians.
 var direction: Direction = Direction.FORWARD
 var drive_enabled: bool = true ## Cleared by the door interlock.
+var road_slope: float = 0.0 ## Rise per metre along the heading. Positive is uphill.
 
 var throttle: float = 0.0 ## Pedal after lag.
 var brake: float = 0.0 ## Pedal after lag.
@@ -120,9 +122,12 @@ func _update_steering(steer_input: float, dt: float) -> void:
 
 func _integrate_speed(dt: float) -> float:
 	var signed_thrust := _drive_accel() * float(direction)
-	var new_speed := speed + signed_thrust * dt
+	var new_speed := speed + (signed_thrust - GRAVITY * road_slope) * dt
 	var resistance := _spec.rolling_decel + _spec.drag_coefficient * speed * speed
 	resistance += brake * _spec.max_brake_decel
+	# The door interlock also applies the stop brake, so an open bus holds on a hill.
+	if not drive_enabled:
+		resistance += _spec.max_brake_decel
 	if throttle < 0.01:
 		resistance += _spec.coast_decel
 	var slowdown := resistance * dt

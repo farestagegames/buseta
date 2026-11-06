@@ -1,27 +1,37 @@
 class_name BusController
 extends CharacterBody3D
 ## Connects the pure handling model to the scene: runs it each physics tick,
-## moves the body, feeds collisions back and publishes telemetry.
+## moves the body, follows the ground, feeds collisions back and publishes
+## telemetry.
+
+const WHEEL_TRACK_INSET := 0.2
+const COLLISION_CLEARANCE := 0.45
 
 @export var spec: BusSpec
 
 var model: BusPhysicsModel
 var doors: BusDoors
 var indicators: BusIndicators
+var suspension: BusSuspension
+var surface: GroundSurface = GroundSurface.new()
 
 var _steer: float = 0.0
 var _throttle: float = 0.0
 var _brake: float = 0.0
-var _start_transform: Transform3D
+var _start_position: Vector2
+var _start_heading: float
 var _telemetry := BusTelemetry.new()
+var _wheels: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 0.0])
 
 
 func _ready() -> void:
 	model = BusPhysicsModel.new(spec)
 	doors = BusDoors.new(spec.door_open_time)
 	indicators = BusIndicators.new()
-	_start_transform = global_transform
-	model.reset(Vector2(global_position.x, global_position.z), rotation.y)
+	suspension = BusSuspension.new(spec.wheelbase, wheel_track())
+	_start_position = Vector2(global_position.x, global_position.z)
+	_start_heading = rotation.y
+	_place(_start_position, _start_heading)
 	_build_collision()
 
 	GameEvents.drive_input_changed.connect(_on_drive_input)
@@ -29,10 +39,26 @@ func _ready() -> void:
 	GameEvents.indicator_toggle_requested.connect(_on_indicator_toggle)
 	GameEvents.gear_toggle_requested.connect(_on_gear_toggle)
 	GameEvents.reset_requested.connect(reset_to_start)
+	GameEvents.bus_relocate_requested.connect(_place)
+	GameEvents.obstacle_hit.connect(_on_obstacle_hit)
+
+
+## Called by the level before play. The bus starts here and resets to here.
+func start_at(surface_to_use: GroundSurface, start_position: Vector2, start_heading: float) -> void:
+	surface = surface_to_use
+	_start_position = start_position
+	_start_heading = start_heading
+	_place(start_position, start_heading)
+
+
+func wheel_track() -> float:
+	return spec.body_width - WHEEL_TRACK_INSET * 2.0
 
 
 func _physics_process(dt: float) -> void:
 	var previous_heading := model.heading
+	_sample_ground()
+	model.road_slope = _slope_along_heading()
 	model.drive_enabled = doors.is_closed()
 	model.step(_steer, _throttle, _brake, dt)
 	doors.update(dt)
@@ -43,14 +69,47 @@ func _physics_process(dt: float) -> void:
 	velocity = Vector3(planar_velocity.x, 0.0, planar_velocity.y)
 	move_and_slide()
 	_resolve_collisions()
+
+	_sample_ground()
+	suspension.update(_wheels, dt)
+	global_position.y = suspension.height
+	if suspension.is_jolt():
+		GameEvents.bus_jolted.emit(suspension.jolt)
 	_publish_telemetry()
 
 
 func reset_to_start() -> void:
-	global_transform = _start_transform
+	_place(_start_position, _start_heading)
+
+
+func _place(new_position: Vector2, new_heading: float) -> void:
+	model.reset(new_position, new_heading)
+	global_position = Vector3(new_position.x, 0.0, new_position.y)
+	rotation.y = new_heading
 	velocity = Vector3.ZERO
-	model.reset(Vector2(global_position.x, global_position.z), rotation.y)
+	_sample_ground()
+	suspension.snap(_wheels)
+	global_position.y = suspension.height
 	reset_physics_interpolation()
+
+
+func _sample_ground() -> void:
+	var forward := model.forward_vector()
+	var right := Vector2(-forward.y, forward.x)
+	var rear := Vector2(global_position.x, global_position.z)
+	var front := rear + forward * spec.wheelbase
+	var half_track := right * wheel_track() / 2.0
+	_wheels[0] = surface.height_at(front - half_track)
+	_wheels[1] = surface.height_at(front + half_track)
+	_wheels[2] = surface.height_at(rear - half_track)
+	_wheels[3] = surface.height_at(rear + half_track)
+
+
+## Uses smooth terrain only, so a kerb rocks the body but does not stop the bus.
+func _slope_along_heading() -> float:
+	var rear := Vector2(global_position.x, global_position.z)
+	var front := rear + model.forward_vector() * spec.wheelbase
+	return (surface.terrain_height(front) - surface.terrain_height(rear)) / spec.wheelbase
 
 
 func _resolve_collisions() -> void:
@@ -66,32 +125,48 @@ func _resolve_collisions() -> void:
 
 
 func _publish_telemetry() -> void:
-	_telemetry.speed = model.speed
-	_telemetry.gear = model.gearbox.gear
-	_telemetry.rpm = model.gearbox.rpm
-	_telemetry.is_reverse = model.direction == BusPhysicsModel.Direction.REVERSE
-	_telemetry.steer_angle = model.steer_angle
-	_telemetry.throttle = model.throttle
-	_telemetry.brake = model.brake
-	_telemetry.longitudinal_accel = model.longitudinal_accel
-	_telemetry.lateral_accel = model.lateral_accel
-	_telemetry.body_roll = model.body_roll
-	_telemetry.body_pitch = model.body_pitch
-	_telemetry.door_open_amount = doors.open_amount
-	_telemetry.doors_closed = doors.is_closed()
-	_telemetry.indicator_side = indicators.side
-	_telemetry.indicator_lamp_on = indicators.lamp_on
-	GameEvents.bus_telemetry_updated.emit(_telemetry)
+	var data := _telemetry
+	data.speed = model.speed
+	data.gear = model.gearbox.gear
+	data.rpm = model.gearbox.rpm
+	data.is_reverse = model.direction == BusPhysicsModel.Direction.REVERSE
+	data.steer_angle = model.steer_angle
+	data.throttle = model.throttle
+	data.brake = model.brake
+	data.longitudinal_accel = model.longitudinal_accel
+	data.lateral_accel = model.lateral_accel
+	data.body_roll = model.body_roll
+	data.body_pitch = model.body_pitch
+	data.door_open_amount = doors.open_amount
+	data.doors_closed = doors.is_closed()
+	data.indicator_side = indicators.side
+	data.indicator_lamp_on = indicators.lamp_on
+	data.position = global_position
+	data.heading = model.heading
+	data.door_position = _door_position()
+	data.body_height = suspension.height
+	data.ground_pitch = suspension.pitch
+	data.ground_roll = suspension.roll
+	for i in 4:
+		data.wheel_heights[i] = _wheels[i]
+	GameEvents.bus_telemetry_updated.emit(data)
+
+
+func _door_position() -> Vector3:
+	var forward := model.forward_vector()
+	var right := Vector2(-forward.y, forward.x)
+	var ground := Vector2(global_position.x, global_position.z)
+	ground += forward * (spec.wheelbase + spec.front_overhang - BusVisual.DOOR_OFFSET - BusVisual.DOOR_WIDTH / 2.0)
+	ground += right * (spec.body_width / 2.0 + 0.3) * float(spec.door_side)
+	return Vector3(ground.x, surface.height_at(ground), ground.y)
 
 
 func _build_collision() -> void:
-	# Raised off the ground so the box never catches on flat surfaces.
-	var ground_clearance := 0.35
 	var box := BoxShape3D.new()
-	box.size = Vector3(spec.body_width, spec.body_height - ground_clearance, spec.overall_length())
+	box.size = Vector3(spec.body_width, spec.body_height - COLLISION_CLEARANCE, spec.overall_length())
 	var shape := CollisionShape3D.new()
 	shape.shape = box
-	shape.position = Vector3(0.0, ground_clearance + box.size.y / 2.0, spec.body_centre_z())
+	shape.position = Vector3(0.0, COLLISION_CLEARANCE + box.size.y / 2.0, spec.body_centre_z())
 	add_child(shape)
 
 
@@ -111,3 +186,8 @@ func _on_indicator_toggle(side: int) -> void:
 
 func _on_gear_toggle() -> void:
 	model.toggle_direction()
+
+
+func _on_obstacle_hit(_kind: String, speed_loss: float) -> void:
+	var slowed := maxf(absf(model.speed) - speed_loss, 0.0)
+	model.apply_external_speed(slowed * signf(model.speed))

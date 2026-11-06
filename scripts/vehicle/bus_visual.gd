@@ -7,7 +7,8 @@ const FLOOR_Y := 0.42
 const SKIRT_BOTTOM := 0.42
 const BELT_Y := 1.3
 const DOOR_WIDTH := 1.25
-const DOOR_LEAF_TRAVEL := 0.55
+const DOOR_OFFSET := 0.3 ## Doorway start, measured back from the nose.
+const DOOR_SWING := deg_to_rad(105.0)
 const STEERING_WHEEL_TURNS := 3.0
 
 const DARK := Color(0.1, 0.1, 0.12)
@@ -23,6 +24,7 @@ var cockpit_anchor: Node3D
 var _body: Node3D
 var _steering_wheel: Node3D
 var _front_wheels: Array[Node3D] = []
+var _wheel_pivots: Array[Node3D] = [] ## Front left, front right, rear left, rear right.
 var _spinners: Array[Node3D] = []
 var _door_front: Node3D
 var _door_rear: Node3D
@@ -43,7 +45,7 @@ func _ready() -> void:
 	_rear_z = spec.rear_overhang
 	_half_width = spec.body_width / 2.0
 	_top_y = spec.body_height - 0.22
-	_door_near_z = _front_z + 0.3
+	_door_near_z = _front_z + DOOR_OFFSET
 	_door_far_z = _door_near_z + DOOR_WIDTH
 
 	_body = Node3D.new()
@@ -58,16 +60,18 @@ func _ready() -> void:
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
-	_body.rotation = Vector3(data.body_pitch, 0.0, -data.body_roll)
+	_body.rotation = Vector3(data.body_pitch + data.ground_pitch, 0.0, -data.body_roll - data.ground_roll)
+	for i in 4:
+		_wheel_pivots[i].position.y = data.wheel_heights[i] - data.body_height + spec.wheel_radius
 	_steering_wheel.rotation.y = -data.steer_angle * STEERING_WHEEL_TURNS
 	for wheel in _front_wheels:
 		wheel.rotation.y = -data.steer_angle
 	_wheel_spin = fmod(_wheel_spin - data.speed * get_physics_process_delta_time() / spec.wheel_radius, TAU)
 	for spinner in _spinners:
 		spinner.rotation.x = _wheel_spin
-	var slide := data.door_open_amount * DOOR_LEAF_TRAVEL
-	_door_front.position.z = -slide
-	_door_rear.position.z = slide
+	var swing := data.door_open_amount * DOOR_SWING * float(spec.door_side)
+	_door_front.rotation.y = swing
+	_door_rear.rotation.y = -swing
 	_brake_lamps.visible = data.brake > 0.05
 	_left_lamps.visible = data.indicator_lamp_on and data.indicator_side < 0
 	_right_lamps.visible = data.indicator_lamp_on and data.indicator_side > 0
@@ -199,7 +203,7 @@ func _build_wheels() -> void:
 	b.wheel(Vector3.ZERO, spec.wheel_radius, 0.36, Color(0.07, 0.07, 0.08), Color(0.7, 0.7, 0.72))
 	var wheel_mesh := b.build(LowPolyBuilder.vertex_colour_material())
 	var wheel_x := _half_width - 0.2
-	for axle_z: float in [0.0, -spec.wheelbase]:
+	for axle_z: float in [-spec.wheelbase, 0.0]:
 		for side: float in [-1.0, 1.0]:
 			var pivot := Node3D.new()
 			pivot.position = Vector3(side * wheel_x, spec.wheel_radius, axle_z)
@@ -208,31 +212,40 @@ func _build_wheels() -> void:
 			spinner.mesh = wheel_mesh
 			pivot.add_child(spinner)
 			_spinners.append(spinner)
+			_wheel_pivots.append(pivot)
 			if axle_z < 0.0:
 				_front_wheels.append(pivot)
 
 
 func _build_doors() -> void:
-	var mid_z := (_door_near_z + _door_far_z) / 2.0
+	# Two leaves hinged at the edges of the doorway. They swing out from the
+	# side of the bus, so an open door can be seen from behind.
 	var leaf_length := DOOR_WIDTH / 2.0 - 0.02
 	var x := (_half_width - 0.03) * spec.door_side
-	_door_front = _door_leaf(x, (_door_near_z + mid_z) / 2.0, leaf_length)
-	_door_rear = _door_leaf(x, (mid_z + _door_far_z) / 2.0, leaf_length)
+	_door_front = _door_leaf(Vector3(x, 0.0, _door_near_z), leaf_length)
+	_door_rear = _door_leaf(Vector3(x, 0.0, _door_far_z), -leaf_length)
 
 
-func _door_leaf(x: float, z: float, length: float) -> Node3D:
+## length is signed along Z, from the hinge to the door's free edge.
+func _door_leaf(hinge: Vector3, length: float) -> Node3D:
+	var pivot := Node3D.new()
+	pivot.position = hinge
+	_body.add_child(pivot)
 	var height := _top_y - SKIRT_BOTTOM
-	var centre := Vector3(x, (SKIRT_BOTTOM + _top_y) / 2.0, z)
+	var mid_y := (SKIRT_BOTTOM + _top_y) / 2.0
+	var size_z := absf(length)
+	var centre := Vector3(0.0, mid_y, length / 2.0)
 	var frame := LowPolyBuilder.new()
-	frame.box(centre + Vector3(0.0, -height / 2.0 + 0.15, 0.0), Vector3(0.05, 0.3, length), spec.body_colour)
-	frame.box(centre + Vector3(0.0, height / 2.0 - 0.05, 0.0), Vector3(0.05, 0.1, length), spec.body_colour)
-	frame.box(centre + Vector3(0.0, 0.0, length / 2.0 - 0.03), Vector3(0.05, height, 0.06), DARK)
+	frame.box(centre + Vector3(0.0, -height / 2.0 + 0.2, 0.0), Vector3(0.06, 0.4, size_z), spec.stripe_colour)
+	frame.box(centre + Vector3(0.0, height / 2.0 - 0.05, 0.0), Vector3(0.06, 0.1, size_z), spec.stripe_colour)
+	frame.box(Vector3(0.0, mid_y, length - signf(length) * 0.04), Vector3(0.06, height, 0.08), DARK)
+	frame.box(Vector3(0.0, mid_y, signf(length) * 0.04), Vector3(0.06, height, 0.08), DARK)
 	var leaf := MeshInstance3D.new()
 	leaf.mesh = frame.build(LowPolyBuilder.vertex_colour_material())
-	_body.add_child(leaf)
+	pivot.add_child(leaf)
 
 	var pane := LowPolyBuilder.new()
-	pane.box(centre + Vector3(0.0, 0.1, 0.0), Vector3(0.02, height - 0.4, length - 0.1), Color(0.5, 0.65, 0.75, 0.28))
+	pane.box(centre + Vector3(0.0, 0.15, 0.0), Vector3(0.02, height - 0.5, size_z - 0.1), Color(0.5, 0.65, 0.75, 0.28))
 	var glass_material := StandardMaterial3D.new()
 	glass_material.vertex_color_use_as_albedo = true
 	glass_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -240,7 +253,7 @@ func _door_leaf(x: float, z: float, length: float) -> Node3D:
 	glass.mesh = pane.build(glass_material)
 	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	leaf.add_child(glass)
-	return leaf
+	return pivot
 
 
 func _build_lamps() -> void:
