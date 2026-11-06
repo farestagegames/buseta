@@ -40,6 +40,7 @@ const AWNINGS: Array[Color] = [Color(0.7, 0.2, 0.18), Color(0.18, 0.42, 0.3), Co
 const TREE_LEAVES: Array[Color] = [Color(0.27, 0.42, 0.2), Color(0.32, 0.47, 0.22), Color(0.22, 0.38, 0.22)]
 
 var building_count: int = 0
+var lamp_spots: Array[Dictionary] = [] ## position and yaw, for ObstacleField.
 
 var _network: RoadNetwork
 var _ground: GroundSurface
@@ -343,7 +344,7 @@ func _build_scenery(route: RouteRunner) -> LowPolyBuilder:
 	for road: Dictionary in _network.roads.values():
 		_line_with_buildings(b, road, 24.0)
 		_line_with_trees(b, road)
-		_line_with_lamps(b, road)
+		_line_with_lamps(road)
 	_tree_line(b)
 	return b
 
@@ -491,7 +492,7 @@ func _tree(b: LowPolyBuilder, spot: Vector2, solid: bool) -> void:
 		_add_solid(Vector3(spot.x, y + 2.0, spot.y), Vector3(0.5, 6.0, 0.5), 0.0)
 
 
-func _line_with_lamps(b: LowPolyBuilder, road: Dictionary) -> void:
+func _line_with_lamps(road: Dictionary) -> void:
 	var length: float = road["length"]
 	var along := 52.0
 	var side := 1.0
@@ -500,7 +501,7 @@ func _line_with_lamps(b: LowPolyBuilder, road: Dictionary) -> void:
 		var placed: Dictionary = _network.sample(road["id"], along, lateral, 1)
 		var spot: Vector2 = placed["position"]
 		if _network.edge_distance(spot) > 0.3 and _clear_of_stops(spot):
-			_lamp(b, spot, placed["forward"], side)
+			_lamp(spot, placed["forward"], side)
 		side = -side
 		along += 42.0
 
@@ -513,16 +514,10 @@ func _clear_of_stops(spot: Vector2) -> bool:
 	return true
 
 
-func _lamp(b: LowPolyBuilder, spot: Vector2, forward: Vector2, side: float) -> void:
-	var y := _ground.terrain_height(spot)
+## Lamp arms reach out over the road. The lamp mesh has its arm along +X.
+func _lamp(spot: Vector2, forward: Vector2, side: float) -> void:
 	var to_road := Vector2(-forward.y, forward.x) * -side
-	var pole := Color(0.25, 0.27, 0.3)
-	b.box(Vector3(spot.x, y + 3.5, spot.y), Vector3(0.14, 7.0, 0.14), pole)
-	var arm := spot + to_road * 0.8
-	b.box(Vector3(arm.x, y + 7.0, arm.y), Vector3(absf(to_road.x) * 1.6 + 0.08, 0.08, absf(to_road.y) * 1.6 + 0.08), pole)
-	var head := spot + to_road * 1.6
-	b.box(Vector3(head.x, y + 6.92, head.y), Vector3(0.5, 0.1, 0.5), Color(0.8, 0.8, 0.75))
-	_add_solid(Vector3(spot.x, y + 2.0, spot.y), Vector3(0.3, 5.0, 0.3), 0.0)
+	lamp_spots.append({"position": spot, "yaw": atan2(-to_road.y, to_road.x)})
 
 
 ## A ring of woodland hides the edge of the world.

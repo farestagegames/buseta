@@ -37,3 +37,11 @@ signal passenger_boarded(stop_index: int)
 signal onboard_changed(count: int)
 signal bus_jolted(strength: float)
 signal obstacle_hit(kind: String, speed_loss: float)
+
+# --- Traffic and scoring ---
+signal stop_arrived(stop_index: int, accuracy: float, seconds_late: float)
+signal indicator_missed
+signal red_light_run
+signal signal_ahead(state: int, distance: float) ## TrafficLightPlan.Light, or -1.
+signal penalty_shown(text: String)
+signal score_updated(total: int)

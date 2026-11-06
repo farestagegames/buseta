@@ -27,7 +27,7 @@ func _ready() -> void:
 	ground = MapLoader.build_ground(map_data, network)
 
 	_city.build(map_data, network, ground, route)
-	_obstacles.setup(map_data, network, ground, _bus.spec)
+	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)
 	_bus.start_at(ground, route.start_position, route.start_heading)
 	_route_system.setup(route, _bus.spec)
 	_crowd.setup(route, ground)

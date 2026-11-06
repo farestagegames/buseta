@@ -93,10 +93,22 @@ def horn_loop():
     return out
 
 
-def hiss(seconds, seed, fall=True):
-    noise = noise_filtered(seconds, 2200, seed)
+def hiss(seconds, seed, cutoff=1400, level=0.28):
+    """Soft compressed air: quick to start, falling away, and low in the mix."""
+    noise = noise_filtered(seconds, cutoff, seed)
     total = len(noise)
-    return [n * (1.0 - i / total if fall else 1.0) * envelope(i, total, 0.02, 0.1) for i, n in enumerate(noise)]
+    peak = max(abs(n) for n in noise) or 1.0
+    return [level * n / peak * math.exp(-3.5 * i / total) * envelope(i, total, 0.03, 0.12) for i, n in enumerate(noise)]
+
+
+def save_quiet(name, samples):
+    """Saves without normalising, so a soft sound stays soft."""
+    scaled = [int(max(-1.0, min(1.0, s)) * 32767) for s in samples]
+    with wave.open(str(OUT / name), "wb") as f:
+        f.setnchannels(1)
+        f.setsampwidth(2)
+        f.setframerate(RATE)
+        f.writeframes(struct.pack("<%dh" % len(scaled), *scaled))
 
 
 def thump(seconds, frequency, drop, seed):
@@ -113,11 +125,14 @@ def thump(seconds, frequency, drop, seed):
 
 
 def door_open():
-    return hiss(1.1, 4)
+    return hiss(0.75, 4, 1200, 0.2)
 
 
 def door_close():
-    return hiss(0.9, 5)
+    """A soft hiss, then the rubber seals meeting with a low, damped bump."""
+    total = int(0.12 * RATE)
+    bump = [0.12 * math.exp(-i / RATE * 45) * math.sin(2 * math.pi * 75 * i / RATE) for i in range(total)]
+    return hiss(0.55, 5, 1200, 0.16) + bump
 
 
 def knock():
@@ -142,14 +157,14 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     save("engine_loop.wav", engine_loop())
     save("horn_loop.wav", horn_loop())
-    save("door_open.wav", door_open())
-    save("door_close.wav", door_close())
+    save_quiet("door_open.wav", door_open())
+    save_quiet("door_close.wav", door_close())
     save("crash.wav", thump(0.45, 120, 7, 8))
     save("thud.wav", thump(0.2, 70, 6, 9))
     save("knock.wav", knock())
     save("pay.wav", pay())
     save("bell.wav", bell())
-    save("air_brake.wav", hiss(0.7, 10))
+    save_quiet("air_brake.wav", hiss(0.5, 10, 1000, 0.13))
 
 
 if __name__ == "__main__":

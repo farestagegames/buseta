@@ -5,6 +5,7 @@ extends RefCounted
 ## ground. Vectors are on the ground plane as (X, Z), and -Z is north.
 
 const LANE_WIDTH := 3.75
+const DEFAULT_SPEED_LIMIT := 50.0 ## km/h
 ## Wide flared junctions, so a 12 m bus can turn without climbing the kerb.
 const JUNCTION_RADIUS := 15.0
 const ROAD_HALF_WIDTH := LANE_WIDTH
@@ -32,6 +33,8 @@ static func from_data(data: Dictionary) -> RoadNetwork:
 		for point: Array in entry.get("via", []):
 			via.append(Vector2(point[0], point[1]))
 		network.add_road(entry["id"], entry["from"], entry["to"], via)
+		network.roads[entry["id"]]["speed_limit"] = entry.get("speed_limit", DEFAULT_SPEED_LIMIT)
+		network.roads[entry["id"]]["traffic"] = entry.get("traffic", true)
 	return network
 
 
@@ -48,7 +51,7 @@ func add_road(id: String, from_node: String, to_node: String, via: Array[Vector2
 	var lengths := PackedFloat32Array([0.0])
 	for i in range(1, points.size()):
 		lengths.append(lengths[i - 1] + points[i].distance_to(points[i - 1]))
-		_add_capsule(points[i - 1], points[i], ROAD_HALF_WIDTH)
+		_add_capsule(points[i - 1], points[i], ROAD_HALF_WIDTH, id)
 	roads[id] = {"id": id, "from": from_node, "to": to_node, "points": points, "lengths": lengths,
 		"length": lengths[lengths.size() - 1]}
 
@@ -107,9 +110,30 @@ func edge_distance(point: Vector2) -> float:
 	return nearest
 
 
-func _add_capsule(a: Vector2, b: Vector2, radius: float) -> void:
+## Speed limit in km/h at this point. Off any road, the town default applies.
+func speed_limit_at(point: Vector2) -> float:
+	var key := _cell_key(int(floor(point.x / CELL_SIZE)), int(floor(point.y / CELL_SIZE)))
+	if not _grid.has(key):
+		return DEFAULT_SPEED_LIMIT
+	var nearest := INF
+	var limit := DEFAULT_SPEED_LIMIT
+	var candidates: PackedInt32Array = _grid[key]
+	for index in candidates:
+		var capsule: Dictionary = _capsules[index]
+		var road_id: String = capsule["road"]
+		if road_id == "":
+			continue
+		var closest := Geometry2D.get_closest_point_to_segment(point, capsule["a"], capsule["b"])
+		var distance := point.distance_to(closest)
+		if distance < nearest:
+			nearest = distance
+			limit = roads[road_id].get("speed_limit", DEFAULT_SPEED_LIMIT)
+	return limit
+
+
+func _add_capsule(a: Vector2, b: Vector2, radius: float, road_id: String = "") -> void:
 	var index := _capsules.size()
-	_capsules.append({"a": a, "b": b, "radius": radius})
+	_capsules.append({"a": a, "b": b, "radius": radius, "road": road_id})
 	var reach := radius + EDGE_REACH
 	var low := Vector2(minf(a.x, b.x), minf(a.y, b.y)) - Vector2.ONE * reach
 	var high := Vector2(maxf(a.x, b.x), maxf(a.y, b.y)) + Vector2.ONE * reach

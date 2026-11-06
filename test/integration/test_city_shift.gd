@@ -192,7 +192,9 @@ func test_hitting_a_parked_car_shoves_it_and_the_bus_keeps_rolling() -> void:
 	await wait_physics_frames(50)
 	assert_signal_emitted(GameEvents, "obstacle_hit")
 	assert_gt(car.position.distance_to(start), 1.0, "Car should have moved")
-	assert_gt(bus.model.speed, 3.0, "A bus should not stop dead against a car")
+	assert_gt(bus.model.speed, 1.5, "A bus should not stop dead against a car")
+	assert_lt(bus.model.speed, 6.5, "A car should cost real speed")
+	assert_lt(car.position.distance_to(start), 12.0, "Car should not slide far")
 
 
 func test_slow_push_moves_a_car_rather_than_blocking() -> void:
@@ -230,3 +232,19 @@ func test_volume_setting_reaches_the_audio_bus() -> void:
 	GameSettings.sound_volume = 0.5
 	assert_almost_eq(AudioServer.get_bus_volume_db(0), linear_to_db(0.5), 0.01)
 	GameSettings.sound_volume = 0.7
+
+
+func test_lamp_post_falls_and_the_bus_keeps_going() -> void:
+	var lamp: KnockableProp = null
+	for prop in obstacles.props:
+		if prop.kind == "lamp":
+			lamp = prop
+			break
+	assert_not_null(lamp, "City should have lamp posts")
+	var spot := Vector2(lamp.position.x, lamp.position.z)
+	var forward := Vector2(0.0, -1.0)
+	GameEvents.bus_relocate_requested.emit(spot - forward * 11.0, 0.0)
+	bus.model.speed = 8.0
+	await wait_physics_frames(45)
+	assert_gt(lamp.tip_angle, 0.5, "Lamp should be falling")
+	assert_gt(bus.model.speed, 3.0, "A lamp post should not stop the bus")

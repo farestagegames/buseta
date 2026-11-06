@@ -6,6 +6,8 @@ const IDLE_RPM := AutomaticGearbox.IDLE_RPM
 const ENGINE_MIN_PITCH := 0.85
 const ENGINE_MAX_PITCH := 1.5
 const COLLISION_COOLDOWN := 0.35
+## A bus only vents its brakes now and then, not on every pedal lift.
+const AIR_BRAKE_COOLDOWN := 8.0
 
 const SOUNDS := {
 	"engine": "res://assets/audio/engine_loop.wav",
@@ -32,6 +34,7 @@ var _streams: Dictionary = {}
 var _doors_were_closed: bool = true
 var _was_braking: bool = false
 var _cooldown: float = 0.0
+var _air_cooldown: float = 0.0
 
 
 func _ready() -> void:
@@ -82,6 +85,7 @@ func _make_loop(key: String, volume_db: float) -> AudioStreamPlayer:
 
 func _process(dt: float) -> void:
 	_cooldown = maxf(_cooldown - dt, 0.0)
+	_air_cooldown = maxf(_air_cooldown - dt, 0.0)
 
 
 func _on_horn(is_pressed: bool) -> void:
@@ -99,15 +103,16 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	if data.doors_closed != _doors_were_closed:
 		_doors_were_closed = data.doors_closed
 		if data.doors_closed:
-			play_effect("thud", -14.0)
+			pass
 	elif not data.doors_closed and data.door_open_amount > 0.0 and data.door_open_amount < 0.03:
-		play_effect("door_open", -12.0)
+		play_effect("door_open", -10.0)
 	if _door_started_closing(data):
-		play_effect("door_close", -12.0)
+		play_effect("door_close", -10.0)
 
 	var braking := data.brake > 0.25
-	if _was_braking and not braking and absf(data.speed) < 1.0:
-		play_effect("air", -16.0)
+	if _was_braking and not braking and absf(data.speed) < 1.0 and _air_cooldown <= 0.0:
+		_air_cooldown = AIR_BRAKE_COOLDOWN
+		play_effect("air", -14.0)
 	_was_braking = braking
 
 

@@ -9,11 +9,16 @@ const KINDS := {
 	"crate": {"radius": 0.55, "speed_loss": 0.5},
 	"barrier": {"radius": 0.75, "speed_loss": 0.45},
 	"car": {"radius": 1.25, "speed_loss": 0.0},
+	"lamp": {"radius": 0.3, "speed_loss": 0.0},
 }
 ## Share of the bus's speed lost to a parked car. A bus outweighs a car about
 ## nine to one, so even a head-on hit shoves the car rather than stopping the bus.
-const CAR_LOSS_GLANCING := 0.06
-const CAR_LOSS_HEAD_ON := 0.28
+const CAR_LOSS_GLANCING := 0.14
+const CAR_LOSS_HEAD_ON := 0.5
+## Speed lost per later hit while the bus keeps pushing the same car.
+const CAR_PUSH_LOSS_SHARE := 0.1
+## A lamp post costs this share of bus speed and falls over.
+const LAMP_LOSS := 0.3
 const CAR_MIN_HIT_SPEED := 0.15
 ## Below this a bus pushes a car along with hardly any loss of speed.
 const CAR_FULL_IMPACT_SPEED := 5.0
@@ -36,7 +41,7 @@ var _bus_heading: float = 0.0
 var _bus_speed: float = 0.0
 
 
-func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec) -> void:
+func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec, lamps: Array[Dictionary] = []) -> void:
 	_ground = ground
 	_spec = spec
 	for entry: Dictionary in map_data.get("knockables", []):
@@ -52,6 +57,9 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 		var placed: Dictionary = network.sample(car["road"], car["along"], RoadNetwork.ROAD_HALF_WIDTH - 1.15, car["dir"])
 		_add_prop("car", placed["position"], placed["heading"])
 		props[props.size() - 1].heavy = true
+	for lamp: Dictionary in lamps:
+		_add_prop("lamp", lamp["position"], lamp["yaw"])
+		props[props.size() - 1].tips_over = true
 	_build_batches()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 
@@ -87,6 +95,8 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		if BusFootprint.touches(_bus_position, _bus_heading, _spec, ground_position, prop.radius):
 			if prop.heavy:
 				_shove(prop, forward, ground_position - centre)
+			elif prop.tips_over:
+				_knock_lamp(prop, ground_position - centre, forward * signf(_bus_speed))
 			else:
 				prop.hit(forward * _bus_speed, ground_position - centre)
 				GameEvents.obstacle_hit.emit(prop.kind, float(KINDS[prop.kind]["speed_loss"]))
@@ -99,12 +109,22 @@ func _can_be_hit(prop: KnockableProp, bus_speed: float) -> bool:
 	return prop.state == KnockableProp.State.STANDING and bus_speed >= MIN_HIT_SPEED
 
 
+func _knock_lamp(prop: KnockableProp, away: Vector2, direction: Vector2) -> void:
+	prop.tip(direction + away.normalized() * 0.3)
+	var loss := absf(_bus_speed) * LAMP_LOSS
+	GameEvents.obstacle_hit.emit(prop.kind, loss)
+	if loss > 0.5:
+		GameEvents.bus_collided.emit(loss)
+
+
 func _shove(prop: KnockableProp, forward: Vector2, away: Vector2) -> void:
 	var direction := forward * signf(_bus_speed)
 	var head_on := clampf(direction.dot(away.normalized()), 0.0, 1.0)
 	var bus_speed := absf(_bus_speed)
 	var hardness := clampf(bus_speed / CAR_FULL_IMPACT_SPEED, 0.05, 1.0)
 	var loss := bus_speed * lerpf(CAR_LOSS_GLANCING, CAR_LOSS_HEAD_ON, head_on) * hardness
+	if prop.in_contact():
+		loss *= CAR_PUSH_LOSS_SHARE
 	prop.shove(forward * _bus_speed, away)
 	GameEvents.obstacle_hit.emit(prop.kind, loss)
 	if loss > 0.5:
@@ -140,7 +160,7 @@ func _build_batches() -> void:
 
 func _write_transform(prop: KnockableProp) -> void:
 	var multi: MultiMesh = _batches[prop.kind]
-	multi.set_instance_transform(_indices[prop], Transform3D(Basis.from_euler(prop.rotation), prop.position))
+	multi.set_instance_transform(_indices[prop], Transform3D(prop.basis(), prop.position))
 
 
 func _mesh_for(kind: String) -> LowPolyBuilder:
@@ -168,6 +188,12 @@ func _mesh_for(kind: String) -> LowPolyBuilder:
 			for z: float in [-1.35, 1.35]:
 				for x: float in [-0.85, 0.85]:
 					b.box(Vector3(x, 0.32, z), Vector3(0.24, 0.64, 0.64), tyre)
+		"lamp":
+			var pole := Color(0.25, 0.27, 0.3)
+			b.box(Vector3(0.0, 0.2, 0.0), Vector3(0.26, 0.4, 0.26), pole)
+			b.box(Vector3(0.0, 3.6, 0.0), Vector3(0.14, 7.0, 0.14), pole)
+			b.box(Vector3(0.8, 7.05, 0.0), Vector3(1.6, 0.08, 0.08), pole)
+			b.box(Vector3(1.6, 6.97, 0.0), Vector3(0.5, 0.1, 0.5), Color(0.8, 0.8, 0.75))
 		_:
 			b.box(Vector3(0.0, 0.08, 0.0), Vector3(1.5, 0.16, 0.4), Color(0.2, 0.2, 0.2))
 			b.box(Vector3(0.0, 0.55, 0.0), Vector3(1.4, 0.3, 0.1), Color(0.92, 0.15, 0.12))

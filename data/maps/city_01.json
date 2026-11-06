@@ -12,8 +12,8 @@
     {"id": "i", "x": -30, "z": 300}
   ],
   "roads": [
-    {"id": "depot_road", "from": "depot", "to": "a"},
-    {"id": "mill_lane", "from": "a", "to": "b"},
+    {"id": "depot_road", "from": "depot", "to": "a", "speed_limit": 30, "traffic": false},
+    {"id": "mill_lane", "from": "a", "to": "b", "speed_limit": 30},
     {"id": "market_street", "from": "b", "to": "c"},
     {"id": "river_road", "from": "c", "to": "e", "via": [[380, 72], [455, 15], [465, -110], [390, -205]]},
     {"id": "high_street", "from": "e", "to": "f"},
@@ -22,7 +22,7 @@
     {"id": "cross_street", "from": "b", "to": "f"},
     {"id": "south_road", "from": "c", "to": "h"},
     {"id": "orchard_way", "from": "h", "to": "i"},
-    {"id": "school_road", "from": "i", "to": "b"}
+    {"id": "school_road", "from": "i", "to": "b", "speed_limit": 30}
   ],
   "hills": [
     {"x": 110, "z": 70, "radius": 150, "height": 7},
@@ -63,7 +63,7 @@
     {"kind": "barrier", "road": "river_road", "along": 361, "lateral": 2.9, "dir": 1}
   ],
   "cone_lines": [
-    {"road": "river_road", "from": 335, "to": 385, "lateral": 1.0, "dir": 1, "spacing": 5},
-    {"road": "park_avenue", "from": 240, "to": 270, "lateral": 1.3, "dir": 1, "spacing": 5}
+    {"road": "river_road", "from": 335, "to": 385, "lateral": 1.7, "dir": 1, "spacing": 5},
+    {"road": "park_avenue", "from": 240, "to": 270, "lateral": 1.7, "dir": 1, "spacing": 5}
   ]
 }

@@ -109,7 +109,10 @@ func _add_turn(index: int, node_kind: String) -> void:
 		text = "Turn right" if angle > 0.0 else "Turn left"
 	else:
 		text = "Straight on at the junction"
-	turns.append({"distance": distances[index], "text": text})
+	var side := 0
+	if absf(angle) >= TURN_ANGLE:
+		side = 1 if angle > 0.0 else -1
+	turns.append({"distance": distances[index], "text": text, "side": side})
 
 
 func _add_stop(entry: Dictionary, network: RoadNetwork) -> void:
