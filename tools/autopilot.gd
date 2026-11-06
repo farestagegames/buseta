@@ -31,6 +31,8 @@ var _arrivals: Array[int] = []
 var _report_text: Dictionary = {}
 var _red_lights: int = 0
 var _braking_for_stop: bool = false
+var _bump_spots: Array[Vector2] = []
+var _next_turn: int = 0
 var _jolt_places: Dictionary = {}
 var _off_road_places: Dictionary = {}
 
@@ -45,6 +47,9 @@ func _ready() -> void:
 	_traffic = _city.get_node("Traffic")
 	_keeper = _city.get_node("ScoreKeeper")
 	_build_path()
+	for feature: Dictionary in _city.ground.features:
+		if feature["kind"] == "bump":
+			_bump_spots.append(feature["position"])
 	GameEvents.stop_arrived.connect(func(_i: int, _a: float, _l: float) -> void: _arrivals.append(roundi(_system.clock)))
 	GameEvents.red_light_run.connect(func() -> void: _red_lights += 1)
 	GameEvents.shift_report_ready.connect(func(report: Dictionary) -> void: _report_text = report)
@@ -74,6 +79,7 @@ func _physics_process(dt: float) -> void:
 	_run_stop_logic()
 	if _hold:
 		return
+	_signal_turns()
 	_steer(rear)
 	if not _braking_for_stop:
 		_drive()
@@ -97,7 +103,7 @@ func _run_stop_logic() -> void:
 	_braking_for_stop = false
 	if not _hold and aligned and near_middle:
 		_braking_for_stop = true
-		GameEvents.ui_pedals_changed.emit(0.0, 0.55)
+		GameEvents.ui_pedals_changed.emit(0.0, 0.45)
 		if _bus.model.is_stopped() and _bus.doors.is_closed():
 			_hold = true
 			GameEvents.ui_wheel_changed.emit(0.0)
@@ -141,13 +147,14 @@ func _drive() -> void:
 	target = minf(target, _limit_for_road())
 	target = minf(target, _speed_for_signal())
 	target = minf(target, _speed_for_traffic())
+	target = minf(target, _speed_for_bumps())
 	var error := target - _bus.model.speed
 	if target <= 0.05:
-		GameEvents.ui_pedals_changed.emit(0.0, 0.6)
+		GameEvents.ui_pedals_changed.emit(0.0, 0.5)
 	elif error > 0.3:
 		GameEvents.ui_pedals_changed.emit(clampf(error * 0.4, 0.35, 0.72), 0.0)
 	elif error < -0.8:
-		GameEvents.ui_pedals_changed.emit(0.0, clampf(-error * 0.22, 0.35, 0.62))
+		GameEvents.ui_pedals_changed.emit(0.0, clampf(-error * 0.2, 0.35, 0.5))
 	else:
 		GameEvents.ui_pedals_changed.emit(0.0, 0.0)
 
@@ -170,15 +177,41 @@ func _speed_for_signal() -> float:
 	var distance: float = float(ahead["distance"]) - 2.0
 	if int(ahead["state"]) == TrafficLightPlan.Light.AMBER and _bus.model.speed * _bus.model.speed / 4.0 > distance:
 		return INF
-	return maxf(sqrt(maxf(distance, 0.0) * 2.0 * 1.6) - 0.4, 0.0)
+	return maxf(sqrt(maxf(distance, 0.0) * 2.0 * 1.2) - 0.4, 0.0)
 
 
 func _speed_for_traffic() -> float:
 	var ahead := _traffic.bus_gap_ahead()
-	var gap: float = float(ahead["gap"]) - 7.0
-	if gap == INF:
+	if float(ahead["gap"]) == INF:
 		return INF
-	return maxf(minf(float(ahead["speed"]) + maxf(gap, 0.0) * 0.5, sqrt(maxf(gap, 0.0) * 3.2)), 0.0)
+	var gap: float = maxf(float(ahead["gap"]) - 8.0, 0.0)
+	var lead: float = ahead["speed"]
+	return minf(lead + gap * 0.35, sqrt(lead * lead + gap * 2.4))
+
+
+func _speed_for_bumps() -> float:
+	var rear := Vector2(_bus.global_position.x, _bus.global_position.z)
+	var forward := _bus.model.forward_vector()
+	var limit := INF
+	for spot in _bump_spots:
+		var offset: Vector2 = spot - rear
+		var ahead := offset.dot(forward)
+		if ahead > -8.0 and ahead < 34.0 and absf(offset.dot(Vector2(-forward.y, forward.x))) < 5.0:
+			limit = minf(limit, 3.5 + maxf(ahead - 12.0, 0.0) * 0.3)
+	return limit
+
+
+func _signal_turns() -> void:
+	var runner := _system.runner
+	if _next_turn >= runner.turns.size():
+		return
+	var turn: Dictionary = runner.turns[_next_turn]
+	var ahead := float(turn["distance"]) - runner.progress
+	var side: int = turn["side"]
+	if ahead < 55.0 and side != 0 and _bus.indicators.side != side:
+		GameEvents.indicator_toggle_requested.emit(side)
+	if ahead < -18.0:
+		_next_turn += 1
 
 
 func _build_path() -> void:
@@ -194,6 +227,7 @@ func _build_path() -> void:
 		_path.append(point)
 		_speeds.append(_speed_at(i))
 	_apply_roundabouts()
+	_smooth_junctions()
 
 
 func _lateral_at(along: float, point: Vector2) -> float:
@@ -203,17 +237,17 @@ func _lateral_at(along: float, point: Vector2) -> float:
 		if relative > -30.0 and relative < 30.0:
 			var share := smoothstep(-30.0, -10.0, relative)
 			share = minf(share, 1.0 - smoothstep(8.0, 30.0, relative))
-			lateral = lerpf(LANE, RoadNetwork.ROAD_HALF_WIDTH + 1.4, share)
+			lateral = lerpf(LANE, RoadNetwork.ROAD_HALF_WIDTH + 1.25, share)
 	var map_data := MapLoader.read_json("res://data/maps/city_01.json")
 	for car: Dictionary in map_data["parked_cars"]:
 		var spot: Vector2 = _city.network.sample(car["road"], car["along"])["position"]
-		if point.distance_to(spot) < 24.0:
-			lateral = minf(lateral, 0.0)
+		if point.distance_to(spot) < 26.0:
+			lateral = minf(lateral, 0.45)
 	for line: Dictionary in map_data["cone_lines"]:
 		var from: Vector2 = _city.network.sample(line["road"], line["from"])["position"]
 		var to: Vector2 = _city.network.sample(line["road"], line["to"])["position"]
 		if Geometry2D.get_closest_point_to_segment(point, from, to).distance_to(point) < 20.0:
-			lateral = 0.4
+			lateral = 0.0
 	return lateral
 
 
@@ -230,6 +264,40 @@ func _speed_at(index: int) -> float:
 		if turn > deg_to_rad(25.0):
 			limit = 3.5
 	return limit
+
+
+## A driver sweeps through a junction on a curve rather than a sharp corner.
+func _smooth_junctions() -> void:
+	for node: Dictionary in _city.network.nodes.values():
+		if node["kind"] != "junction":
+			continue
+		var centre: Vector2 = node["position"]
+		var i := 0
+		while i < _path.size():
+			if _path[i].distance_to(centre) >= 22.0:
+				i += 1
+				continue
+			var first := i
+			while i < _path.size() and _path[i].distance_to(centre) < 22.0:
+				i += 1
+			_curve_through(first, i - 1)
+
+
+func _curve_through(first: int, last: int) -> void:
+	if first < 2 or last > _path.size() - 3 or last <= first:
+		return
+	var start := _path[first]
+	var finish := _path[last]
+	var into := (_path[first] - _path[first - 2]).normalized()
+	var out := (_path[last + 2] - _path[last]).normalized()
+	var reach := start.distance_to(finish) * 0.42
+	var steps := last - first
+	var turning := absf(into.angle_to(out)) > deg_to_rad(30.0)
+	for i in steps + 1:
+		var t := float(i) / float(steps)
+		_path[first + i] = start.bezier_interpolate(start + into * reach, finish - out * reach, finish, t)
+		if turning:
+			_speeds[first + i] = minf(_speeds[first + i], 4.5)
 
 
 func _apply_roundabouts() -> void:

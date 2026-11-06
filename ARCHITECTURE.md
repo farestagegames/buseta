@@ -38,7 +38,10 @@ Tilt sensor, keyboard  ---------------------->        |
 | `scripts/passengers` | `PassengerLedger`, `StopSession`, `PassengerCrowd` visuals |
 | `scripts/audio` | `AudioDirector`, driven only by events |
 
-Planned for later phases: `scoring`, `traffic`, `progression`, `save`.
+| `scripts/scoring` | `ShiftScore` category points, stars and coins, `DrivingMonitor`, `ScoreKeeper` |
+| `scripts/traffic` | `TrafficLightPlan`, `LaneGraph`, `TrafficLane`, `TrafficAgent`, `TrafficSystem` |
+
+Planned for later phases: `progression`, `save`.
 `CityShift` is the only script that knows every module. It wires them together
 at load time.
 
@@ -73,6 +76,14 @@ solid.
 **Textures from a script.** `tools/make_textures.py` draws tiling textures that
 the meshes tint with vertex colour, so one wall texture covers every building.
 `LowPolyBuilder` writes UVs in metres, which keeps brick and windows at real size.
+
+**Scoring through events.** `ScoreKeeper` only listens to `GameEvents` and only
+speaks through them. All point values are named constants in `ShiftScore`, so the
+game's balance can be tuned in one file. A shift ends with `shift_report_ready`.
+
+**Traffic without physics bodies.** Cars follow lanes built from the road data and
+use the Intelligent Driver Model for smooth queues. It is cheap, and cars are drawn
+as one instanced batch. They react to the bus through its telemetry.
 
 **Autopilot check.** `tools/autopilot.sh` drives a whole shift through the real
 controls. Run it after changing a map, because a route that passes its data tests

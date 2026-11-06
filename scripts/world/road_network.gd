@@ -15,6 +15,7 @@ const CELL_SIZE := 16.0
 const EDGE_REACH := 4.0
 const BAY_LENGTH := 32.0
 const BAY_DEPTH := 3.3
+const BAY_TAPER := 10.0
 
 var nodes: Dictionary = {} ## id to {id, position, kind, radius, island}
 var roads: Dictionary = {} ## id to {id, from, to, points, lengths, length}
@@ -89,6 +90,20 @@ func add_bay(road_id: String, along: float, dir: int) -> void:
 		var a: Vector2 = sample(road_id, start, middle, dir)["position"]
 		var b: Vector2 = sample(road_id, start + piece_length * dir, middle, dir)["position"]
 		_add_capsule(a, b, BAY_DEPTH / 2.0 + 0.1)
+	for end: float in [-1.0, 1.0]:
+		_add_bay_taper(road_id, along + end * BAY_LENGTH / 2.0 * dir, end * dir, middle, dir)
+
+
+## Lead-in and lead-out, so a bus can ease in and out of the bay.
+func _add_bay_taper(road_id: String, start: float, outward: float, middle: float, dir: int) -> void:
+	var steps := 5
+	var piece := BAY_TAPER / float(steps)
+	for i in steps:
+		var share := float(i + 1) / float(steps)
+		var lateral := lerpf(middle, ROAD_HALF_WIDTH - BAY_DEPTH / 2.0, share)
+		var a: Vector2 = sample(road_id, start + outward * piece * float(i), lateral, dir)["position"]
+		var b: Vector2 = sample(road_id, start + outward * piece * float(i + 1), lateral, dir)["position"]
+		_add_capsule(a, b, BAY_DEPTH / 2.0)
 
 
 ## Metres outside the asphalt. Zero or less is on the road, and roundabout

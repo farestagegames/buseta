@@ -364,3 +364,49 @@ func test_speed_limit_reaches_the_hud_status() -> void:
 	assert_signal_emitted(GameEvents, "route_status_updated")
 	var params: Array = get_signal_parameters(GameEvents, "route_status_updated")
 	assert_eq(float(params[0]["speed_limit"]), 30.0, "Depot road is 30")
+
+
+func test_passengers_vary_and_have_working_arms() -> void:
+	var stop: RouteStop = scene.route.stops[1]
+	var rear := stop.position + stop.forward() * bus.spec.body_centre_z()
+	route_system.runner.stop_index = 1
+	GameEvents.bus_relocate_requested.emit(rear, stop.heading)
+	await wait_physics_frames(3)
+	var looks := {}
+	var sizes := {}
+	for walker in crowd.waiting:
+		looks[(walker.get_child(0) as MeshInstance3D).mesh] = true
+		sizes[walker.scale.x] = true
+		assert_not_null(walker.left_arm)
+	assert_gt(looks.size(), 2, "People should not all look the same")
+	assert_gt(sizes.size(), 2, "People should not all be the same height")
+
+
+func test_one_long_scrape_counts_as_one_collision() -> void:
+	await wait_physics_frames(2)
+	for i in 8:
+		GameEvents.bus_collided.emit(3.0)
+		await wait_physics_frames(10)
+	assert_eq(int(keeper.score.counts["collisions"]), 1)
+
+
+func test_bus_can_pass_a_parked_car_at_the_road_centre() -> void:
+	var car := _first_car()
+	var heading := car.rotation.y
+	var forward := Vector2(-sin(heading), -cos(heading))
+	var right := Vector2(-forward.y, forward.x)
+	var spot := Vector2(car.position.x, car.position.z)
+	var clear_lateral := -2.3
+	assert_false(BusFootprint.touches_car(spot + right * clear_lateral - forward * 3.0, heading, bus.spec, spot, forward))
+	assert_true(BusFootprint.touches_car(spot - forward * 3.0, heading, bus.spec, spot, forward))
+
+
+func test_report_reads_naturally_and_clears_the_hud() -> void:
+	var hud: DriveHud = scene.get_node("Hud")
+	GameEvents.bus_collided.emit(3.0)
+	route_system.runner.stop_index = route_system.runner.stops.size() - 1
+	_park_at(route_system.runner.current_stop())
+	await wait_physics_frames(3)
+	assert_string_contains(keeper._details({"carried": 1}), "1 collision")
+	assert_false(keeper._details({"carried": 1}).contains("1 collisions"))
+	assert_false(hud.gauge.visible, "The report should not sit over the HUD")

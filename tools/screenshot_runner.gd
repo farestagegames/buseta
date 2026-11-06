@@ -13,20 +13,24 @@ func _ready() -> void:
 	print("load ms ", Time.get_ticks_msec() - started)
 	var city: CityShift = scene
 	var bus: BusController = scene.get_node("Bus")
+	var traffic := city.traffic_for_tools()
 	await _frames(30)
-	await _shot("1_depot")
 
-	_place(city, "mill_lane", 88.0, 1.9, 1)
-	GameEvents.ui_pedals_changed.emit(0.6, 0.0)
-	await _seconds(4.0)
-	GameEvents.ui_pedals_changed.emit(0.0, 0.0)
-	await _shot("2_street")
+	# A signal junction, seen from the approach.
+	var approach: Dictionary = traffic._approaches[0]
+	for candidate: Dictionary in traffic._approaches:
+		if candidate["node"] == "b":
+			approach = candidate
+	var forward: Vector2 = approach["forward"]
+	GameEvents.bus_relocate_requested.emit(approach["line"] - forward * 22.0, RoadNetwork.heading_of(forward))
+	await _seconds(7.0)
+	await _shot("1_junction")
 	GameEvents.camera_cycle_requested.emit()
 	await _frames(20)
-	await _shot("3_far")
+	await _shot("2_far")
 	GameEvents.camera_cycle_requested.emit()
-	await _frames(10)
-	await _shot("4_cockpit")
+	await _frames(20)
+	await _shot("3_cockpit")
 	GameEvents.camera_cycle_requested.emit()
 
 	var stop := city.route.stops[1]
@@ -34,23 +38,22 @@ func _ready() -> void:
 	GameEvents.bus_relocate_requested.emit(_rear_for(stop, bus.spec), stop.heading)
 	await _seconds(0.6)
 	GameEvents.door_toggle_requested.emit()
-	await _seconds(3.4)
-	await _shot("5_stop_doors")
-	await _seconds(3.0)
-	await _shot("6_boarding")
+	await _seconds(4.6)
+	await _shot("4_boarding")
+	await _seconds(7.0)
+	await _shot("5_seated")
 
-	_place(city, "river_road", 360.0, 1.2, 1)
+	GameEvents.penalty_shown.emit("Ran a red light")
+	GameEvents.bus_collided.emit(3.0)
+	await _frames(3)
+	var system := city.route_system_for_tools()
+	system.runner.stop_index = system.runner.stops.size() - 1
+	var last := city.route.stops[city.route.stops.size() - 1]
 	GameEvents.door_toggle_requested.emit()
 	await _seconds(1.4)
-	GameEvents.ui_pedals_changed.emit(1.0, 0.0)
-	await _seconds(3.0)
-	await _shot("7_cones")
-	_place(city, "market_street", 245.0, 1.9, 1)
-	GameEvents.ui_pedals_changed.emit(0.0, 0.0)
-	await _seconds(0.5)
-	GameEvents.camera_cycle_requested.emit()
-	await _frames(20)
-	await _shot("8_roundabout")
+	GameEvents.bus_relocate_requested.emit(_rear_for(last, bus.spec), last.heading)
+	await _seconds(1.0)
+	await _shot("6_report")
 	get_tree().quit()
 
 

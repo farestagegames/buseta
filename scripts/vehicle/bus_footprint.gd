@@ -2,6 +2,9 @@ class_name BusFootprint
 extends RefCounted
 ## Tests points against the bus outline, without any physics engine.
 
+const CAR_CIRCLE_OFFSET := 1.35
+const CAR_CIRCLE_RADIUS := 0.82
+
 
 ## Returns true when a circle touches the bus. rear_axle and point are on the
 ## ground plane (X, Z). Heading follows BusPhysicsModel.
@@ -14,6 +17,15 @@ static func touches(rear_axle: Vector2, heading: float, spec: BusSpec, point: Ve
 	return along > -spec.rear_overhang - radius \
 		and along < spec.wheelbase + spec.front_overhang + radius \
 		and across < spec.body_width / 2.0 + radius
+
+
+## Tests a car against the bus. A car is long and narrow, so it is two circles
+## along its length. One big circle would clip a bus passing it cleanly.
+static func touches_car(rear_axle: Vector2, heading: float, spec: BusSpec, car_position: Vector2, car_forward: Vector2) -> bool:
+	for offset: float in [-CAR_CIRCLE_OFFSET, CAR_CIRCLE_OFFSET]:
+		if touches(rear_axle, heading, spec, car_position + car_forward * offset, CAR_CIRCLE_RADIUS):
+			return true
+	return false
 
 
 ## Centre of the body on the ground plane.

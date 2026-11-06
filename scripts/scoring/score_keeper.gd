@@ -6,6 +6,8 @@ extends Node
 const KERB_COOLDOWN := 4.0
 const OFF_ROAD_MARGIN := 0.4
 const LOST_COLLISION_SPEED := 0.5
+## Contact within this time is the same crash, however long the bus scrapes.
+const COLLISION_COOLDOWN := 2.5
 
 var score := ShiftScore.new()
 var monitor := DrivingMonitor.new()
@@ -13,6 +15,7 @@ var monitor := DrivingMonitor.new()
 var _network: RoadNetwork
 var _spec: BusSpec
 var _kerb_timer: float = 0.0
+var _collision_timer: float = 0.0
 var _wheels_were_on_road: bool = true
 
 
@@ -36,6 +39,7 @@ func setup(network: RoadNetwork, spec: BusSpec) -> void:
 func _on_telemetry(data: BusTelemetry) -> void:
 	var dt := get_physics_process_delta_time()
 	_kerb_timer = maxf(_kerb_timer - dt, 0.0)
+	_collision_timer = maxf(_collision_timer - dt, 0.0)
 	monitor.update(data.longitudinal_accel, dt)
 	var rear := Vector2(data.position.x, data.position.z)
 	var centre := BusFootprint.body_centre(rear, data.heading, _spec)
@@ -49,7 +53,7 @@ func _on_telemetry(data: BusTelemetry) -> void:
 ## A wheel climbing the kerb. Only counts as a new strike when it comes back on.
 func _check_kerb(rear: Vector2, heading: float, speed: float) -> void:
 	var forward := Vector2(-sin(heading), -cos(heading))
-	var right := Vector2(-forward.y, forward.x) * _spec.body_width / 2.0
+	var right := Vector2(-forward.y, forward.x) * (_spec.body_width / 2.0 - BusController.WHEEL_TRACK_INSET)
 	var front := rear + forward * _spec.wheelbase
 	var on_road := true
 	for wheel: Vector2 in [front - right, front + right, rear - right, rear + right]:
@@ -78,7 +82,8 @@ func _on_jolted(_strength: float) -> void:
 
 
 func _on_collided(impact_speed: float) -> void:
-	if impact_speed >= LOST_COLLISION_SPEED:
+	if impact_speed >= LOST_COLLISION_SPEED and _collision_timer <= 0.0:
+		_collision_timer = COLLISION_COOLDOWN
 		score.add_collision(impact_speed)
 		GameEvents.penalty_shown.emit("Collision")
 
@@ -127,18 +132,23 @@ func _on_shift_completed(summary: Dictionary) -> void:
 
 func _details(summary: Dictionary) -> String:
 	var counts := score.counts
-	var notes: Array[String] = ["%d passengers carried" % summary["carried"]]
+	var notes: Array[String] = [_count(summary["carried"], "passenger carried", "passengers carried")]
 	var labels := {
-		"collisions": "collisions", "red_lights": "red lights", "knocked": "objects hit",
-		"harsh_brakes": "harsh stops", "harsh_accels": "harsh starts", "jolts": "hard bumps",
-		"kerbs": "kerb strikes", "indicators": "turns not signalled", "missed_stops": "stops missed",
-		"left_behind": "left waiting",
+		"collisions": ["collision", "collisions"], "red_lights": ["red light", "red lights"],
+		"knocked": ["object hit", "objects hit"], "harsh_brakes": ["harsh stop", "harsh stops"],
+		"harsh_accels": ["harsh start", "harsh starts"], "jolts": ["hard bump", "hard bumps"],
+		"kerbs": ["kerb strike", "kerb strikes"], "indicators": ["turn not signalled", "turns not signalled"],
+		"missed_stops": ["stop missed", "stops missed"], "left_behind": ["person left waiting", "people left waiting"],
 	}
 	for key: String in labels:
 		if int(counts[key]) > 0:
-			notes.append("%d %s" % [counts[key], labels[key]])
+			notes.append(_count(counts[key], labels[key][0], labels[key][1]))
 	if score.speeding_seconds >= 1.0:
 		notes.append("%d s speeding" % roundi(score.speeding_seconds))
 	if score.off_road_seconds >= 1.0:
 		notes.append("%d s off road" % roundi(score.off_road_seconds))
 	return ", ".join(notes)
+
+
+func _count(amount: int, one: String, many: String) -> String:
+	return "%d %s" % [amount, one if amount == 1 else many]

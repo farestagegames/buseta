@@ -16,8 +16,16 @@ const TRIM := Color(0.26, 0.27, 0.3)
 const SEAT := Color(0.15, 0.25, 0.5)
 const SKIN := Color(0.85, 0.68, 0.55)
 const SHIRTS: Array[Color] = [
-	Color(0.2, 0.4, 0.75), Color(0.8, 0.3, 0.25), Color(0.25, 0.6, 0.4),
-	Color(0.85, 0.65, 0.2), Color(0.55, 0.35, 0.65), Color(0.85, 0.85, 0.85),
+	Color(0.2, 0.4, 0.75), Color(0.8, 0.3, 0.25), Color(0.25, 0.6, 0.4), Color(0.85, 0.65, 0.2),
+	Color(0.55, 0.35, 0.65), Color(0.85, 0.85, 0.85), Color(0.28, 0.3, 0.36), Color(0.15, 0.55, 0.6),
+]
+const SKINS: Array[Color] = [
+	Color(0.93, 0.77, 0.65), Color(0.85, 0.66, 0.52), Color(0.68, 0.48, 0.34),
+	Color(0.48, 0.32, 0.22), Color(0.33, 0.22, 0.16),
+]
+const HAIRS: Array[Color] = [
+	Color(0.12, 0.09, 0.07), Color(0.3, 0.2, 0.12), Color(0.55, 0.38, 0.18),
+	Color(0.72, 0.6, 0.35), Color(0.75, 0.75, 0.76),
 ]
 const LAMP_OFF_RED := Color(0.35, 0.05, 0.05)
 const LAMP_OFF_AMBER := Color(0.45, 0.25, 0.05)
@@ -39,6 +47,8 @@ var _right_lamps: MeshInstance3D
 var _wheel_spin: float = 0.0
 var _seat_points: Array[Vector3] = []
 var _riders: MultiMesh
+var _rider_heads: MultiMesh
+var _rider_hair: MultiMesh
 var _driver: Node3D
 var _front_z: float
 var _rear_z: float
@@ -80,7 +90,10 @@ func driver_visible() -> bool:
 
 
 func _on_onboard_changed(count: int) -> void:
-	_riders.visible_instance_count = mini(count, _riders.instance_count)
+	var shown := mini(count, _riders.instance_count)
+	_riders.visible_instance_count = shown
+	_rider_heads.visible_instance_count = shown
+	_rider_hair.visible_instance_count = shown
 
 
 ## The driver would block the player's own view from the cockpit.
@@ -307,22 +320,42 @@ func _build_riders() -> void:
 		var held: Vector3 = order[i]
 		order[i] = order[swap]
 		order[swap] = held
-	var person := LowPolyBuilder.new()
-	person.box(Vector3(0.0, 0.3, 0.0), Vector3(0.38, 0.6, 0.24), Color.WHITE)
-	person.box(Vector3(0.0, 0.76, 0.0), Vector3(0.22, 0.26, 0.24), SKIN * 1.1)
-	_riders = MultiMesh.new()
-	_riders.transform_format = MultiMesh.TRANSFORM_3D
-	_riders.use_colors = true
-	_riders.mesh = person.build(LowPolyBuilder.vertex_colour_material())
-	_riders.instance_count = order.size()
+	var torso := LowPolyBuilder.new()
+	torso.box(Vector3(0.0, 0.3, 0.0), Vector3(0.38, 0.6, 0.22), Color.WHITE)
+	torso.box(Vector3(0.0, 0.58, 0.0), Vector3(0.43, 0.09, 0.24), Color.WHITE)
+	for side: float in [-0.25, 0.25]:
+		torso.box(Vector3(side, 0.32, -0.08), Vector3(0.1, 0.46, 0.12), Color(0.82, 0.82, 0.82))
+	var head := LowPolyBuilder.new()
+	head.box(Vector3(0.0, 0.66, 0.0), Vector3(0.1, 0.1, 0.1), Color.WHITE)
+	head.box(Vector3(0.0, 0.82, 0.0), Vector3(0.21, 0.24, 0.22), Color.WHITE)
+	var hair := LowPolyBuilder.new()
+	hair.box(Vector3(0.0, 0.96, 0.01), Vector3(0.23, 0.07, 0.24), Color.WHITE)
+	hair.box(Vector3(0.0, 0.85, 0.1), Vector3(0.23, 0.2, 0.05), Color.WHITE)
+	_riders = _rider_batch(torso, order.size())
+	_rider_heads = _rider_batch(head, order.size())
+	_rider_hair = _rider_batch(hair, order.size())
 	for i in order.size():
-		_riders.set_instance_transform(i, Transform3D(Basis.IDENTITY, order[i]))
+		var place := Transform3D(Basis.IDENTITY, order[i])
+		_riders.set_instance_transform(i, place)
+		_rider_heads.set_instance_transform(i, place)
+		_rider_hair.set_instance_transform(i, place)
 		_riders.set_instance_color(i, SHIRTS[i % SHIRTS.size()])
-	_riders.visible_instance_count = 0
+		_rider_heads.set_instance_color(i, SKINS[i % SKINS.size()])
+		_rider_hair.set_instance_color(i, HAIRS[(i * 3) % HAIRS.size()])
+
+
+func _rider_batch(builder: LowPolyBuilder, count: int) -> MultiMesh:
+	var batch := MultiMesh.new()
+	batch.transform_format = MultiMesh.TRANSFORM_3D
+	batch.use_colors = true
+	batch.mesh = builder.build(LowPolyBuilder.vertex_colour_material())
+	batch.instance_count = count
+	batch.visible_instance_count = 0
 	var instance := MultiMeshInstance3D.new()
-	instance.multimesh = _riders
+	instance.multimesh = batch
 	instance.custom_aabb = AABB(Vector3(-2.0, 0.0, _front_z), Vector3(4.0, 3.0, spec.overall_length()))
 	_body.add_child(instance)
+	return batch
 
 
 func _build_driver() -> void:

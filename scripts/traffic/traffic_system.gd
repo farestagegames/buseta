@@ -83,12 +83,14 @@ func bus_gap_ahead() -> Dictionary:
 	var best := {"gap": INF, "speed": 0.0}
 	for agent in agents:
 		var lane: TrafficLane = graph.lanes[agent.lane]
-		if lane.forward_at(agent.distance).dot(forward) < 0.2:
+		var facing := lane.forward_at(agent.distance).dot(forward)
+		if facing < -0.5:
 			continue
 		var offset := _position_of(agent) - nose
 		var ahead := offset.dot(forward)
 		if ahead > 0.0 and ahead < float(best["gap"]) and absf(offset.dot(right)) < 2.3:
-			best = {"gap": ahead - CAR_HALF_LENGTH, "speed": agent.speed}
+			# A car crossing in front is not going our way, so treat it as stopped.
+			best = {"gap": ahead - CAR_HALF_LENGTH, "speed": agent.speed if facing > 0.7 else 0.0}
 	return best
 
 
@@ -225,7 +227,8 @@ func _check_bus_hits() -> void:
 	for agent in agents:
 		if agent.stunned > TrafficAgent.STUN_SECONDS - 1.0:
 			continue
-		if BusFootprint.touches(_bus_position, _bus_heading, _spec, _position_of(agent), 1.2):
+		var car_forward := (graph.lanes[agent.lane] as TrafficLane).forward_at(agent.distance)
+		if BusFootprint.touches_car(_bus_position, _bus_heading, _spec, _position_of(agent), car_forward):
 			agent.hit_by_bus(forward * _bus_speed)
 			var loss := absf(_bus_speed) * ObstacleField.CAR_LOSS_HEAD_ON * 0.7
 			GameEvents.obstacle_hit.emit("car", loss)

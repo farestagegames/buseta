@@ -294,6 +294,8 @@ func _bay(b: LowPolyBuilder, stop: RouteStop) -> void:
 	var outer := (edge + depth) * side
 	var walk := (edge + depth + 3.2) * side
 	_strip(b, stop.road, from, to, minf(inner, outer), maxf(inner, outer), ASPHALT_PATCH, LIFT_BAY)
+	_taper(b, stop.road, from, from - RoadNetwork.BAY_TAPER, inner, outer)
+	_taper(b, stop.road, to, to + RoadNetwork.BAY_TAPER, inner, outer)
 	_strip(_pavements, stop.road, from, to, minf(outer, walk), maxf(outer, walk), PAVEMENT, LIFT_PAVEMENT + 0.005)
 	var kerb := (edge + depth + 0.1) * side
 	_strip(_lines, stop.road, from, to, kerb - 0.15, kerb + 0.15, KERB, LIFT_BAY + 0.005)
@@ -314,6 +316,18 @@ func _bay(b: LowPolyBuilder, stop: RouteStop) -> void:
 			_diagonal(stop.road, at, from_lateral, at + step, to_lateral)
 			high = not high
 			at += step
+
+
+func _taper(b: LowPolyBuilder, road_id: String, wide_end: float, narrow_end: float, inner: float, outer: float) -> void:
+	var a: Vector2 = _network.sample(road_id, wide_end, inner)["position"]
+	var c: Vector2 = _network.sample(road_id, wide_end, outer)["position"]
+	var tip: Vector2 = _network.sample(road_id, narrow_end, inner)["position"]
+	var first := _lifted(a, LIFT_BAY)
+	var second := _lifted(c, LIFT_BAY)
+	var third := _lifted(tip, LIFT_BAY)
+	# Winding depends on which way the taper points, so draw it from both sides.
+	b.quad(first, second, third, third, ASPHALT_PATCH)
+	b.quad(first, third, second, second, ASPHALT_PATCH)
 
 
 func _diagonal(road_id: String, along_a: float, lateral_a: float, along_b: float, lateral_b: float) -> void:

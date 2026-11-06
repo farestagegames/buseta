@@ -199,6 +199,9 @@ func _close_settings() -> void:
 func _on_shift_report(report: Dictionary) -> void:
 	_controls.visible = false
 	settings_panel.visible = false
+	for readout: Control in [gauge, route_panel, minimap, penalty_toast, _frame_rate]:
+		readout.visible = false
+		readout.process_mode = Node.PROCESS_MODE_DISABLED
 	GameEvents.ui_pedals_changed.emit(0.0, 1.0)
 	shift_panel.show_report(report)
 

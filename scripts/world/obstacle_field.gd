@@ -54,7 +54,7 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 			_add_prop("cone", placed["position"], 0.0)
 			along += float(line["spacing"])
 	for car: Dictionary in map_data.get("parked_cars", []):
-		var placed: Dictionary = network.sample(car["road"], car["along"], RoadNetwork.ROAD_HALF_WIDTH - 1.15, car["dir"])
+		var placed: Dictionary = network.sample(car["road"], car["along"], RoadNetwork.ROAD_HALF_WIDTH - 1.0, car["dir"])
 		_add_prop("car", placed["position"], placed["heading"])
 		props[props.size() - 1].heavy = true
 	for lamp: Dictionary in lamps:
@@ -92,7 +92,13 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		var ground_position := Vector2(prop.position.x, prop.position.z)
 		if ground_position.distance_squared_to(centre) > CHECK_RADIUS * CHECK_RADIUS:
 			continue
-		if BusFootprint.touches(_bus_position, _bus_heading, _spec, ground_position, prop.radius):
+		var touching := false
+		if prop.heavy:
+			var car_forward := Vector2(-sin(prop.rotation.y), -cos(prop.rotation.y))
+			touching = BusFootprint.touches_car(_bus_position, _bus_heading, _spec, ground_position, car_forward)
+		else:
+			touching = BusFootprint.touches(_bus_position, _bus_heading, _spec, ground_position, prop.radius)
+		if touching:
 			if prop.heavy:
 				_shove(prop, forward, ground_position - centre)
 			elif prop.tips_over:

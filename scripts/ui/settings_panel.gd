@@ -10,6 +10,10 @@ var _volume_label: Label
 
 
 func _ready() -> void:
+	var backing := StyleBoxFlat.new()
+	backing.bg_color = Color(0.09, 0.1, 0.13, 0.97)
+	backing.set_corner_radius_all(18)
+	add_theme_stylebox_override("panel", backing)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
 	var margin := MarginContainer.new()

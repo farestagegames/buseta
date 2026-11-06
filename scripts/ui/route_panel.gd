@@ -34,7 +34,6 @@ func _on_status(status: Dictionary) -> void:
 		_line_one = one
 		_line_two = two
 		_prompt = prompt
-		visible = true
 		queue_redraw()
 
 

@@ -16,7 +16,7 @@ const COCKPIT_LOOK_INTO_TURN := 0.55
 ## bus and close in on the doorway, so doors and passengers face the player.
 const DOOR_ORBIT := 2.15
 const DOOR_ORBIT_RATE := 2.2
-const DOOR_ZOOM := 0.72
+const DOOR_ZOOM := 0.58
 const HEIGHT_RATE := 5.0
 
 @export var target_path: NodePath
