@@ -11,6 +11,8 @@ extends Node3D
 @onready var _route_system: RouteSystem = $RouteSystem
 @onready var _crowd: PassengerCrowd = $Crowd
 @onready var _beacon: StopBeacon = $Beacon
+@onready var _traffic: TrafficSystem = $Traffic
+@onready var _score: ScoreKeeper = $ScoreKeeper
 
 var network: RoadNetwork
 var ground: GroundSurface
@@ -29,7 +31,9 @@ func _ready() -> void:
 	_city.build(map_data, network, ground, route)
 	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)
 	_bus.start_at(ground, route.start_position, route.start_heading)
-	_route_system.setup(route, _bus.spec)
+	_route_system.setup(route, _bus.spec, network)
+	_traffic.setup(map_data, network, ground, _bus.spec)
+	_score.setup(network, _bus.spec)
 	_crowd.setup(route, ground)
 	_beacon.setup(ground)
 	GameEvents.map_ready.emit(network, route)
@@ -37,3 +41,7 @@ func _ready() -> void:
 
 func route_system_for_tools() -> RouteSystem:
 	return _route_system
+
+
+func traffic_for_tools() -> TrafficSystem:
+	return _traffic

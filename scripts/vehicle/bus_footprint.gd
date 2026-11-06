@@ -38,6 +38,10 @@ static func gap_ahead(rear_axle: Vector2, heading: float, spec: BusSpec, car_pos
 	var sideways := absf(bus_forward.dot(car_right))
 	var reach_along := half_length * facing + half_width * sideways
 	var reach_across := half_length * sideways + half_width * facing
+	# On a bend an oncoming bus swings across a car's straight line of sight, but
+	# it is in its own lane. Only react if it has really crossed over.
+	if bus_forward.dot(car_forward) < -0.4:
+		reach_across = half_width
 	if absf(offset.dot(car_right)) > reach_across + car_half_width + 0.5:
 		return INF
 	return maxf(along - reach_along - car_half_length, 0.0)

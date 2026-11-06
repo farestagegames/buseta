@@ -72,7 +72,7 @@ func _add_prop(kind: String, ground_position: Vector2, yaw: float) -> void:
 
 func _physics_process(dt: float) -> void:
 	for prop in props:
-		if prop.is_moving():
+		if prop.is_moving() or prop.cooldown > 0.0 or prop.in_contact():
 			prop.update(dt, _ground.height_at(Vector2(prop.position.x, prop.position.z)) + 0.1)
 			_write_transform(prop)
 

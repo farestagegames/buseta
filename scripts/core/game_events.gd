@@ -45,3 +45,4 @@ signal red_light_run
 signal signal_ahead(state: int, distance: float) ## TrafficLightPlan.Light, or -1.
 signal penalty_shown(text: String)
 signal score_updated(total: int)
+signal shift_report_ready(report: Dictionary)

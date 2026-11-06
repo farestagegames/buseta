@@ -165,3 +165,17 @@ func test_speed_limit_comes_from_the_map() -> void:
 	assert_eq(city.speed_limit_at(spot), 30.0)
 	var other: Vector2 = city.sample("market_street", 100.0)["position"]
 	assert_eq(city.speed_limit_at(other), 50.0)
+
+
+func test_oncoming_bus_on_a_bend_does_not_stop_a_car() -> void:
+	var spec := BusSpec.new()
+	var heading := PI - 0.3
+	var bus_rear := Vector2(-4.5, -24.0)
+	var gap := BusFootprint.gap_ahead(bus_rear, heading, spec, Vector2.ZERO, Vector2(0.0, -1.0), 2.2, 0.9)
+	assert_eq(gap, INF)
+
+
+func test_oncoming_bus_in_the_cars_lane_does_stop_it() -> void:
+	var spec := BusSpec.new()
+	var gap := BusFootprint.gap_ahead(Vector2(0.0, -30.0), PI, spec, Vector2.ZERO, Vector2(0.0, -1.0), 2.2, 0.9)
+	assert_lt(gap, 30.0)

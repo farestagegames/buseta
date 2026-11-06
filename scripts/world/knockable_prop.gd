@@ -20,6 +20,7 @@ const HEAVY_HIT_COOLDOWN := 0.25
 const SHOVE_KICK := 0.9
 ## Share of bus speed a parked car picks up. Its brakes and tyres fight the shove.
 const SHOVE_SHARE := 0.75
+const SLOW_PUSH_SPEED := 4.0
 ## Hits this soon after another are the bus still pushing, not a new crash.
 const CONTACT_WINDOW := 1.2
 ## Time for a lamp post to fall over, at the start of its fall.
@@ -85,7 +86,9 @@ func hit(bus_velocity: Vector2, away: Vector2) -> void:
 ## A shove from the bus, for props too heavy to throw.
 func shove(bus_velocity: Vector2, away: Vector2) -> void:
 	var speed := bus_velocity.length()
-	var push := bus_velocity.normalized() * (speed * SHOVE_SHARE + SHOVE_KICK) + away.normalized() * speed * 0.15
+	# A slow bus rolls the car along. A fast hit is resisted by its brakes and tyres.
+	var carried := speed if speed < SLOW_PUSH_SPEED else speed * SHOVE_SHARE
+	var push := bus_velocity.normalized() * (carried + SHOVE_KICK) + away.normalized() * speed * 0.15
 	velocity = Vector3(push.x, 0.0, push.y)
 	spin = Vector3(0.0, signf(away.cross(bus_velocity)) * bus_velocity.length() * 0.14, 0.0)
 	state = State.FLYING

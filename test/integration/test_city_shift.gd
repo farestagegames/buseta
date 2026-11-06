@@ -9,6 +9,8 @@ var route_system: RouteSystem
 var obstacles: ObstacleField
 var crowd: PassengerCrowd
 var audio: AudioDirector
+var traffic: TrafficSystem
+var keeper: ScoreKeeper
 
 
 func before_each() -> void:
@@ -20,6 +22,8 @@ func before_each() -> void:
 	obstacles = scene.get_node("Obstacles")
 	crowd = scene.get_node("Crowd")
 	audio = scene.get_node("AudioDirector")
+	traffic = scene.get_node("Traffic")
+	keeper = scene.get_node("ScoreKeeper")
 
 
 func after_each() -> void:
@@ -91,6 +95,7 @@ func test_stopping_at_the_depot_finishes_the_shift() -> void:
 	await wait_physics_frames(3)
 	assert_signal_emitted(GameEvents, "shift_completed")
 	assert_true((scene.get_node("Hud") as DriveHud).shift_panel.visible)
+	assert_gt((scene.get_node("Hud") as DriveHud).shift_panel.stars_shown, 0, "Report should show stars")
 
 
 func test_bus_knocks_a_cone_flying_and_passes() -> void:
@@ -206,7 +211,10 @@ func test_slow_push_moves_a_car_rather_than_blocking() -> void:
 	GameEvents.bus_relocate_requested.emit(ground_spot - forward * 10.2, heading)
 	GameEvents.ui_pedals_changed.emit(1.0, 0.0)
 	await wait_physics_frames(240)
-	assert_gt(car.position.distance_to(start), 0.3)
+	assert_gt(car.position.distance_to(start), 1.0, "Car should roll ahead of the bus")
+	var nose := Vector2(bus.global_position.x, bus.global_position.z) + forward * (bus.spec.wheelbase + bus.spec.front_overhang)
+	var car_now := Vector2(car.position.x, car.position.z)
+	assert_gt((car_now - nose).dot(forward), -1.0, "Bus must not drive through the car")
 	assert_gt(bus.model.speed, 0.5)
 
 
@@ -248,3 +256,111 @@ func test_lamp_post_falls_and_the_bus_keeps_going() -> void:
 	await wait_physics_frames(45)
 	assert_gt(lamp.tip_angle, 0.5, "Lamp should be falling")
 	assert_gt(bus.model.speed, 3.0, "A lamp post should not stop the bus")
+
+
+func test_traffic_runs_and_keeps_moving() -> void:
+	assert_eq(traffic.agents.size(), TrafficSystem.CAR_COUNT)
+	var start: Array[Vector2] = []
+	for agent in traffic.agents:
+		start.append(traffic._position_of(agent))
+	await wait_physics_frames(180)
+	var moved := 0
+	for i in traffic.agents.size():
+		if traffic._position_of(traffic.agents[i]).distance_to(start[i]) > 2.0:
+			moved += 1
+	assert_gt(moved, TrafficSystem.CAR_COUNT / 2, "Most cars should be driving")
+
+
+func test_car_stops_behind_the_bus() -> void:
+	var lane_index := -1
+	for i in traffic.graph.lanes.size():
+		var candidate: TrafficLane = traffic.graph.lanes[i]
+		if candidate.road == "high_street":
+			lane_index = i
+			break
+	var lane: TrafficLane = traffic.graph.lanes[lane_index]
+	var agent: TrafficAgent = traffic.agents[0]
+	agent.lane = lane_index
+	agent.distance = 40.0
+	agent.speed = 10.0
+	agent.next_lane = -1
+	var ahead := lane.point_at(100.0)
+	GameEvents.bus_relocate_requested.emit(ahead, RoadNetwork.heading_of(lane.forward_at(100.0)))
+	await wait_physics_frames(540)
+	assert_lt(agent.speed, 0.5, "Car should wait behind the stopped bus")
+	var hit := BusFootprint.touches(ahead, RoadNetwork.heading_of(lane.forward_at(100.0)), bus.spec, traffic._position_of(agent), 0.2)
+	assert_false(hit)
+
+
+func _line_of_node(node_id: String) -> Dictionary:
+	for approach in traffic._approaches:
+		if approach["node"] == node_id:
+			return approach
+	return {}
+
+
+func test_running_a_red_light_is_penalised() -> void:
+	var approach := _line_of_node("b")
+	var forward: Vector2 = approach["forward"]
+	var plan: TrafficLightPlan = traffic.plans["b"]
+	while plan.state(approach["group"], traffic.time) != TrafficLightPlan.Light.RED:
+		traffic.time += 0.5
+	var heading := RoadNetwork.heading_of(forward)
+	var nose_to_rear: float = bus.spec.wheelbase + bus.spec.front_overhang
+	GameEvents.bus_relocate_requested.emit(approach["line"] - forward * (nose_to_rear + 3.0), heading)
+	await wait_physics_frames(2)
+	bus.model.speed = 6.0
+	watch_signals(GameEvents)
+	await wait_physics_frames(50)
+	assert_signal_emitted(GameEvents, "red_light_run")
+	assert_eq(int(keeper.score.counts["red_lights"]), 1)
+
+
+func test_green_light_is_not_penalised() -> void:
+	var approach := _line_of_node("b")
+	var forward: Vector2 = approach["forward"]
+	var plan: TrafficLightPlan = traffic.plans["b"]
+	while plan.state(approach["group"], traffic.time) != TrafficLightPlan.Light.GREEN or plan.state(approach["group"], traffic.time + 4.0) != TrafficLightPlan.Light.GREEN:
+		traffic.time += 0.5
+	var heading := RoadNetwork.heading_of(forward)
+	var nose_to_rear: float = bus.spec.wheelbase + bus.spec.front_overhang
+	GameEvents.bus_relocate_requested.emit(approach["line"] - forward * (nose_to_rear + 3.0), heading)
+	await wait_physics_frames(2)
+	bus.model.speed = 6.0
+	await wait_physics_frames(50)
+	assert_eq(int(keeper.score.counts["red_lights"]), 0)
+
+
+func test_bus_signal_reports_the_light_ahead() -> void:
+	var approach := _line_of_node("b")
+	var forward: Vector2 = approach["forward"]
+	var heading := RoadNetwork.heading_of(forward)
+	GameEvents.bus_relocate_requested.emit(approach["line"] - forward * 30.0, heading)
+	await wait_physics_frames(3)
+	var ahead := traffic.bus_signal()
+	assert_gte(int(ahead["state"]), 0)
+	assert_lt(float(ahead["distance"]), 30.0)
+
+
+func test_hard_braking_and_a_crash_show_in_the_score() -> void:
+	bus.model.speed = 12.0
+	GameEvents.ui_pedals_changed.emit(0.0, 1.0)
+	await wait_physics_frames(60)
+	assert_eq(int(keeper.score.counts["harsh_brakes"]), 1)
+	GameEvents.bus_collided.emit(4.0)
+	assert_eq(int(keeper.score.counts["collisions"]), 1)
+
+
+func test_driving_along_the_pavement_is_off_road() -> void:
+	var spot := scene.network.sample("mill_lane", 40.0, RoadNetwork.ROAD_HALF_WIDTH + 1.6, 1)
+	GameEvents.bus_relocate_requested.emit(spot["position"], spot["heading"])
+	await wait_physics_frames(40)
+	assert_gt(keeper.score.off_road_seconds, 0.2)
+
+
+func test_speed_limit_reaches_the_hud_status() -> void:
+	watch_signals(GameEvents)
+	await wait_physics_frames(20)
+	assert_signal_emitted(GameEvents, "route_status_updated")
+	var params: Array = get_signal_parameters(GameEvents, "route_status_updated")
+	assert_eq(float(params[0]["speed_limit"]), 30.0, "Depot road is 30")

@@ -6,10 +6,13 @@ extends Node
 
 const STATUS_INTERVAL := 0.2
 const PASSENGER_SEED := 2024
+const INDICATOR_WINDOW := 70.0
 
 var runner: RouteRunner
 var ledger: PassengerLedger
 var session: StopSession = null
+var schedule: ShiftSchedule
+var clock: float = 0.0
 var finished: bool = false
 
 var _spec: BusSpec
@@ -22,11 +25,20 @@ var _accuracy_total: float = 0.0
 var _aligned: bool = false
 var _session_was_accuracy_counted: bool = false
 var _status: Dictionary = {}
+var _network: RoadNetwork
+var _next_turn: int = 0
+var _indicated: bool = false
+var _last_late: float = 0.0
 
 
-func setup(route: RouteRunner, spec: BusSpec) -> void:
+func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork) -> void:
 	runner = route
 	_spec = spec
+	_network = network
+	var times := PackedFloat32Array()
+	for stop in route.stops:
+		times.append(stop.due)
+	schedule = ShiftSchedule.new(times)
 	ledger = PassengerLedger.new(PASSENGER_SEED, route.stops.size() - 2)
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.reset_requested.connect(_on_recover_requested)
@@ -39,15 +51,18 @@ func _on_telemetry(data: BusTelemetry) -> void:
 func tick(data: BusTelemetry, dt: float) -> void:
 	if finished:
 		return
+	clock += dt
 	var rear := Vector2(data.position.x, data.position.z)
 	var centre := BusFootprint.body_centre(rear, data.heading, _spec)
 	runner.update_position(centre)
+	_check_indicator(data)
 	var stop := runner.current_stop()
 	_aligned = stop.is_aligned(centre, data.heading)
 	var stopped := absf(data.speed) < BusPhysicsModel.STOPPED_SPEED
 
 	if stop.is_final:
 		if _aligned and stopped:
+			GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, clock))
 			_finish()
 			return
 	elif session != null:
@@ -65,12 +80,28 @@ func tick(data: BusTelemetry, dt: float) -> void:
 		_publish_status(data, centre)
 
 
+## A turn counts as signalled if the matching indicator was on during the approach.
+func _check_indicator(data: BusTelemetry) -> void:
+	if _next_turn >= runner.turns.size():
+		return
+	var turn: Dictionary = runner.turns[_next_turn]
+	var ahead: float = float(turn["distance"]) - runner.progress
+	if ahead < INDICATOR_WINDOW and data.indicator_side == int(turn["side"]):
+		_indicated = true
+	if ahead < 0.0:
+		if int(turn["side"]) != 0 and not _indicated:
+			GameEvents.indicator_missed.emit()
+		_next_turn += 1
+		_indicated = false
+
+
 func _start_session(stop: RouteStop, centre: Vector2) -> void:
 	var alighting := ledger.alight_at(runner.stop_index)
 	var boarding := ledger.boardable(stop.waiting)
 	if runner.stop_index >= runner.stops.size() - 2:
 		boarding = 0
 	_accuracy_total += stop.accuracy(centre)
+	GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, clock))
 	_session_stop = runner.stop_index
 	session = StopSession.new(alighting, boarding)
 	session.passenger_alighted.connect(_on_alighted)
@@ -102,6 +133,7 @@ func _on_boarded() -> void:
 
 
 func _next_stop() -> void:
+	_last_late = maxf(clock - schedule.due_times[runner.stop_index], 0.0)
 	runner.advance_stop()
 
 
@@ -112,7 +144,7 @@ func _finish() -> void:
 	GameEvents.onboard_changed.emit(0)
 	GameEvents.shift_completed.emit({
 		"route": runner.route_name, "carried": carried, "served": _served, "missed": _missed,
-		"left_behind": _left_behind,
+		"left_behind": _left_behind, "time": clock,
 		"accuracy": _accuracy_total / float(maxi(_served, 1)),
 	})
 
@@ -132,7 +164,18 @@ func _publish_status(data: BusTelemetry, centre: Vector2) -> void:
 	_status["stop_position"] = stop.position
 	_status["stop_number"] = runner.stop_index + 1
 	_status["stop_count"] = runner.stops.size()
+	_status["clock"] = clock
+	_status["seconds_late"] = _running_lateness()
+	_status["speed_limit"] = _network.speed_limit_at(centre)
 	GameEvents.route_status_updated.emit(_status)
+
+
+## How the bus stands against the timetable. It only shows as late once a stop
+## is overdue, or when it left the last stop behind time.
+func _running_lateness() -> float:
+	var due := schedule.due_times[runner.stop_index]
+	var overdue := clock - due
+	return maxf(overdue, _last_late) if overdue > -ShiftSchedule.ON_TIME_EARLY else _last_late
 
 
 func _prompt(stop: RouteStop, data: BusTelemetry, centre: Vector2) -> String:

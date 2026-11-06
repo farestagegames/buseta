@@ -17,6 +17,7 @@ var position: Vector2 = Vector2.ZERO ## Middle of the bay.
 var heading: float = 0.0
 var waiting: int = 0
 var is_final: bool = false
+var due: float = 0.0 ## Seconds after the shift starts.
 var route_distance: float = 0.0
 
 

@@ -123,6 +123,7 @@ func _add_stop(entry: Dictionary, network: RoadNetwork) -> void:
 	stop.dir = int(entry["dir"])
 	stop.waiting = int(entry.get("waiting", 0))
 	stop.is_final = entry.get("final", false)
+	stop.due = float(entry.get("due", 0.0))
 	var lateral := RoadNetwork.ROAD_HALF_WIDTH + RoadNetwork.BAY_DEPTH / 2.0 - 0.2
 	var placed: Dictionary = network.sample(stop.road, stop.along, lateral, stop.dir)
 	stop.position = placed["position"]

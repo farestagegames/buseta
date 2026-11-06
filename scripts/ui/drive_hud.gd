@@ -17,6 +17,7 @@ var gauge: HudGauge
 var route_panel: RoutePanel
 var minimap: Minimap
 var shift_panel: ShiftEndPanel
+var penalty_toast: PenaltyToast
 
 var _controls: Control
 var _tilt_hint: Label
@@ -56,6 +57,10 @@ func _ready() -> void:
 	_place(route_panel, Vector2(0.5, 0.0), Vector2(-240.0, 124.0), Vector2(480.0, 84.0))
 	root.add_child(route_panel)
 
+	penalty_toast = PenaltyToast.new()
+	_place(penalty_toast, Vector2(0.5, 0.0), Vector2(-200.0, 214.0), Vector2(400.0, 40.0))
+	root.add_child(penalty_toast)
+
 	minimap = Minimap.new()
 	_place(minimap, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 8.0), Vector2(190.0, 190.0))
 	root.add_child(minimap)
@@ -68,9 +73,9 @@ func _ready() -> void:
 
 	shift_panel = ShiftEndPanel.new()
 	shift_panel.visible = false
-	_place(shift_panel, Vector2(0.5, 0.5), Vector2(-280.0, -240.0), Vector2(560.0, 480.0))
+	_place(shift_panel, Vector2(0.5, 0.5), Vector2(-340.0, -345.0), Vector2(680.0, 690.0))
 	root.add_child(shift_panel)
-	GameEvents.shift_completed.connect(_on_shift_completed)
+	GameEvents.shift_report_ready.connect(_on_shift_report)
 
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameSettings.changed.connect(_apply_mode)
@@ -191,11 +196,11 @@ func _close_settings() -> void:
 	GameEvents.ui_pedals_changed.emit(0.0, 0.0)
 
 
-func _on_shift_completed(summary: Dictionary) -> void:
+func _on_shift_report(report: Dictionary) -> void:
 	_controls.visible = false
 	settings_panel.visible = false
 	GameEvents.ui_pedals_changed.emit(0.0, 1.0)
-	shift_panel.show_summary(summary)
+	shift_panel.show_report(report)
 
 
 func _on_telemetry(data: BusTelemetry) -> void:

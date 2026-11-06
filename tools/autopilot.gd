@@ -25,6 +25,11 @@ var _off_road: float = 0.0
 var _hold: bool = false
 var _finished: bool = false
 var _stuck_time: float = 0.0
+var _traffic: TrafficSystem
+var _keeper: ScoreKeeper
+var _arrivals: Array[int] = []
+var _report_text: Dictionary = {}
+var _red_lights: int = 0
 var _braking_for_stop: bool = false
 var _jolt_places: Dictionary = {}
 var _off_road_places: Dictionary = {}
@@ -37,7 +42,12 @@ func _ready() -> void:
 	add_child(_city)
 	_bus = _city.get_node("Bus")
 	_system = _city.get_node("RouteSystem")
+	_traffic = _city.get_node("Traffic")
+	_keeper = _city.get_node("ScoreKeeper")
 	_build_path()
+	GameEvents.stop_arrived.connect(func(_i: int, _a: float, _l: float) -> void: _arrivals.append(roundi(_system.clock)))
+	GameEvents.red_light_run.connect(func() -> void: _red_lights += 1)
+	GameEvents.shift_report_ready.connect(func(report: Dictionary) -> void: _report_text = report)
 	GameEvents.bus_collided.connect(func(speed: float) -> void:
 		_collisions.append("%.1f m/s at (%d, %d) near %s" % [speed, _bus.global_position.x, _bus.global_position.z, _system.runner.current_stop().stop_name]))
 	GameEvents.bus_jolted.connect(func(_s: float) -> void:
@@ -45,7 +55,7 @@ func _ready() -> void:
 		_tally(_jolt_places, Vector2(_bus.global_position.x, _bus.global_position.z)))
 	GameEvents.obstacle_hit.connect(func(kind: String, _l: float) -> void: _knocks.append(kind))
 	GameEvents.stop_missed.connect(func(_i: int, stop_name: String) -> void: _missed.append(stop_name))
-	GameEvents.shift_completed.connect(_on_finished)
+	GameEvents.shift_report_ready.connect(_on_finished)
 
 
 func _physics_process(dt: float) -> void:
@@ -87,7 +97,7 @@ func _run_stop_logic() -> void:
 	_braking_for_stop = false
 	if not _hold and aligned and near_middle:
 		_braking_for_stop = true
-		GameEvents.ui_pedals_changed.emit(0.0, 1.0)
+		GameEvents.ui_pedals_changed.emit(0.0, 0.55)
 		if _bus.model.is_stopped() and _bus.doors.is_closed():
 			_hold = true
 			GameEvents.ui_wheel_changed.emit(0.0)
@@ -128,13 +138,16 @@ func _drive() -> void:
 			target = minf(target, maxf(2.0, ahead * 0.3))
 		if stop.is_final and ahead < 1.0:
 			target = 0.0
+	target = minf(target, _limit_for_road())
+	target = minf(target, _speed_for_signal())
+	target = minf(target, _speed_for_traffic())
 	var error := target - _bus.model.speed
-	if target <= 0.0:
-		GameEvents.ui_pedals_changed.emit(0.0, 1.0)
+	if target <= 0.05:
+		GameEvents.ui_pedals_changed.emit(0.0, 0.6)
 	elif error > 0.3:
-		GameEvents.ui_pedals_changed.emit(clampf(error * 0.5, 0.35, 1.0), 0.0)
+		GameEvents.ui_pedals_changed.emit(clampf(error * 0.4, 0.35, 0.72), 0.0)
 	elif error < -0.8:
-		GameEvents.ui_pedals_changed.emit(0.0, clampf(-error * 0.25, 0.35, 1.0))
+		GameEvents.ui_pedals_changed.emit(0.0, clampf(-error * 0.22, 0.35, 0.62))
 	else:
 		GameEvents.ui_pedals_changed.emit(0.0, 0.0)
 
@@ -142,6 +155,30 @@ func _drive() -> void:
 func _tally(places: Dictionary, point: Vector2) -> void:
 	var key := Vector2i(int(point.x / 25.0) * 25, int(point.y / 25.0) * 25)
 	places[key] = int(places.get(key, 0)) + 1
+
+
+func _limit_for_road() -> float:
+	var rear := Vector2(_bus.global_position.x, _bus.global_position.z)
+	var limit := _city.network.speed_limit_at(rear)
+	return (limit - 2.0) / 3.6
+
+
+func _speed_for_signal() -> float:
+	var ahead := _traffic.bus_signal()
+	if int(ahead["state"]) < 0 or int(ahead["state"]) == TrafficLightPlan.Light.GREEN:
+		return INF
+	var distance: float = float(ahead["distance"]) - 2.0
+	if int(ahead["state"]) == TrafficLightPlan.Light.AMBER and _bus.model.speed * _bus.model.speed / 4.0 > distance:
+		return INF
+	return maxf(sqrt(maxf(distance, 0.0) * 2.0 * 1.6) - 0.4, 0.0)
+
+
+func _speed_for_traffic() -> float:
+	var ahead := _traffic.bus_gap_ahead()
+	var gap: float = float(ahead["gap"]) - 7.0
+	if gap == INF:
+		return INF
+	return maxf(minf(float(ahead["speed"]) + maxf(gap, 0.0) * 0.5, sqrt(maxf(gap, 0.0) * 3.2)), 0.0)
 
 
 func _build_path() -> void:
@@ -176,7 +213,7 @@ func _lateral_at(along: float, point: Vector2) -> float:
 		var from: Vector2 = _city.network.sample(line["road"], line["from"])["position"]
 		var to: Vector2 = _city.network.sample(line["road"], line["to"])["position"]
 		if Geometry2D.get_closest_point_to_segment(point, from, to).distance_to(point) < 20.0:
-			lateral = -1.0
+			lateral = 0.4
 	return lateral
 
 
@@ -208,11 +245,15 @@ func _apply_roundabouts() -> void:
 				_speeds[i] = 5.0
 
 
-func _on_finished(summary: Dictionary) -> void:
-	_report("FINISHED: %s" % summary)
+func _on_finished(report: Dictionary) -> void:
+	_report("FINISHED: score %d, %d stars, %d coins, carried %d" % [report["score"], report["stars"], report["coins"], report["carried"]])
+	print("AUTOPILOT categories ", report["categories"])
+	print("AUTOPILOT details ", report["details"])
 
 
 func _report(outcome: String) -> void:
+	if _finished:
+		return
 	_finished = true
 	print("AUTOPILOT ", outcome)
 	print("AUTOPILOT shift time %d:%02d (%d s)" % [int(_sim_time) / 60, int(_sim_time) % 60, _sim_time])
@@ -221,9 +262,10 @@ func _report(outcome: String) -> void:
 		print("AUTOPILOT   ", line)
 	print("AUTOPILOT jolts ", _jolts, ", props knocked ", _knocks, ", missed ", _missed)
 	print("AUTOPILOT rear axle off road for %.1f s" % _off_road)
+	print("AUTOPILOT arrivals ", _arrivals, " red lights ", _red_lights)
 	print("AUTOPILOT jolt places ", _top(_jolt_places))
 	print("AUTOPILOT off road places ", _top(_off_road_places))
-	get_tree().quit()
+	get_tree().quit.call_deferred()
 
 
 func _top(places: Dictionary) -> Array:

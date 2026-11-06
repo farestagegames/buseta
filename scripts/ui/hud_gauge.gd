@@ -9,6 +9,7 @@ var _gear_text: String = "D1"
 var _view_name: String = ""
 var _doors_open: bool = false
 var _steer_share: float = 0.0
+var _speed_limit: float = 0.0
 var _style := StyleBoxFlat.new()
 
 
@@ -21,10 +22,18 @@ func _init() -> void:
 func _ready() -> void:
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.camera_view_changed.connect(_on_view_changed)
+	GameEvents.route_status_updated.connect(_on_status)
 
 
 func status_text() -> String:
 	return "DOORS OPEN" if _doors_open else _view_name
+
+
+func _on_status(status: Dictionary) -> void:
+	var limit: float = status["speed_limit"]
+	if limit != _speed_limit:
+		_speed_limit = limit
+		queue_redraw()
 
 
 func _on_view_changed(view: String) -> void:
@@ -48,10 +57,16 @@ func _on_telemetry(data: BusTelemetry) -> void:
 func _draw() -> void:
 	draw_style_box(_style, Rect2(Vector2.ZERO, size))
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(0.0, 62.0), str(_speed_kmh), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.5, 58, Color.WHITE)
-	draw_string(font, Vector2(0.0, 88.0), "km/h", HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.5, 20, Color(1, 1, 1, 0.7))
-	draw_string(font, Vector2(size.x * 0.5, 50.0), _gear_text, HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.5, 40, Color(0.98, 0.72, 0.15))
-	draw_string(font, Vector2(size.x * 0.5, 84.0), status_text(), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.5, 20, Color(1, 1, 1, 0.8))
+	draw_string(font, Vector2(0.0, 62.0), str(_speed_kmh), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 58, Color.WHITE)
+	draw_string(font, Vector2(0.0, 88.0), "km/h", HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 20, Color(1, 1, 1, 0.7))
+	draw_string(font, Vector2(size.x * 0.6, 50.0), _gear_text, HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 40, Color(0.98, 0.72, 0.15))
+	draw_string(font, Vector2(size.x * 0.6, 84.0), status_text(), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 18, Color(1, 1, 1, 0.8))
+	if _speed_limit > 0.0:
+		var sign_centre := Vector2(size.x * 0.5 - 8.0, 48.0)
+		var over := float(_speed_kmh) > _speed_limit + DrivingMonitor.SPEED_GRACE_KMH
+		draw_circle(sign_centre, 28.0, Color(1.0, 0.25, 0.2) if over else Color(0.9, 0.12, 0.1))
+		draw_circle(sign_centre, 21.0, Color.WHITE)
+		draw_string(font, sign_centre + Vector2(-21.0, 8.0), str(roundi(_speed_limit)), HORIZONTAL_ALIGNMENT_CENTER, 42.0, 22, Color.BLACK)
 	var bar_y := size.y - 8.0
 	var mid := size.x / 2.0
 	draw_line(Vector2(mid - 120.0, bar_y), Vector2(mid + 120.0, bar_y), Color(1, 1, 1, 0.2), 5.0)

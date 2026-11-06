@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/vehicle/bus.tscn" id="1"]
 [ext_resource type="Script" path="res://scripts/world/city_shift.gd" id="2"]
@@ -11,6 +11,9 @@
 [ext_resource type="Script" path="res://scripts/passengers/passenger_crowd.gd" id="9"]
 [ext_resource type="Script" path="res://scripts/world/stop_beacon.gd" id="10"]
 [ext_resource type="Script" path="res://scripts/audio/audio_director.gd" id="11"]
+
+[ext_resource type="Script" path="res://scripts/traffic/traffic_system.gd" id="12"]
+[ext_resource type="Script" path="res://scripts/scoring/score_keeper.gd" id="13"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.38, 0.58, 0.82, 1)
@@ -77,6 +80,12 @@ script = ExtResource("4")
 
 [node name="RouteSystem" type="Node" parent="."]
 script = ExtResource("8")
+
+[node name="Traffic" type="Node3D" parent="."]
+script = ExtResource("12")
+
+[node name="ScoreKeeper" type="Node" parent="."]
+script = ExtResource("13")
 
 [node name="AudioDirector" type="Node" parent="."]
 script = ExtResource("11")
