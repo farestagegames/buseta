@@ -32,7 +32,7 @@ func _ready() -> void:
 	GameEvents.camera_cycle_requested.connect(next_view)
 	GameEvents.bus_telemetry_updated.connect(func(data: BusTelemetry) -> void: _steer_angle = data.steer_angle)
 	GameEvents.reset_requested.connect(func() -> void: _follow_heading = _bus.rotation.y)
-	_announce_view()
+	_announce_view.call_deferred() # After every listener in the scene is ready.
 
 
 func next_view() -> void:

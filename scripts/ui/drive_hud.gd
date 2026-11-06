@@ -13,6 +13,7 @@ var brake_pedal: PedalControl
 var left_button: TouchButton
 var right_button: TouchButton
 var settings_panel: SettingsPanel
+var gauge: HudGauge
 
 var _controls: Control
 var _tilt_hint: Label
@@ -39,7 +40,7 @@ func _ready() -> void:
 	_build_pedals()
 	_build_buttons()
 
-	var gauge := HudGauge.new()
+	gauge = HudGauge.new()
 	_place(gauge, Vector2(0.5, 0.0), Vector2(-190.0, 8.0), Vector2(380.0, 112.0))
 	root.add_child(gauge)
 

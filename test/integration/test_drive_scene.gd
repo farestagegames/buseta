@@ -104,6 +104,21 @@ func test_cockpit_camera_sits_inside_the_bus() -> void:
 	assert_between(local.y, 1.0, bus.spec.body_height)
 
 
+func test_gauge_shows_the_current_camera_view() -> void:
+	GameEvents.camera_cycle_requested.emit()
+	assert_eq(hud.gauge.status_text(), "Far")
+
+
+func test_gauge_door_warning_clears_when_doors_close() -> void:
+	GameEvents.door_toggle_requested.emit()
+	await wait_physics_frames(2)
+	assert_eq(hud.gauge.status_text(), "DOORS OPEN")
+	bus.doors.open_amount = 0.01
+	GameEvents.door_toggle_requested.emit()
+	await wait_physics_frames(3)
+	assert_eq(hud.gauge.status_text(), "Close")
+
+
 func test_hud_shows_the_control_for_each_steering_mode() -> void:
 	assert_true(hud.wheel.visible)
 	GameSettings.steering_mode = SteeringMapper.Mode.BUTTONS

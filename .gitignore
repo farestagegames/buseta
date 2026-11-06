@@ -6,3 +6,4 @@ build/
 export_credentials.cfg
 .DS_Store
 tools/screens/
+.tools/

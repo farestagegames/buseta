@@ -85,7 +85,7 @@ func _build_shell() -> void:
 	# Roof, floor, and solid ends.
 	b.box(Vector3(0.0, spec.body_height - 0.11, mid_z), Vector3(spec.body_width, 0.22, length), paint)
 	b.box(Vector3(0.0, FLOOR_Y, mid_z), Vector3(spec.body_width - 0.1, 0.06, length - 0.1), TRIM)
-	b.box(Vector3(0.0, (SKIRT_BOTTOM + _top_y) / 2.0, _rear_z - 0.04), Vector3(spec.body_width, _top_y - SKIRT_BOTTOM, 0.08), paint)
+	b.box(Vector3(0.0, (SKIRT_BOTTOM + 1.65) / 2.0, _rear_z - 0.04), Vector3(spec.body_width, 1.65 - SKIRT_BOTTOM, 0.08), paint)
 	b.box(Vector3(0.0, (SKIRT_BOTTOM + 1.15) / 2.0, _front_z + 0.04), Vector3(spec.body_width, 1.15 - SKIRT_BOTTOM, 0.08), paint)
 
 	# Lower side panels, with the door gap left open on the door side.
@@ -101,9 +101,9 @@ func _build_shell() -> void:
 		for side: float in [-1.0, 1.0]:
 			b.box(Vector3(side * wall_x, (BELT_Y + _top_y) / 2.0, z), Vector3(0.09, _top_y - BELT_Y, 0.14), paint)
 		z += 1.9
-	for z_pillar: float in [_front_z + 0.06, _door_near_z]:
-		for side: float in [-1.0, 1.0]:
-			b.box(Vector3(side * wall_x, (BELT_Y + _top_y) / 2.0, z_pillar), Vector3(0.09, _top_y - BELT_Y, 0.14), paint)
+	for side: float in [-1.0, 1.0]:
+		b.box(Vector3(side * wall_x, (BELT_Y + _top_y) / 2.0, _front_z + 0.05), Vector3(0.09, _top_y - BELT_Y, 0.1), paint)
+	b.box(Vector3(signf(door_x) * wall_x, (BELT_Y + _top_y) / 2.0, _door_near_z), Vector3(0.09, _top_y - BELT_Y, 0.14), paint)
 
 	# Bumpers, destination board, headlamps, wheel arches.
 	b.box(Vector3(0.0, 0.52, _front_z - 0.03), Vector3(spec.body_width + 0.02, 0.26, 0.1), DARK)
@@ -145,6 +145,8 @@ func _build_glass() -> void:
 	b.box(Vector3(signf(door_x) * pane_x, band_y, (_front_z + _door_near_z) / 2.0), Vector3(0.03, band_height, _door_near_z - _front_z), tint)
 	b.box(Vector3(0.0, (1.15 + _top_y) / 2.0, _front_z + 0.05), Vector3(spec.body_width - 0.1, _top_y - 1.15, 0.03), tint)
 
+	b.box(Vector3(0.0, (1.65 + _top_y) / 2.0, _rear_z - 0.05), Vector3(spec.body_width - 0.1, _top_y - 1.65, 0.03), tint)
+
 	var material := StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -159,14 +161,14 @@ func _build_cockpit() -> void:
 	var x := spec.driver_seat_x
 	var b := LowPolyBuilder.new()
 	b.box(Vector3(0.0, 1.05, _front_z + 0.42), Vector3(spec.body_width - 0.15, 0.2, 0.7), TRIM)
-	b.box(Vector3(x, 0.72, _front_z + 2.0), Vector3(0.55, 0.5, 0.5), DARK)
-	b.box(Vector3(x, 1.3, _front_z + 2.25), Vector3(0.55, 0.9, 0.1), DARK)
+	b.box(Vector3(x, 0.72, _front_z + 1.75), Vector3(0.55, 0.5, 0.5), DARK)
+	b.box(Vector3(x, 1.3, _front_z + 2.0), Vector3(0.55, 0.9, 0.1), DARK)
 	var dash := MeshInstance3D.new()
 	dash.mesh = b.build(LowPolyBuilder.vertex_colour_material())
 	_body.add_child(dash)
 
 	var tilt := Node3D.new()
-	tilt.position = Vector3(x, 1.38, _front_z + 1.12)
+	tilt.position = Vector3(x, 1.38, _front_z + 0.9)
 	tilt.rotation.x = deg_to_rad(55.0)
 	_body.add_child(tilt)
 	_steering_wheel = Node3D.new()
@@ -188,7 +190,7 @@ func _build_cockpit() -> void:
 	_steering_wheel.add_child(spoke)
 
 	cockpit_anchor = Node3D.new()
-	cockpit_anchor.position = Vector3(x, 2.0, _front_z + 1.95)
+	cockpit_anchor.position = Vector3(x, 2.0, _front_z + 1.6)
 	_body.add_child(cockpit_anchor)
 
 

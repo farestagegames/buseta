@@ -19,9 +19,11 @@ radiance_size = 1
 [sub_resource type="Environment" id="environment"]
 background_mode = 2
 sky = SubResource("sky")
-ambient_light_source = 3
-ambient_light_energy = 0.8
-tonemap_mode = 2
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.74, 0.78, 1)
+ambient_light_energy = 0.55
+reflected_light_source = 1
+tonemap_mode = 0
 
 [node name="TestDrive" type="Node3D"]
 
@@ -30,7 +32,8 @@ environment = SubResource("environment")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.8, 0.45, -0.39, 0, 0.66, 0.75, 0.6, -0.6, 0.52, 0, 30, 0)
-light_energy = 1.1
+light_color = Color(1, 0.97, 0.9, 1)
+light_energy = 0.75
 shadow_enabled = true
 directional_shadow_mode = 0
 directional_shadow_max_distance = 70.0

@@ -60,4 +60,4 @@ func _shot(shot_name: String) -> void:
 	var image := get_viewport().get_texture().get_image()
 	var path := ProjectSettings.globalize_path("res://tools/screens/%s.png" % shot_name)
 	image.save_png(path)
-	print("saved ", shot_name)
+	print("saved ", shot_name, " fps=", Engine.get_frames_per_second())
