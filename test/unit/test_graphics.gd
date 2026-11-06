@@ -50,3 +50,15 @@ func test_chunked_builder_splits_by_location_and_keeps_every_triangle() -> void:
 	var whole_vertices: int = whole_meshes[0].surface_get_array_len(0)
 	var split_vertices: int = split_meshes[0].surface_get_array_len(0) + split_meshes[1].surface_get_array_len(0)
 	assert_eq(split_vertices, whole_vertices)
+
+
+func test_game_style_reaches_every_button() -> void:
+	var box: StyleBoxFlat = ThemeDB.get_default_theme().get_stylebox("normal", "Button")
+	assert_eq(box.bg_color, UiStyle.RAISED)
+
+
+func test_language_change_does_not_reset_graphics() -> void:
+	var before := GameSettings.graphics_quality
+	GameSettings.language = "es"
+	assert_eq(GameSettings.graphics_quality, before)
+	GameSettings.language = "en"

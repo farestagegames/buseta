@@ -38,6 +38,9 @@ func _ready() -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Thumbs do not change with the language: right-to-left text keeps the wheel on
+	# the left and the pedals on the right.
+	root.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	add_child(root)
 	_apply_safe_area(root)
 

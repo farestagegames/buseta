@@ -76,3 +76,11 @@ func test_replaying_the_tutorial_from_settings_brings_it_back() -> void:
 	Profile.data.intro_done = true
 	Profile.reset_tutorial()
 	assert_false(Profile.data.intro_done)
+
+
+func test_tutorial_message_is_fully_on_screen() -> void:
+	intro.skip()
+	await wait_frames(3)
+	var screen := get_viewport().get_visible_rect()
+	var panel: Control = hud.tutorial_panel.get_child(0)
+	assert_true(screen.encloses(panel.get_global_rect()), "Message must not run off the screen")

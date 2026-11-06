@@ -504,3 +504,24 @@ func test_no_ad_button_without_a_provider() -> void:
 	_park_at(route_system.runner.current_stop())
 	await wait_physics_frames(3)
 	assert_false(hud.shift_panel._double_coins.visible)
+
+
+func test_right_to_left_language_keeps_the_driving_controls_in_place() -> void:
+	await wait_frames(2)
+	var wheel_x := (scene.get_node("Hud") as DriveHud).wheel.get_global_rect().position.x
+	GameSettings.language = "ar"
+	await wait_frames(3)
+	var hud: DriveHud = scene.get_node("Hud")
+	var width := get_viewport().get_visible_rect().size.x
+	assert_lt(hud.wheel.get_global_rect().get_center().x, width / 2.0, "Wheel stays on the left")
+	assert_gt(hud.throttle_pedal.get_global_rect().get_center().x, width / 2.0, "Pedals stay on the right")
+	assert_eq(hud.wheel.get_global_rect().position.x, wheel_x)
+	GameSettings.language = "en"
+
+
+func test_changing_language_updates_prompts_live() -> void:
+	GameSettings.language = "fr"
+	await wait_physics_frames(20)
+	var hud: DriveHud = scene.get_node("Hud")
+	assert_string_contains(hud.route_panel._line_one, "Prochain")
+	GameSettings.language = "en"

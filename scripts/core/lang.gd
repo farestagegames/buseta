@@ -57,4 +57,4 @@ func _build_font() -> void:
 	variation.fallbacks = [load(HINDI_FONT), load(ARABIC_FONT)]
 	font = variation
 	ThemeDB.fallback_font = variation
-	get_tree().root.theme = UiStyle.build(variation)
+	UiStyle.apply(variation)

@@ -12,10 +12,16 @@ const TEXT := Color(0.96, 0.97, 1.0)
 const MUTED := Color(1, 1, 1, 0.65)
 
 
-static func build(font: Font) -> Theme:
-	var theme := Theme.new()
+## Makes this the look of every control in the game.
+static func apply(font: Font) -> void:
+	var theme := ThemeDB.get_default_theme()
 	theme.default_font = font
 	theme.default_font_size = 22
+	theme.merge_with(build())
+
+
+static func build() -> Theme:
+	var theme := Theme.new()
 	theme.set_stylebox("normal", "Button", _box(RAISED))
 	theme.set_stylebox("hover", "Button", _box(RAISED.lightened(0.1)))
 	theme.set_stylebox("pressed", "Button", _box(ACCENT))
