@@ -41,7 +41,8 @@ Tilt sensor, keyboard  ---------------------->        |
 | `scripts/scoring` | `ShiftScore` category points, stars and coins, `DrivingMonitor`, `ScoreKeeper` |
 | `scripts/traffic` | `TrafficLightPlan`, `LaneGraph`, `TrafficLane`, `TrafficAgent`, `TrafficSystem` |
 
-Planned for later phases: `progression`, `save`.
+| `scripts/progression` | `PlayerProfile`, `SaveStore`, `Catalog`, `ShiftRewards`, `DriverLevel`, `DailyChallenge`, `AchievementList`, `AdProvider`, `ProgressionSystem` |
+| `scripts/core/profile.gd` | Autoload holding the live profile and saving it |
 `CityShift` is the only script that knows every module. It wires them together
 at load time.
 
@@ -84,6 +85,14 @@ game's balance can be tuned in one file. A shift ends with `shift_report_ready`.
 **Traffic without physics bodies.** Cars follow lanes built from the road data and
 use the Intelligent Driver Model for smooth queues. It is cheap, and cars are drawn
 as one instanced batch. They react to the bus through its telemetry.
+
+**Safe saves.** `SaveStore` writes to a temporary file and swaps it in only when
+complete, keeping the last good save as a backup. `PlayerProfile.from_dict`
+validates every field, so damaged data cannot stop the game from starting. Progress
+saves after every change and whenever the app goes to the background.
+
+**Ads behind an interface.** `AdProvider` is a stub that is never available, so no
+ad button shows. A real provider extends it and is assigned to `Profile.ads`.
 
 **Autopilot check.** `tools/autopilot.sh` drives a whole shift through the real
 controls. Run it after changing a map, because a route that passes its data tests

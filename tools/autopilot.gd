@@ -43,6 +43,9 @@ func _ready() -> void:
 	if chosen != "":
 		(Profile.data.owned[Catalog.ROUTES] as Array).append(chosen)
 		Profile.data.select(Catalog.ROUTES, chosen)
+	if OS.get_environment("AUTOPILOT_BUS") != "":
+		(Profile.data.owned[Catalog.BUSES] as Array).append(OS.get_environment("AUTOPILOT_BUS"))
+		Profile.data.select(Catalog.BUSES, OS.get_environment("AUTOPILOT_BUS"))
 	Engine.time_scale = TIME_SCALE
 	Engine.max_physics_steps_per_frame = 32
 	_city = (load(SCENE) as PackedScene).instantiate()
@@ -228,14 +231,14 @@ func _build_path() -> void:
 		var after := line[mini(i + 1, line.size() - 1)]
 		var forward := (after - before).normalized()
 		var right := Vector2(-forward.y, forward.x)
-		var point := line[i] + right * _lateral_at(along, line[i])
+		var point := line[i] + right * _lateral_at(along, line[i], right)
 		_path.append(point)
 		_speeds.append(_speed_at(i))
 	_apply_roundabouts()
 	_smooth_junctions()
 
 
-func _lateral_at(along: float, point: Vector2) -> float:
+func _lateral_at(along: float, point: Vector2, right: Vector2) -> float:
 	var lateral := LANE
 	for stop in _city.route.stops:
 		var relative := along - stop.route_distance
@@ -245,8 +248,8 @@ func _lateral_at(along: float, point: Vector2) -> float:
 			lateral = lerpf(LANE, RoadNetwork.ROAD_HALF_WIDTH + 1.25, share)
 	var map_data := MapLoader.read_json("res://data/maps/city_01.json")
 	for car: Dictionary in map_data["parked_cars"]:
-		var spot: Vector2 = _city.network.sample(car["road"], car["along"])["position"]
-		if point.distance_to(spot) < 26.0:
+		var spot: Vector2 = _city.network.sample(car["road"], car["along"], 2.75, car["dir"])["position"]
+		if point.distance_to(spot) < 26.0 and (spot - point).dot(right) > 0.0:
 			lateral = minf(lateral, 0.45)
 	for line: Dictionary in map_data["cone_lines"]:
 		var from: Vector2 = _city.network.sample(line["road"], line["from"])["position"]
