@@ -5,6 +5,7 @@ extends RefCounted
 
 const CAPACITY := 40
 
+var capacity: int = CAPACITY
 var onboard: Array[int] = [] ## Destination stop index of each passenger.
 var carried_total: int = 0
 
@@ -35,11 +36,11 @@ func alight_at(stop_index: int) -> int:
 
 ## How many of the waiting passengers will fit. Does not board them yet.
 func boardable(waiting: int) -> int:
-	return mini(waiting, CAPACITY - onboard.size())
+	return mini(waiting, capacity - onboard.size())
 
 
 func board_one(stop_index: int) -> void:
-	if stop_index >= _last_stop or onboard.size() >= CAPACITY:
+	if stop_index >= _last_stop or onboard.size() >= capacity:
 		return
 	onboard.append(_random.randi_range(stop_index + 1, _last_stop))
 	carried_total += 1

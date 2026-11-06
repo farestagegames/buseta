@@ -1,0 +1,18 @@
+{
+  "routes": [
+    {"id": "route_01", "name": "Route 1: Northfield Loop", "file": "res://data/routes/route_01.json", "cost": 0, "description": "The full loop: roundabout, river road and hills."},
+    {"id": "route_02", "name": "Route 2: Orchard Circular", "file": "res://data/routes/route_02.json", "cost": 1500, "description": "Quieter streets, a hilly back road and the roundabout from the south."}
+  ],
+  "buses": [
+    {"id": "city_12", "name": "City 12", "file": "res://data/buses/city_bus.tres", "cost": 0, "description": "The depot's 12 metre workhorse. Heavy and steady."},
+    {"id": "midi_10", "name": "Midi 10", "file": "res://data/buses/midi_bus.tres", "cost": 2500, "description": "A nimble 10 metre bus with a tighter turning circle, but fewer seats."}
+  ],
+  "liveries": [
+    {"id": "classic_red", "name": "Classic Red", "body": [0.85, 0.16, 0.13], "stripe": [0.96, 0.93, 0.84], "cost": 0},
+    {"id": "harbour_blue", "name": "Harbour Blue", "body": [0.12, 0.3, 0.58], "stripe": [0.9, 0.92, 0.95], "cost": 400},
+    {"id": "park_green", "name": "Park Green", "body": [0.14, 0.42, 0.28], "stripe": [0.93, 0.88, 0.6], "cost": 400},
+    {"id": "sunrise_orange", "name": "Sunrise Orange", "body": [0.9, 0.45, 0.1], "stripe": [0.98, 0.93, 0.8], "cost": 600},
+    {"id": "city_white", "name": "City White", "body": [0.9, 0.91, 0.92], "stripe": [0.15, 0.4, 0.75], "cost": 600},
+    {"id": "night_service", "name": "Night Service", "body": [0.1, 0.11, 0.15], "stripe": [0.95, 0.7, 0.15], "cost": 900}
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Route 2: Orchard Circular",
+  "map": "res://data/maps/city_01.json",
+  "start": {"road": "depot_road", "along": 35, "lateral": 1.9, "dir": 1},
+  "legs": [
+    {"road": "depot_road", "dir": 1},
+    {"road": "mill_lane", "dir": 1},
+    {"road": "school_road", "dir": -1},
+    {"road": "orchard_way", "dir": -1},
+    {"road": "south_road", "dir": -1},
+    {"road": "market_street", "dir": -1},
+    {"road": "mill_lane", "dir": -1},
+    {"road": "depot_road", "dir": -1}
+  ],
+  "stops": [
+    {"name": "Mill Cross", "due": 45, "road": "mill_lane", "along": 125, "dir": 1, "waiting": 4},
+    {"name": "School Gates", "due": 110, "road": "school_road", "along": 115, "dir": -1, "waiting": 5},
+    {"name": "Orchard Green", "due": 170, "road": "orchard_way", "along": 190, "dir": -1, "waiting": 4},
+    {"name": "South Gate", "due": 245, "road": "south_road", "along": 110, "dir": -1, "waiting": 3},
+    {"name": "Market East", "due": 310, "road": "market_street", "along": 110, "dir": -1, "waiting": 5},
+    {"name": "Mill Bridge", "due": 370, "road": "mill_lane", "along": 120, "dir": -1, "waiting": 0},
+    {"name": "Depot", "due": 410, "road": "depot_road", "along": 80, "dir": -1, "waiting": 0, "final": true}
+  ]
+}

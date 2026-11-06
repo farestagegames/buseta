@@ -40,6 +40,7 @@ func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork) -> void:
 		times.append(stop.due)
 	schedule = ShiftSchedule.new(times)
 	ledger = PassengerLedger.new(PASSENGER_SEED, route.stops.size() - 2)
+	ledger.capacity = spec.capacity
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.reset_requested.connect(_on_recover_requested)
 

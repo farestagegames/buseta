@@ -3,6 +3,7 @@ extends Resource
 ## Data definition of one bus. New buses are new .tres files, not new code.
 
 @export var display_name: String = "City 12"
+@export var capacity: int = 40
 
 @export_group("Dimensions (metres)")
 @export var body_width: float = 2.55

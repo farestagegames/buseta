@@ -10,6 +10,10 @@ var hud: DriveHud
 var camera: CameraRig
 
 
+func before_all() -> void:
+	Profile.load_from("user://test_save_scene.json")
+
+
 func before_each() -> void:
 	GameSettings.steering_mode = SteeringMapper.Mode.WHEEL
 	scene = SCENE.instantiate()

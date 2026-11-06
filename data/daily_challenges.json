@@ -1,0 +1,10 @@
+[
+  {"id": "no_harsh_brakes", "text": "Complete a shift with zero harsh braking", "counter": "harsh_brakes", "max": 0},
+  {"id": "no_collisions", "text": "Complete a shift with no collisions", "counter": "collisions", "max": 0},
+  {"id": "kerb_free", "text": "Complete a shift without striking a kerb", "counter": "kerbs", "max": 0},
+  {"id": "by_the_book", "text": "Signal every turn on your shift", "counter": "indicators", "max": 0},
+  {"id": "red_free", "text": "Complete a shift without running a red light", "counter": "red_lights", "max": 0},
+  {"id": "nothing_knocked", "text": "Complete a shift without hitting an object", "counter": "knocked", "max": 0},
+  {"id": "four_stars", "text": "Earn at least 4 stars on a shift", "min_stars": 4},
+  {"id": "smooth_ride", "text": "Complete a shift with no hard bumps", "counter": "jolts", "max": 0}
+]

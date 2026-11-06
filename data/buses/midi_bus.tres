@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BusSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/bus_spec.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Midi 10"
+body_width = 2.4
+wheelbase = 5.0
+front_overhang = 2.3
+rear_overhang = 2.7
+max_steer_degrees = 40.0
+steer_rate_degrees = 56.0
+max_drive_accel = 1.75
+max_brake_decel = 4.2
+capacity = 30

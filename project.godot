@@ -11,6 +11,7 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 [autoload]
 GameEvents="*res://scripts/core/game_events.gd"
 GameSettings="*res://scripts/core/game_settings.gd"
+Profile="*res://scripts/core/profile.gd"
 
 [display]
 window/size/viewport_width=1280
