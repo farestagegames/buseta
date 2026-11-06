@@ -14,6 +14,7 @@ var session: StopSession = null
 var schedule: ShiftSchedule
 var clock: float = 0.0
 var finished: bool = false
+var held: bool = false ## The timetable waits during the tutorial.
 
 var _spec: BusSpec
 var _session_stop: int = -1
@@ -43,6 +44,7 @@ func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork) -> void:
 	ledger.capacity = spec.capacity
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.reset_requested.connect(_on_recover_requested)
+	GameEvents.shift_held_changed.connect(func(value: bool) -> void: held = value)
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
@@ -52,7 +54,8 @@ func _on_telemetry(data: BusTelemetry) -> void:
 func tick(data: BusTelemetry, dt: float) -> void:
 	if finished:
 		return
-	clock += dt
+	if not held:
+		clock += dt
 	var rear := Vector2(data.position.x, data.position.z)
 	var centre := BusFootprint.body_centre(rear, data.heading, _spec)
 	runner.update_position(centre)

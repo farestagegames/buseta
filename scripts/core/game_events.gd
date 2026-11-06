@@ -47,3 +47,5 @@ signal penalty_shown(text: String)
 signal score_updated(total: int)
 signal shift_report_ready(report: Dictionary)
 signal shift_rewards_ready(report: Dictionary)
+## True while the opening scene or tutorial runs: no clock, no penalties.
+signal shift_held_changed(held: bool)

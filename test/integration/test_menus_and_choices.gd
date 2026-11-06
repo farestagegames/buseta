@@ -8,11 +8,12 @@ const CITY := preload("res://scenes/main/city_shift.tscn")
 func before_each() -> void:
 	Profile.load_from("user://test_save_menu.json")
 	Profile.data = PlayerProfile.new()
+	Profile.data.intro_done = true
 
 
 func after_all() -> void:
-	Profile.data = PlayerProfile.new()
 	Profile.load_from("user://test_save_scene.json")
+	Profile.data.intro_done = true
 
 
 func test_every_menu_tab_opens() -> void:

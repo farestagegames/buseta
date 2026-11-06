@@ -39,6 +39,7 @@ var _off_road_places: Dictionary = {}
 
 func _ready() -> void:
 	Profile.load_from("user://autopilot_save.json")
+	Profile.data.intro_done = true
 	var chosen := OS.get_environment("AUTOPILOT_ROUTE")
 	if chosen != "":
 		(Profile.data.owned[Catalog.ROUTES] as Array).append(chosen)

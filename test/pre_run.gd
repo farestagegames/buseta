@@ -5,4 +5,5 @@ extends GutHookScript
 
 func run() -> void:
 	Profile.load_from("user://test_save_scene.json")
+	Profile.data.intro_done = true
 	GameSettings.language = "en"

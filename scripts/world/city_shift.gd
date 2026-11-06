@@ -13,6 +13,10 @@ const MENU_SCENE := "res://scenes/main/main_menu.tscn"
 @onready var _beacon: StopBeacon = $Beacon
 @onready var _traffic: TrafficSystem = $Traffic
 @onready var _score: ScoreKeeper = $ScoreKeeper
+@onready var _intro: IntroCutscene = $Intro
+@onready var _tutorial: TutorialDirector = $Tutorial
+@onready var _hud: DriveHud = $Hud
+@onready var _camera: Camera3D = $CameraRig
 
 var network: RoadNetwork
 var ground: GroundSurface
@@ -62,6 +66,29 @@ func _ready() -> void:
 	_crowd.setup(route, ground)
 	_beacon.setup(ground)
 	GameEvents.map_ready.emit(network, route)
+	_tutorial.setup(_hud, _route_system, _bus.spec)
+	_intro.setup(network, ground, _bus, _camera)
+	if not Profile.data.intro_done:
+		_begin_first_shift.call_deferred()
+
+
+## A new driver sees the opening scene, then the tutorial, with the clock held.
+func _begin_first_shift() -> void:
+	GameEvents.shift_held_changed.emit(true)
+	_hud.visible = false
+	_intro.finished.connect(_on_intro_finished)
+	_tutorial.finished.connect(_on_tutorial_finished)
+	_intro.play()
+
+
+func _on_intro_finished() -> void:
+	_hud.visible = true
+	_tutorial.start()
+
+
+func _on_tutorial_finished() -> void:
+	Profile.finish_tutorial()
+	GameEvents.shift_held_changed.emit(false)
 
 
 func route_system_for_tools() -> RouteSystem:

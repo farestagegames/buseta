@@ -25,6 +25,7 @@ var _spec: BusSpec
 var _kerb_timer: float = 0.0
 var _collision_timer: float = 0.0
 var _wheels_were_on_road: bool = true
+var _held: bool = false ## Nothing counts against a driver in the tutorial.
 
 
 func setup(network: RoadNetwork, spec: BusSpec) -> void:
@@ -41,9 +42,12 @@ func setup(network: RoadNetwork, spec: BusSpec) -> void:
 	GameEvents.stop_missed.connect(_on_stop_missed)
 	GameEvents.stop_served.connect(_on_stop_served)
 	GameEvents.shift_completed.connect(_on_shift_completed)
+	GameEvents.shift_held_changed.connect(func(held: bool) -> void: _held = held)
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
+	if _held:
+		return
 	var dt := get_physics_process_delta_time()
 	_kerb_timer = maxf(_kerb_timer - dt, 0.0)
 	_collision_timer = maxf(_collision_timer - dt, 0.0)
@@ -74,16 +78,22 @@ func _check_kerb(rear: Vector2, heading: float, speed: float) -> void:
 
 
 func _on_harsh_brake() -> void:
+	if _held:
+		return
 	score.add_harsh_brake()
 	GameEvents.penalty_shown.emit("Emergency stop")
 
 
 func _on_jolted(_strength: float) -> void:
+	if _held:
+		return
 	if score.add_jolt():
 		GameEvents.penalty_shown.emit("Too fast over a bump")
 
 
 func _on_collided(impact_speed: float) -> void:
+	if _held:
+		return
 	if impact_speed >= LOST_COLLISION_SPEED and _collision_timer <= 0.0:
 		_collision_timer = COLLISION_COOLDOWN
 		score.add_collision(impact_speed)
@@ -91,17 +101,23 @@ func _on_collided(impact_speed: float) -> void:
 
 
 func _on_obstacle_hit(kind: String, _speed_loss: float) -> void:
+	if _held:
+		return
 	if HIT_MESSAGES.has(kind):
 		score.add_knocked()
 		GameEvents.penalty_shown.emit(HIT_MESSAGES[kind])
 
 
 func _on_red_light() -> void:
+	if _held:
+		return
 	score.add_red_light()
 	GameEvents.penalty_shown.emit("Ran a red light")
 
 
 func _on_indicator_missed() -> void:
+	if _held:
+		return
 	score.add_missed_indicator()
 	GameEvents.penalty_shown.emit("No indicator")
 
@@ -111,11 +127,15 @@ func _on_stop_arrived(_index: int, accuracy: float, seconds_late: float) -> void
 
 
 func _on_stop_missed(_index: int, stop_name: String) -> void:
+	if _held:
+		return
 	score.add_missed_stop()
 	GameEvents.penalty_shown.emit(tr("Missed %s") % stop_name)
 
 
 func _on_stop_served(_index: int, _name: String, left_behind: int) -> void:
+	if _held:
+		return
 	if left_behind > 0:
 		score.add_left_behind(left_behind)
 		GameEvents.penalty_shown.emit(tr("Left %d waiting") % left_behind)

@@ -19,9 +19,11 @@ var route_panel: RoutePanel
 var minimap: Minimap
 var shift_panel: ShiftEndPanel
 var penalty_toast: PenaltyToast
+var tutorial_panel: TutorialPanel
 
 var _controls: Control
 var _tilt_hint: Label
+var _view_button: TouchButton
 var _indicator_left: TouchButton
 var _indicator_right: TouchButton
 var _door_button: TouchButton
@@ -70,6 +72,9 @@ func _ready() -> void:
 	minimap = Minimap.new()
 	_place(minimap, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 8.0), Vector2(190.0, 190.0))
 	root.add_child(minimap)
+
+	tutorial_panel = TutorialPanel.new()
+	root.add_child(tutorial_panel)
 
 	settings_panel = SettingsPanel.new()
 	settings_panel.in_shift = true
@@ -153,8 +158,8 @@ func _build_pedals() -> void:
 
 
 func _build_buttons() -> void:
-	var camera := _action_button("VIEW", Vector2(0.0, 0.0), Vector2(EDGE, EDGE), Vector2(130.0, 96.0))
-	camera.pressed_down.connect(GameEvents.camera_cycle_requested.emit)
+	_view_button = _action_button("VIEW", Vector2(0.0, 0.0), Vector2(EDGE, EDGE), Vector2(130.0, 96.0))
+	_view_button.pressed_down.connect(GameEvents.camera_cycle_requested.emit)
 	var menu := _action_button("MENU", Vector2(0.0, 0.0), Vector2(EDGE + 146.0, EDGE), Vector2(130.0, 96.0))
 	menu.pressed_down.connect(_open_settings)
 
@@ -216,6 +221,29 @@ func _close_settings() -> void:
 	settings_panel.visible = false
 	_controls.visible = true
 	get_tree().paused = false
+
+
+## Where a control is on screen, for the tutorial's highlight.
+func control_rect(focus: String) -> Rect2:
+	match focus:
+		"go":
+			return throttle_pedal.get_global_rect()
+		"brake":
+			return brake_pedal.get_global_rect()
+		"steer":
+			if GameSettings.steering_mode == SteeringMapper.Mode.BUTTONS:
+				return left_button.get_global_rect().merge(right_button.get_global_rect())
+			return wheel.get_global_rect() if GameSettings.steering_mode == SteeringMapper.Mode.WHEEL else Rect2()
+		"view":
+			return _view_button.get_global_rect()
+		"indicator":
+			return _indicator_right.get_global_rect()
+		"doors":
+			return _door_button.get_global_rect()
+		"map":
+			return minimap.get_global_rect()
+		_:
+			return Rect2()
 
 
 func is_paused() -> bool:

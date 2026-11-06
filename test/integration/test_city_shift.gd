@@ -15,6 +15,7 @@ var keeper: ScoreKeeper
 
 func before_all() -> void:
 	Profile.load_from("user://test_save_scene.json")
+	Profile.data.intro_done = true
 
 
 func before_each() -> void:
