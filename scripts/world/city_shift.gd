@@ -21,17 +21,23 @@ var route: RouteRunner
 
 ## Runs before the bus readies, so it builds with the player's choices.
 func _enter_tree() -> void:
-	var bus_item := Profile.selected_item(Catalog.BUSES)
-	var livery := Profile.selected_item(Catalog.LIVERIES)
-	var spec: BusSpec = (load(bus_item["file"]) as BusSpec).duplicate()
-	spec.body_colour = _colour(livery["body"])
-	spec.stripe_colour = _colour(livery["stripe"])
+	var spec := chosen_spec()
 	var bus: BusController = get_node("Bus")
 	bus.spec = spec
 	(bus.get_node("Visual") as BusVisual).spec = spec
 
 
-func _colour(values: Array) -> Color:
+## The player's bus in their livery. A copy, so the shared data stays untouched.
+static func chosen_spec() -> BusSpec:
+	var bus_item := Profile.selected_item(Catalog.BUSES)
+	var livery := Profile.selected_item(Catalog.LIVERIES)
+	var spec: BusSpec = (load(bus_item["file"]) as BusSpec).duplicate()
+	spec.body_colour = _colour(livery["body"])
+	spec.stripe_colour = _colour(livery["stripe"])
+	return spec
+
+
+static func _colour(values: Array) -> Color:
 	return Color(values[0], values[1], values[2])
 
 

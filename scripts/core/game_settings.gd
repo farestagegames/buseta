@@ -24,10 +24,15 @@ var sound_volume: float = 0.7:
 		sound_volume = clampf(value, 0.0, 1.0)
 		changed.emit()
 
-## Off until Phase 5 adds the quality levels, but saved so the choice carries over.
-var graphics_quality: int = 1:
+## GraphicsQuality.Level, or AUTO to match the phone.
+var graphics_quality: int = GraphicsQuality.AUTO:
 	set(value):
-		graphics_quality = clampi(value, 0, 2)
+		graphics_quality = clampi(value, GraphicsQuality.AUTO, GraphicsQuality.Level.HIGH)
+		changed.emit()
+
+var show_performance: bool = false:
+	set(value):
+		show_performance = value
 		changed.emit()
 
 
@@ -41,7 +46,8 @@ var language: String = "":
 func to_dict() -> Dictionary:
 	return {
 		"steering_mode": int(steering_mode), "sensitivity": sensitivity, "invert_tilt": invert_tilt,
-		"sound_volume": sound_volume, "graphics_quality": graphics_quality, "language": language,
+		"sound_volume": sound_volume, "graphics_level": graphics_quality, "language": language,
+		"show_performance": show_performance,
 	}
 
 
@@ -54,7 +60,8 @@ func apply_saved(saved: Dictionary) -> void:
 	sensitivity = float(saved.get("sensitivity", sensitivity))
 	invert_tilt = bool(saved.get("invert_tilt", invert_tilt))
 	sound_volume = float(saved.get("sound_volume", sound_volume))
-	graphics_quality = int(saved.get("graphics_quality", graphics_quality))
+	graphics_quality = int(saved.get("graphics_level", graphics_quality))
+	show_performance = bool(saved.get("show_performance", show_performance))
 	language = str(saved.get("language", language))
 	set_block_signals(false)
 	changed.emit()

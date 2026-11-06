@@ -6,6 +6,7 @@ extends CanvasLayer
 
 const EDGE := 24.0
 const GAP := 16.0
+const PERFORMANCE_WINDOW := 1.0
 
 var wheel: SteeringWheelControl
 var throttle_pedal: PedalControl
@@ -26,6 +27,8 @@ var _indicator_right: TouchButton
 var _door_button: TouchButton
 var _gear_button: TouchButton
 var _frame_rate: Label
+var _worst_frame: float = 0.0
+var _frame_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -51,7 +54,9 @@ func _ready() -> void:
 
 	_frame_rate = Label.new()
 	_frame_rate.add_theme_font_size_override("font_size", 18)
-	_place(_frame_rate, Vector2(0.5, 0.0), Vector2(200.0, 8.0), Vector2(80.0, 24.0))
+	_place(_frame_rate, Vector2(0.5, 0.0), Vector2(-190.0, 210.0), Vector2(380.0, 24.0))
+	_frame_rate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_frame_rate.visible = false
 	root.add_child(_frame_rate)
 
 	route_panel = RoutePanel.new()
@@ -70,7 +75,7 @@ func _ready() -> void:
 	settings_panel.in_shift = true
 	settings_panel.visible = false
 	settings_panel.closed.connect(_close_settings)
-	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-300.0, -310.0), Vector2(600.0, 620.0))
+	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-340.0, -340.0), Vector2(680.0, 680.0))
 	root.add_child(settings_panel)
 
 	shift_panel = ShiftEndPanel.new()
@@ -84,8 +89,19 @@ func _ready() -> void:
 	_apply_mode()
 
 
-func _process(_dt: float) -> void:
-	_frame_rate.text = "%d fps" % Engine.get_frames_per_second()
+func _process(dt: float) -> void:
+	_frame_rate.visible = GameSettings.show_performance and not shift_panel.visible
+	if not _frame_rate.visible:
+		return
+	_worst_frame = maxf(_worst_frame, dt)
+	_frame_timer -= dt
+	if _frame_timer <= 0.0:
+		_frame_timer = PERFORMANCE_WINDOW
+		_frame_rate.text = "%d fps  low %d  %dk tris  %d draws" % [
+			Engine.get_frames_per_second(), roundi(1.0 / maxf(_worst_frame, 0.001)),
+			roundi(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000.0),
+			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)]
+		_worst_frame = 0.0
 
 
 func _build_steering() -> void:

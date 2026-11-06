@@ -4,11 +4,11 @@ extends Control
 ## new routes, buses and liveries appear without any changes here.
 
 const SHIFT_SCENE := "res://scenes/main/city_shift.tscn"
-const BACKGROUND := Color(0.1, 0.12, 0.16)
-const CARD := Color(0.16, 0.19, 0.24)
-const ACCENT := Color(0.98, 0.72, 0.15)
-const GOOD := Color(0.5, 0.95, 0.6)
-const MUTED := Color(1, 1, 1, 0.65)
+const BACKGROUND := UiStyle.INK
+const CARD := UiStyle.CARD
+const ACCENT := UiStyle.ACCENT
+const GOOD := UiStyle.GOOD
+const MUTED := UiStyle.MUTED
 
 var _content: Control
 var _coins_label: Label
@@ -16,6 +16,7 @@ var _level_label: Label
 var _level_bar: ProgressBar
 var _tabs: Array[Button] = []
 var _current_tab: int = 0
+var _shown_locale: String = ""
 
 
 func _ready() -> void:
@@ -41,7 +42,17 @@ func _ready() -> void:
 	_content = MarginContainer.new()
 	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(_content)
+	GameSettings.changed.connect(_on_settings_changed)
 	show_tab(0)
+
+
+## A language change re-reads every formatted line.
+func _on_settings_changed() -> void:
+	if TranslationServer.get_locale() != _shown_locale:
+		_shown_locale = TranslationServer.get_locale()
+		_refresh_header()
+		if _current_tab != 4:
+			show_tab(_current_tab)
 
 
 func show_tab(index: int) -> void:
@@ -60,7 +71,9 @@ func show_tab(index: int) -> void:
 		3:
 			_content.add_child(_driver_tab())
 		_:
-			_content.add_child(SettingsPanel.new())
+			var settings := SettingsPanel.new()
+			settings.tutorial_requested.connect(func() -> void: show_tab(0))
+			_content.add_child(settings)
 	_refresh_header()
 
 
@@ -115,8 +128,20 @@ func _navigation() -> Control:
 
 
 func _home_tab() -> Control:
+	var page := HBoxContainer.new()
+	page.add_theme_constant_override("separation", 16)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.size_flags_stretch_ratio = 1.15
+	page.add_child(column)
+	var side := VBoxContainer.new()
+	side.add_theme_constant_override("separation", 12)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(side)
+	var preview := BusPreview.new()
+	preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	side.add_child(preview)
 	var route := Profile.selected_item(Catalog.ROUTES)
 	var bus := Profile.selected_item(Catalog.BUSES)
 	var livery := Profile.selected_item(Catalog.LIVERIES)
@@ -140,15 +165,12 @@ func _home_tab() -> Control:
 	daily_card.add_child(daily_lines)
 	column.add_child(daily_card)
 
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(spacer)
 	var start := _button("Start shift")
 	start.custom_minimum_size.y = 110.0
 	start.add_theme_font_size_override("font_size", 38)
 	start.pressed.connect(_start_shift)
-	column.add_child(start)
-	return column
+	side.add_child(start)
+	return page
 
 
 func _start_shift() -> void:
@@ -164,7 +186,15 @@ func _routes_tab() -> Control:
 
 
 func _garage_tab() -> Control:
+	var page := HBoxContainer.new()
+	page.add_theme_constant_override("separation", 16)
 	var list := _list()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.size_flags_stretch_ratio = 1.5
+	page.add_child(list)
+	var preview := BusPreview.new()
+	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(preview)
 	var rows := list.get_child(0)
 	rows.add_child(_text("Buses", 26, ACCENT))
 	for item: Dictionary in Profile.catalog.items(Catalog.BUSES):
@@ -172,7 +202,7 @@ func _garage_tab() -> Control:
 	rows.add_child(_text("Liveries", 26, ACCENT))
 	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
 		rows.add_child(_shop_row(Catalog.LIVERIES, item, ""))
-	return list
+	return page
 
 
 func _shop_row(kind: String, item: Dictionary, description: String) -> Control:
@@ -195,7 +225,7 @@ func _shop_row(kind: String, item: Dictionary, description: String) -> Control:
 func _shop_button(kind: String, item: Dictionary) -> Button:
 	var id: String = item["id"]
 	var button := _button("")
-	button.custom_minimum_size = Vector2(190.0, 76.0)
+	button.custom_minimum_size = Vector2(170.0, 72.0)
 	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	if Profile.data.selected[kind] == id:
 		button.text = "Selected"

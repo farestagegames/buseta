@@ -8,6 +8,7 @@ const ENGINE_MAX_PITCH := 1.5
 const COLLISION_COOLDOWN := 0.35
 ## A bus only vents its brakes now and then, not on every pedal lift.
 const AIR_BRAKE_COOLDOWN := 8.0
+const REVERSE_BEEP_SECONDS := 1.0
 
 const SOUNDS := {
 	"engine": "res://assets/audio/engine_loop.wav",
@@ -20,6 +21,11 @@ const SOUNDS := {
 	"pay": "res://assets/audio/pay.wav",
 	"bell": "res://assets/audio/bell.wav",
 	"air": "res://assets/audio/air_brake.wav",
+	"ambience": "res://assets/audio/ambience_loop.wav",
+	"tick": "res://assets/audio/indicator_tick.wav",
+	"tock": "res://assets/audio/indicator_tock.wav",
+	"reverse": "res://assets/audio/reverse_beep.wav",
+	"bump": "res://assets/audio/bump.wav",
 }
 
 var horn_playing: bool:
@@ -35,6 +41,9 @@ var _doors_were_closed: bool = true
 var _was_braking: bool = false
 var _cooldown: float = 0.0
 var _air_cooldown: float = 0.0
+var _ambience: AudioStreamPlayer
+var _lamp_was_on: bool = false
+var _reverse_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -43,12 +52,12 @@ func _ready() -> void:
 	_engine = _make_loop("engine", -22.0)
 	_horn = _make_loop("horn", -13.0)
 	_engine.play()
+	_ambience = _make_loop("ambience", -24.0)
+	_ambience.play()
 	for i in 4:
 		var player := AudioStreamPlayer.new()
 		add_child(player)
 		_effects.append(player)
-	GameSettings.changed.connect(_apply_volume)
-	_apply_volume()
 	GameEvents.horn_changed.connect(_on_horn)
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.bus_collided.connect(_on_collided)
@@ -56,11 +65,6 @@ func _ready() -> void:
 	GameEvents.bus_jolted.connect(_on_jolted)
 	GameEvents.passenger_boarded.connect(func(_stop: int) -> void: play_effect("pay", -18.0))
 	GameEvents.stop_session_started.connect(func(_stop: int, _off: int, _on: int) -> void: play_effect("bell", -14.0))
-
-
-func _apply_volume() -> void:
-	AudioServer.set_bus_volume_db(0, linear_to_db(GameSettings.sound_volume))
-	AudioServer.set_bus_mute(0, GameSettings.sound_volume <= 0.0)
 
 
 func play_effect(key: String, volume_db: float) -> void:
@@ -109,6 +113,15 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	if _door_started_closing(data):
 		play_effect("door_close", -10.0)
 
+	if data.indicator_lamp_on != _lamp_was_on:
+		_lamp_was_on = data.indicator_lamp_on
+		if data.indicator_side != 0:
+			play_effect("tick" if data.indicator_lamp_on else "tock", -20.0)
+	_reverse_timer -= get_physics_process_delta_time()
+	if data.is_reverse and data.speed < -0.1 and _reverse_timer <= 0.0:
+		_reverse_timer = REVERSE_BEEP_SECONDS
+		play_effect("reverse", -20.0)
+
 	var braking := data.brake > 0.25
 	if _was_braking and not braking and absf(data.speed) < 1.0 and _air_cooldown <= 0.0:
 		_air_cooldown = AIR_BRAKE_COOLDOWN
@@ -134,4 +147,4 @@ func _on_collided(impact_speed: float) -> void:
 func _on_jolted(strength: float) -> void:
 	if _cooldown <= 0.0:
 		_cooldown = COLLISION_COOLDOWN
-		play_effect("thud", clampf(-22.0 + strength * 1.5, -22.0, -10.0))
+		play_effect("bump", clampf(-20.0 + strength * 1.5, -20.0, -10.0))

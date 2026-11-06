@@ -3,8 +3,13 @@ extends RefCounted
 ## Collects boxes and wheels into one vertex-coloured mesh, so a whole model or
 ## set of props costs a single draw call on the phone.
 
+## Set above zero, geometry is split into square cells this many metres wide, so
+## the phone only draws the parts of town the camera can see.
+var chunk_size: float = 0.0
+
 var _surface := SurfaceTool.new()
 var _has_geometry := false
+var _chunks: Dictionary = {} ## Cell to SurfaceTool.
 ## Height where wall textures start, so storeys line up with the ground.
 var uv_base_height: float = 0.0
 
@@ -137,6 +142,20 @@ func build(material: Material) -> ArrayMesh:
 	return mesh
 
 
+## One mesh per occupied cell, or a single mesh if chunking is off.
+func build_all(material: Material) -> Array[ArrayMesh]:
+	var meshes: Array[ArrayMesh] = []
+	if chunk_size <= 0.0:
+		meshes.append(build(material))
+		return meshes
+	for surface: SurfaceTool in _chunks.values():
+		var mesh := ArrayMesh.new()
+		surface.set_material(material)
+		surface.commit(mesh)
+		meshes.append(mesh)
+	return meshes
+
+
 ## Standard material that takes its colour from the mesh vertices.
 static func vertex_colour_material() -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
@@ -147,11 +166,23 @@ static func vertex_colour_material() -> StandardMaterial3D:
 
 func _triangle(a: Vector3, b: Vector3, c: Vector3, normal: Vector3, colour: Color) -> void:
 	_has_geometry = true
+	var surface := _surface_for((a + b + c) / 3.0)
 	for point: Vector3 in [a, b, c]:
-		_surface.set_color(colour)
-		_surface.set_normal(normal)
-		_surface.set_uv(_world_uv(point, normal))
-		_surface.add_vertex(point)
+		surface.set_color(colour)
+		surface.set_normal(normal)
+		surface.set_uv(_world_uv(point, normal))
+		surface.add_vertex(point)
+
+
+func _surface_for(point: Vector3) -> SurfaceTool:
+	if chunk_size <= 0.0:
+		return _surface
+	var cell := Vector2i(int(floor(point.x / chunk_size)), int(floor(point.z / chunk_size)))
+	if not _chunks.has(cell):
+		var surface := SurfaceTool.new()
+		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+		_chunks[cell] = surface
+	return _chunks[cell]
 
 
 ## UVs in metres, so textures keep their real size on any shape. Flat surfaces

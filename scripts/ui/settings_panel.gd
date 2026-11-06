@@ -1,33 +1,56 @@
 class_name SettingsPanel
 extends PanelContainer
-## In-drive controls menu: steering mode, sensitivity and tilt direction.
+## Settings, used from the main menu and, with shift actions, as the pause menu.
 
 signal closed
+signal tutorial_requested
 
-## In a shift this is the pause menu. In the main menu it is just the controls.
+## In a shift this is the pause menu. In the main menu it is just the settings.
 var in_shift: bool = false
 
 var _mode_buttons: Array[Button] = []
+var _language_buttons: Dictionary = {}
+var _quality_buttons: Dictionary = {}
 var _sensitivity_label: Label
 var _volume_label: Label
 
 
 func _ready() -> void:
-	var backing := StyleBoxFlat.new()
-	backing.bg_color = Color(0.09, 0.1, 0.13, 0.97)
-	backing.set_corner_radius_all(18)
-	add_theme_stylebox_override("panel", backing)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 10)
 	var margin := MarginContainer.new()
 	for side: String in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 20)
-	margin.add_child(box)
+	margin.add_child(outer)
 	add_child(margin)
 
-	box.add_child(_label("Paused" if in_shift else "Settings", 34))
+	outer.add_child(_label("Paused" if in_shift else "Settings", 32))
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_child(scroll)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(box)
+
+	_add_controls(box)
+	_add_language(box)
+	_add_graphics(box)
+	if not in_shift:
+		var replay := _button("Replay tutorial")
+		replay.pressed.connect(_on_replay_tutorial)
+		box.add_child(replay)
+	else:
+		outer.add_child(_shift_actions())
+
+	GameSettings.changed.connect(_refresh)
+	_refresh()
+
+
+func _add_controls(box: Container) -> void:
 	var modes := HBoxContainer.new()
-	modes.add_theme_constant_override("separation", 12)
+	modes.add_theme_constant_override("separation", 10)
 	for entry: Array in [["Wheel", SteeringMapper.Mode.WHEEL], ["Tilt", SteeringMapper.Mode.TILT], ["Buttons", SteeringMapper.Mode.BUTTONS]]:
 		var mode: SteeringMapper.Mode = entry[1]
 		var button := _button(entry[0])
@@ -38,41 +61,78 @@ func _ready() -> void:
 		_mode_buttons.append(button)
 	box.add_child(modes)
 
-	_sensitivity_label = _label("", 24)
+	_sensitivity_label = _label("", 22)
 	box.add_child(_sensitivity_label)
-	var slider := HSlider.new()
-	slider.min_value = SteeringMapper.MIN_SENSITIVITY
-	slider.max_value = SteeringMapper.MAX_SENSITIVITY
-	slider.step = 0.05
-	slider.value = GameSettings.sensitivity
-	slider.custom_minimum_size.y = 60
-	slider.value_changed.connect(func(value: float) -> void: GameSettings.sensitivity = value)
-	box.add_child(slider)
+	box.add_child(_slider(SteeringMapper.MIN_SENSITIVITY, SteeringMapper.MAX_SENSITIVITY, GameSettings.sensitivity,
+		func(value: float) -> void: GameSettings.sensitivity = value))
 
 	var invert := CheckButton.new()
 	invert.text = "Invert tilt"
-	invert.add_theme_font_size_override("font_size", 24)
+	invert.add_theme_font_size_override("font_size", 22)
 	invert.custom_minimum_size.y = 60
 	invert.button_pressed = GameSettings.invert_tilt
 	invert.toggled.connect(func(on: bool) -> void: GameSettings.invert_tilt = on)
 	box.add_child(invert)
 
-	_volume_label = _label("", 24)
+	_volume_label = _label("", 22)
 	box.add_child(_volume_label)
-	var volume := HSlider.new()
-	volume.min_value = 0.0
-	volume.max_value = 1.0
-	volume.step = 0.05
-	volume.value = GameSettings.sound_volume
-	volume.custom_minimum_size.y = 60
-	volume.value_changed.connect(func(value: float) -> void: GameSettings.sound_volume = value)
-	box.add_child(volume)
+	box.add_child(_slider(0.0, 1.0, GameSettings.sound_volume,
+		func(value: float) -> void: GameSettings.sound_volume = value))
 
-	if in_shift:
-		box.add_child(_shift_actions())
 
-	GameSettings.changed.connect(_refresh)
-	_refresh()
+func _add_language(box: Container) -> void:
+	box.add_child(_label("Language", 22))
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	for language: Dictionary in Lang.LANGUAGES:
+		var code: String = language["code"]
+		var button := _button(language["name"])
+		button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		button.toggle_mode = true
+		button.custom_minimum_size.x = 0.0
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.pressed.connect(func() -> void: GameSettings.language = code)
+		grid.add_child(button)
+		_language_buttons[code] = button
+	box.add_child(grid)
+
+
+func _add_graphics(box: Container) -> void:
+	box.add_child(_label("Graphics quality", 22))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var levels := [["Auto", GraphicsQuality.AUTO], ["Low", GraphicsQuality.Level.LOW],
+		["Medium", GraphicsQuality.Level.MEDIUM], ["High", GraphicsQuality.Level.HIGH]]
+	for entry: Array in levels:
+		var level: int = entry[1]
+		var button := _button(entry[0])
+		button.toggle_mode = true
+		button.custom_minimum_size.x = 0.0
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.pressed.connect(func() -> void: GameSettings.graphics_quality = level)
+		row.add_child(button)
+		_quality_buttons[level] = button
+	box.add_child(row)
+	var performance := CheckButton.new()
+	performance.text = "Show performance"
+	performance.add_theme_font_size_override("font_size", 22)
+	performance.custom_minimum_size.y = 60
+	performance.button_pressed = GameSettings.show_performance
+	performance.toggled.connect(func(on: bool) -> void: GameSettings.show_performance = on)
+	box.add_child(performance)
+
+
+func _slider(low: float, high: float, value: float, on_change: Callable) -> HSlider:
+	var slider := HSlider.new()
+	slider.min_value = low
+	slider.max_value = high
+	slider.step = 0.05
+	slider.value = value
+	slider.custom_minimum_size.y = 56
+	slider.value_changed.connect(on_change)
+	return slider
 
 
 func _shift_actions() -> Control:
@@ -96,9 +156,19 @@ func _shift_actions() -> Control:
 	return actions
 
 
+func _on_replay_tutorial() -> void:
+	Profile.reset_tutorial()
+	tutorial_requested.emit()
+
+
 func _refresh() -> void:
 	for i in _mode_buttons.size():
 		_mode_buttons[i].set_pressed_no_signal(i == int(GameSettings.steering_mode))
+	var chosen := Lang.resolve(GameSettings.language, OS.get_locale_language())
+	for code: String in _language_buttons:
+		(_language_buttons[code] as Button).set_pressed_no_signal(code == chosen)
+	for level: int in _quality_buttons:
+		(_quality_buttons[level] as Button).set_pressed_no_signal(level == GameSettings.graphics_quality)
 	_sensitivity_label.text = tr("Steering sensitivity: %.2f") % GameSettings.sensitivity
 	_volume_label.text = tr("Sound volume: %d%%") % roundi(GameSettings.sound_volume * 100.0)
 
@@ -113,6 +183,6 @@ func _label(text: String, font_size: int) -> Label:
 func _button(text: String) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.custom_minimum_size = Vector2(150.0, 76.0)
-	button.add_theme_font_size_override("font_size", 26)
+	button.custom_minimum_size = Vector2(150.0, 70.0)
+	button.add_theme_font_size_override("font_size", 24)
 	return button

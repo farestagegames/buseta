@@ -48,6 +48,17 @@ func select(kind: String, id: String) -> bool:
 	return true
 
 
+## The next shift plays the opening scene and tutorial again.
+func reset_tutorial() -> void:
+	data.intro_done = false
+	save()
+
+
+func finish_tutorial() -> void:
+	data.intro_done = true
+	save()
+
+
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_APPLICATION_FOCUS_OUT:

@@ -219,3 +219,9 @@ func test_settings_round_trip_and_ignore_bad_values() -> void:
 	assert_eq(GameSettings.sensitivity, SteeringMapper.MAX_SENSITIVITY)
 	assert_eq(int(GameSettings.steering_mode), int(saved["steering_mode"]))
 	GameSettings.apply_saved(saved)
+
+
+func test_tutorial_flag_survives_saving() -> void:
+	profile.intro_done = true
+	assert_true(PlayerProfile.from_dict(JSON.parse_string(JSON.stringify(profile.to_dict()))).intro_done)
+	assert_false(PlayerProfile.from_dict({}).intro_done, "A new player sees the tutorial")

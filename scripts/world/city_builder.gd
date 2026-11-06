@@ -4,6 +4,7 @@ extends Node3D
 ## static is merged, so the whole town costs a handful of draw calls.
 
 const GRID_CELL := 12.0
+const CHUNK_SIZE := 170.0
 const MAP_MARGIN := 160.0
 const PAVEMENT_OUTER := RoadNetwork.ROAD_HALF_WIDTH + GroundSurface.PAVEMENT_WIDTH
 
@@ -54,6 +55,8 @@ var _shops: LowPolyBuilder
 var _lines: LowPolyBuilder
 var _pavements: LowPolyBuilder
 var _woodland: LowPolyBuilder
+var _road_mesh: LowPolyBuilder
+var _scenery_mesh: LowPolyBuilder
 var _stop_spots: Array[Vector2] = []
 var _signs: Array[Dictionary] = []
 
@@ -72,12 +75,16 @@ func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, ro
 	_pavements = LowPolyBuilder.new()
 	_woodland = LowPolyBuilder.new()
 	_build_terrain()
+	_road_mesh = LowPolyBuilder.new()
+	_scenery_mesh = LowPolyBuilder.new()
+	for builder: LowPolyBuilder in [_flats, _office, _shops, _lines, _pavements, _woodland, _road_mesh, _scenery_mesh]:
+		builder.chunk_size = CHUNK_SIZE
 	for stop in route.stops:
 		_stop_spots.append(stop.position)
-	_add_mesh(_build_roads(map_data, route), _textured(TEXTURE_ASPHALT, Vector2(8.0, 8.0)), false)
+	_add_mesh(_build_roads(_road_mesh, map_data, route), _textured(TEXTURE_ASPHALT, Vector2(8.0, 8.0)), false)
 	_add_mesh(_pavements, _textured(TEXTURE_PAVEMENT, Vector2(3.2, 3.2)), false)
 	_add_mesh(_lines, LowPolyBuilder.vertex_colour_material(), false)
-	_add_mesh(_build_scenery(route), LowPolyBuilder.vertex_colour_material())
+	_add_mesh(_build_scenery(_scenery_mesh, route), LowPolyBuilder.vertex_colour_material())
 	_add_mesh(_woodland, LowPolyBuilder.vertex_colour_material(), false)
 	_add_mesh(_flats, _textured(TEXTURE_FLATS, Vector2(STOREY, STOREY)))
 	_add_mesh(_office, _textured(TEXTURE_OFFICE, Vector2(STOREY, STOREY)))
@@ -85,11 +92,12 @@ func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, ro
 
 
 func _add_mesh(builder: LowPolyBuilder, material: Material, casts_shadow: bool = true) -> void:
-	var instance := MeshInstance3D.new()
-	instance.mesh = builder.build(material)
-	if not casts_shadow:
-		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(instance)
+	for mesh in builder.build_all(material):
+		var instance := MeshInstance3D.new()
+		instance.mesh = mesh
+		if not casts_shadow:
+			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(instance)
 
 
 ## Textures tint with vertex colour, so one wall texture covers every building.
@@ -166,8 +174,7 @@ func _build_terrain() -> void:
 	add_child(instance)
 
 
-func _build_roads(map_data: Dictionary, route: RouteRunner) -> LowPolyBuilder:
-	var b := LowPolyBuilder.new()
+func _build_roads(b: LowPolyBuilder, map_data: Dictionary, route: RouteRunner) -> LowPolyBuilder:
 	for node: Dictionary in _network.nodes.values():
 		var position: Vector2 = node["position"]
 		var radius: float = node["radius"]
@@ -366,8 +373,7 @@ func _bump_warning(road_id: String, along: float, approach: float) -> void:
 	_signs.append({"spot": spot, "y": y, "yaw": placed["heading"]})
 
 
-func _build_scenery(route: RouteRunner) -> LowPolyBuilder:
-	var b := LowPolyBuilder.new()
+func _build_scenery(b: LowPolyBuilder, route: RouteRunner) -> LowPolyBuilder:
 	for stop in route.stops:
 		_shelter(b, stop)
 	_depot(b)

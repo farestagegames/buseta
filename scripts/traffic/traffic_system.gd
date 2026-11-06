@@ -2,7 +2,6 @@ class_name TrafficSystem
 extends Node3D
 ## Moves all traffic and runs the signals. Sees the bus only through telemetry.
 
-const CAR_COUNT := 14
 const CAR_HALF_LENGTH := 2.2
 const CAR_HALF_WIDTH := 0.9
 const CRUISE_LOW := 9.5
@@ -268,8 +267,9 @@ func _spawn_cars() -> void:
 	for i in graph.lanes.size():
 		if not (graph.lanes[i] as TrafficLane).is_link:
 			road_lanes.append(i)
-	for i in CAR_COUNT:
-		var lane_index: int = road_lanes[i * road_lanes.size() / CAR_COUNT]
+	var car_count: int = GraphicsQuality.current_profile()["traffic_cars"]
+	for i in car_count:
+		var lane_index: int = road_lanes[i * road_lanes.size() / car_count]
 		var lane: TrafficLane = graph.lanes[lane_index]
 		var start := lane.length * (0.25 + 0.5 * _random.randf())
 		agents.append(TrafficAgent.new(lane_index, start, _random.randf_range(CRUISE_LOW, CRUISE_HIGH)))

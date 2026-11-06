@@ -263,7 +263,7 @@ func test_lamp_post_falls_and_the_bus_keeps_going() -> void:
 
 
 func test_traffic_runs_and_keeps_moving() -> void:
-	assert_eq(traffic.agents.size(), TrafficSystem.CAR_COUNT)
+	assert_eq(traffic.agents.size(), int(GraphicsQuality.current_profile()["traffic_cars"]))
 	var start: Array[Vector2] = []
 	for agent in traffic.agents:
 		start.append(traffic._position_of(agent))
@@ -272,7 +272,7 @@ func test_traffic_runs_and_keeps_moving() -> void:
 	for i in traffic.agents.size():
 		if traffic._position_of(traffic.agents[i]).distance_to(start[i]) > 2.0:
 			moved += 1
-	assert_gt(moved, TrafficSystem.CAR_COUNT / 2, "Most cars should be driving")
+	assert_gt(moved, traffic.agents.size() / 2, "Most cars should be driving")
 
 
 func test_car_stops_behind_the_bus() -> void:

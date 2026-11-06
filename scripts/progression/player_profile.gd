@@ -23,6 +23,7 @@ var stats: Dictionary = {
 var achievements: Array[String] = []
 var best_scores: Dictionary = {} ## Route id to best score.
 var last_daily: String = "" ## Date key of the last daily challenge completed.
+var intro_done: bool = false ## The opening scene and tutorial have been seen.
 var settings: Dictionary = {}
 
 
@@ -58,7 +59,7 @@ func to_dict() -> Dictionary:
 	return {
 		"version": VERSION, "coins": coins, "xp": xp, "owned": owned, "selected": selected,
 		"stats": stats, "achievements": achievements, "best_scores": best_scores,
-		"last_daily": last_daily, "settings": settings,
+		"last_daily": last_daily, "settings": settings, "intro_done": intro_done,
 	}
 
 
@@ -95,6 +96,7 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 			profile.best_scores[str(key)] = int(_number((saved_best as Dictionary)[key], 0.0))
 	var daily: Variant = saved.get("last_daily")
 	profile.last_daily = daily if daily is String else ""
+	profile.intro_done = saved.get("intro_done") == true
 	var saved_settings: Variant = saved.get("settings")
 	profile.settings = saved_settings if saved_settings is Dictionary else {}
 	return profile
