@@ -43,6 +43,9 @@ Tilt sensor, keyboard  ---------------------->        |
 
 | `scripts/progression` | `PlayerProfile`, `SaveStore`, `Catalog`, `ShiftRewards`, `DriverLevel`, `DailyChallenge`, `AchievementList`, `AdProvider`, `ProgressionSystem` |
 | `scripts/core/profile.gd` | Autoload holding the live profile and saving it |
+| `scripts/core/lang.gd` | Autoload for languages and fonts |
+| `scripts/core/graphics_quality.gd` | Low, medium and high as data, and matching a phone to a level |
+| `scripts/tutorial` | `CameraShots`, `IntroCutscene`, `TutorialScript`, `TutorialDirector`, `TutorialPanel` |
 `CityShift` is the only script that knows every module. It wires them together
 at load time.
 
@@ -93,6 +96,18 @@ saves after every change and whenever the app goes to the background.
 
 **Ads behind an interface.** `AdProvider` is a stub that is never available, so no
 ad button shows. A real provider extends it and is assigned to `Profile.ads`.
+
+**Scoring fairness.** `test_an_imperfect_learner_shift_earns_three_or_four_stars`
+defines what a realistic imperfect drive should score. Change the balance
+freely, but keep that test passing. Losses in a category level off, running early
+is never penalised, and any valid stop scores at least 60% for accuracy.
+
+**Chunked city.** `LowPolyBuilder` can split geometry into 170 m cells, so the
+phone only draws what the camera can see. This halved triangles per frame. The cost
+is more draw calls, which is the number to watch on low-end GPUs.
+
+**Languages.** Anything drawn by hand calls `tr()`, and the driving HUD is locked
+left to right, so Arabic mirrors the menus but never moves the wheel or pedals.
 
 **Autopilot check.** `tools/autopilot.sh` drives a whole shift through the real
 controls. Run it after changing a map, because a route that passes its data tests
