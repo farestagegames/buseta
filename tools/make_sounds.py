@@ -43,27 +43,58 @@ def noise_filtered(seconds, cutoff, seed):
     return out
 
 
-def engine_loop():
-    # A whole number of cycles of each harmonic, so the loop has no click.
-    total = RATE
-    base = 55
-    harmonics = [(1, 1.0), (2, 0.7), (3, 0.45), (4, 0.3), (6, 0.15), (9, 0.08)]
-    out = []
-    for i in range(total):
-        t = i / RATE
-        beat = 0.8 + 0.2 * math.sin(2 * math.pi * 11 * t)
-        out.append(beat * sum(a * saw(base * n * t) for n, a in harmonics))
+def lowpass_loop(samples, cutoff, passes=2):
+    """Filters a looping sound, running round it so the join stays seamless."""
+    a = min(1.0, 2 * math.pi * cutoff / RATE)
+    out = list(samples)
+    for _ in range(passes):
+        value = sum(out) / len(out)
+        for _lap in range(2):
+            for i, sample in enumerate(out):
+                value += a * (sample - value)
+                out[i] = value
     return out
 
 
+def engine_loop():
+    """A six cylinder diesel idling: uneven low thuds under a soft rumble.
+
+    Each firing is a short decaying pulse with its own strength and timing, so
+    it sounds mechanical rather than like a steady musical note.
+    """
+    random.seed(21)
+    fires_per_second = 48
+    fires = 72  # 1.5 seconds, long enough not to sound like a short repeat.
+    period = RATE // fires_per_second
+    total = period * fires
+    pulses = [0.0] * total
+    for fire in range(fires):
+        strength = random.uniform(0.75, 1.0)
+        start = fire * period + random.randint(-12, 12)
+        for i in range(period * 2):
+            t = i / RATE
+            at = (start + i) % total
+            pulses[at] += strength * math.exp(-t * 95) * math.sin(2 * math.pi * 95 * t)
+    body = lowpass_loop(pulses, 320)
+    rumble = lowpass_loop([random.uniform(-1, 1) for _ in range(total)], 170)
+    clatter = lowpass_loop([random.uniform(-1, 1) for _ in range(total)], 1500, 1)
+    return [b + 1.6 * r + 0.05 * c for b, r, c in zip(body, rumble, clatter)]
+
+
 def horn_loop():
-    total = RATE // 2
-    tones = [(350, 1.0), (440, 0.9), (700, 0.3), (880, 0.25)]
-    return [sum(a * saw(f * i / RATE) for f, a in tones) for i in range(total)]
+    """A city bus air horn: two close tones, softly saturated, not a buzzer."""
+    total = RATE  # Whole cycles of every partial, so the loop is seamless.
+    tones = [(415, 1.0), (494, 0.8), (830, 0.22), (988, 0.16), (1245, 0.06)]
+    out = []
+    for i in range(total):
+        t = i / RATE
+        wave_sum = sum(a * math.sin(2 * math.pi * f * t) for f, a in tones)
+        out.append(math.tanh(wave_sum * 1.1))
+    return out
 
 
 def hiss(seconds, seed, fall=True):
-    noise = noise_filtered(seconds, 3500, seed)
+    noise = noise_filtered(seconds, 2200, seed)
     total = len(noise)
     return [n * (1.0 - i / total if fall else 1.0) * envelope(i, total, 0.02, 0.1) for i, n in enumerate(noise)]
 
@@ -82,11 +113,11 @@ def thump(seconds, frequency, drop, seed):
 
 
 def door_open():
-    return thump(0.12, 90, 8, 3) + hiss(1.0, 4)
+    return hiss(1.1, 4)
 
 
 def door_close():
-    return hiss(0.9, 5) + thump(0.18, 80, 8, 6)
+    return hiss(0.9, 5)
 
 
 def knock():

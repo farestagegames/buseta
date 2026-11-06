@@ -171,3 +171,62 @@ func test_open_doors_bring_the_camera_round_to_the_door_side() -> void:
 	var during: Vector3 = bus.global_transform.affine_inverse() * camera.global_position
 	assert_gt(during.x, 4.0, "Should be out to the door side")
 	assert_lt(during.z, -3.0, "Should be toward the front of the bus")
+
+
+func _first_car() -> KnockableProp:
+	for prop in obstacles.props:
+		if prop.kind == "car":
+			return prop
+	return null
+
+
+func test_hitting_a_parked_car_shoves_it_and_the_bus_keeps_rolling() -> void:
+	var car := _first_car()
+	var ground_spot := Vector2(car.position.x, car.position.z)
+	var heading := car.rotation.y
+	var forward := Vector2(-sin(heading), -cos(heading))
+	var start := car.position
+	GameEvents.bus_relocate_requested.emit(ground_spot - forward * 12.5, heading)
+	bus.model.speed = 8.0
+	watch_signals(GameEvents)
+	await wait_physics_frames(50)
+	assert_signal_emitted(GameEvents, "obstacle_hit")
+	assert_gt(car.position.distance_to(start), 1.0, "Car should have moved")
+	assert_gt(bus.model.speed, 3.0, "A bus should not stop dead against a car")
+
+
+func test_slow_push_moves_a_car_rather_than_blocking() -> void:
+	var car := _first_car()
+	var ground_spot := Vector2(car.position.x, car.position.z)
+	var heading := car.rotation.y
+	var forward := Vector2(-sin(heading), -cos(heading))
+	var start := car.position
+	GameEvents.bus_relocate_requested.emit(ground_spot - forward * 10.2, heading)
+	GameEvents.ui_pedals_changed.emit(1.0, 0.0)
+	await wait_physics_frames(240)
+	assert_gt(car.position.distance_to(start), 0.3)
+	assert_gt(bus.model.speed, 0.5)
+
+
+func test_boarded_passengers_appear_in_the_seats() -> void:
+	var visual: BusVisual = bus.get_node("Visual")
+	assert_eq(visual.visible_riders(), 0)
+	GameEvents.onboard_changed.emit(6)
+	assert_eq(visual.visible_riders(), 6)
+
+
+func test_driver_hides_only_from_the_cockpit() -> void:
+	var visual: BusVisual = bus.get_node("Visual")
+	var camera: CameraRig = scene.get_node("CameraRig")
+	await wait_frames(2)
+	assert_true(visual.driver_visible())
+	camera.next_view()
+	camera.next_view()
+	assert_eq(camera.view_name(), "Cockpit")
+	assert_false(visual.driver_visible())
+
+
+func test_volume_setting_reaches_the_audio_bus() -> void:
+	GameSettings.sound_volume = 0.5
+	assert_almost_eq(AudioServer.get_bus_volume_db(0), linear_to_db(0.5), 0.01)
+	GameSettings.sound_volume = 0.7

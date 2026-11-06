@@ -63,7 +63,7 @@ func _ready() -> void:
 	settings_panel = SettingsPanel.new()
 	settings_panel.visible = false
 	settings_panel.closed.connect(_close_settings)
-	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-300.0, -280.0), Vector2(600.0, 560.0))
+	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-300.0, -310.0), Vector2(600.0, 620.0))
 	root.add_child(settings_panel)
 
 	shift_panel = ShiftEndPanel.new()

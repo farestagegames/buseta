@@ -5,6 +5,8 @@ extends RefCounted
 
 var _surface := SurfaceTool.new()
 var _has_geometry := false
+## Height where wall textures start, so storeys line up with the ground.
+var uv_base_height: float = 0.0
 
 
 func _init() -> void:
@@ -56,6 +58,55 @@ func disc(centre: Vector2, radius: float, lift: float, height_of: Callable, colo
 			Vector3(p1.x, float(height_of.call(p1)) + lift, p1.y), Vector3.UP, colour)
 
 
+## A rough rounded lump, for tree crowns and hedges. Eight faces per half.
+func blob(centre: Vector3, size: Vector3, colour: Color, random: RandomNumberGenerator) -> void:
+	var sides := 6
+	var rings: Array[Array] = []
+	for level: float in [-0.75, 0.05, 0.8]:
+		var ring: Array[Vector3] = []
+		var reach := sqrt(1.0 - level * level)
+		for i in sides:
+			var angle := TAU * (float(i) + 0.5 * (level + 1.0)) / sides
+			var wobble := random.randf_range(0.85, 1.15)
+			ring.append(centre + Vector3(cos(angle) * reach * wobble, level, sin(angle) * reach * wobble) * size)
+		rings.append(ring)
+	var top := centre + Vector3.UP * size.y * 1.05
+	var bottom := centre - Vector3.UP * size.y * 0.95
+	for i in sides:
+		var j := (i + 1) % sides
+		_facet(top, rings[2][i], rings[2][j], colour)
+		_facet(bottom, rings[0][j], rings[0][i], colour.darkened(0.2))
+		for level in 2:
+			var shade := colour.darkened(0.12) if level == 0 else colour
+			_facet(rings[level][i], rings[level + 1][j], rings[level + 1][i], shade)
+			_facet(rings[level][i], rings[level][j], rings[level + 1][j], shade)
+
+
+func _facet(a: Vector3, b: Vector3, c: Vector3, colour: Color) -> void:
+	var normal := (c - a).cross(b - a).normalized()
+	_triangle(a, b, c, normal, colour)
+
+
+## A gable roof on a rectangle. The ridge runs along the local Z axis.
+func gable(centre: Vector3, width: float, length: float, rise: float, yaw: float, colour: Color) -> void:
+	var basis := Basis(Vector3.UP, yaw)
+	var half_w := width / 2.0
+	var half_l := length / 2.0
+	var corner := func(x: float, y: float, z: float) -> Vector3: return centre + basis * Vector3(x, y, z)
+	var a: Vector3 = corner.call(-half_w, 0.0, -half_l)
+	var b: Vector3 = corner.call(half_w, 0.0, -half_l)
+	var c: Vector3 = corner.call(half_w, 0.0, half_l)
+	var d: Vector3 = corner.call(-half_w, 0.0, half_l)
+	var ridge_front: Vector3 = corner.call(0.0, rise, -half_l)
+	var ridge_back: Vector3 = corner.call(0.0, rise, half_l)
+	_facet(a, ridge_back, d, colour)
+	_facet(a, ridge_front, ridge_back, colour)
+	_facet(b, c, ridge_back, colour.darkened(0.1))
+	_facet(b, ridge_back, ridge_front, colour.darkened(0.1))
+	_facet(a, b, ridge_front, colour.darkened(0.05))
+	_facet(d, ridge_back, c, colour.darkened(0.05))
+
+
 ## A cylinder lying along the X axis. Alternate hub segments make rolling visible.
 func wheel(centre: Vector3, radius: float, width: float, tyre: Color, hub: Color, sides: int = 12) -> void:
 	var half := width / 2.0
@@ -99,4 +150,14 @@ func _triangle(a: Vector3, b: Vector3, c: Vector3, normal: Vector3, colour: Colo
 	for point: Vector3 in [a, b, c]:
 		_surface.set_color(colour)
 		_surface.set_normal(normal)
+		_surface.set_uv(_world_uv(point, normal))
 		_surface.add_vertex(point)
+
+
+## UVs in metres, so textures keep their real size on any shape. Flat surfaces
+## map from above and walls wrap around horizontally.
+func _world_uv(point: Vector3, normal: Vector3) -> Vector2:
+	if absf(normal.y) > 0.6:
+		return Vector2(point.x, point.z)
+	var along := Vector2(-normal.z, normal.x).normalized()
+	return Vector2(point.x * along.x + point.z * along.y, uv_base_height - point.y)

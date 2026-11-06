@@ -73,7 +73,7 @@ func _start_session(stop: RouteStop, centre: Vector2) -> void:
 	_accuracy_total += stop.accuracy(centre)
 	_session_stop = runner.stop_index
 	session = StopSession.new(alighting, boarding)
-	session.passenger_alighted.connect(func() -> void: GameEvents.passenger_alighted.emit(_session_stop))
+	session.passenger_alighted.connect(_on_alighted)
 	session.passenger_boarded.connect(_on_boarded)
 	GameEvents.stop_session_started.emit(runner.stop_index, alighting, boarding)
 
@@ -90,9 +90,15 @@ func _run_session(stop: RouteStop, data: BusTelemetry, centre: Vector2, dt: floa
 		_next_stop()
 
 
+func _on_alighted() -> void:
+	GameEvents.passenger_alighted.emit(_session_stop)
+	GameEvents.onboard_changed.emit(ledger.count() + session.alighting_left)
+
+
 func _on_boarded() -> void:
 	ledger.board_one(_session_stop)
 	GameEvents.passenger_boarded.emit(_session_stop)
+	GameEvents.onboard_changed.emit(ledger.count())
 
 
 func _next_stop() -> void:
@@ -103,6 +109,7 @@ func _finish() -> void:
 	finished = true
 	var carried := ledger.carried_total
 	ledger.clear()
+	GameEvents.onboard_changed.emit(0)
 	GameEvents.shift_completed.emit({
 		"route": runner.route_name, "carried": carried, "served": _served, "missed": _missed,
 		"left_behind": _left_behind,

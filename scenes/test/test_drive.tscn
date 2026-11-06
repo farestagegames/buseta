@@ -38,7 +38,10 @@ light_color = Color(1, 0.97, 0.9, 1)
 light_energy = 0.75
 shadow_enabled = true
 directional_shadow_mode = 0
-directional_shadow_max_distance = 70.0
+directional_shadow_max_distance = 55.0
+shadow_blur = 1.4
+shadow_bias = 0.06
+shadow_normal_bias = 1.2
 
 [node name="TestGround" type="Node3D" parent="."]
 script = ExtResource("2")

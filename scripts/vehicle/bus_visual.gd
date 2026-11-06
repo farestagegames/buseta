@@ -14,6 +14,11 @@ const STEERING_WHEEL_TURNS := 3.0
 const DARK := Color(0.1, 0.1, 0.12)
 const TRIM := Color(0.26, 0.27, 0.3)
 const SEAT := Color(0.15, 0.25, 0.5)
+const SKIN := Color(0.85, 0.68, 0.55)
+const SHIRTS: Array[Color] = [
+	Color(0.2, 0.4, 0.75), Color(0.8, 0.3, 0.25), Color(0.25, 0.6, 0.4),
+	Color(0.85, 0.65, 0.2), Color(0.55, 0.35, 0.65), Color(0.85, 0.85, 0.85),
+]
 const LAMP_OFF_RED := Color(0.35, 0.05, 0.05)
 const LAMP_OFF_AMBER := Color(0.45, 0.25, 0.05)
 
@@ -32,6 +37,9 @@ var _brake_lamps: MeshInstance3D
 var _left_lamps: MeshInstance3D
 var _right_lamps: MeshInstance3D
 var _wheel_spin: float = 0.0
+var _seat_points: Array[Vector3] = []
+var _riders: MultiMesh
+var _driver: Node3D
 var _front_z: float
 var _rear_z: float
 var _half_width: float
@@ -56,7 +64,28 @@ func _ready() -> void:
 	_build_wheels()
 	_build_doors()
 	_build_lamps()
+	_build_riders()
+	_build_driver()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
+	GameEvents.onboard_changed.connect(_on_onboard_changed)
+	GameEvents.camera_view_changed.connect(_on_view_changed)
+
+
+func visible_riders() -> int:
+	return _riders.visible_instance_count
+
+
+func driver_visible() -> bool:
+	return _driver.visible
+
+
+func _on_onboard_changed(count: int) -> void:
+	_riders.visible_instance_count = mini(count, _riders.instance_count)
+
+
+## The driver would block the player's own view from the cockpit.
+func _on_view_changed(view_name: String) -> void:
+	_driver.visible = view_name != "Cockpit"
 
 
 func door_swing_angle() -> float:
@@ -122,12 +151,19 @@ func _build_shell() -> void:
 		for axle_z: float in [0.0, -spec.wheelbase]:
 			b.box(Vector3(side * wall_x, 0.68, axle_z), Vector3(0.1, 0.56, 1.3), DARK)
 
+	# Mirrors on arms, which also make the cockpit view read as a real bus.
+	for side: float in [-1.0, 1.0]:
+		var mirror_z := _front_z + 0.15
+		b.box(Vector3(side * (_half_width + 0.14), 2.3, mirror_z), Vector3(0.3, 0.04, 0.04), DARK)
+		b.box(Vector3(side * (_half_width + 0.27), 2.12, mirror_z), Vector3(0.05, 0.36, 0.17), DARK)
+
 	# Saloon seats, so the windows are not looking at an empty box.
 	var row_z := _door_far_z + 0.5
 	while row_z < _rear_z - 0.8:
 		for x: float in [-0.95, -0.5, 0.5, 0.95]:
 			b.box(Vector3(x, 0.72, row_z), Vector3(0.4, 0.5, 0.42), SEAT)
 			b.box(Vector3(x, 1.12, row_z + 0.18), Vector3(0.4, 0.55, 0.08), SEAT)
+			_seat_points.append(Vector3(x, 0.97, row_z))
 		row_z += 0.95
 
 	var mesh_instance := MeshInstance3D.new()
@@ -258,6 +294,47 @@ func _door_leaf(hinge: Vector3, length: float) -> Node3D:
 	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	leaf.add_child(glass)
 	return pivot
+
+
+## Seated passengers are one instanced batch, filled in a shuffled order so the
+## bus does not fill front to back. Only the shirt takes the instance colour.
+func _build_riders() -> void:
+	var order := _seat_points.duplicate()
+	var random := RandomNumberGenerator.new()
+	random.seed = 31
+	for i in range(order.size() - 1, 0, -1):
+		var swap := random.randi_range(0, i)
+		var held: Vector3 = order[i]
+		order[i] = order[swap]
+		order[swap] = held
+	var person := LowPolyBuilder.new()
+	person.box(Vector3(0.0, 0.3, 0.0), Vector3(0.38, 0.6, 0.24), Color.WHITE)
+	person.box(Vector3(0.0, 0.76, 0.0), Vector3(0.22, 0.26, 0.24), SKIN * 1.1)
+	_riders = MultiMesh.new()
+	_riders.transform_format = MultiMesh.TRANSFORM_3D
+	_riders.use_colors = true
+	_riders.mesh = person.build(LowPolyBuilder.vertex_colour_material())
+	_riders.instance_count = order.size()
+	for i in order.size():
+		_riders.set_instance_transform(i, Transform3D(Basis.IDENTITY, order[i]))
+		_riders.set_instance_color(i, SHIRTS[i % SHIRTS.size()])
+	_riders.visible_instance_count = 0
+	var instance := MultiMeshInstance3D.new()
+	instance.multimesh = _riders
+	instance.custom_aabb = AABB(Vector3(-2.0, 0.0, _front_z), Vector3(4.0, 3.0, spec.overall_length()))
+	_body.add_child(instance)
+
+
+func _build_driver() -> void:
+	var b := LowPolyBuilder.new()
+	var x := spec.driver_seat_x
+	var z := _front_z + 1.72
+	b.box(Vector3(x, 1.28, z), Vector3(0.42, 0.62, 0.26), Color(0.15, 0.2, 0.35))
+	b.box(Vector3(x, 1.74, z), Vector3(0.24, 0.27, 0.25), SKIN)
+	b.box(Vector3(x, 1.9, z), Vector3(0.27, 0.07, 0.28), Color(0.12, 0.14, 0.22))
+	_driver = MeshInstance3D.new()
+	(_driver as MeshInstance3D).mesh = b.build(LowPolyBuilder.vertex_colour_material())
+	_body.add_child(_driver)
 
 
 func _build_lamps() -> void:

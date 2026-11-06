@@ -26,3 +26,8 @@ func test_mouse_can_stand_in_for_touch_on_desktop() -> void:
 
 func test_texture_compression_for_android_is_on() -> void:
 	assert_true(ProjectSettings.get_setting("rendering/textures/vram_compression/import_etc2_astc"))
+
+
+func test_shadows_are_filtered_on_phones() -> void:
+	assert_eq(ProjectSettings.get_setting("rendering/lights_and_shadows/directional_shadow/size.mobile"), 4096)
+	assert_gt(ProjectSettings.get_setting("rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality.mobile"), 0)

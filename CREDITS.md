@@ -4,7 +4,8 @@
 
 The game has no third-party art or audio so far. The bus, city, passengers and
 obstacles are generated in code, all sounds are synthesised by
-`tools/make_sounds.py` for this project, and the interface uses Godot's built-in
+`tools/make_sounds.py`, all textures are drawn by `tools/make_textures.py`, and
+the interface uses Godot's built-in
 font.
 
 CC0 assets added in later phases are listed here with their source and licence.

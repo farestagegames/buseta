@@ -65,6 +65,15 @@ smooth hills never penalise passenger comfort.
 outline, drawn with one `MultiMesh` per kind. Hundreds cost almost nothing, whereas
 a rigid body each would be heavy on a phone.
 
+**Pushable cars.** Parked cars are heavy `KnockableProp`s, not solid walls. A bus
+outweighs a car about nine to one, so a hit shoves the car and costs some speed
+depending on how direct and how fast it was. Buildings, trees and lamp posts stay
+solid.
+
+**Textures from a script.** `tools/make_textures.py` draws tiling textures that
+the meshes tint with vertex colour, so one wall texture covers every building.
+`LowPolyBuilder` writes UVs in metres, which keeps brick and windows at real size.
+
 **Autopilot check.** `tools/autopilot.sh` drives a whole shift through the real
 controls. Run it after changing a map, because a route that passes its data tests
 can still be impossible for a 12 m bus.

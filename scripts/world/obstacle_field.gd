@@ -8,7 +8,19 @@ const KINDS := {
 	"bin": {"radius": 0.42, "speed_loss": 0.35},
 	"crate": {"radius": 0.55, "speed_loss": 0.5},
 	"barrier": {"radius": 0.75, "speed_loss": 0.45},
+	"car": {"radius": 1.25, "speed_loss": 0.0},
 }
+## Share of the bus's speed lost to a parked car. A bus outweighs a car about
+## nine to one, so even a head-on hit shoves the car rather than stopping the bus.
+const CAR_LOSS_GLANCING := 0.06
+const CAR_LOSS_HEAD_ON := 0.28
+const CAR_MIN_HIT_SPEED := 0.15
+## Below this a bus pushes a car along with hardly any loss of speed.
+const CAR_FULL_IMPACT_SPEED := 5.0
+const CAR_COLOURS: Array[Color] = [
+	Color(0.2, 0.3, 0.55), Color(0.75, 0.75, 0.78), Color(0.17, 0.17, 0.2),
+	Color(0.55, 0.15, 0.15), Color(0.85, 0.82, 0.72), Color(0.25, 0.4, 0.35),
+]
 ## Below this the bus nudges past rather than knocking things over.
 const MIN_HIT_SPEED := 0.6
 const CHECK_RADIUS := 15.0
@@ -36,6 +48,10 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 			var placed: Dictionary = network.sample(line["road"], along, line["lateral"], line["dir"])
 			_add_prop("cone", placed["position"], 0.0)
 			along += float(line["spacing"])
+	for car: Dictionary in map_data.get("parked_cars", []):
+		var placed: Dictionary = network.sample(car["road"], car["along"], RoadNetwork.ROAD_HALF_WIDTH - 1.15, car["dir"])
+		_add_prop("car", placed["position"], placed["heading"])
+		props[props.size() - 1].heavy = true
 	_build_batches()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 
@@ -57,19 +73,42 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	_bus_position = Vector2(data.position.x, data.position.z)
 	_bus_heading = data.heading
 	_bus_speed = data.speed
-	if absf(_bus_speed) < MIN_HIT_SPEED:
+	var bus_speed := absf(_bus_speed)
+	if bus_speed < CAR_MIN_HIT_SPEED:
 		return
 	var forward := Vector2(-sin(_bus_heading), -cos(_bus_heading))
 	var centre := BusFootprint.body_centre(_bus_position, _bus_heading, _spec)
 	for prop in props:
-		if prop.state != KnockableProp.State.STANDING:
+		if not _can_be_hit(prop, bus_speed):
 			continue
 		var ground_position := Vector2(prop.position.x, prop.position.z)
 		if ground_position.distance_squared_to(centre) > CHECK_RADIUS * CHECK_RADIUS:
 			continue
 		if BusFootprint.touches(_bus_position, _bus_heading, _spec, ground_position, prop.radius):
-			prop.hit(forward * _bus_speed, ground_position - centre)
-			GameEvents.obstacle_hit.emit(prop.kind, float(KINDS[prop.kind]["speed_loss"]))
+			if prop.heavy:
+				_shove(prop, forward, ground_position - centre)
+			else:
+				prop.hit(forward * _bus_speed, ground_position - centre)
+				GameEvents.obstacle_hit.emit(prop.kind, float(KINDS[prop.kind]["speed_loss"]))
+
+
+func _can_be_hit(prop: KnockableProp, bus_speed: float) -> bool:
+	if prop.heavy:
+		var prop_speed := Vector2(prop.velocity.x, prop.velocity.z).length()
+		return prop.cooldown <= 0.0 and prop_speed < bus_speed
+	return prop.state == KnockableProp.State.STANDING and bus_speed >= MIN_HIT_SPEED
+
+
+func _shove(prop: KnockableProp, forward: Vector2, away: Vector2) -> void:
+	var direction := forward * signf(_bus_speed)
+	var head_on := clampf(direction.dot(away.normalized()), 0.0, 1.0)
+	var bus_speed := absf(_bus_speed)
+	var hardness := clampf(bus_speed / CAR_FULL_IMPACT_SPEED, 0.05, 1.0)
+	var loss := bus_speed * lerpf(CAR_LOSS_GLANCING, CAR_LOSS_HEAD_ON, head_on) * hardness
+	prop.shove(forward * _bus_speed, away)
+	GameEvents.obstacle_hit.emit(prop.kind, loss)
+	if loss > 0.5:
+		GameEvents.bus_collided.emit(loss)
 
 
 func _build_batches() -> void:
@@ -80,6 +119,7 @@ func _build_batches() -> void:
 	for kind: String in counts:
 		var multi := MultiMesh.new()
 		multi.transform_format = MultiMesh.TRANSFORM_3D
+		multi.use_colors = kind == "car"
 		multi.mesh = _mesh_for(kind).build(material)
 		multi.instance_count = counts[kind]
 		_batches[kind] = multi
@@ -93,6 +133,8 @@ func _build_batches() -> void:
 		var index: int = next.get(prop.kind, 0)
 		next[prop.kind] = index + 1
 		_indices[prop] = index
+		if prop.kind == "car":
+			(_batches["car"] as MultiMesh).set_instance_color(index, CAR_COLOURS[index % CAR_COLOURS.size()])
 		_write_transform(prop)
 
 
@@ -115,6 +157,17 @@ func _mesh_for(kind: String) -> LowPolyBuilder:
 		"crate":
 			b.box(Vector3(0.0, 0.45, 0.0), Vector3(0.9, 0.9, 0.9), Color(0.6, 0.42, 0.22))
 			b.box(Vector3(0.0, 0.9, 0.0), Vector3(0.94, 0.06, 0.94), Color(0.45, 0.3, 0.16))
+		"car":
+			var glass := Color(0.12, 0.16, 0.2)
+			var tyre := Color(0.05, 0.05, 0.06)
+			b.box(Vector3(0.0, 0.55, 0.0), Vector3(1.8, 0.55, 4.3), Color.WHITE)
+			b.box(Vector3(0.0, 1.05, 0.25), Vector3(1.6, 0.5, 2.3), glass)
+			b.box(Vector3(0.0, 1.32, 0.25), Vector3(1.5, 0.06, 2.1), Color.WHITE)
+			b.box(Vector3(0.0, 0.34, 2.17), Vector3(1.82, 0.2, 0.08), tyre)
+			b.box(Vector3(0.0, 0.34, -2.17), Vector3(1.82, 0.2, 0.08), tyre)
+			for z: float in [-1.35, 1.35]:
+				for x: float in [-0.85, 0.85]:
+					b.box(Vector3(x, 0.32, z), Vector3(0.24, 0.64, 0.64), tyre)
 		_:
 			b.box(Vector3(0.0, 0.08, 0.0), Vector3(1.5, 0.16, 0.4), Color(0.2, 0.2, 0.2))
 			b.box(Vector3(0.0, 0.55, 0.0), Vector3(1.4, 0.3, 0.1), Color(0.92, 0.15, 0.12))

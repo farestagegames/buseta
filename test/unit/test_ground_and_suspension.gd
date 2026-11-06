@@ -198,3 +198,14 @@ func test_standing_prop_does_not_move_on_its_own() -> void:
 	var prop := KnockableProp.new("cone", Vector3(1.0, 0.0, 1.0), 0.3)
 	prop.update(1.0, 0.0)
 	assert_eq(prop.position, Vector3(1.0, 0.0, 1.0))
+
+
+func test_car_is_shoved_along_and_comes_back_to_rest() -> void:
+	var car := KnockableProp.new("car", Vector3.ZERO, 1.25)
+	car.heavy = true
+	car.shove(Vector2(0.0, -8.0), Vector2(0.0, -1.0))
+	for i in 300:
+		car.update(DT, 0.0)
+	assert_lt(car.position.z, -3.0, "Car should slide ahead of the bus")
+	assert_eq(car.position.y, 0.0, "Car should stay on the road")
+	assert_eq(car.state, KnockableProp.State.STANDING, "Car can be pushed again")

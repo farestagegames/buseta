@@ -3,8 +3,8 @@ extends Node
 ## All game sound. Listens to events only, so nothing else knows audio exists.
 
 const IDLE_RPM := AutomaticGearbox.IDLE_RPM
-const ENGINE_MIN_PITCH := 0.75
-const ENGINE_MAX_PITCH := 1.75
+const ENGINE_MIN_PITCH := 0.85
+const ENGINE_MAX_PITCH := 1.5
 const COLLISION_COOLDOWN := 0.35
 
 const SOUNDS := {
@@ -37,20 +37,27 @@ var _cooldown: float = 0.0
 func _ready() -> void:
 	for key: String in SOUNDS:
 		_streams[key] = load(SOUNDS[key])
-	_engine = _make_loop("engine", -12.0)
-	_horn = _make_loop("horn", -4.0)
+	_engine = _make_loop("engine", -22.0)
+	_horn = _make_loop("horn", -13.0)
 	_engine.play()
 	for i in 4:
 		var player := AudioStreamPlayer.new()
 		add_child(player)
 		_effects.append(player)
+	GameSettings.changed.connect(_apply_volume)
+	_apply_volume()
 	GameEvents.horn_changed.connect(_on_horn)
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.bus_collided.connect(_on_collided)
-	GameEvents.obstacle_hit.connect(func(_kind: String, _loss: float) -> void: play_effect("knock", -3.0))
+	GameEvents.obstacle_hit.connect(func(_kind: String, _loss: float) -> void: play_effect("knock", -9.0))
 	GameEvents.bus_jolted.connect(_on_jolted)
-	GameEvents.passenger_boarded.connect(func(_stop: int) -> void: play_effect("pay", -8.0))
-	GameEvents.stop_session_started.connect(func(_stop: int, _off: int, _on: int) -> void: play_effect("bell", -8.0))
+	GameEvents.passenger_boarded.connect(func(_stop: int) -> void: play_effect("pay", -18.0))
+	GameEvents.stop_session_started.connect(func(_stop: int, _off: int, _on: int) -> void: play_effect("bell", -14.0))
+
+
+func _apply_volume() -> void:
+	AudioServer.set_bus_volume_db(0, linear_to_db(GameSettings.sound_volume))
+	AudioServer.set_bus_mute(0, GameSettings.sound_volume <= 0.0)
 
 
 func play_effect(key: String, volume_db: float) -> void:
@@ -87,20 +94,20 @@ func _on_horn(is_pressed: bool) -> void:
 func _on_telemetry(data: BusTelemetry) -> void:
 	var share := inverse_lerp(IDLE_RPM, AutomaticGearbox.MAX_RPM, data.rpm)
 	_engine.pitch_scale = lerpf(ENGINE_MIN_PITCH, ENGINE_MAX_PITCH, clampf(share, 0.0, 1.0))
-	_engine.volume_db = lerpf(-15.0, -7.0, data.throttle)
+	_engine.volume_db = lerpf(-24.0, -16.0, data.throttle)
 
 	if data.doors_closed != _doors_were_closed:
 		_doors_were_closed = data.doors_closed
 		if data.doors_closed:
-			play_effect("thud", -8.0)
+			play_effect("thud", -14.0)
 	elif not data.doors_closed and data.door_open_amount > 0.0 and data.door_open_amount < 0.03:
-		play_effect("door_open", -3.0)
+		play_effect("door_open", -12.0)
 	if _door_started_closing(data):
-		play_effect("door_close", -3.0)
+		play_effect("door_close", -12.0)
 
 	var braking := data.brake > 0.25
 	if _was_braking and not braking and absf(data.speed) < 1.0:
-		play_effect("air", -8.0)
+		play_effect("air", -16.0)
 	_was_braking = braking
 
 
@@ -116,10 +123,10 @@ func _door_started_closing(data: BusTelemetry) -> bool:
 func _on_collided(impact_speed: float) -> void:
 	if _cooldown <= 0.0:
 		_cooldown = COLLISION_COOLDOWN
-		play_effect("crash", clampf(-14.0 + impact_speed * 2.0, -14.0, 0.0))
+		play_effect("crash", clampf(-16.0 + impact_speed * 1.5, -16.0, -5.0))
 
 
 func _on_jolted(strength: float) -> void:
 	if _cooldown <= 0.0:
 		_cooldown = COLLISION_COOLDOWN
-		play_effect("thud", clampf(-16.0 + strength * 1.5, -16.0, -3.0))
+		play_effect("thud", clampf(-22.0 + strength * 1.5, -22.0, -10.0))

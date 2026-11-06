@@ -5,6 +5,8 @@ extends RefCounted
 ## ground. Vectors are on the ground plane as (X, Z), and -Z is north.
 
 const LANE_WIDTH := 3.75
+## Wide flared junctions, so a 12 m bus can turn without climbing the kerb.
+const JUNCTION_RADIUS := 15.0
 const ROAD_HALF_WIDTH := LANE_WIDTH
 const SAMPLE_SPACING := 6.0
 const CELL_SIZE := 16.0
@@ -24,7 +26,7 @@ static func from_data(data: Dictionary) -> RoadNetwork:
 	var network := RoadNetwork.new()
 	for entry: Dictionary in data["nodes"]:
 		network.add_node(entry["id"], Vector2(entry["x"], entry["z"]), entry.get("kind", "junction"),
-			entry.get("radius", 11.0), entry.get("island", 0.0))
+			entry.get("radius", JUNCTION_RADIUS), entry.get("island", 0.0))
 	for entry: Dictionary in data["roads"]:
 		var via: Array[Vector2] = []
 		for point: Array in entry.get("via", []):

@@ -201,3 +201,24 @@ func test_city_steepest_road_is_drivable() -> void:
 		steepest = maxf(steepest, rise / run)
 	assert_lt(steepest, 0.1, "Route should stay under a 10 percent grade")
 	assert_gt(steepest, 0.03, "Hills should be noticeable")
+
+
+func test_route_has_no_corners_tighter_than_a_bus_can_take() -> void:
+	var route_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/routes/route_01.json"))
+	var map_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(route_data["map"]))
+	var city := RoadNetwork.from_data(map_data)
+	var tightest := INF
+	for road: Dictionary in city.roads.values():
+		var points: PackedVector2Array = road["points"]
+		var clear_of_nodes := func(point: Vector2) -> bool:
+			return point.distance_to(city.nodes[road["from"]]["position"]) > 30.0 \
+				and point.distance_to(city.nodes[road["to"]]["position"]) > 30.0
+		for i in range(4, points.size() - 4):
+			if not clear_of_nodes.call(points[i]):
+				continue
+			var before := points[i] - points[i - 4]
+			var after := points[i + 4] - points[i]
+			var turn := absf(before.angle_to(after))
+			if turn > 0.01:
+				tightest = minf(tightest, (before.length() + after.length()) / 2.0 / turn)
+	assert_gt(tightest, 22.0, "Bends should take a bus at about 25 km/h")
