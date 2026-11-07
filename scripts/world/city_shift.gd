@@ -63,7 +63,7 @@ func _ready() -> void:
 	_route_system.setup(route, _bus.spec, network)
 	_traffic.setup(map_data, network, ground, _bus.spec)
 	_score.setup(network, _bus.spec)
-	_crowd.setup(route, ground)
+	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)
 	GameEvents.map_ready.emit(network, route)
 	_tutorial.setup(_hud, _route_system, _bus.spec)

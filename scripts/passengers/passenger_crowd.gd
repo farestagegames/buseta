@@ -1,11 +1,17 @@
 class_name PassengerCrowd
 extends Node3D
 ## The people you can see. Purely visual: it follows passenger events and never
-## decides who boards. Walkers come from a small pool to keep phones happy.
+## decides who boards. Walkers come from a small pool to keep phones happy. Once
+## aboard they belong to the bus body, so they ride its suspension and leave with
+## it, and they stay on their feet until they reach a seat.
 
 const MAX_WAITING := 8
 const SPAWN_DISTANCE := 260.0
 const WALK_SPEED := 1.7
+const CABIN_SPEED := 1.35
+const AISLE_GAP := 0.8
+const PAY_SECONDS := 0.8
+const PAY_ARM_RAISE := 1.35
 const QUEUE_GAP := 0.8
 ## Keep at least this far apart, in metres.
 const PERSONAL_SPACE := 0.62
@@ -36,8 +42,12 @@ const BAG_COLOURS: Array[Color] = [Color(0.2, 0.2, 0.22), Color(0.5, 0.3, 0.16),
 var waiting: Array[Walker] = []
 var leaving: Array[Walker] = []
 var boarding: Array[Walker] = []
+var aboard: Array[Walker] = [] ## On the bus, heading for a seat.
+var getting_off: Array[Walker] = [] ## On the bus, heading for the door.
 
 var _route: RouteRunner
+var _visual: BusVisual
+var _cabin: CabinLayout
 var _ground: GroundSurface
 var _pool: Array[Walker] = []
 var _body_meshes: Array[ArrayMesh] = []
@@ -45,6 +55,8 @@ var _leg_meshes: Array[ArrayMesh] = []
 var _arm_meshes: Array[ArrayMesh] = []
 var _spawned_for: int = -1
 var _door: Vector3 = Vector3.ZERO
+var _doors_shut: bool = true
+var _bus_forward: Vector2 = Vector2.UP
 var _queueing: bool = false
 var _random := RandomNumberGenerator.new()
 
@@ -60,6 +72,9 @@ class Walker:
 	var pace: float = 1.0 ## Older people walk more slowly.
 	var idle_time: float = 0.0
 	var base_yaw: float = 0.0
+	var path: Array[Vector3] = [] ## Points still to walk through the bus.
+	var pay_left: float = 0.0
+	var seat: int = -1
 
 	func step(dt: float, speed: float, ground: GroundSurface) -> bool:
 		var flat := Vector2(target.x - position.x, target.z - position.z)
@@ -71,7 +86,39 @@ class Walker:
 		var move := flat.normalized() * minf(speed * dt, distance)
 		position.x += move.x
 		position.z += move.y
-		base_yaw = atan2(-flat.x, -flat.y)
+		_stride(flat, dt, speed)
+		position.y = ground.height_at(Vector2(position.x, position.z)) + absf(cos(stride)) * 0.04
+		return false
+
+	## Follows the path through the bus, step by step. True once it runs out.
+	func walk_path(dt: float, speed: float) -> bool:
+		if pay_left > 0.0:
+			pay_left -= dt
+			right_arm.rotation.x = lerpf(right_arm.rotation.x, PAY_ARM_RAISE, minf(dt * 9.0, 1.0))
+			return false
+		if path.is_empty():
+			return true
+		var ahead := path[0] - position
+		var flat := Vector2(ahead.x, ahead.z)
+		var distance := flat.length()
+		speed *= pace
+		if distance > 0.001:
+			position += ahead * minf(speed * dt / distance, 1.0)
+			_stride(flat, dt, speed)
+		if distance <= speed * dt:
+			position = path[0]
+			path.remove_at(0)
+		return false
+
+	## At the machine, this is the moment of paying.
+	func start_paying() -> void:
+		pay_left = PAY_SECONDS
+
+	func hold_still(dt: float) -> void:
+		_idle(dt)
+
+	func _stride(direction: Vector2, dt: float, speed: float) -> void:
+		base_yaw = atan2(-direction.x, -direction.y)
 		rotation.y = base_yaw
 		stride += dt * speed * 5.5
 		var swing := sin(stride) * 0.55
@@ -79,8 +126,6 @@ class Walker:
 		right_leg.rotation.x = -swing
 		left_arm.rotation.x = -swing * 0.8
 		right_arm.rotation.x = swing * 0.8
-		position.y = ground.height_at(Vector2(position.x, position.z)) + absf(cos(stride)) * 0.04
-		return false
 
 	## Standing people shift their weight and glance around, so a queue looks alive.
 	func _idle(dt: float) -> void:
@@ -94,9 +139,11 @@ class Walker:
 		rotation.z = sin(idle_time * 0.45 + stride) * 0.025
 
 
-func setup(route: RouteRunner, ground: GroundSurface) -> void:
+func setup(route: RouteRunner, ground: GroundSurface, visual: BusVisual) -> void:
 	_route = route
 	_ground = ground
+	_visual = visual
+	_cabin = visual.cabin
 	_random.seed = 77
 	_build_meshes()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
@@ -104,6 +151,7 @@ func setup(route: RouteRunner, ground: GroundSurface) -> void:
 	GameEvents.passenger_boarded.connect(_on_boarded)
 	GameEvents.passenger_alighted.connect(_on_alighted)
 	GameEvents.stop_served.connect(_on_stop_finished.unbind(3))
+	GameEvents.shift_completed.connect(_on_shift_completed.unbind(1))
 
 
 ## Moves two people apart along the line between them. Pure, so it can be tested.
@@ -134,15 +182,47 @@ func _process(dt: float) -> void:
 			walker.target = _queue_point(i)
 		walker.step(dt, WALK_SPEED, _ground)
 	for i in range(boarding.size() - 1, -1, -1):
-		boarding[i].target = _door
-		if boarding[i].step(dt, WALK_SPEED * 1.2, _ground):
-			_release(boarding[i])
+		var walker := boarding[i]
+		walker.target = _door
+		if _doors_shut or walker.step(dt, WALK_SPEED * 1.2, _ground):
 			boarding.remove_at(i)
+			_step_aboard(walker)
+	_walk_to_seats(dt)
+	_walk_to_door(dt)
 	for i in range(leaving.size() - 1, -1, -1):
 		if leaving[i].step(dt, WALK_SPEED, _ground):
 			_release(leaving[i])
 			leaving.remove_at(i)
 	_keep_apart()
+
+
+## People keep their place in the aisle, so the next in line waits behind whoever
+## is paying.
+func _walk_to_seats(dt: float) -> void:
+	var ahead: Walker = null
+	for walker: Walker in aboard.duplicate():
+		if ahead != null and walker.position.distance_to(ahead.position) < AISLE_GAP:
+			walker.hold_still(dt)
+			ahead = walker
+			continue
+		var points_left := walker.path.size()
+		if walker.walk_path(dt, CABIN_SPEED):
+			_sit_down(walker)
+			continue
+		if points_left > walker.path.size() and walker.path.size() == CabinLayout.POINTS_AFTER_PAYING:
+			walker.start_paying()
+			GameEvents.passenger_paid.emit()
+		ahead = walker
+
+
+func _walk_to_door(dt: float) -> void:
+	for walker: Walker in getting_off.duplicate():
+		if _doors_shut:
+			getting_off.erase(walker)
+			_release(walker)
+		elif walker.walk_path(dt, CABIN_SPEED):
+			getting_off.erase(walker)
+			_walk_away(walker)
 
 
 func _keep_apart() -> void:
@@ -161,6 +241,8 @@ func _keep_apart() -> void:
 
 func _on_telemetry(data: BusTelemetry) -> void:
 	_door = data.door_position
+	_doors_shut = data.doors_closed
+	_bus_forward = Vector2(-sin(data.heading), -cos(data.heading))
 	var stop := _route.current_stop()
 	if stop == null or _route.stop_index == _spawned_for:
 		return
@@ -170,6 +252,11 @@ func _on_telemetry(data: BusTelemetry) -> void:
 
 func _spawn_waiting(stop: RouteStop) -> void:
 	_spawned_for = _route.stop_index
+	# Anyone still here was left at the last stop, and that stop is well behind.
+	for walker in waiting:
+		_release(walker)
+	waiting.clear()
+	_queueing = false
 	var forward := stop.forward()
 	var right := Vector2(-forward.y, forward.x)
 	for i in mini(stop.waiting, MAX_WAITING):
@@ -205,22 +292,55 @@ func _on_session_started(_stop_index: int, _alighting: int, _boarding: int) -> v
 
 
 func _on_boarded(_stop_index: int) -> void:
-	if not waiting.is_empty():
-		boarding.append(waiting.pop_front())
+	if waiting.is_empty():
+		return
+	var walker: Walker = waiting.pop_front()
+	walker.seat = _visual.reserve_seat()
+	boarding.append(walker)
+
+
+## Through the door and into the bus. If the doors shut first, they squeezed on.
+func _step_aboard(walker: Walker) -> void:
+	walker.reparent(_visual.cabin_floor(), false)
+	walker.path = _cabin.boarding_path(_visual.seat_position(walker.seat))
+	if _doors_shut:
+		walker.position = _cabin.pay_point
+		walker.path = walker.path.slice(-CabinLayout.POINTS_AFTER_PAYING)
+	else:
+		walker.position = _cabin.kerb
+	aboard.append(walker)
+
+
+func _sit_down(walker: Walker) -> void:
+	aboard.erase(walker)
+	_visual.fill_seat(walker.seat)
+	_release(walker)
 
 
 func _on_alighted(_stop_index: int) -> void:
-	var stop := _route.current_stop()
-	if stop == null:
-		return
-	var forward := stop.forward()
-	var right := Vector2(-forward.y, forward.x)
 	var walker := _take_walker()
+	walker.reparent(_visual.cabin_floor(), false)
+	walker.position = _cabin.exit_start
+	walker.path = _cabin.alighting_path()
+	getting_off.append(walker)
+
+
+## Queue is behind the door, so people getting off walk forward and clear of it.
+func _walk_away(walker: Walker) -> void:
+	walker.reparent(self, false)
 	walker.position = _door
-	# Queue is behind the door, so people getting off walk forward and clear of it.
-	var goal := Vector2(_door.x, _door.z) + right * _random.randf_range(2.6, 4.0) + forward * _random.randf_range(3.0, 10.0)
+	var right := Vector2(-_bus_forward.y, _bus_forward.x)
+	var goal := Vector2(_door.x, _door.z) + right * _random.randf_range(2.6, 4.0) + _bus_forward * _random.randf_range(3.0, 10.0)
 	walker.target = Vector3(goal.x, _door.y, goal.y)
 	leaving.append(walker)
+
+
+## Everyone is off at the depot, and nobody is left standing in the bus.
+func _on_shift_completed() -> void:
+	for walker: Walker in aboard + getting_off:
+		_release(walker)
+	aboard.clear()
+	getting_off.clear()
 
 
 func _on_stop_finished() -> void:
@@ -243,6 +363,11 @@ func _take_walker() -> Walker:
 
 func _release(walker: Walker) -> void:
 	walker.visible = false
+	walker.path = []
+	walker.pay_left = 0.0
+	walker.seat = -1
+	if walker.get_parent() != self:
+		walker.reparent(self, false)
 	_pool.append(walker)
 
 

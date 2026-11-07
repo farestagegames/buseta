@@ -27,12 +27,15 @@ const HAIRS: Array[Color] = [
 	Color(0.12, 0.09, 0.07), Color(0.3, 0.2, 0.12), Color(0.55, 0.38, 0.18),
 	Color(0.72, 0.6, 0.35), Color(0.75, 0.75, 0.76),
 ]
+const POLE := Color(0.9, 0.72, 0.15)
+const MACHINE_SCREEN := Color(0.35, 0.85, 0.55)
 const LAMP_OFF_RED := Color(0.35, 0.05, 0.05)
 const LAMP_OFF_AMBER := Color(0.45, 0.25, 0.05)
 
 @export var spec: BusSpec
 
 var cockpit_anchor: Node3D
+var cabin: CabinLayout
 
 var _body: Node3D
 var _steering_wheel: Node3D
@@ -46,6 +49,8 @@ var _left_lamps: MeshInstance3D
 var _right_lamps: MeshInstance3D
 var _wheel_spin: float = 0.0
 var _seat_points: Array[Vector3] = []
+var _seat_order: Array[Vector3] = []
+var _held_seats: Dictionary = {}
 var _riders: MultiMesh
 var _rider_heads: MultiMesh
 var _rider_hair: MultiMesh
@@ -65,6 +70,7 @@ func _ready() -> void:
 	_top_y = spec.body_height - 0.22
 	_door_near_z = _front_z + DOOR_OFFSET
 	_door_far_z = _door_near_z + DOOR_WIDTH
+	cabin = CabinLayout.new(spec)
 
 	_body = Node3D.new()
 	add_child(_body)
@@ -87,6 +93,41 @@ func visible_riders() -> int:
 
 func driver_visible() -> bool:
 	return _driver.visible
+
+
+## The floor people stand on, which moves with the suspension.
+func cabin_floor() -> Node3D:
+	return _body
+
+
+## Holds the next seat empty for someone still walking to it. -1 if the bus is full.
+func reserve_seat() -> int:
+	var index := _riders.visible_instance_count
+	if index >= _seat_order.size():
+		return -1
+	_held_seats[index] = true
+	var empty := Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), _seat_order[index])
+	for batch: MultiMesh in [_riders, _rider_heads, _rider_hair]:
+		batch.set_instance_transform(index, empty)
+	return index
+
+
+func seat_is_held(index: int) -> bool:
+	return _held_seats.has(index)
+
+
+func fill_seat(index: int) -> void:
+	if index < 0:
+		return
+	_held_seats.erase(index)
+	var place := Transform3D(Basis.IDENTITY, _seat_order[index])
+	for batch: MultiMesh in [_riders, _rider_heads, _rider_hair]:
+		batch.set_instance_transform(index, place)
+
+
+## Where a seat is, or the back of the bus if there is no seat to be had.
+func seat_position(index: int) -> Vector3:
+	return _seat_order[index] if index >= 0 else Vector3(0.0, 0.0, _rear_z - 1.0)
 
 
 func _on_onboard_changed(count: int) -> void:
@@ -217,8 +258,22 @@ func _build_glass() -> void:
 func _build_cockpit() -> void:
 	var x := spec.driver_seat_x
 	var b := LowPolyBuilder.new()
-	b.box(Vector3(0.0, 1.05, _front_z + 0.42), Vector3(spec.body_width - 0.15, 0.2, 0.7), TRIM)
+	# The dash runs the full width ahead of the doorway, and is only deep beside the driver.
+	var door_side := float(spec.door_side)
+	var ahead_of_door := _door_near_z - _front_z - 0.07
+	b.box(Vector3(0.0, 1.05, _front_z + 0.07 + ahead_of_door / 2.0), Vector3(spec.body_width - 0.15, 0.2, ahead_of_door), TRIM)
+	b.box(Vector3(-door_side * 0.6, 1.05, _front_z + 0.42), Vector3(spec.body_width - 1.2, 0.2, 0.7), TRIM)
 	b.box(Vector3(x, 0.72, _front_z + 1.75), Vector3(0.55, 0.5, 0.5), DARK)
+	# The ticket machine people pay at, on a pole beside the driver.
+	var machine := cabin.machine
+	b.box(Vector3(machine.x, (FLOOR_Y + machine.y) / 2.0, machine.z), Vector3(0.05, machine.y - FLOOR_Y, 0.05), POLE)
+	b.box(machine, Vector3(0.1, 0.2, 0.16), DARK)
+	b.box(machine + Vector3(door_side * 0.055, 0.03, 0.0), Vector3(0.01, 0.09, 0.12), MACHINE_SCREEN)
+	# Handrails at the doorway.
+	var rail_x := door_side * (_half_width - 0.28)
+	var rail_height := _top_y - FLOOR_Y
+	b.box(Vector3(rail_x, FLOOR_Y + rail_height / 2.0, _door_far_z + 0.06), Vector3(0.05, rail_height, 0.05), POLE)
+	b.box(Vector3(rail_x, FLOOR_Y + rail_height / 2.0, _door_near_z - 0.06), Vector3(0.05, rail_height, 0.05), POLE)
 	b.box(Vector3(x, 1.3, _front_z + 2.0), Vector3(0.55, 0.9, 0.1), DARK)
 	var dash := MeshInstance3D.new()
 	dash.mesh = b.build(LowPolyBuilder.vertex_colour_material())
@@ -312,7 +367,8 @@ func _door_leaf(hinge: Vector3, length: float) -> Node3D:
 ## Seated passengers are one instanced batch, filled in a shuffled order so the
 ## bus does not fill front to back. Only the shirt takes the instance colour.
 func _build_riders() -> void:
-	var order := _seat_points.duplicate()
+	_seat_order = _seat_points.duplicate()
+	var order := _seat_order
 	var random := RandomNumberGenerator.new()
 	random.seed = 31
 	for i in range(order.size() - 1, 0, -1):

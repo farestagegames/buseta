@@ -12,6 +12,12 @@ const VIEWS: Array[Dictionary] = [
 const START_VIEW := 1
 ## Cockpit view turns a little toward the bend, as a driver's head would.
 const COCKPIT_LOOK_INTO_TURN := 0.55
+const COCKPIT_TILT := deg_to_rad(-6.0)
+## With the doors open the driver's head turns to the doorway, so the player watches
+## people step on, pay and walk past.
+const DOOR_GLANCE_YAW := deg_to_rad(64.0)
+const DOOR_GLANCE_TILT := deg_to_rad(-9.0)
+const DOOR_GLANCE_RATE := 3.0
 ## While the doors are open, follow views swing round to the front corner of the
 ## bus and close in on the doorway, so doors and passengers face the player.
 const DOOR_ORBIT := 2.15
@@ -30,6 +36,7 @@ var _steer_angle: float = 0.0
 var _door_amount: float = 0.0
 var _door_orbit: float = 0.0
 var _door_focus: float = 0.0
+var _door_glance: float = 0.0
 var _door_position: Vector3 = Vector3.ZERO
 var _follow_height: float = 0.0
 
@@ -73,15 +80,18 @@ func _process(dt: float) -> void:
 	var view: Dictionary = VIEWS[view_index]
 	fov = view["fov"]
 	if view["cockpit"]:
-		_update_cockpit()
+		_update_cockpit(dt)
 	else:
 		_update_follow(view, dt)
 
 
-func _update_cockpit() -> void:
+func _update_cockpit(dt: float) -> void:
+	_door_glance = lerpf(_door_glance, _door_amount, 1.0 - exp(-DOOR_GLANCE_RATE * dt))
+	var into_turn := -_steer_angle * COCKPIT_LOOK_INTO_TURN * (1.0 - _door_glance)
+	var to_door := -DOOR_GLANCE_YAW * _door_glance * float(_bus.spec.door_side)
 	var anchor := _visual.cockpit_anchor.get_global_transform_interpolated()
-	global_transform = anchor.rotated_local(Vector3.UP, -_steer_angle * COCKPIT_LOOK_INTO_TURN)
-	rotate_object_local(Vector3.RIGHT, deg_to_rad(-6.0))
+	global_transform = anchor.rotated_local(Vector3.UP, into_turn + to_door)
+	rotate_object_local(Vector3.RIGHT, COCKPIT_TILT + DOOR_GLANCE_TILT * _door_glance)
 
 
 func _update_follow(view: Dictionary, dt: float) -> void:
