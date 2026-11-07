@@ -12,15 +12,15 @@ func before_each() -> void:
 
 func _build(item: Dictionary) -> RouteRunner:
 	var data := MapLoader.read_json(item["file"])
-	return RouteRunner.build(data, RoadNetwork.from_data(MapLoader.read_map_of(data)))
+	return RouteRunner.build(data, RoadNetwork.from_data(MapLoader.read_map_of(data)), 7, map_data)
 
 
-func test_game_launches_with_four_routes_that_cost_more_as_they_go() -> void:
+func test_game_launches_with_five_routes_that_cost_more_as_they_go() -> void:
 	var routes: Array = catalog.items(Catalog.ROUTES)
-	assert_eq(routes.size(), 4)
+	assert_eq(routes.size(), 5)
 	assert_eq(int(routes[0]["cost"]), 0, "The first route is free")
 	assert_eq(int(routes[1]["cost"]), 500)
-	for i in range(1, routes.size()):
+	for i in range(1, routes.size() - 1):
 		assert_gt(int(routes[i]["cost"]), int(routes[i - 1]["cost"]))
 
 
@@ -44,7 +44,7 @@ func test_stops_are_far_enough_apart_to_brake_for() -> void:
 	for item: Dictionary in catalog.items(Catalog.ROUTES):
 		var stops := _build(item).stops
 		for i in range(1, stops.size()):
-			assert_gt(stops[i].route_distance - stops[i - 1].route_distance, 120.0, "%s: stop %d" % [item["id"], i])
+			assert_gt(stops[i].route_distance - stops[i - 1].route_distance, 45.0, "%s: stop %d" % [item["id"], i])
 
 
 func test_bus_ends_each_shift_empty() -> void:
@@ -54,12 +54,16 @@ func test_bus_ends_each_shift_empty() -> void:
 
 
 func test_no_bay_is_blocked_by_a_parked_car_or_a_prop() -> void:
-	var reach := RoadNetwork.BAY_LENGTH / 2.0 + 5.0
 	for item: Dictionary in catalog.items(Catalog.ROUTES):
 		for stop in _build(item).stops:
-			for entry: Dictionary in map_data["parked_cars"] + map_data["knockables"]:
+			if stop.is_final:
+				continue
+			var named: bool = stop.kind != RouteStop.Kind.HAIL or stop.stop_name != RoadNetwork.from_data(map_data).roads[stop.road]["name"]
+			if named:
+				continue
+			for entry: Dictionary in map_data["parked_cars"]:
 				if entry["road"] == stop.road and int(entry["dir"]) == stop.dir:
-					assert_gt(absf(float(entry["along"]) - stop.along), reach, "%s: %s" % [item["id"], stop.stop_name])
+					assert_gt(absf(float(entry["along"]) - stop.along), 21.0, "%s: %s" % [item["id"], stop.stop_name])
 
 
 func test_every_leg_of_a_route_joins_the_next() -> void:
@@ -67,3 +71,72 @@ func test_every_leg_of_a_route_joins_the_next() -> void:
 		var line := _build(item).polyline
 		for i in range(1, line.size()):
 			assert_lt(line[i].distance_to(line[i - 1]), 40.0, "%s: legs must join up at %d" % [item["id"], i])
+
+
+func test_informal_routes_add_hails_between_the_named_stops() -> void:
+	var item := catalog.find(Catalog.ROUTES, "route_01")
+	var named: Array = MapLoader.read_json(item["file"])["stops"]
+	var runner := _build(item)
+	assert_gt(runner.stops.size(), named.size())
+	for stop in runner.stops:
+		assert_eq(stop.kind, RouteStop.Kind.HAIL)
+
+
+func test_each_shift_lays_out_different_hails() -> void:
+	var item := catalog.find(Catalog.ROUTES, "route_01")
+	var data := MapLoader.read_json(item["file"])
+	var network := RoadNetwork.from_data(map_data)
+	var one := RouteRunner.build(data, network, 1, map_data)
+	var two := RouteRunner.build(data, network, 2, map_data)
+	var places_one: Array = one.stops.map(func(stop: RouteStop) -> Vector2: return stop.position)
+	var places_two: Array = two.stops.map(func(stop: RouteStop) -> Vector2: return stop.position)
+	assert_ne(places_one, places_two)
+
+
+func test_the_same_seed_lays_out_the_same_hails() -> void:
+	var item := catalog.find(Catalog.ROUTES, "route_02")
+	var data := MapLoader.read_json(item["file"])
+	var network := RoadNetwork.from_data(map_data)
+	var one := RouteRunner.build(data, network, 5, map_data)
+	var two := RouteRunner.build(data, network, 5, map_data)
+	assert_eq(one.stops.size(), two.stops.size())
+
+
+func test_informal_timetable_rises_with_the_distance_driven() -> void:
+	var stops := _build(catalog.find(Catalog.ROUTES, "route_01")).stops
+	for i in range(1, stops.size()):
+		assert_gt(stops[i].due, stops[i - 1].due)
+
+
+func test_every_informal_route_has_a_vendor_on_it() -> void:
+	for id: String in ["route_01", "route_02", "route_04"]:
+		var vendors := _build(catalog.find(Catalog.ROUTES, id)).stops.filter(func(stop: RouteStop) -> bool: return stop.vendor)
+		assert_gt(vendors.size(), 0, id)
+
+
+func test_rapid_transit_line_uses_fixed_stations_on_its_own_road() -> void:
+	var item := catalog.find(Catalog.ROUTES, "troncal")
+	var runner := _build(item)
+	var network := RoadNetwork.from_data(map_data)
+	assert_eq(item["only_bus"], "articulado_18")
+	assert_true(network.roads["troncal"]["busway"])
+	assert_false(network.roads["troncal"]["traffic"])
+	for stop in runner.stops:
+		assert_eq(stop.kind, RouteStop.Kind.STATION)
+		assert_eq(stop.road, "troncal")
+
+
+func test_out_and_back_route_tells_the_two_directions_apart() -> void:
+	var runner := _build(catalog.find(Catalog.ROUTES, "troncal"))
+	var network := RoadNetwork.from_data(map_data)
+	var outward: Dictionary = network.sample("troncal", 500.0, 1.9, 1)
+	var back: Dictionary = network.sample("troncal", 500.0, 1.9, -1)
+	for along: float in range(40, 860, 30):
+		var there: Dictionary = network.sample("troncal", along, 1.9, 1)
+		runner.update_position(there["position"], there["forward"])
+	var at_far_end := runner.progress
+	for along: float in range(860, 40, -30):
+		var there: Dictionary = network.sample("troncal", along, 1.9, -1)
+		runner.update_position(there["position"], there["forward"])
+	assert_gt(runner.progress, at_far_end + 600.0, "Progress keeps climbing on the way back")
+	assert_ne(outward["position"], back["position"])

@@ -27,6 +27,14 @@
    "file": "routes/route_04.json",
    "cost": 2000,
    "description": "The longest shift: the whole city, with the seafront the other way."
+  },
+  {
+   "id": "troncal",
+   "name": "Route T1: La Ola Line",
+   "file": "routes/troncal.json",
+   "cost": 1500,
+   "only_bus": "articulado_18",
+   "description": "Fixed stations on a dedicated busway, in the 18 metre articulated bus."
   }
  ],
  "buses": [

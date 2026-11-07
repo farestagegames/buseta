@@ -29,7 +29,8 @@
     "code": "COP",
     "symbol": "$",
     "thousands": ".",
-    "per_coin": 100
+    "per_coin": 100,
+    "fare": 29
   },
   "languages": [
     {

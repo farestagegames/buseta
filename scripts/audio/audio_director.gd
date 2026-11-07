@@ -64,6 +64,7 @@ func _ready() -> void:
 	GameEvents.obstacle_hit.connect(func(_kind: String, _loss: float) -> void: play_effect("knock", -9.0))
 	GameEvents.bus_jolted.connect(_on_jolted)
 	GameEvents.passenger_paid.connect(func() -> void: play_effect("pay", -18.0))
+	GameEvents.stop_requested.connect(func() -> void: play_effect("bell", -16.0))
 	GameEvents.stop_session_started.connect(func(_stop: int, _off: int, _on: int) -> void: play_effect("bell", -14.0))
 
 

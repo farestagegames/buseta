@@ -1,0 +1,89 @@
+{
+ "name": "Route T1: La Ola Line",
+ "map": "maps/puerto_marisol.json",
+ "service": "rapid",
+ "fare": 31,
+ "start": {
+  "road": "troncal",
+  "along": 35,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {
+   "road": "troncal",
+   "dir": 1
+  },
+  {
+   "road": "troncal",
+   "dir": -1
+  }
+ ],
+ "stops": [
+  {
+   "name": "Las Flores",
+   "due": 50,
+   "road": "troncal",
+   "along": 265,
+   "dir": 1,
+   "waiting": 6
+  },
+  {
+   "name": "Universidad",
+   "due": 85,
+   "road": "troncal",
+   "along": 420,
+   "dir": 1,
+   "waiting": 8
+  },
+  {
+   "name": "Hospital",
+   "due": 128,
+   "road": "troncal",
+   "along": 590,
+   "dir": 1,
+   "waiting": 7
+  },
+  {
+   "name": "Portal del Mar",
+   "due": 182,
+   "road": "troncal",
+   "along": 805,
+   "dir": 1,
+   "waiting": 6
+  },
+  {
+   "name": "Hospital",
+   "due": 272,
+   "road": "troncal",
+   "along": 590,
+   "dir": -1,
+   "waiting": 7
+  },
+  {
+   "name": "Universidad",
+   "due": 320,
+   "road": "troncal",
+   "along": 420,
+   "dir": -1,
+   "waiting": 6
+  },
+  {
+   "name": "Las Flores",
+   "due": 370,
+   "road": "troncal",
+   "along": 265,
+   "dir": -1,
+   "waiting": 0
+  },
+  {
+   "name": "Patio Central",
+   "due": 420,
+   "road": "troncal",
+   "along": 70,
+   "dir": -1,
+   "waiting": 0,
+   "final": true
+  }
+ ]
+}

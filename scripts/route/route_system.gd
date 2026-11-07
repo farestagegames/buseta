@@ -7,6 +7,9 @@ extends Node
 const STATUS_INTERVAL := 0.2
 const PASSENGER_SEED := 2024
 const INDICATOR_WINDOW := 70.0
+const HAIL_NOTICE_DISTANCE := 90.0
+## A vendor works the bus for this many stops, then gets off.
+const VENDOR_STOPS := 2
 
 var runner: RouteRunner
 var ledger: PassengerLedger
@@ -30,10 +33,15 @@ var _network: RoadNetwork
 var _next_turn: int = 0
 var _indicated: bool = false
 var _last_late: float = 0.0
+var _fare: int = 0
+var _fares: int = 0
+var _vendor_stops_left: int = 0
+var _vendor_stop: int = -1
 
 
-func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork) -> void:
+func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork, fare: int = 0) -> void:
 	runner = route
+	_fare = fare
 	_spec = spec
 	_network = network
 	var times := PackedFloat32Array()
@@ -60,7 +68,7 @@ func tick(data: BusTelemetry, dt: float) -> void:
 		clock += dt
 	var rear := Vector2(data.position.x, data.position.z)
 	var centre := BusFootprint.body_centre(rear, data.heading, _spec)
-	runner.update_position(centre)
+	runner.update_position(centre, Vector2(-sin(data.heading), -cos(data.heading)))
 	_check_indicator(data)
 	var stop := runner.current_stop()
 	_aligned = stop.is_aligned(centre, data.heading)
@@ -76,8 +84,11 @@ func tick(data: BusTelemetry, dt: float) -> void:
 	elif _aligned and stopped and data.door_open_amount >= 1.0:
 		_start_session(stop, centre)
 	elif stop.is_passed(centre):
-		GameEvents.stop_missed.emit(runner.stop_index, stop.stop_name)
-		_missed += 1
+		if stop.kind == RouteStop.Kind.HAIL:
+			_drive_past_hail(stop)
+		else:
+			GameEvents.stop_missed.emit(runner.stop_index, stop.stop_name)
+			_missed += 1
 		_next_stop()
 
 	_status_timer -= dt
@@ -101,6 +112,16 @@ func _check_indicator(data: BusTelemetry) -> void:
 		_indicated = false
 
 
+## Nothing stops an informal bus going past people, but they notice.
+func _drive_past_hail(stop: RouteStop) -> void:
+	var wanting := ledger.wanting_off(runner.stop_index)
+	ledger.carry_on_past(runner.stop_index)
+	if wanting > 0:
+		GameEvents.request_ignored.emit(wanting)
+	if stop.waiting > 0:
+		GameEvents.hail_ignored.emit(stop.waiting)
+
+
 func _start_session(stop: RouteStop, centre: Vector2) -> void:
 	var alighting := ledger.alight_at(runner.stop_index)
 	var boarding := ledger.boardable(stop.waiting)
@@ -117,6 +138,10 @@ func _start_session(stop: RouteStop, centre: Vector2) -> void:
 
 func _run_session(stop: RouteStop, data: BusTelemetry, centre: Vector2, dt: float) -> void:
 	session.update(dt, data.door_open_amount >= 1.0)
+	if stop.vendor and session.is_complete() and _vendor_stop != runner.stop_index:
+		_vendor_stop = runner.stop_index
+		_vendor_stops_left = VENDOR_STOPS + 1
+		GameEvents.vendor_boarded.emit()
 	var driven_off := not stop.is_aligned(centre, data.heading) and absf(data.speed) > BusPhysicsModel.STOPPED_SPEED
 	if (session.is_complete() and data.doors_closed) or driven_off:
 		var behind := session.boarding_left
@@ -134,6 +159,7 @@ func _on_alighted() -> void:
 
 func _on_boarded() -> void:
 	ledger.board_one(_session_stop)
+	_fares += _fare
 	GameEvents.passenger_boarded.emit(_session_stop)
 	GameEvents.onboard_changed.emit(ledger.count())
 
@@ -141,6 +167,17 @@ func _on_boarded() -> void:
 func _next_stop() -> void:
 	_last_late = maxf(clock - schedule.due_times[runner.stop_index], 0.0)
 	runner.advance_stop()
+	_count_down_vendor()
+	if not runner.is_finished() and ledger.wanting_off(runner.stop_index) > 0:
+		GameEvents.stop_requested.emit()
+
+
+func _count_down_vendor() -> void:
+	if _vendor_stops_left <= 0:
+		return
+	_vendor_stops_left -= 1
+	if _vendor_stops_left == 0:
+		GameEvents.vendor_left.emit()
 
 
 func _finish() -> void:
@@ -150,7 +187,7 @@ func _finish() -> void:
 	GameEvents.onboard_changed.emit(0)
 	GameEvents.shift_completed.emit({
 		"route": runner.route_name, "carried": carried, "served": _served, "missed": _missed,
-		"left_behind": _left_behind, "time": clock,
+		"left_behind": _left_behind, "time": clock, "fares": _fares,
 		"accuracy": _accuracy_total / float(maxi(_served, 1)),
 	})
 
@@ -190,6 +227,7 @@ func _publish_status(data: BusTelemetry, centre: Vector2) -> void:
 	_status["distance"] = runner.distance_to_next_stop()
 	_status["turn"] = "Speed bump ahead" if runner.hazard_ahead() else runner.upcoming_turn()
 	_status["onboard"] = ledger.count()
+	_status["fares"] = _fares
 	_status["prompt"] = _prompt(stop, data, centre)
 	_status["stop_position"] = stop.position
 	_status["stop_number"] = runner.stop_index + 1
@@ -214,12 +252,14 @@ func _prompt(stop: RouteStop, data: BusTelemetry, centre: Vector2) -> String:
 			return tr("All aboard: close the doors")
 		return tr("Passengers getting off") if session.stage == StopSession.Stage.ALIGHTING else tr("Passengers boarding")
 	var offset := stop.offset_of(centre)
+	if stop.kind == RouteStop.Kind.HAIL and not stop.is_final and offset.x < -stop.along_tolerance() and -offset.x < HAIL_NOTICE_DISTANCE:
+		return tr("Someone wants to get off") if ledger.wanting_off(runner.stop_index) > 0 else tr("Passenger flagging you down")
 	if absf(offset.x) > 30.0:
 		return ""
 	if _aligned:
 		if absf(data.speed) >= BusPhysicsModel.STOPPED_SPEED:
 			return tr("Stop here")
 		return tr("Stop reached") if stop.is_final else tr("Open the doors")
-	if absf(offset.x) > RouteStop.ALONG_TOLERANCE:
-		return tr("Pull forward %d m") % ceili(-offset.x - RouteStop.ALONG_TOLERANCE) if offset.x < 0.0 else tr("Too far forward")
-	return tr("Pull into the bay") if absf(offset.y) > RouteStop.LATERAL_TOLERANCE else tr("Straighten up")
+	if absf(offset.x) > stop.along_tolerance():
+		return tr("Pull forward %d m") % ceili(-offset.x - stop.along_tolerance()) if offset.x < 0.0 else tr("Too far forward")
+	return tr("Pull into the bay") if absf(offset.y) > stop.lateral_tolerance() else tr("Straighten up")

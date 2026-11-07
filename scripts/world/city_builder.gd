@@ -27,6 +27,7 @@ const SHOP_WIDTH := 6.4
 
 const ASPHALT := Color(0.34, 0.34, 0.36)
 const ASPHALT_PATCH := Color(0.27, 0.27, 0.29)
+const BUSWAY := Color(0.62, 0.3, 0.24) ## Dedicated bus lanes are painted red.
 const PAVEMENT := Color(0.62, 0.61, 0.59)
 const KERB := Color(0.72, 0.71, 0.68)
 const LINE := Color(0.92, 0.92, 0.88)
@@ -81,7 +82,8 @@ func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, ro
 	for builder: LowPolyBuilder in [_flats, _office, _shops, _lines, _pavements, _woodland, _road_mesh, _scenery_mesh]:
 		builder.chunk_size = CHUNK_SIZE
 	for stop in route.stops:
-		_stop_spots.append(stop.position)
+		if stop.kind != RouteStop.Kind.HAIL:
+			_stop_spots.append(stop.position)
 	_add_mesh(_build_roads(_road_mesh, map_data, route), _textured(TEXTURE_ASPHALT, Vector2(8.0, 8.0)), false)
 	_add_mesh(_pavements, _textured(TEXTURE_PAVEMENT, Vector2(3.2, 3.2)), false)
 	_add_mesh(_lines, LowPolyBuilder.vertex_colour_material(), false)
@@ -219,12 +221,14 @@ func _build_roads(b: LowPolyBuilder, map_data: Dictionary, route: RouteRunner) -
 	for road: Dictionary in _network.roads.values():
 		_ribbon(_pavements, road, -PAVEMENT_OUTER, PAVEMENT_OUTER, LIFT_PAVEMENT, PAVEMENT)
 		_ribbon(_lines, road, -RoadNetwork.ROAD_HALF_WIDTH - 0.2, RoadNetwork.ROAD_HALF_WIDTH + 0.2, LIFT_KERB, KERB)
-		_ribbon(b, road, -RoadNetwork.ROAD_HALF_WIDTH, RoadNetwork.ROAD_HALF_WIDTH, LIFT_ROAD, ASPHALT)
+		var surface := BUSWAY if road["busway"] else ASPHALT
+		_ribbon(b, road, -RoadNetwork.ROAD_HALF_WIDTH, RoadNetwork.ROAD_HALF_WIDTH, LIFT_ROAD, surface)
 		_road_wear(b, road)
 		_markings(road)
 		_junction_lines(road)
 	for stop in route.stops:
-		_bay(b, stop)
+		if stop.kind == RouteStop.Kind.BAY:
+			_bay(b, stop)
 	for feature: Dictionary in map_data.get("features", []):
 		_feature_visual(feature)
 	return b
@@ -444,7 +448,10 @@ func _shelter(b: LowPolyBuilder, stop: RouteStop) -> void:
 	var spot := stop.position + right * (RoadNetwork.BAY_DEPTH / 2.0 + 2.6)
 	var y := _ground.terrain_height(spot)
 	var yaw := stop.heading
-	if stop.is_final:
+	if stop.is_final or stop.kind == RouteStop.Kind.HAIL:
+		return
+	if stop.kind == RouteStop.Kind.STATION:
+		_station(b, stop, right)
 		return
 	b.turned_box(Vector3(spot.x, y + 2.5, spot.y), Vector3(1.4, 0.12, 5.0), yaw, Color(0.25, 0.3, 0.38))
 	b.turned_box(_at(spot + right * 0.6, y + 1.3), Vector3(0.1, 2.4, 5.0), yaw, Color(0.3, 0.42, 0.5))
@@ -453,6 +460,25 @@ func _shelter(b: LowPolyBuilder, stop: RouteStop) -> void:
 	var pole := stop.position + forward * 8.0 + right * (RoadNetwork.BAY_DEPTH / 2.0 + 0.8)
 	b.turned_box(_at(pole, y + 1.6), Vector3(0.12, 3.2, 0.12), yaw, Color(0.2, 0.2, 0.25))
 	b.turned_box(_at(pole, y + 3.1), Vector3(0.1, 0.7, 0.8), yaw, Country.pack.colour("signage", "bus_stop_colour", Color(0.1, 0.4, 0.8)))
+
+
+## A rapid-transit platform: a long canopy on posts with a glass wall behind.
+func _station(b: LowPolyBuilder, stop: RouteStop, right: Vector2) -> void:
+	var forward := stop.forward()
+	var yaw := stop.heading
+	var spot := stop.position + right * (RoadNetwork.ROAD_HALF_WIDTH - RouteStop.STATION_LATERAL + 1.6)
+	var y := _ground.terrain_height(spot)
+	var teal := Color(0.08, 0.5, 0.62)
+	b.turned_box(_at(spot, y + 3.4), Vector3(4.2, 0.18, 26.0), yaw, teal)
+	b.turned_box(_at(spot + right * 1.5, y + 1.45), Vector3(0.08, 2.5, 26.0), yaw, Color(0.6, 0.78, 0.84))
+	var along := -12.5
+	while along <= 12.5:
+		b.turned_box(_at(spot + forward * along + right * 1.5, y + 1.7), Vector3(0.16, 3.4, 0.16), yaw, Color(0.9, 0.92, 0.94))
+		along += 5.0
+	var mark := spot + forward * 14.5
+	b.turned_box(_at(mark, y + 2.2), Vector3(0.14, 4.4, 0.14), yaw, Color(0.2, 0.2, 0.25))
+	b.turned_box(_at(mark, y + 4.5), Vector3(0.12, 1.0, 1.0), yaw, teal)
+	b.turned_box(_at(mark, y + 4.5), Vector3(0.16, 0.2, 0.8), yaw, Color(0.96, 0.96, 0.9))
 
 
 func _at(point: Vector2, height: float) -> Vector3:

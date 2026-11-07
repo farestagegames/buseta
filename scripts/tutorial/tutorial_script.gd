@@ -10,7 +10,7 @@ const STEPS: Array[Dictionary] = [
 	{"id": "view", "focus": "view", "text": "Tap VIEW to change the camera."},
 	{"id": "indicate", "focus": "indicator", "text": "You turn right ahead. Tap the right indicator to signal."},
 	{"id": "follow", "focus": "map", "text": "Follow the orange line on the map to the green beacon."},
-	{"id": "bay", "focus": "", "text": "Slow down, pull into the bay and stop inside the yellow box."},
+	{"id": "bay", "focus": "", "text": "Slow down, pull in to the kerb and stop beside the passengers."},
 	{"id": "open", "focus": "doors", "text": "Stopped! Tap DOORS to open them."},
 	{"id": "wait", "focus": "", "text": "Passengers get off first, then board and pay. Give them a moment."},
 	{"id": "close", "focus": "doors", "text": "All aboard. Tap DOORS to close them."},

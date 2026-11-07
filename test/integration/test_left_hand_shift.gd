@@ -78,5 +78,13 @@ func test_passengers_board_through_the_left_door_from_the_pavement() -> void:
 	assert_eq(system.ledger.count(), stop.waiting)
 
 
+func test_driving_past_a_marked_stop_counts_as_missed() -> void:
+	watch_signals(GameEvents)
+	var stop: RouteStop = scene.route.stops[0]
+	GameEvents.bus_relocate_requested.emit(stop.position + stop.forward() * 35.0, stop.heading)
+	await wait_physics_frames(3)
+	assert_signal_emitted(GameEvents, "stop_missed")
+
+
 func test_speed_limit_shows_in_the_packs_unit() -> void:
 	assert_eq(Country.pack.speed_unit(), "mph")

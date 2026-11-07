@@ -40,6 +40,7 @@ var _map_data: Dictionary = {}
 
 
 func _ready() -> void:
+	CityShift.shift_seed = 7
 	if OS.get_environment("AUTOPILOT_PACK") != "":
 		Country.use_pack(OS.get_environment("AUTOPILOT_PACK"))
 	Profile.load_from("user://autopilot_save.json")
@@ -250,7 +251,8 @@ func _lateral_at(along: float, point: Vector2, forward: Vector2, right: Vector2)
 		if relative > -30.0 and relative < 30.0:
 			var share := smoothstep(-30.0, -10.0, relative)
 			share = minf(share, 1.0 - smoothstep(8.0, 30.0, relative))
-			lateral = lerpf(LANE, RoadNetwork.ROAD_HALF_WIDTH + 1.25, share)
+			var kerb_side := RoadNetwork.ROAD_HALF_WIDTH + 1.25 if stop.kind == RouteStop.Kind.BAY else stop.lateral()
+			lateral = lerpf(LANE, kerb_side, share)
 	var map_data := _city_map()
 	for car: Dictionary in map_data["parked_cars"]:
 		var spot: Vector2 = _city.network.sample(car["road"], car["along"], 2.75, car["dir"])["position"]

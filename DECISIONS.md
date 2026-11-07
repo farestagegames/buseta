@@ -26,3 +26,11 @@ One line each, with the reason. Newest at the bottom.
 - The chiva needs driver level 5 as well as $400.000, to make it feel like a special unlock. Catalog items can now set a `level`.
 - The articulated bus comes with its route, not from the garage: it only makes sense on the busway.
 - A chiva has an open step instead of doors, so the door button opens and closes nothing visible but still runs the stop.
+- All four buseta routes became informal: people flag the bus down at random spots each shift, on top of the named stops. Bays stay in the code for later countries, and the left-hand test pack still uses them.
+- On an informal route only the end time is really timed. Each hail gets a share of it by distance, so the on-time display still works.
+- Driving past someone flagging the bus is only a small loss. Driving past someone who asked to get off costs more, and they ride on to the next stop.
+- A fare is $2.900 on a buseta and $3.100 on La Ola. The driver's pay stays a small share of that, about $300 a passenger, so the economy did not need rebalancing.
+- A vendor boards after everyone else, works the aisle for two stops and gets off, and gives a small boost to satisfaction.
+- La Ola is a closed busway that loops round the south and east of the city, so it crosses no other road. It turns back round an island at Portal del Mar.
+- Passengers on La Ola pay at the station, so there is no stop at the ticket machine.
+- People running for the bus and the wheelchair ramp were on the old list but not your revised one, so I left them out.

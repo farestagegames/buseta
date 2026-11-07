@@ -15,6 +15,7 @@ var pay_point: Vector3
 var machine: Vector3 ## The ticket machine itself.
 var aisle_front: Vector3
 var exit_start: Vector3 ## Where people getting off come into view from the aisle.
+var vendor_spot: Vector3 ## Where a vendor stands to sell, part way down the aisle.
 
 
 func _init(spec: BusSpec) -> void:
@@ -30,6 +31,7 @@ func _init(spec: BusSpec) -> void:
 	machine = Vector3(0.02 * side, 1.28, door_z + 0.05)
 	aisle_front = Vector3(0.12 * side, FLOOR_HEIGHT, behind_door + 0.6)
 	exit_start = Vector3(0.0, FLOOR_HEIGHT, behind_door + 1.3)
+	vendor_spot = Vector3(0.0, 0.0, behind_door + 2.6)
 
 
 ## From the kerb, past the machine and along the aisle to a seat's row.

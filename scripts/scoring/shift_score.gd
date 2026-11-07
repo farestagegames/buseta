@@ -35,6 +35,9 @@ const SATISFACTION_COLLISION := 3.0
 const SATISFACTION_LATE_STOP := 1.5
 const SATISFACTION_LEFT_BEHIND := 1.0
 const SATISFACTION_MISSED_STOP := 5.0
+const SATISFACTION_IGNORED_HAIL := 0.5
+const SATISFACTION_IGNORED_REQUEST := 2.0
+const SATISFACTION_VENDOR_BONUS := 1.5
 
 const BASE_COINS := 50
 const COINS_PER_POINT := 2
@@ -44,6 +47,7 @@ const COINS_PER_STAR := 40
 var counts: Dictionary = {
 	"harsh_brakes": 0, "jolts": 0, "collisions": 0, "knocked": 0,
 	"red_lights": 0, "kerbs": 0, "indicators": 0, "missed_stops": 0, "left_behind": 0,
+	"ignored_hails": 0, "ignored_requests": 0, "vendors": 0,
 }
 var speeding_seconds: float = 0.0
 var off_road_seconds: float = 0.0
@@ -54,6 +58,10 @@ var _smoothness_lost: float = 0.0
 var _rules_lost: float = 0.0
 var _satisfaction_lost: float = 0.0
 var _jolt_cooldown: float = 0.0
+
+
+func _add_satisfaction_loss(amount: float) -> void:
+	_satisfaction_lost = maxf(_satisfaction_lost + amount, 0.0)
 
 
 func add_stop(accuracy: float, seconds_late: float) -> void:
@@ -73,6 +81,24 @@ func add_missed_stop() -> void:
 func add_left_behind(passengers: int) -> void:
 	counts["left_behind"] += passengers
 	_satisfaction_lost += SATISFACTION_LEFT_BEHIND * passengers
+
+
+## Someone flagged the bus down and it drove past. A lost fare, not a disaster.
+func add_ignored_hail(people: int) -> void:
+	counts["ignored_hails"] = int(counts["ignored_hails"]) + people
+	_add_satisfaction_loss(SATISFACTION_IGNORED_HAIL * float(people))
+
+
+## Someone asked to get off and the bus kept going, which annoys everybody.
+func add_ignored_request(people: int) -> void:
+	counts["ignored_requests"] = int(counts["ignored_requests"]) + people
+	_add_satisfaction_loss(SATISFACTION_IGNORED_REQUEST * float(people))
+
+
+## A vendor on board makes the ride better for everyone.
+func add_vendor() -> void:
+	counts["vendors"] = int(counts["vendors"]) + 1
+	_add_satisfaction_loss(-SATISFACTION_VENDOR_BONUS)
 
 
 func add_harsh_brake() -> void:

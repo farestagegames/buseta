@@ -18,7 +18,8 @@
     "code": "TST",
     "symbol": "£",
     "thousands": ",",
-    "per_coin": 1
+    "per_coin": 1,
+    "fare": 3
   },
   "languages": [
     {

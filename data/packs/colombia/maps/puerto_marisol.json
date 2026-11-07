@@ -50,6 +50,14 @@
    "id": "i",
    "x": -30,
    "z": 300
+  },
+  {
+   "id": "portal",
+   "x": 335,
+   "z": 160,
+   "kind": "roundabout",
+   "radius": 21,
+   "island": 9
   }
  ],
  "roads": [
@@ -58,18 +66,21 @@
    "from": "depot",
    "to": "a",
    "speed_limit": 30,
-   "traffic": false
+   "traffic": false,
+   "name": "Carrera del Patio"
   },
   {
    "id": "mill_lane",
    "from": "a",
    "to": "b",
-   "speed_limit": 30
+   "speed_limit": 30,
+   "name": "Calle de los Almendros"
   },
   {
    "id": "market_street",
    "from": "b",
-   "to": "c"
+   "to": "c",
+   "name": "Calle del Mercado"
   },
   {
    "id": "river_road",
@@ -92,17 +103,20 @@
      390,
      -205
     ]
-   ]
+   ],
+   "name": "Malecón"
   },
   {
    "id": "high_street",
    "from": "e",
-   "to": "f"
+   "to": "f",
+   "name": "Calle Real"
   },
   {
    "id": "station_road",
    "from": "f",
-   "to": "g"
+   "to": "g",
+   "name": "Avenida de la Terminal"
   },
   {
    "id": "park_avenue",
@@ -121,28 +135,64 @@
      -300,
      -15
     ]
-   ]
+   ],
+   "name": "Avenida del Parque"
   },
   {
    "id": "cross_street",
    "from": "b",
-   "to": "f"
+   "to": "f",
+   "name": "Carrera Central"
   },
   {
    "id": "south_road",
    "from": "c",
-   "to": "h"
+   "to": "h",
+   "name": "Carrera del Sur"
   },
   {
    "id": "orchard_way",
    "from": "h",
-   "to": "i"
+   "to": "i",
+   "name": "Avenida de los Mangos"
   },
   {
    "id": "school_road",
    "from": "i",
    "to": "b",
-   "speed_limit": 30
+   "speed_limit": 30,
+   "name": "Calle del Colegio"
+  },
+  {
+   "id": "troncal",
+   "from": "depot",
+   "to": "portal",
+   "via": [
+    [
+     -235,
+     262
+    ],
+    [
+     -190,
+     335
+    ],
+    [
+     -110,
+     372
+    ],
+    [
+     250,
+     372
+    ],
+    [
+     335,
+     322
+    ]
+   ],
+   "speed_limit": 60,
+   "traffic": false,
+   "busway": true,
+   "name": "Troncal La Ola"
   }
  ],
  "hills": [

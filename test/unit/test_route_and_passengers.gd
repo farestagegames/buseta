@@ -195,7 +195,7 @@ func test_city_data_files_load_and_every_stop_is_on_the_route() -> void:
 	var map_data: Dictionary = MapLoader.read_map_of(route_data)
 	var city := RoadNetwork.from_data(map_data)
 	var route := RouteRunner.build(route_data, city)
-	assert_between(route.stops.size(), 6, 9, "Brief asks for 6 to 8 stops plus the depot")
+	assert_between((route_data["stops"] as Array).size(), 6, 9, "Brief asks for 6 to 8 named stops plus the depot")
 	var last := -1.0
 	for stop in route.stops:
 		assert_gt(stop.route_distance, last, "%s should be after the previous stop" % stop.stop_name)

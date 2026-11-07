@@ -37,6 +37,11 @@ signal stop_session_started(stop_index: int, alighting: int, boarding: int)
 signal passenger_alighted(stop_index: int)
 signal passenger_boarded(stop_index: int)
 signal passenger_paid
+signal hail_ignored(people: int)
+signal request_ignored(people: int)
+signal stop_requested ## Someone on board wants the next stop.
+signal vendor_boarded
+signal vendor_left
 signal onboard_changed(count: int)
 signal bus_jolted(strength: float)
 signal obstacle_hit(kind: String, speed_loss: float)

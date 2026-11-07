@@ -165,6 +165,12 @@ merged body mesh. The rear section of an articulated bus is a trailer: `BusPhysi
 drags its axle behind the joint, so it cuts in on bends, and it has its own collision
 shape and footprint.
 
+**Three kinds of stop.** `RouteStop.Kind` is a bay, a hail or a station, set by a
+route's `service`. On an informal route `HailPlan` adds people flagging the bus down
+between the named stops, seeded per shift, and only the final stop is really timed:
+each hail gets a share of it. `RouteRunner.update_position` also takes the bus's
+facing, because a line that runs out and back on one road passes each point twice.
+
 **Cheats in test builds only.** `Cheats.available()` is `OS.is_debug_build()`, so
 the gesture and panels do not exist in a release export. The panels are English
 only, and each cheat is a small function on `PlayerProfile` or `RouteSystem`.

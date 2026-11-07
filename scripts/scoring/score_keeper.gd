@@ -41,6 +41,9 @@ func setup(network: RoadNetwork, spec: BusSpec) -> void:
 	GameEvents.stop_arrived.connect(_on_stop_arrived)
 	GameEvents.stop_missed.connect(_on_stop_missed)
 	GameEvents.stop_served.connect(_on_stop_served)
+	GameEvents.hail_ignored.connect(_on_hail_ignored)
+	GameEvents.request_ignored.connect(_on_request_ignored)
+	GameEvents.vendor_boarded.connect(_on_vendor_boarded)
 	GameEvents.shift_completed.connect(_on_shift_completed)
 	GameEvents.shift_held_changed.connect(func(held: bool) -> void: _held = held)
 
@@ -141,6 +144,24 @@ func _on_stop_served(_index: int, _name: String, left_behind: int) -> void:
 		GameEvents.penalty_shown.emit(tr("Left %d waiting") % left_behind)
 
 
+func _on_hail_ignored(people: int) -> void:
+	if _held:
+		return
+	score.add_ignored_hail(people)
+	GameEvents.penalty_shown.emit(tr("Left %d waiting") % people)
+
+
+func _on_request_ignored(people: int) -> void:
+	if _held:
+		return
+	score.add_ignored_request(people)
+	GameEvents.penalty_shown.emit("Missed a stop request")
+
+
+func _on_vendor_boarded() -> void:
+	score.add_vendor()
+
+
 func _on_shift_completed(summary: Dictionary) -> void:
 	var report := summary.duplicate()
 	var carried: int = summary["carried"]
@@ -158,6 +179,8 @@ func _on_shift_completed(summary: Dictionary) -> void:
 func _details(summary: Dictionary) -> String:
 	var counts := score.counts
 	var notes: Array[String] = [_count(summary["carried"], "%d passenger carried", "%d passengers carried")]
+	if int(summary.get("fares", 0)) > 0:
+		notes.append(tr("%s in fares") % Country.pack.money(summary["fares"]))
 	var labels := {
 		"collisions": ["%d collision", "%d collisions"], "red_lights": ["%d red light", "%d red lights"],
 		"knocked": ["%d object hit", "%d objects hit"], "harsh_brakes": ["%d emergency stop", "%d emergency stops"],
@@ -165,6 +188,9 @@ func _details(summary: Dictionary) -> String:
 		"indicators": ["%d turn not signalled", "%d turns not signalled"],
 		"missed_stops": ["%d stop missed", "%d stops missed"],
 		"left_behind": ["%d person left waiting", "%d people left waiting"],
+		"ignored_hails": ["%d person left waiting", "%d people left waiting"],
+		"ignored_requests": ["%d stop request missed", "%d stop requests missed"],
+		"vendors": ["%d vendor on board", "%d vendors on board"],
 	}
 	for key: String in labels:
 		if int(counts[key]) > 0:

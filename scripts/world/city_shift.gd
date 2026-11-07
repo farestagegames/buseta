@@ -6,6 +6,10 @@ extends Node3D
 const MENU_SCENE := "res://scenes/main/main_menu.tscn"
 const SKY_HAZE := 0.15 ## Keeps the sky blue however thick the distance haze is.
 
+## Sets where people flag the bus down. Tests and tools fix it, and play leaves it
+## at -1 so each shift is different.
+static var shift_seed: int = -1
+
 @onready var _bus: BusController = $Bus
 @onready var _city: CityBuilder = $City
 @onready var _obstacles: ObstacleField = $Obstacles
@@ -68,9 +72,11 @@ func _ready() -> void:
 	var route_data := MapLoader.read_json(Profile.selected_item(Catalog.ROUTES)["file"])
 	var map_data := MapLoader.read_map_of(route_data)
 	network = RoadNetwork.from_data(map_data, Country.pack.traffic_side, Country.pack.default_speed_limit())
-	route = RouteRunner.build(route_data, network)
+	var hail_seed := shift_seed if shift_seed >= 0 else randi()
+	route = RouteRunner.build(route_data, network, hail_seed, map_data)
 	for stop in route.stops:
-		network.add_bay(stop.road, stop.along, stop.dir)
+		if stop.kind == RouteStop.Kind.BAY:
+			network.add_bay(stop.road, stop.along, stop.dir)
 	ground = MapLoader.build_ground(map_data, network)
 	for feature: Dictionary in ground.features:
 		if feature["kind"] == "bump":
@@ -81,7 +87,7 @@ func _ready() -> void:
 	_street_life.setup(network, ground, route)
 	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)
 	_bus.start_at(ground, route.start_position, route.start_heading)
-	_route_system.setup(route, _bus.spec, network)
+	_route_system.setup(route, _bus.spec, network, int(route_data.get("fare", Country.pack.data["currency"]["fare"])))
 	_traffic.setup(map_data, network, ground, _bus.spec)
 	_score.setup(network, _bus.spec)
 	_crowd.setup(route, ground, _bus.get_node("Visual"))

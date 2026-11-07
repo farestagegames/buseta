@@ -12,6 +12,7 @@ const CABIN_SPEED := 1.35
 const AISLE_GAP := 0.8
 const PAY_SECONDS := 0.8
 const PAY_ARM_RAISE := 1.35
+const WAVE_ARM := 2.7
 const QUEUE_GAP := 0.8
 ## Keep at least this far apart, in metres.
 const PERSONAL_SPACE := 0.62
@@ -27,6 +28,8 @@ var leaving: Array[Walker] = []
 var boarding: Array[Walker] = []
 var aboard: Array[Walker] = [] ## On the bus, heading for a seat.
 var getting_off: Array[Walker] = [] ## On the bus, heading for the door.
+var selling: Array[Walker] = [] ## Vendors working the aisle.
+var vendor_waiting: Walker = null ## A vendor at the stop ahead, not in the queue.
 
 var _route: RouteRunner
 var _visual: BusVisual
@@ -35,6 +38,7 @@ var _cabin: CabinLayout
 var _ground: GroundSurface
 var _pool: Array[Walker] = []
 var _body_meshes: Array[ArrayMesh] = []
+var _vendor_mesh: ArrayMesh
 var _leg_meshes: Array[ArrayMesh] = []
 var _arm_meshes: Array[ArrayMesh] = []
 var _spawned_for: int = -1
@@ -59,6 +63,9 @@ class Walker:
 	var path: Array[Vector3] = [] ## Points still to walk through the bus.
 	var pay_left: float = 0.0
 	var seat: int = -1
+	var waving: bool = false ## Flagging down the bus.
+	var is_vendor: bool = false
+	var usual_body: ArrayMesh
 
 	func step(dt: float, speed: float, ground: GroundSurface) -> bool:
 		var flat := Vector2(target.x - position.x, target.z - position.z)
@@ -118,7 +125,8 @@ class Walker:
 		left_leg.rotation.x = lerpf(left_leg.rotation.x, 0.0, ease_out)
 		right_leg.rotation.x = lerpf(right_leg.rotation.x, 0.0, ease_out)
 		left_arm.rotation.x = lerpf(left_arm.rotation.x, 0.0, ease_out)
-		right_arm.rotation.x = lerpf(right_arm.rotation.x, 0.0, ease_out)
+		var arm_goal := WAVE_ARM + sin(idle_time * 7.0) * 0.28 if waving else 0.0
+		right_arm.rotation.x = lerpf(right_arm.rotation.x, arm_goal, ease_out)
 		rotation.y = base_yaw + sin(idle_time * 0.7 + stride) * 0.22
 		rotation.z = sin(idle_time * 0.45 + stride) * 0.025
 
@@ -137,6 +145,8 @@ func setup(route: RouteRunner, ground: GroundSurface, visual: BusVisual) -> void
 	GameEvents.passenger_alighted.connect(_on_alighted)
 	GameEvents.stop_served.connect(_on_stop_finished.unbind(3))
 	GameEvents.shift_completed.connect(_on_shift_completed.unbind(1))
+	GameEvents.vendor_boarded.connect(_on_vendor_boarded)
+	GameEvents.vendor_left.connect(_on_vendor_left)
 
 
 ## Moves two people apart along the line between them. Pure, so it can be tested.
@@ -174,6 +184,8 @@ func _process(dt: float) -> void:
 			_step_aboard(walker)
 	_walk_to_seats(dt)
 	_walk_to_door(dt)
+	for vendor in selling:
+		vendor.hold_still(dt)
 	for i in range(leaving.size() - 1, -1, -1):
 		if leaving[i].step(dt, WALK_SPEED, _ground):
 			_release(leaving[i])
@@ -194,7 +206,8 @@ func _walk_to_seats(dt: float) -> void:
 		if walker.walk_path(dt, CABIN_SPEED):
 			_sit_down(walker)
 			continue
-		if points_left > walker.path.size() and walker.path.size() == CabinLayout.POINTS_AFTER_PAYING:
+		var at_machine := points_left > walker.path.size() and walker.path.size() == CabinLayout.POINTS_AFTER_PAYING
+		if at_machine and _route.kind != RouteStop.Kind.STATION and not walker.is_vendor:
 			walker.start_paying()
 			GameEvents.passenger_paid.emit()
 		ahead = walker
@@ -242,16 +255,27 @@ func _spawn_waiting(stop: RouteStop) -> void:
 		_release(walker)
 	waiting.clear()
 	_queueing = false
+	if vendor_waiting != null:
+		_release(vendor_waiting)
+		vendor_waiting = null
 	var forward := stop.forward()
 	var right := Vector2(-forward.y, forward.x) * _kerb_side
+	if stop.vendor:
+		var pitch := stop.position + right * (stop.waiting_distance() + 0.6) + forward * 5.0
+		vendor_waiting = _take_walker()
+		vendor_waiting.is_vendor = true
+		(vendor_waiting.get_child(0) as MeshInstance3D).mesh = _vendor_mesh
+		vendor_waiting.position = Vector3(pitch.x, _ground.height_at(pitch), pitch.y)
+		vendor_waiting.target = vendor_waiting.position
 	for i in mini(stop.waiting, MAX_WAITING):
-		var spot := stop.position + right * (RoadNetwork.BAY_DEPTH / 2.0 + 1.3 + _random.randf_range(0.0, 1.2)) \
+		var spot := stop.position + right * (stop.waiting_distance() + _random.randf_range(0.0, 1.2)) \
 			+ forward * (float(i) * 1.1 - 4.0)
 		var walker := _take_walker()
 		walker.position = Vector3(spot.x, _ground.height_at(spot), spot.y)
 		walker.target = walker.position
 		walker.base_yaw = stop.heading + PI / 2.0 * _kerb_side
 		walker.rotation.y = walker.base_yaw
+		walker.waving = stop.kind == RouteStop.Kind.HAIL
 		waiting.append(walker)
 
 
@@ -267,6 +291,8 @@ func _queue_point(place: int) -> Vector3:
 
 func _on_session_started(_stop_index: int, _alighting: int, _boarding: int) -> void:
 	_queueing = true
+	for walker in waiting:
+		walker.waving = false
 	var spots: Array[Vector2] = []
 	for walker in waiting:
 		spots.append(Vector2(walker.position.x, walker.position.z))
@@ -287,7 +313,8 @@ func _on_boarded(_stop_index: int) -> void:
 ## Through the door and into the bus. If the doors shut first, they squeezed on.
 func _step_aboard(walker: Walker) -> void:
 	walker.reparent(_visual.cabin_floor(), false)
-	walker.path = _cabin.boarding_path(_visual.seat_position(walker.seat))
+	var goal := _visual.seat_position(walker.seat) if not walker.is_vendor else _cabin.vendor_spot
+	walker.path = _cabin.boarding_path(goal)
 	if _doors_shut:
 		walker.position = _cabin.pay_point
 		walker.path = walker.path.slice(-CabinLayout.POINTS_AFTER_PAYING)
@@ -298,8 +325,28 @@ func _step_aboard(walker: Walker) -> void:
 
 func _sit_down(walker: Walker) -> void:
 	aboard.erase(walker)
+	if walker.is_vendor:
+		selling.append(walker)
+		return
 	_visual.fill_seat(walker.seat)
 	_release(walker)
+
+
+## A vendor gets on once everyone else is aboard.
+func _on_vendor_boarded() -> void:
+	if vendor_waiting == null:
+		return
+	vendor_waiting.seat = -1
+	boarding.append(vendor_waiting)
+	vendor_waiting = null
+
+
+## They finish working the aisle and head for the door at the next chance.
+func _on_vendor_left() -> void:
+	for vendor in selling:
+		vendor.path = _cabin.alighting_path()
+		getting_off.append(vendor)
+	selling.clear()
 
 
 func _on_alighted(_stop_index: int) -> void:
@@ -322,10 +369,11 @@ func _walk_away(walker: Walker) -> void:
 
 ## Everyone is off at the depot, and nobody is left standing in the bus.
 func _on_shift_completed() -> void:
-	for walker: Walker in aboard + getting_off:
+	for walker: Walker in aboard + getting_off + selling:
 		_release(walker)
 	aboard.clear()
 	getting_off.clear()
+	selling.clear()
 
 
 func _on_stop_finished() -> void:
@@ -351,6 +399,9 @@ func _release(walker: Walker) -> void:
 	walker.path = []
 	walker.pay_left = 0.0
 	walker.seat = -1
+	walker.waving = false
+	walker.is_vendor = false
+	(walker.get_child(0) as MeshInstance3D).mesh = walker.usual_body
 	if walker.get_parent() != self:
 		walker.reparent(self, false)
 	_pool.append(walker)
@@ -362,6 +413,7 @@ func _build_walker() -> Walker:
 	var look := _random.randi_range(0, _body_meshes.size() - 1)
 	var body := MeshInstance3D.new()
 	body.mesh = _body_meshes[look]
+	walker.usual_body = body.mesh
 	walker.add_child(body)
 	var leg_mesh := _leg_meshes[_random.randi_range(0, _leg_meshes.size() - 1)]
 	walker.left_leg = _limb(leg_mesh, Vector3(-0.1, 0.86, 0.0))
@@ -390,6 +442,28 @@ func _limb(mesh: ArrayMesh, pivot: Vector3) -> Node3D:
 func _pick(colours: Array) -> Color:
 	var value: Array = colours[_random.randi_range(0, colours.size() - 1)]
 	return Color(value[0], value[1], value[2])
+
+
+## A street vendor: an apron and cap, with a cool box of drinks on one shoulder.
+func _build_vendor_mesh(material: Material, skins: Array, hairs: Array) -> ArrayMesh:
+	var b := LowPolyBuilder.new()
+	var shirt := Color(0.95, 0.95, 0.92)
+	var apron := Color(0.15, 0.55, 0.45)
+	var skin := _pick(skins)
+	b.box(Vector3(0.0, 1.26, 0.0), Vector3(0.42, 0.56, 0.23), shirt)
+	b.box(Vector3(0.0, 1.5, 0.0), Vector3(0.47, 0.1, 0.25), shirt)
+	b.box(Vector3(0.0, 1.1, -0.125), Vector3(0.36, 0.5, 0.02), apron)
+	b.box(Vector3(0.0, 0.99, 0.0), Vector3(0.4, 0.14, 0.23), apron)
+	b.box(Vector3(0.0, 1.58, 0.0), Vector3(0.1, 0.1, 0.1), skin)
+	b.box(Vector3(0.0, 1.73, 0.0), Vector3(0.21, 0.24, 0.22), skin)
+	b.box(Vector3(0.0, 1.76, 0.1), Vector3(0.23, 0.2, 0.05), _pick(hairs))
+	for side: float in [-0.055, 0.055]:
+		b.box(Vector3(side, 1.76, -0.112), Vector3(0.035, 0.03, 0.01), Color(0.06, 0.06, 0.08))
+	b.box(Vector3(0.0, 1.88, 0.01), Vector3(0.25, 0.08, 0.26), Color(0.92, 0.72, 0.15))
+	b.box(Vector3(0.0, 1.85, -0.16), Vector3(0.2, 0.03, 0.12), Color(0.92, 0.72, 0.15))
+	b.box(Vector3(0.36, 1.0, 0.0), Vector3(0.22, 0.34, 0.5), Color(0.1, 0.35, 0.7))
+	b.box(Vector3(0.36, 1.2, 0.0), Vector3(0.24, 0.06, 0.52), Color(0.95, 0.95, 0.95))
+	return b.build(material)
 
 
 ## A fixed set of people, mixing skin, hair, clothes, build and what they carry.
@@ -437,6 +511,7 @@ func _build_meshes() -> void:
 		arm.box(Vector3(0.0, -0.22, 0.0), Vector3(0.1, 0.46, 0.11), top)
 		arm.box(Vector3(0.0, -0.5, 0.0), Vector3(0.09, 0.12, 0.1), skin)
 		_arm_meshes.append(arm.build(material))
+	_vendor_mesh = _build_vendor_mesh(material, skins, hairs)
 	for lower: Array in lowers:
 		var colour := Color(lower[0], lower[1], lower[2])
 		var leg := LowPolyBuilder.new()

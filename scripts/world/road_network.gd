@@ -38,6 +38,8 @@ static func from_data(data: Dictionary, side: int = 1, default_limit: float = DE
 		network.add_road(entry["id"], entry["from"], entry["to"], via)
 		network.roads[entry["id"]]["speed_limit"] = entry.get("speed_limit", default_limit)
 		network.roads[entry["id"]]["traffic"] = entry.get("traffic", true)
+		network.roads[entry["id"]]["busway"] = entry.get("busway", false)
+		network.roads[entry["id"]]["name"] = entry.get("name", entry["id"])
 	return network
 
 

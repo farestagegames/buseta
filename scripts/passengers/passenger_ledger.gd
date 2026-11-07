@@ -34,6 +34,18 @@ func alight_at(stop_index: int) -> int:
 	return leaving
 
 
+## How many want to get off at this stop.
+func wanting_off(stop_index: int) -> int:
+	return onboard.count(stop_index)
+
+
+## The bus went past someone's stop, so they ride on to the next one.
+func carry_on_past(stop_index: int) -> void:
+	for i in onboard.size():
+		if onboard[i] == stop_index:
+			onboard[i] = mini(stop_index + 1, _last_stop)
+
+
 ## How many of the waiting passengers will fit. Does not board them yet.
 func boardable(waiting: int) -> int:
 	return mini(waiting, capacity - onboard.size())

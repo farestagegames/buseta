@@ -49,7 +49,7 @@ func test_city_is_built_with_real_size() -> void:
 func test_bus_starts_in_the_depot_road_on_the_ground() -> void:
 	var start := scene.route.start_position
 	assert_almost_eq(bus.global_position.y, scene.ground.height_at(start), 0.2)
-	assert_eq(route_system.runner.current_stop().stop_name, "Los Almendros")
+	assert_eq(route_system.runner.current_stop().stop_name, "Calle de los Almendros")
 
 
 func test_bus_rides_on_a_hill() -> void:
@@ -84,12 +84,14 @@ func test_walkers_appear_at_the_next_stop() -> void:
 	assert_eq(crowd.waiting.size(), stop.waiting)
 
 
-func test_driving_past_a_stop_counts_as_missed() -> void:
+func test_driving_past_someone_flagging_the_bus_counts_against_the_driver() -> void:
 	watch_signals(GameEvents)
 	var stop: RouteStop = scene.route.stops[0]
 	GameEvents.bus_relocate_requested.emit(stop.position + stop.forward() * 35.0, stop.heading)
 	await wait_physics_frames(3)
-	assert_signal_emitted(GameEvents, "stop_missed")
+	assert_signal_emitted(GameEvents, "hail_ignored")
+	assert_eq(int(keeper.score.counts["ignored_hails"]), stop.waiting)
+	assert_eq(route_system.runner.stop_index, 1)
 	assert_eq(route_system.runner.stop_index, 1)
 
 

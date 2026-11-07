@@ -69,7 +69,7 @@ func test_second_route_loads_with_its_own_stops() -> void:
 	Profile.select(Catalog.ROUTES, "route_02")
 	var city: CityShift = CITY.instantiate()
 	add_child_autofree(city)
-	assert_eq(city.route.current_stop().stop_name, "Cruce Almendros")
+	assert_eq(city.route.current_stop().stop_name, "Calle de los Almendros")
 	assert_between(city.route.stops.size(), 6, 9)
 	var last := 0.0
 	for stop in city.route.stops:

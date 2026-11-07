@@ -100,12 +100,24 @@
   },
   {
    "name": "Patio Central",
-   "due": 470,
+   "due": 560,
    "road": "depot_road",
    "along": 80,
    "dir": -1,
    "waiting": 0,
    "final": true
   }
- ]
+ ],
+ "service": "informal",
+ "hail": {
+  "spacing": [
+   190,
+   290
+  ],
+  "people": [
+   1,
+   3
+  ],
+  "vendor_every": 3
+ }
 }
