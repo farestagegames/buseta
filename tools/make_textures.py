@@ -107,55 +107,50 @@ def pavement():
 
 
 def grass():
+    """Ground texture. It is close to white, so vertex colour decides between grass and sand."""
     size = 256
-    soft = layers(size, 5, [3, 7, 17])
-    random.seed(6)
+    noise = layers(size, 3, [8, 19, 41])
     pixels = []
-    for i in range(size * size):
-        blade = random.uniform(-0.09, 0.09)
-        value = soft[i]
-        r = 0.34 + value * 0.2 + blade
-        g = 0.47 + value * 0.2 + blade
-        b = 0.22 + value * 0.08 + blade * 0.6
-        pixels.append((r, g, b))
+    for y in range(size):
+        for x in range(size):
+            value = 0.86 + (noise[y * size + x] - 0.5) * 0.34
+            pixels.append((value, value * 0.98, value * 0.94))
     save("grass.png", size, size, pixels)
 
 
-def brick_value(x, y, size, seed_tones):
-    course = size // 16
-    row = y // course
-    offset = course if row % 2 else 0
-    brick = (x + offset) // (course * 2)
-    tone = seed_tones[(row * 17 + brick * 31) % len(seed_tones)]
-    if y % course < 2 or (x + offset) % (course * 2) < 2:
-        return 0.72
-    return tone
-
-
 def facade_flats():
+    """Painted plaster with tall shuttered windows, tinted by vertex colour."""
     size = 256
-    random.seed(7)
-    tones = [random.uniform(0.82, 1.0) for _ in range(61)]
     noise = layers(size, 8, [6, 13])
     pixels = []
-    left, right = 70, 186
-    top, bottom = 46, 186
+    left, right = 74, 182
+    top, bottom = 40, 196
     for y in range(size):
         for x in range(size):
-            value = brick_value(x, y, size, tones) + (noise[y * size + x] - 0.5) * 0.16
+            value = 0.97 + (noise[y * size + x] - 0.5) * 0.12
             pixel = (value, value, value)
-            frame = left - 8 <= x <= right + 8 and top - 8 <= y <= bottom + 8
-            if frame:
-                pixel = (0.93, 0.92, 0.9)
-            if bottom + 8 < y <= bottom + 16 and left - 14 <= x <= right + 14:
-                pixel = (0.8, 0.79, 0.77)
+            if left - 7 <= x <= right + 7 and top - 7 <= y <= bottom + 7:
+                pixel = (1.0, 1.0, 1.0)
+            if bottom + 7 < y <= bottom + 12 and left - 12 <= x <= right + 12:
+                pixel = (0.82, 0.82, 0.82)
             if left <= x <= right and top <= y <= bottom:
-                sky = 0.3 + 0.28 * (bottom - y) / (bottom - top)
-                pixel = (sky * 0.75, sky * 0.9, sky * 1.1)
-                if abs(x - (left + right) // 2) < 4 or abs(y - 96) < 3:
-                    pixel = (0.9, 0.89, 0.87)
+                slat = 0.28 + 0.1 * ((y // 7) % 2)
+                pixel = (slat * 0.8, slat * 0.72, slat * 0.62)
+                if abs(x - (left + right) // 2) < 3:
+                    pixel = (0.95, 0.95, 0.95)
             pixels.append(pixel)
     save("facade_flats.png", size, size, pixels)
+
+
+def sea():
+    size = 128
+    noise = layers(size, 21, [5, 11])
+    pixels = []
+    for y in range(size):
+        for x in range(size):
+            value = 0.86 + (noise[y * size + x] - 0.5) * 0.5
+            pixels.append((value, value, value))
+    save("sea.png", size, size, pixels)
 
 
 def facade_office():
@@ -167,7 +162,7 @@ def facade_office():
             value = 0.9 + (noise[y * size + x] - 0.5) * 0.1
             pixel = (value, value, value)
             if 16 <= y <= 196 and x % 128 > 8:
-                reflect = 0.3 + 0.3 * ((x + y * 0.5) % 256) / 256 + 0.1 * noise[y * size + x]
+                reflect = 0.42 + 0.18 * y / 256 + 0.12 * noise[y * size + x]
                 pixel = (reflect * 0.72, reflect * 0.9, reflect * 1.08)
             pixels.append(pixel)
     save("facade_office.png", size, size, pixels)
@@ -205,6 +200,7 @@ def main():
     pavement()
     grass()
     facade_flats()
+    sea()
     facade_office()
     facade_shops()
 

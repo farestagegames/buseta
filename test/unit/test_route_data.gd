@@ -28,7 +28,7 @@ func test_every_route_ends_with_a_timed_stop_at_the_depot() -> void:
 	for item: Dictionary in catalog.items(Catalog.ROUTES):
 		var stops := _build(item).stops
 		assert_true(stops[stops.size() - 1].is_final, item["id"])
-		assert_eq(stops[stops.size() - 1].stop_name, "Depot", item["id"])
+		assert_eq(stops[stops.size() - 1].stop_name, "Patio Central", item["id"])
 		for i in range(1, stops.size()):
 			assert_gt(stops[i].due, stops[i - 1].due, "%s: stop %d" % [item["id"], i])
 

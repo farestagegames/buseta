@@ -1,67 +1,865 @@
 {
-  "name": "Northfield",
-  "nodes": [
-    {"id": "depot", "x": -300, "z": 270, "kind": "terminal", "radius": 17},
-    {"id": "a", "x": -300, "z": 70},
-    {"id": "b", "x": -30, "z": 70},
-    {"id": "c", "x": 250, "z": 70, "kind": "roundabout", "radius": 21, "island": 9},
-    {"id": "e", "x": 250, "z": -220},
-    {"id": "f", "x": -30, "z": -220},
-    {"id": "g", "x": -300, "z": -220},
-    {"id": "h", "x": 250, "z": 300},
-    {"id": "i", "x": -30, "z": 300}
+ "name": "Puerto Marisol",
+ "nodes": [
+  {
+   "id": "depot",
+   "x": -300,
+   "z": 270,
+   "kind": "terminal",
+   "radius": 17
+  },
+  {
+   "id": "a",
+   "x": -300,
+   "z": 70
+  },
+  {
+   "id": "b",
+   "x": -30,
+   "z": 70
+  },
+  {
+   "id": "c",
+   "x": 250,
+   "z": 70,
+   "kind": "roundabout",
+   "radius": 21,
+   "island": 9
+  },
+  {
+   "id": "e",
+   "x": 250,
+   "z": -220
+  },
+  {
+   "id": "f",
+   "x": -30,
+   "z": -220
+  },
+  {
+   "id": "g",
+   "x": -300,
+   "z": -220
+  },
+  {
+   "id": "h",
+   "x": 250,
+   "z": 300
+  },
+  {
+   "id": "i",
+   "x": -30,
+   "z": 300
+  }
+ ],
+ "roads": [
+  {
+   "id": "depot_road",
+   "from": "depot",
+   "to": "a",
+   "speed_limit": 30,
+   "traffic": false
+  },
+  {
+   "id": "mill_lane",
+   "from": "a",
+   "to": "b",
+   "speed_limit": 30
+  },
+  {
+   "id": "market_street",
+   "from": "b",
+   "to": "c"
+  },
+  {
+   "id": "river_road",
+   "from": "c",
+   "to": "e",
+   "via": [
+    [
+     380,
+     72
+    ],
+    [
+     455,
+     15
+    ],
+    [
+     465,
+     -110
+    ],
+    [
+     390,
+     -205
+    ]
+   ]
+  },
+  {
+   "id": "high_street",
+   "from": "e",
+   "to": "f"
+  },
+  {
+   "id": "station_road",
+   "from": "f",
+   "to": "g"
+  },
+  {
+   "id": "park_avenue",
+   "from": "g",
+   "to": "a",
+   "via": [
+    [
+     -300,
+     -125
+    ],
+    [
+     -282,
+     -70
+    ],
+    [
+     -300,
+     -15
+    ]
+   ]
+  },
+  {
+   "id": "cross_street",
+   "from": "b",
+   "to": "f"
+  },
+  {
+   "id": "south_road",
+   "from": "c",
+   "to": "h"
+  },
+  {
+   "id": "orchard_way",
+   "from": "h",
+   "to": "i"
+  },
+  {
+   "id": "school_road",
+   "from": "i",
+   "to": "b",
+   "speed_limit": 30
+  }
+ ],
+ "hills": [
+  {
+   "x": 110,
+   "z": 70,
+   "radius": 150,
+   "height": 7
+  },
+  {
+   "x": 440,
+   "z": -70,
+   "radius": 150,
+   "height": 9
+  },
+  {
+   "x": -300,
+   "z": -70,
+   "radius": 140,
+   "height": -4
+  },
+  {
+   "x": 90,
+   "z": -230,
+   "radius": 130,
+   "height": 5
+  },
+  {
+   "x": -120,
+   "z": 330,
+   "radius": 170,
+   "height": 8
+  }
+ ],
+ "features": [
+  {
+   "type": "speed_bump",
+   "road": "mill_lane",
+   "along": 205
+  },
+  {
+   "type": "speed_bump",
+   "road": "station_road",
+   "along": 60
+  },
+  {
+   "type": "pothole",
+   "road": "high_street",
+   "along": 70,
+   "lateral": 1.4,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "high_street",
+   "along": 215,
+   "lateral": 2.4,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "river_road",
+   "along": 180,
+   "lateral": 2.2,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "park_avenue",
+   "along": 110,
+   "lateral": 1.6,
+   "dir": 1
+  },
+  {
+   "type": "speed_bump",
+   "road": "cross_street",
+   "along": 235
+  },
+  {
+   "type": "speed_bump",
+   "road": "south_road",
+   "along": 60
+  },
+  {
+   "type": "pothole",
+   "road": "market_street",
+   "along": 55,
+   "lateral": 1.2,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "market_street",
+   "along": 205,
+   "lateral": 2.5,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "mill_lane",
+   "along": 60,
+   "lateral": 2.3,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "mill_lane",
+   "along": 175,
+   "lateral": 1.3,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "orchard_way",
+   "along": 140,
+   "lateral": 2.2,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "orchard_way",
+   "along": 70,
+   "lateral": 1.4,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "school_road",
+   "along": 60,
+   "lateral": 2.4,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "south_road",
+   "along": 170,
+   "lateral": 1.5,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "cross_street",
+   "along": 65,
+   "lateral": 2.2,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "station_road",
+   "along": 215,
+   "lateral": 1.6,
+   "dir": -1
+  }
+ ],
+ "parked_cars": [
+  {
+   "road": "market_street",
+   "along": 40,
+   "dir": 1
+  },
+  {
+   "road": "market_street",
+   "along": 175,
+   "dir": 1
+  },
+  {
+   "road": "market_street",
+   "along": 182,
+   "dir": 1
+  },
+  {
+   "road": "high_street",
+   "along": 45,
+   "dir": 1
+  },
+  {
+   "road": "high_street",
+   "along": 200,
+   "dir": 1
+  },
+  {
+   "road": "station_road",
+   "along": 200,
+   "dir": 1
+  },
+  {
+   "road": "park_avenue",
+   "along": 200,
+   "dir": 1
+  },
+  {
+   "road": "cross_street",
+   "along": 120,
+   "dir": 1
+  },
+  {
+   "road": "orchard_way",
+   "along": 100,
+   "dir": 1
+  }
+ ],
+ "knockables": [
+  {
+   "kind": "bin",
+   "road": "mill_lane",
+   "along": 150,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "bin",
+   "road": "market_street",
+   "along": 130,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "bin",
+   "road": "high_street",
+   "along": 120,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "bin",
+   "road": "station_road",
+   "along": 100,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "river_road",
+   "along": 240,
+   "lateral": 4.5,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "river_road",
+   "along": 244,
+   "lateral": 5.0,
+   "dir": 1
+  },
+  {
+   "kind": "barrier",
+   "road": "river_road",
+   "along": 355,
+   "lateral": 2.9,
+   "dir": 1
+  },
+  {
+   "kind": "barrier",
+   "road": "river_road",
+   "along": 361,
+   "lateral": 2.9,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "market_street",
+   "along": 225.4,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "market_street",
+   "along": 66.2,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "market_street",
+   "along": 154.6,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "market_street",
+   "along": 202.0,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "high_street",
+   "along": 72.3,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "high_street",
+   "along": 235.6,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "high_street",
+   "along": 58.1,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "high_street",
+   "along": 186.4,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "station_road",
+   "along": 44.4,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "station_road",
+   "along": 67.0,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "station_road",
+   "along": 203.0,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "mill_lane",
+   "along": 62.5,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "mill_lane",
+   "along": 50.3,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "mill_lane",
+   "along": 197.4,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "school_road",
+   "along": 52.7,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "school_road",
+   "along": 64.3,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "orchard_way",
+   "along": 64.7,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "orchard_way",
+   "along": 155.2,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "orchard_way",
+   "along": 53.0,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "orchard_way",
+   "along": 115.6,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "cross_street",
+   "along": 53.0,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "cross_street",
+   "along": 126.8,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "cross_street",
+   "along": 54.1,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "cross_street",
+   "along": 114.4,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "south_road",
+   "along": 53.5,
+   "lateral": 5.3,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "south_road",
+   "along": 45.7,
+   "lateral": 5.3,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "south_road",
+   "along": 183.6,
+   "lateral": 5.3,
+   "dir": -1
+  }
+ ],
+ "cone_lines": [
+  {
+   "road": "river_road",
+   "from": 335,
+   "to": 385,
+   "lateral": 1.7,
+   "dir": 1,
+   "spacing": 5
+  },
+  {
+   "road": "park_avenue",
+   "from": 240,
+   "to": 270,
+   "lateral": 1.7,
+   "dir": 1,
+   "spacing": 5
+  }
+ ],
+ "coast": {
+  "x": 488,
+  "beach": 46
+ },
+ "theme": {
+  "walls": [
+   [
+    0.3,
+    0.7,
+    0.68
+   ],
+   [
+    0.92,
+    0.48,
+    0.36
+   ],
+   [
+    0.96,
+    0.7,
+    0.24
+   ],
+   [
+    0.9,
+    0.48,
+    0.56
+   ],
+   [
+    0.62,
+    0.76,
+    0.34
+   ],
+   [
+    0.42,
+    0.66,
+    0.84
+   ],
+   [
+    0.94,
+    0.93,
+    0.86
+   ],
+   [
+    0.82,
+    0.44,
+    0.28
+   ],
+   [
+    0.62,
+    0.52,
+    0.8
+   ]
   ],
-  "roads": [
-    {"id": "depot_road", "from": "depot", "to": "a", "speed_limit": 30, "traffic": false},
-    {"id": "mill_lane", "from": "a", "to": "b", "speed_limit": 30},
-    {"id": "market_street", "from": "b", "to": "c"},
-    {"id": "river_road", "from": "c", "to": "e", "via": [[380, 72], [455, 15], [465, -110], [390, -205]]},
-    {"id": "high_street", "from": "e", "to": "f"},
-    {"id": "station_road", "from": "f", "to": "g"},
-    {"id": "park_avenue", "from": "g", "to": "a", "via": [[-300, -125], [-282, -70], [-300, -15]]},
-    {"id": "cross_street", "from": "b", "to": "f"},
-    {"id": "south_road", "from": "c", "to": "h"},
-    {"id": "orchard_way", "from": "h", "to": "i"},
-    {"id": "school_road", "from": "i", "to": "b", "speed_limit": 30}
+  "roofs": [
+   [
+    0.72,
+    0.38,
+    0.25
+   ],
+   [
+    0.6,
+    0.32,
+    0.22
+   ],
+   [
+    0.62,
+    0.63,
+    0.64
+   ]
   ],
-  "hills": [
-    {"x": 110, "z": 70, "radius": 150, "height": 7},
-    {"x": 440, "z": -70, "radius": 150, "height": 9},
-    {"x": -300, "z": -70, "radius": 140, "height": -4},
-    {"x": 90, "z": -230, "radius": 130, "height": 5},
-    {"x": -120, "z": 330, "radius": 170, "height": 8}
+  "awnings": [
+   [
+    0.9,
+    0.2,
+    0.18
+   ],
+   [
+    0.98,
+    0.75,
+    0.12
+   ],
+   [
+    0.15,
+    0.4,
+    0.8
+   ],
+   [
+    0.15,
+    0.62,
+    0.35
+   ],
+   [
+    0.95,
+    0.5,
+    0.1
+   ]
   ],
-  "features": [
-    {"type": "speed_bump", "road": "mill_lane", "along": 205},
-    {"type": "speed_bump", "road": "station_road", "along": 60},
-    {"type": "pothole", "road": "high_street", "along": 70, "lateral": 1.4, "dir": 1},
-    {"type": "pothole", "road": "high_street", "along": 215, "lateral": 2.4, "dir": 1},
-    {"type": "pothole", "road": "river_road", "along": 180, "lateral": 2.2, "dir": 1},
-    {"type": "pothole", "road": "park_avenue", "along": 110, "lateral": 1.6, "dir": 1}
+  "leaves": [
+   [
+    0.2,
+    0.5,
+    0.2
+   ],
+   [
+    0.28,
+    0.55,
+    0.18
+   ],
+   [
+    0.16,
+    0.44,
+    0.22
+   ]
   ],
-  "parked_cars": [
-    {"road": "market_street", "along": 40, "dir": 1},
-    {"road": "market_street", "along": 175, "dir": 1},
-    {"road": "market_street", "along": 182, "dir": 1},
-    {"road": "high_street", "along": 45, "dir": 1},
-    {"road": "high_street", "along": 200, "dir": 1},
-    {"road": "station_road", "along": 200, "dir": 1},
-    {"road": "park_avenue", "along": 200, "dir": 1},
-    {"road": "cross_street", "along": 120, "dir": 1},
-    {"road": "orchard_way", "along": 100, "dir": 1}
+  "car_colours": [
+   [
+    0.98,
+    0.8,
+    0.1
+   ],
+   [
+    0.9,
+    0.9,
+    0.92
+   ],
+   [
+    0.98,
+    0.8,
+    0.1
+   ],
+   [
+    0.75,
+    0.75,
+    0.78
+   ],
+   [
+    0.98,
+    0.8,
+    0.1
+   ],
+   [
+    0.72,
+    0.16,
+    0.14
+   ],
+   [
+    0.17,
+    0.17,
+    0.2
+   ],
+   [
+    0.2,
+    0.3,
+    0.55
+   ]
   ],
-  "knockables": [
-    {"kind": "bin", "road": "mill_lane", "along": 150, "lateral": 4.6, "dir": 1},
-    {"kind": "bin", "road": "market_street", "along": 130, "lateral": 4.6, "dir": 1},
-    {"kind": "bin", "road": "high_street", "along": 120, "lateral": 4.6, "dir": 1},
-    {"kind": "bin", "road": "station_road", "along": 100, "lateral": 4.6, "dir": 1},
-    {"kind": "crate", "road": "river_road", "along": 240, "lateral": 4.5, "dir": 1},
-    {"kind": "crate", "road": "river_road", "along": 244, "lateral": 5.0, "dir": 1},
-    {"kind": "barrier", "road": "river_road", "along": 355, "lateral": 2.9, "dir": 1},
-    {"kind": "barrier", "road": "river_road", "along": 361, "lateral": 2.9, "dir": 1}
+  "bunting": [
+   [
+    0.98,
+    0.8,
+    0.1
+   ],
+   [
+    0.1,
+    0.3,
+    0.7
+   ],
+   [
+    0.85,
+    0.12,
+    0.15
+   ],
+   [
+    0.15,
+    0.62,
+    0.35
+   ],
+   [
+    0.95,
+    0.45,
+    0.1
+   ]
   ],
-  "cone_lines": [
-    {"road": "river_road", "from": 335, "to": 385, "lateral": 1.7, "dir": 1, "spacing": 5},
-    {"road": "park_avenue", "from": 240, "to": 270, "lateral": 1.7, "dir": 1, "spacing": 5}
-  ]
+  "grass_a": [
+   0.44,
+   0.56,
+   0.26
+  ],
+  "grass_b": [
+   0.52,
+   0.58,
+   0.3
+  ],
+  "sand": [
+   0.95,
+   0.86,
+   0.64
+  ],
+  "sea": [
+   0.08,
+   0.55,
+   0.66
+  ],
+  "palm_trunk": [
+   0.52,
+   0.42,
+   0.32
+  ],
+  "palm_leaf": [
+   0.22,
+   0.55,
+   0.2
+  ],
+  "palm_share": 0.7,
+  "house_share": 0.5,
+  "office_share": 0.06,
+  "lowest_storeys": 2,
+  "highest_storeys": 4,
+  "chimneys": false,
+  "bunting_every": 110,
+  "sky_top": [
+   0.22,
+   0.55,
+   0.92
+  ],
+  "sky_horizon": [
+   0.75,
+   0.88,
+   0.95
+  ],
+  "fog": [
+   0.82,
+   0.88,
+   0.9
+  ],
+  "ambient": [
+   0.8,
+   0.8,
+   0.78
+  ],
+  "ambient_energy": 0.56,
+  "sun_colour": [
+   1.0,
+   0.96,
+   0.85
+  ],
+  "sun_energy": 0.92,
+  "street_gap": 1.0,
+  "gap_low": 0.5,
+  "gap_high": 4.0,
+  "trees_on_pavement": true,
+  "width_low": 9,
+  "width_high": 17
+ }
 }

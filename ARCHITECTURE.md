@@ -153,6 +153,12 @@ fair.
 reads it, `DriverFigure` builds the 3D figure and `DriverBadge` draws the portrait, so
 a new driver needs no code. Drivers change nothing about how the bus handles.
 
+**Cities are themed by data.** The `theme` block of a map sets the colours, building
+mix, palms and sky, read by `CityTheme`, and the `coast` block adds a beach and sea.
+`StreetLife` walks people along the pavements as one instanced batch. Motorbikes are
+`TrafficAgent`s that keep to the kerb side of a lane and ignore cars, so they filter
+past queues without any lane-changing logic.
+
 **Cheats in test builds only.** `Cheats.available()` is `OS.is_debug_build()`, so
 the gesture and panels do not exist in a release export. The panels are English
 only, and each cheat is a small function on `PlayerProfile` or `RouteSystem`.

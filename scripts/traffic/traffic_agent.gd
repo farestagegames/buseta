@@ -1,6 +1,6 @@
 class_name TrafficAgent
 extends RefCounted
-## One car. Follows the Intelligent Driver Model: it keeps a safe time gap to
+## One car or motorbike. Follows the Intelligent Driver Model: it keeps a safe time gap to
 ## whatever is ahead and brakes smoothly, which gives natural queues. Pure logic.
 
 const MAX_ACCEL := 1.6
@@ -10,6 +10,9 @@ const TIME_GAP := 1.3
 const MIN_GAP := 2.5
 const CAR_LENGTH := 4.4
 const STUN_SECONDS := 5.0
+const MOTO_LENGTH := 2.2
+## Motorbikes keep to the kerb side of the lane, which is how they slip past cars.
+const MOTO_KERB_SHIFT := 1.35
 
 var lane: int
 var distance: float = 0.0
@@ -19,6 +22,8 @@ var next_lane: int = -1
 var stunned: float = 0.0 ## Seconds it stays stopped after being hit.
 var nudge: Vector2 = Vector2.ZERO ## Offset from being shoved by the bus.
 var nudge_velocity: Vector2 = Vector2.ZERO
+var is_moto: bool = false
+var batch_index: int = 0 ## This vehicle's place in its drawn batch.
 
 
 func _init(start_lane: int, start_distance: float, cruise_speed: float) -> void:

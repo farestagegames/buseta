@@ -69,7 +69,7 @@ func test_second_route_loads_with_its_own_stops() -> void:
 	Profile.select(Catalog.ROUTES, "route_02")
 	var city: CityShift = CITY.instantiate()
 	add_child_autofree(city)
-	assert_eq(city.route.current_stop().stop_name, "Mill Cross")
+	assert_eq(city.route.current_stop().stop_name, "Cruce Almendros")
 	assert_between(city.route.stops.size(), 6, 9)
 	var last := 0.0
 	for stop in city.route.stops:
@@ -96,24 +96,24 @@ func _settings_tab() -> SettingsPanel:
 func test_language_is_a_dropdown_listing_every_language() -> void:
 	var settings: SettingsPanel = await _settings_tab()
 	assert_eq(settings.language_picker.item_count, Country.pack.languages().size())
-	assert_eq(settings.language_picker.get_item_text(4), "हिन्दी", "Names stay in their own script")
+	assert_eq(settings.language_picker.get_item_text(0), "Español (Colombia)", "Names stay in their own language")
 
 
 func test_choosing_from_the_dropdown_changes_the_language() -> void:
 	var settings: SettingsPanel = await _settings_tab()
-	settings.language_picker.select(1)
-	settings.language_picker.item_selected.emit(1)
-	assert_eq(GameSettings.language, "fr")
-	assert_eq(TranslationServer.get_locale(), "fr")
+	settings.language_picker.select(0)
+	settings.language_picker.item_selected.emit(0)
+	assert_eq(GameSettings.language, "es_CO")
+	assert_eq(TranslationServer.get_locale(), "es_CO")
 	GameSettings.language = "en"
 	await wait_frames(1)
-	assert_eq(settings.language_picker.selected, 0, "Follows the setting")
+	assert_eq(settings.language_picker.selected, 1, "Follows the setting")
 
 
 func test_dropdown_shows_the_saved_language_when_it_opens() -> void:
-	GameSettings.language = "ar"
+	GameSettings.language = "es_CO"
 	var settings: SettingsPanel = await _settings_tab()
-	assert_eq(settings.language_picker.selected, 5)
+	assert_eq(settings.language_picker.selected, 0)
 	GameSettings.language = "en"
 
 

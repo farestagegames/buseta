@@ -7,8 +7,8 @@ const RIGHT_HAND := 1
 const LEFT_HAND := -1
 const SPEED_UNITS := {"kmh": 1.0, "mph": 0.621371}
 const REQUIRED_FIELDS: Array[String] = [
-	"id", "name", "driving_side", "road_rules", "signage", "currency", "languages",
-	"default_language", "content", "sounds", "horns", "radio",
+	"id", "name", "city_name", "driving_side", "road_rules", "signage", "currency", "languages",
+	"default_language", "fonts", "content", "sounds", "horns", "radio",
 ]
 const REQUIRED_CONTENT: Array[String] = ["catalog", "achievements", "daily_challenges", "passengers"]
 const REQUIRED_KINDS: Array[String] = [Catalog.ROUTES, Catalog.BUSES, Catalog.LIVERIES, Catalog.DRIVERS]
@@ -110,6 +110,9 @@ func validate() -> Array[String]:
 
 func _check_languages(problems: Array[String]) -> void:
 	var codes: Array = (data["languages"] as Array).map(func(language: Dictionary) -> String: return language["code"])
+	for language: Dictionary in data["languages"]:
+		if language.has("file"):
+			_check_file(problems, language["file"], "language file %s" % language["code"])
 	if codes.is_empty():
 		problems.append("A pack needs at least one language")
 	if not codes.has(data["default_language"]):

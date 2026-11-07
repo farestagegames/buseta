@@ -6,7 +6,7 @@ extends Node
 const KERB_COOLDOWN := 4.0
 const OFF_ROAD_MARGIN := 0.4
 const LOST_COLLISION_SPEED := 0.5
-const HIT_MESSAGES := {"cone": "Hit a cone", "bin": "Hit a bin", "crate": "Hit a crate", "barrier": "Hit a barrier"}
+const HIT_MESSAGES := {"cone": "Hit a cone", "bin": "Hit a bin", "crate": "Hit a crate", "barrier": "Hit a barrier", "stall": "Hit a stall", "moto": "Hit a motorbike"}
 const TIPS := {
 	"punctuality": "Tip: you lost the most time between stops. Keep moving when the road is clear.",
 	"accuracy": "Tip: stop with the bus in the middle of the bay.",

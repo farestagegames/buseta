@@ -93,6 +93,40 @@ func _facet(a: Vector3, b: Vector3, c: Vector3, colour: Color) -> void:
 
 
 ## A gable roof on a rectangle. The ridge runs along the local Z axis.
+## A flat piece seen from both sides, such as a flag or a palm frond.
+func flag(a: Vector3, b: Vector3, c: Vector3, colour: Color) -> void:
+	_facet(a, b, c, colour)
+	_facet(a, c, b, colour)
+
+
+## A palm: a leaning trunk in two lengths, and a crown of drooping fronds.
+func palm(base: Vector3, height: float, lean: Vector2, trunk: Color, leaf: Color, random: RandomNumberGenerator) -> void:
+	var middle := base + Vector3(lean.x * 0.35, height * 0.55, lean.y * 0.35)
+	var top := base + Vector3(lean.x, height, lean.y)
+	_post(base, middle, 0.21, 0.16, trunk)
+	_post(middle, top, 0.16, 0.12, trunk.lightened(0.08))
+	var fronds := 7
+	for i in fronds:
+		var angle := TAU * float(i) / float(fronds) + random.randf_range(-0.2, 0.2)
+		var out := Vector3(cos(angle), 0.0, sin(angle))
+		var across := Vector3(-out.z, 0.0, out.x) * 0.42
+		var reach := random.randf_range(2.5, 3.3)
+		var bend := top + out * reach * 0.55 + Vector3.UP * 0.5
+		var tip := top + out * reach + Vector3.DOWN * random.randf_range(0.7, 1.3)
+		var shade := leaf.darkened(random.randf_range(0.0, 0.22))
+		flag(top, bend + across, bend - across, shade)
+		flag(bend + across, tip, bend - across, shade.lightened(0.06))
+
+
+## A four-sided tapering post from one point to another.
+func _post(from: Vector3, to: Vector3, wide: float, narrow: float, colour: Color) -> void:
+	var offsets: Array[Vector3] = [Vector3(1, 0, 1), Vector3(1, 0, -1), Vector3(-1, 0, -1), Vector3(-1, 0, 1)]
+	for i in 4:
+		var a := offsets[i]
+		var b := offsets[(i + 1) % 4]
+		quad(from + b * wide, from + a * wide, to + a * narrow, to + b * narrow, colour)
+
+
 func gable(centre: Vector3, width: float, length: float, rise: float, yaw: float, colour: Color) -> void:
 	var basis := Basis(Vector3.UP, yaw)
 	var half_w := width / 2.0

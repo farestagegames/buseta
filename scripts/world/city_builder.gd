@@ -31,21 +31,17 @@ const PAVEMENT := Color(0.62, 0.61, 0.59)
 const KERB := Color(0.72, 0.71, 0.68)
 const LINE := Color(0.92, 0.92, 0.88)
 const YELLOW := Color(0.95, 0.78, 0.18)
-const GRASS_A := Color(0.62, 0.66, 0.56)
-const GRASS_B := Color(0.68, 0.71, 0.6)
-const WALLS: Array[Color] = [
-	Color(0.86, 0.66, 0.54), Color(0.74, 0.5, 0.42), Color(0.92, 0.86, 0.74),
-	Color(0.8, 0.8, 0.8), Color(0.7, 0.58, 0.5), Color(0.9, 0.8, 0.66),
-]
-const ROOF_TILES: Array[Color] = [Color(0.42, 0.24, 0.2), Color(0.3, 0.3, 0.34), Color(0.5, 0.3, 0.22)]
-const AWNINGS: Array[Color] = [Color(0.7, 0.2, 0.18), Color(0.18, 0.42, 0.3), Color(0.2, 0.3, 0.55), Color(0.85, 0.65, 0.2)]
-const TREE_LEAVES: Array[Color] = [Color(0.27, 0.42, 0.2), Color(0.32, 0.47, 0.22), Color(0.22, 0.38, 0.22)]
+const TANK_BLUE := Color(0.16, 0.28, 0.48)
+const TEXTURE_SEA := preload("res://assets/textures/sea.png")
+const SEA_DRIFT := Vector3(0.006, 0.0, 0.004)
 
 var building_count: int = 0
 var lamp_spots: Array[Dictionary] = [] ## position and yaw, for ObstacleField.
 
+var theme: CityTheme
 var _network: RoadNetwork
 var _keep: float = 1.0 ## 1 where traffic keeps right, -1 where it keeps left.
+var _sea_material: StandardMaterial3D
 var _ground: GroundSurface
 var _random := RandomNumberGenerator.new()
 var _solid: StaticBody3D
@@ -65,6 +61,7 @@ var _signs: Array[Dictionary] = []
 
 func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, route: RouteRunner) -> void:
 	_network = network
+	theme = CityTheme.from_data(map_data)
 	_keep = float(network.traffic_side)
 	_ground = ground
 	_height_of = ground.terrain_height
@@ -78,6 +75,7 @@ func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, ro
 	_pavements = LowPolyBuilder.new()
 	_woodland = LowPolyBuilder.new()
 	_build_terrain()
+	_build_sea()
 	_road_mesh = LowPolyBuilder.new()
 	_scenery_mesh = LowPolyBuilder.new()
 	for builder: LowPolyBuilder in [_flats, _office, _shops, _lines, _pavements, _woodland, _road_mesh, _scenery_mesh]:
@@ -124,14 +122,8 @@ func _add_solid(centre: Vector3, size: Vector3, yaw: float) -> void:
 
 
 func _build_terrain() -> void:
-	var low := Vector2(INF, INF)
-	var high := Vector2(-INF, -INF)
-	for node: Dictionary in _network.nodes.values():
-		var position: Vector2 = node["position"]
-		low = Vector2(minf(low.x, position.x), minf(low.y, position.y))
-		high = Vector2(maxf(high.x, position.x), maxf(high.y, position.y))
-	low -= Vector2.ONE * MAP_MARGIN
-	high += Vector2.ONE * (MAP_MARGIN + 180.0)
+	var low := _town_edges().position - Vector2.ONE * MAP_MARGIN
+	var high := _town_edges().end + Vector2.ONE * (MAP_MARGIN + 180.0)
 	var columns := int((high.x - low.x) / GRID_CELL) + 1
 	var rows := int((high.y - low.y) / GRID_CELL) + 1
 	var vertices := PackedVector3Array()
@@ -153,7 +145,8 @@ func _build_terrain() -> void:
 			var east := _ground.terrain_height(point + Vector2(step, 0.0))
 			var south := _ground.terrain_height(point + Vector2(0.0, step))
 			normals[index] = Vector3(height - east, step, height - south).normalized()
-			colours[index] = GRASS_A if (row * 7 + column * 13) % 5 < 3 else GRASS_B
+			var grass := theme.grass_a if (row * 7 + column * 13) % 5 < 3 else theme.grass_b
+			colours[index] = grass.lerp(theme.sand, clampf(_ground.beach_share(point) * 6.0, 0.0, 1.0))
 			uvs[index] = point
 	for row in rows - 1:
 		for column in columns - 1:
@@ -175,6 +168,42 @@ func _build_terrain() -> void:
 	instance.mesh = mesh
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
+
+
+## The box around every road and node in town.
+func _town_edges() -> Rect2:
+	var edges := Rect2(_network.nodes.values()[0]["position"], Vector2.ZERO)
+	for node: Dictionary in _network.nodes.values():
+		edges = edges.expand(node["position"])
+	for road: Dictionary in _network.roads.values():
+		for point: Vector2 in road["points"]:
+			edges = edges.expand(point)
+	return edges
+
+
+## A flat sea with slowly drifting ripples. It only needs one draw call.
+func _build_sea() -> void:
+	if _ground.coast_x == GroundSurface.NO_COAST:
+		return
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(1600.0, 3000.0)
+	_sea_material = StandardMaterial3D.new()
+	_sea_material.albedo_color = theme.sea
+	_sea_material.albedo_texture = TEXTURE_SEA
+	_sea_material.uv1_scale = Vector3(60.0, 110.0, 1.0)
+	_sea_material.roughness = 0.25
+	_sea_material.metallic_specular = 0.7
+	plane.material = _sea_material
+	var sea := MeshInstance3D.new()
+	sea.mesh = plane
+	sea.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	sea.position = Vector3(_ground.coast_x + _ground.beach_width + 760.0, GroundSurface.SEA_LEVEL, 0.0)
+	add_child(sea)
+
+
+func _process(dt: float) -> void:
+	if _sea_material != null:
+		_sea_material.uv1_offset += SEA_DRIFT * dt
 
 
 func _build_roads(b: LowPolyBuilder, map_data: Dictionary, route: RouteRunner) -> LowPolyBuilder:
@@ -390,7 +419,9 @@ func _build_scenery(b: LowPolyBuilder, route: RouteRunner) -> LowPolyBuilder:
 		_line_with_buildings(b, road, 24.0)
 		_line_with_trees(b, road)
 		_line_with_lamps(road)
+		_line_with_bunting(road)
 	_tree_line(b)
+	_beach_palms(b)
 	for sign_data: Dictionary in _signs:
 		var spot: Vector2 = sign_data["spot"]
 		var y: float = sign_data["y"]
@@ -445,57 +476,58 @@ func _line_with_buildings(b: LowPolyBuilder, road: Dictionary, set_back: float) 
 	for side: float in [-1.0, 1.0]:
 		var along := _random.randf_range(32.0, 48.0)
 		while along < length - 32.0:
-			var width := _random.randf_range(12.0, 24.0)
+			var width := _random.randf_range(theme.width_low, theme.width_high)
 			var depth := _random.randf_range(11.0, 17.0)
-			var lateral := (PAVEMENT_OUTER + 2.5 + set_back + depth / 2.0) * side
+			var lateral := (PAVEMENT_OUTER + theme.street_gap + set_back + depth / 2.0) * side
 			var placed: Dictionary = _network.sample(road["id"], along, lateral, 1)
 			var forward: Vector2 = placed["forward"]
 			var to_road := Vector2(-forward.y, forward.x) * -side
 			if _try_building(b, placed["position"], placed["heading"], width, depth, to_road, set_back == 0.0):
 				building_count += 1
-			along += width + _random.randf_range(3.0, 11.0)
+			along += width + _random.randf_range(theme.gap_low, theme.gap_high)
 
 
 func _try_building(b: LowPolyBuilder, centre: Vector2, heading: float, width: float, depth: float, to_road: Vector2, on_street: bool) -> bool:
 	var forward := Vector2(-sin(heading), -cos(heading))
 	var right := Vector2(-forward.y, forward.x)
-	var clear := PAVEMENT_OUTER - RoadNetwork.ROAD_HALF_WIDTH + 1.0
+	var clear := GroundSurface.PAVEMENT_WIDTH + minf(theme.street_gap, 1.0) - 0.05
 	var lowest := INF
 	for along_share: float in [-0.5, 0.0, 0.5]:
 		for across_share: float in [-0.5, 0.0, 0.5]:
 			var corner := centre + forward * width * along_share + right * depth * across_share
-			if _network.edge_distance(corner) < clear:
+			if _network.edge_distance(corner) < clear or _ground.beach_share(corner) > 0.0:
 				return false
 			lowest = minf(lowest, _ground.terrain_height(corner))
-	var reach := maxf(width, depth) * 0.6
+	var reach := depth * 0.55
 	if not _is_free(centre, reach):
 		return false
 	_taken.append(Vector3(centre.x, centre.y, reach))
 
 	var kind := _random.randf()
-	if kind < 0.3:
+	if kind < theme.house_share:
 		_house(b, centre, heading, width, depth, lowest)
-	elif kind < 0.8:
-		_block(b, _flats, centre, heading, width, depth, lowest, _random.randi_range(3, 5), to_road, on_street)
+	elif kind < 1.0 - theme.office_share:
+		var storeys := _random.randi_range(theme.lowest_storeys, theme.highest_storeys)
+		_block(b, _flats, centre, heading, width, depth, lowest, storeys, to_road, on_street)
 	else:
-		_block(b, _office, centre, heading, width, depth, lowest, _random.randi_range(5, 7), to_road, on_street)
+		_block(b, _office, centre, heading, width, depth, lowest, theme.highest_storeys + _random.randi_range(1, 3), to_road, on_street)
 	return true
 
 
 func _house(b: LowPolyBuilder, centre: Vector2, heading: float, width: float, depth: float, base: float) -> void:
 	var size := Vector3(minf(depth, 11.0), STOREY * 2.0, minf(width, 15.0))
-	_walls(_flats, centre, size, heading, base, WALLS[_random.randi_range(0, WALLS.size() - 1)])
-	var roof := ROOF_TILES[_random.randi_range(0, ROOF_TILES.size() - 1)]
-	b.gable(_at(centre, base + size.y), size.x + 0.7, size.z + 0.7, 3.2, heading, roof)
-	var chimney := centre + Vector2(-sin(heading), -cos(heading)) * size.z * 0.3
-	b.turned_box(_at(chimney, base + size.y + 2.4), Vector3(0.7, 2.2, 0.7), heading, Color(0.5, 0.35, 0.3))
+	_walls(_flats, centre, size, heading, base, _pick(theme.walls))
+	b.gable(_at(centre, base + size.y), size.x + 0.7, size.z + 0.7, 3.2, heading, _pick(theme.roofs))
+	if theme.chimneys:
+		var chimney := centre + Vector2(-sin(heading), -cos(heading)) * size.z * 0.3
+		b.turned_box(_at(chimney, base + size.y + 2.4), Vector3(0.7, 2.2, 0.7), heading, Color(0.5, 0.35, 0.3))
 	_add_solid(_at(centre, base + size.y / 2.0), size + Vector3(0.0, 6.0, 0.0), heading)
 
 
 func _block(b: LowPolyBuilder, facade: LowPolyBuilder, centre: Vector2, heading: float, width: float, depth: float, base: float, storeys: int, to_road: Vector2, on_street: bool) -> void:
 	var height := float(storeys) * STOREY
 	var size := Vector3(depth, height, width)
-	var wall: Color = WALLS[_random.randi_range(0, WALLS.size() - 1)]
+	var wall := _pick(theme.walls)
 	if facade == _office:
 		wall = wall.lerp(Color.WHITE, 0.6)
 	_walls(facade, centre, size, heading, base, wall)
@@ -505,8 +537,13 @@ func _block(b: LowPolyBuilder, facade: LowPolyBuilder, centre: Vector2, heading:
 	for i in _random.randi_range(1, 3):
 		var unit := centre + Vector2(_random.randf_range(-3.0, 3.0), _random.randf_range(-3.0, 3.0))
 		b.turned_box(_at(unit, base + height + 1.0), Vector3(1.6, 1.0, 1.2), heading, Color(0.6, 0.6, 0.62))
+	if not theme.chimneys:
+		var tank := centre + Vector2(_random.randf_range(-2.0, 2.0), _random.randf_range(-2.0, 2.0))
+		b.turned_box(_at(tank, base + height + 1.1), Vector3(1.3, 1.2, 1.3), heading, TANK_BLUE)
 	if on_street and _random.randf() < 0.65:
 		_shopfront(b, centre, heading, size, base, to_road)
+	if on_street and storeys > 1:
+		_balcony(b, centre, heading, size, base, to_road, wall)
 	_add_solid(_at(centre, base + height / 2.0), size + Vector3(0.0, 6.0, 0.0), heading)
 
 
@@ -517,32 +554,98 @@ func _walls(facade: LowPolyBuilder, centre: Vector2, size: Vector3, heading: flo
 	facade.turned_box(_at(centre, base + (size.y - depth_below) / 2.0), Vector3(size.x, size.y + depth_below, size.z), heading, colour)
 
 
+## A slab with a low wall across the front of the first floor, for the heat.
+func _balcony(b: LowPolyBuilder, centre: Vector2, heading: float, size: Vector3, base: float, to_road: Vector2, wall: Color) -> void:
+	var front := centre + to_road * (size.x / 2.0 + 0.5)
+	var y := base + STOREY + 0.2
+	b.turned_box(_at(front, y), Vector3(1.0, 0.12, size.z * 0.7), heading, wall.lightened(0.25))
+	b.turned_box(_at(front + to_road * 0.46, y + 0.5), Vector3(0.08, 0.9, size.z * 0.7), heading, _pick(theme.awnings))
+
+
+func _pick(colours: Array[Color]) -> Color:
+	return colours[_random.randi_range(0, colours.size() - 1)]
+
+
 func _shopfront(b: LowPolyBuilder, centre: Vector2, heading: float, size: Vector3, base: float, to_road: Vector2) -> void:
 	var front := centre + to_road * (size.x / 2.0 + 0.04)
 	_shops.uv_base_height = base + STOREY
-	var tint := Color(1.0, 1.0, 1.0).lerp(AWNINGS[_random.randi_range(0, AWNINGS.size() - 1)], 0.25)
+	var tint := Color(1.0, 1.0, 1.0).lerp(_pick(theme.awnings), 0.35)
 	_shops.turned_box(_at(front, base + STOREY / 2.0 - 0.6), Vector3(0.1, STOREY + 1.2, size.z - 0.5), heading, tint)
 	var awning := centre + to_road * (size.x / 2.0 + 0.7)
-	var colour: Color = AWNINGS[_random.randi_range(0, AWNINGS.size() - 1)]
-	b.turned_box(_at(awning, base + 2.75), Vector3(1.3, 0.14, size.z - 1.0), heading, colour)
+	b.turned_box(_at(awning, base + 2.75), Vector3(1.3, 0.14, size.z - 1.0), heading, _pick(theme.awnings))
 
 
 func _line_with_trees(b: LowPolyBuilder, road: Dictionary) -> void:
 	var length: float = road["length"]
 	for side: float in [-1.0, 1.0]:
-		var along := _random.randf_range(20.0, 40.0)
-		while along < length - 15.0:
-			var placed: Dictionary = _network.sample(road["id"], along, (PAVEMENT_OUTER + 1.2) * side, 1)
+		var along := _random.randf_range(34.0, 50.0)
+		var from_edge := RoadNetwork.ROAD_HALF_WIDTH + 1.5 if theme.trees_on_pavement else PAVEMENT_OUTER + 1.2
+		var clear := 1.2 if theme.trees_on_pavement else 3.1
+		while along < length - 34.0:
+			var placed: Dictionary = _network.sample(road["id"], along, from_edge * side, 1)
 			var spot: Vector2 = placed["position"]
-			if _network.edge_distance(spot) > 3.1 and _is_free(spot, 1.5):
-				_tree(b, spot, true)
+			if _network.edge_distance(spot) > clear and _clear_of_stops(spot) and _is_free(spot, 1.0):
+				_street_tree(b, spot)
 			along += _random.randf_range(22.0, 40.0)
+
+
+func _street_tree(b: LowPolyBuilder, spot: Vector2) -> void:
+	if _random.randf() < theme.palm_share:
+		_palm(b, spot, true)
+	else:
+		_tree(b, spot, true)
+
+
+func _palm(b: LowPolyBuilder, spot: Vector2, solid: bool) -> void:
+	var y := _ground.terrain_height(spot)
+	var height := _random.randf_range(6.0, 10.0)
+	var lean := Vector2(_random.randf_range(-1.0, 1.0), _random.randf_range(-1.0, 1.0))
+	b.palm(Vector3(spot.x, y, spot.y), height, lean, theme.palm_trunk, theme.palm_leaf, _random)
+	if solid:
+		_add_solid(Vector3(spot.x, y + 2.0, spot.y), Vector3(0.45, 6.0, 0.45), 0.0)
+
+
+## Strings of little flags across the street.
+func _line_with_bunting(road: Dictionary) -> void:
+	if theme.bunting_every <= 0.0:
+		return
+	var along := 60.0
+	var length: float = road["length"]
+	while along < length - 50.0:
+		_bunting(road["id"], along)
+		along += theme.bunting_every * _random.randf_range(0.8, 1.3)
+
+
+func _bunting(road_id: String, along: float) -> void:
+	var from: Vector2 = _network.sample(road_id, along, -RoadNetwork.ROAD_HALF_WIDTH - 2.5)["position"]
+	var to: Vector2 = _network.sample(road_id, along, RoadNetwork.ROAD_HALF_WIDTH + 2.5)["position"]
+	var top := _ground.terrain_height(from) + 6.6
+	var pieces := 12
+	for i in pieces:
+		var start := float(i) / float(pieces)
+		var finish := float(i + 1) / float(pieces)
+		var sag := 0.9 * (1.0 - pow(2.0 * start - 1.0, 2.0))
+		var a := from.lerp(to, start)
+		var b := from.lerp(to, finish)
+		var c := from.lerp(to, (start + finish) / 2.0)
+		_lines.flag(_at(a, top - sag), _at(b, top - sag), _at(c, top - sag - 0.55), _pick(theme.bunting))
+
+
+## Palms along the sand, between the seafront and the water.
+func _beach_palms(b: LowPolyBuilder) -> void:
+	if _ground.coast_x == GroundSurface.NO_COAST:
+		return
+	var edges := _town_edges()
+	var z := edges.position.y - 40.0
+	while z < edges.end.y + 40.0:
+		_palm(b, Vector2(_ground.coast_x + _random.randf_range(-6.0, 14.0), z), false)
+		z += _random.randf_range(9.0, 19.0)
 
 
 func _tree(b: LowPolyBuilder, spot: Vector2, solid: bool) -> void:
 	var y := _ground.terrain_height(spot)
 	var scale := _random.randf_range(0.8, 1.35)
-	var colour: Color = TREE_LEAVES[_random.randi_range(0, TREE_LEAVES.size() - 1)]
+	var colour := _pick(theme.leaves)
 	b.box(Vector3(spot.x, y + 1.4 * scale, spot.y), Vector3(0.32, 2.8, 0.32) * scale, Color(0.32, 0.24, 0.18))
 	b.blob(Vector3(spot.x, y + 4.0 * scale, spot.y), Vector3(2.3, 2.2, 2.3) * scale, colour, _random)
 	b.blob(Vector3(spot.x + 0.9, y + 5.4 * scale, spot.y - 0.5), Vector3(1.5, 1.5, 1.5) * scale, colour.lightened(0.08), _random)
@@ -580,25 +683,29 @@ func _lamp(spot: Vector2, forward: Vector2, side: float) -> void:
 
 ## A ring of woodland hides the edge of the world.
 func _tree_line(b: LowPolyBuilder) -> void:
-	var low := Vector2(INF, INF)
-	var high := Vector2(-INF, -INF)
-	for node: Dictionary in _network.nodes.values():
-		var position: Vector2 = node["position"]
-		low = Vector2(minf(low.x, position.x), minf(low.y, position.y))
-		high = Vector2(maxf(high.x, position.x), maxf(high.y, position.y))
-	low -= Vector2.ONE * 110.0
-	high += Vector2.ONE * 150.0
+	var low := _town_edges().position - Vector2.ONE * 110.0
+	var high := _town_edges().end + Vector2.ONE * 150.0
 	var spacing := 24.0
 	var x := low.x
 	while x < high.x:
-		_tree(_woodland, Vector2(x, low.y + _random.randf_range(-10.0, 10.0)), false)
-		_tree(_woodland, Vector2(x, high.y + _random.randf_range(-10.0, 10.0)), false)
+		_edge_tree(Vector2(x, low.y + _random.randf_range(-10.0, 10.0)))
+		_edge_tree(Vector2(x, high.y + _random.randf_range(-10.0, 10.0)))
 		x += spacing
 	var z := low.y
 	while z < high.y:
-		_tree(_woodland, Vector2(low.x + _random.randf_range(-10.0, 10.0), z), false)
-		_tree(_woodland, Vector2(high.x + _random.randf_range(-10.0, 10.0), z), false)
+		_edge_tree(Vector2(low.x + _random.randf_range(-10.0, 10.0), z))
+		_edge_tree(Vector2(high.x + _random.randf_range(-10.0, 10.0), z))
 		z += spacing
+
+
+## The edge of town needs hiding everywhere except on the beach.
+func _edge_tree(spot: Vector2) -> void:
+	if _ground.beach_share(spot) > 0.0:
+		return
+	if _random.randf() < theme.palm_share:
+		_palm(_woodland, spot, false)
+	else:
+		_tree(_woodland, spot, false)
 
 
 func _is_free(spot: Vector2, radius: float) -> bool:

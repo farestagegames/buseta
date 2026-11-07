@@ -5,7 +5,7 @@ const LIVE_LABELS: Array[String] = [
 	"VIEW", "MENU", "◀ IND", "IND ▶", "DOORS", "HORN", "GO", "BRAKE", "km/h", "DOORS OPEN",
 	"Cockpit", "Close", "Far", "Speed bump ahead", "Kerb strike", "Emergency stop", "Collision",
 	"Too fast over a bump", "Ran a red light", "No indicator", "Hit a cone", "Hit a bin", "Hit a crate",
-	"Hit a barrier", "Punctuality", "Stopping accuracy", "Smooth driving", "Traffic rules",
+	"Hit a barrier", "Hit a stall", "Hit a motorbike", "Punctuality", "Stopping accuracy", "Smooth driving", "Traffic rules",
 	"Passenger satisfaction", "Home", "Routes", "Garage", "Drivers", "Career", "Settings", "Paused",
 	"Wheel", "Tilt", "Buttons", "Tilt the phone to steer", "Invert tilt", "Resume", "Recover bus",
 	"Quit shift", "Drive again", "Main menu", "Language", "Start shift", "Daily challenge",
@@ -14,11 +14,13 @@ const LIVE_LABELS: Array[String] = [
 	"Turn right", "Turn left", "Straight on at the junction", "%d:%02d late", "%d:%02d early", "On time",
 ]
 
+const SPANISH := "res://data/packs/colombia/lang/es_CO.json"
+
 var strings: Dictionary
 
 
 func before_all() -> void:
-	strings = JSON.parse_string(FileAccess.get_file_as_string(Lang.PATH))
+	strings = MapLoader.read_json(SPANISH)
 
 
 func after_each() -> void:
@@ -42,34 +44,30 @@ func _scripts_in(path: String, into: Array[String]) -> void:
 		_scripts_in(path + "/" + folder, into)
 
 
-func test_game_offers_six_languages() -> void:
-	assert_eq(Country.pack.languages().size(), 6)
+func test_colombian_spanish_comes_first_and_english_second() -> void:
+	var languages := Country.pack.languages()
+	assert_eq(languages.size(), 2)
+	assert_eq(languages[0]["code"], "es_CO")
+	assert_eq(languages[1]["code"], "en")
+	assert_eq(Country.pack.data["default_language"], "es_CO")
 
 
-func test_every_entry_has_every_language_and_no_blanks() -> void:
+func test_no_translation_is_blank() -> void:
 	for key: String in strings:
-		var values: Array = strings[key]
-		assert_eq(values.size(), Lang.LOCALES.size(), key)
-		for value: String in values:
-			assert_ne(value.strip_edges(), "", key)
+		assert_ne((strings[key] as String).strip_edges(), "", key)
 
 
 func test_placeholders_survive_translation() -> void:
 	for key: String in strings:
-		for value: String in strings[key]:
-			assert_eq(_placeholders(value), _placeholders(key), "%s -> %s" % [key, value])
+		assert_eq(_placeholders(strings[key]), _placeholders(key), "%s -> %s" % [key, strings[key]])
 
 
 func test_every_format_string_formats_without_error() -> void:
 	for key: String in strings:
-		var slots := _placeholders(key).filter(func(slot: String) -> bool: return slot != "%%")
-		if slots.is_empty():
+		var value: String = strings[key]
+		if _in_text_order(value).is_empty():
 			continue
-		var arguments := []
-		for slot: String in _in_text_order(key):
-			arguments.append("x" if slot == "s" else 1)
-		for value: String in strings[key]:
-			assert_ne(_format(value, _reordered(value, key, arguments)), "", value)
+		assert_ne(_format(value, _reordered(value, key, [])), "", value)
 
 
 func _in_text_order(text: String) -> Array[String]:
@@ -96,8 +94,7 @@ func test_mixed_placeholders_stay_in_the_same_order() -> void:
 	for key: String in strings:
 		var original := _in_text_order(key)
 		if original.has("s") and original.size() > 1:
-			for value: String in strings[key]:
-				assert_eq(_in_text_order(value), original, "%s must keep its argument order" % key)
+			assert_eq(_in_text_order(strings[key]), original, "%s must keep its argument order" % key)
 
 
 func test_every_tr_call_in_the_code_has_a_translation() -> void:
@@ -141,35 +138,25 @@ func test_every_score_keeper_message_has_a_translation() -> void:
 
 
 func test_translation_applies_when_the_language_changes() -> void:
-	TranslationServer.set_locale("fr")
-	assert_eq(String(TranslationServer.translate("BRAKE")), "FREIN")
-	TranslationServer.set_locale("ar")
-	assert_eq(String(TranslationServer.translate("BRAKE")), "فرامل")
-	TranslationServer.set_locale("hi")
-	assert_eq(String(TranslationServer.translate("BRAKE")), "ब्रेक")
+	TranslationServer.set_locale("es_CO")
+	assert_eq(String(TranslationServer.translate("BRAKE")), "FRENO")
+	TranslationServer.set_locale("en")
+	assert_eq(String(TranslationServer.translate("BRAKE")), "BRAKE")
 
 
 func test_phone_language_is_followed_until_the_player_chooses() -> void:
-	assert_eq(Lang.resolve("", "es"), "es")
-	assert_eq(Lang.resolve("fr", "es"), "fr")
+	assert_eq(Lang.resolve("", "en"), "en")
+	assert_eq(Lang.resolve("es_CO", "en"), "es_CO")
+
+
+func test_any_spanish_phone_gets_colombian_spanish() -> void:
+	assert_eq(Lang.resolve("", "es"), "es_CO")
+	assert_eq(Lang.resolve("", "es_MX"), "es_CO")
+
+
+func test_a_saved_language_the_country_does_not_offer_falls_back() -> void:
+	assert_eq(Lang.resolve("fr", "de"), "es_CO")
 
 
 func test_unsupported_phone_language_falls_back_to_the_countrys_own() -> void:
 	assert_eq(Lang.resolve("", "de"), Country.pack.data["default_language"])
-
-
-func test_fonts_cover_hindi_and_arabic() -> void:
-	var font: Font = ThemeDB.fallback_font
-	var found_devanagari := false
-	var found_arabic := false
-	for fallback: Font in font.fallbacks:
-		found_devanagari = found_devanagari or fallback.has_char("ब".unicode_at(0))
-		found_arabic = found_arabic or fallback.has_char("ف".unicode_at(0))
-	assert_true(found_devanagari, "Hindi font")
-	assert_true(found_arabic, "Arabic font")
-
-
-func test_arabic_is_recognised_as_right_to_left() -> void:
-	var text_server := TextServerManager.get_primary_interface()
-	assert_true(text_server.is_locale_right_to_left("ar"))
-	assert_false(text_server.is_locale_right_to_left("fr"))

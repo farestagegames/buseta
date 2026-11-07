@@ -22,6 +22,10 @@ static func read_map_of(route_data: Dictionary) -> Dictionary:
 static func build_ground(map_data: Dictionary, network: RoadNetwork) -> GroundSurface:
 	var ground := GroundSurface.new()
 	ground.network = network
+	var coast: Dictionary = map_data.get("coast", {})
+	if not coast.is_empty():
+		ground.coast_x = coast["x"]
+		ground.beach_width = coast["beach"]
 	for hill: Dictionary in map_data.get("hills", []):
 		ground.add_hill(Vector2(hill["x"], hill["z"]), hill["radius"], hill["height"])
 	for feature: Dictionary in map_data.get("features", []):

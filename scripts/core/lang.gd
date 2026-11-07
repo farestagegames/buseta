@@ -1,12 +1,6 @@
 extends Node
-## Languages: loads the translations, adds fonts for Hindi and Arabic, and keeps
-## the game's locale matched to the player's setting. Text is translated from
-## data/lang/strings.json, keyed by the English text.
-
-const PATH := "res://data/lang/strings.json"
-const LOCALES: Array[String] = ["fr", "es", "pt", "hi", "ar"] ## Order of each entry in the file.
-const HINDI_FONT := "res://assets/fonts/NotoSansDevanagari-Regular.ttf"
-const ARABIC_FONT := "res://assets/fonts/NotoSansArabic-Regular.ttf"
+## Languages: each country's pack lists the ones it offers and where their text
+## lives. English needs no file, because the text in the code is the English.
 
 var font: Font
 
@@ -25,32 +19,39 @@ func apply() -> void:
 		TranslationServer.set_locale(wanted)
 
 
-## The player's choice, then the phone's language, then the country's own.
+## The player's choice, then the phone's language, then the country's own. A plain
+## language matches its regional version, so Spanish phones get Colombian Spanish.
 static func resolve(setting: String, phone_language: String) -> String:
-	var choice := setting if setting != "" else phone_language
-	for language: Dictionary in Country.pack.languages():
-		if language["code"] == choice:
-			return choice
+	for choice: String in [setting, phone_language]:
+		if choice == "":
+			continue
+		for language: Dictionary in Country.pack.languages():
+			var code: String = language["code"]
+			if code == choice or code.get_slice("_", 0) == choice.get_slice("_", 0):
+				return code
 	return Country.pack.data["default_language"]
 
 
 func _load_translations() -> void:
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
-	var entries: Dictionary = parsed
-	for i in LOCALES.size():
+	for language: Dictionary in Country.pack.languages():
+		if not language.has("file"):
+			continue
+		var entries: Dictionary = MapLoader.read_json(Country.pack.resolve(language["file"]))
 		var translation := Translation.new()
-		translation.locale = LOCALES[i]
+		translation.locale = language["code"]
 		for key: String in entries:
-			var values: Array = entries[key]
-			translation.add_message(key, values[i])
+			translation.add_message(key, entries[key])
 		TranslationServer.add_translation(translation)
 
 
-## Every piece of text uses this font, which falls back to the right script.
+## Every piece of text uses this font, which falls back to any script the pack needs.
 func _build_font() -> void:
 	var variation := FontVariation.new()
 	variation.base_font = ThemeDB.fallback_font
-	variation.fallbacks = [load(HINDI_FONT), load(ARABIC_FONT)]
+	var fallbacks: Array[Font] = []
+	for path: String in Country.pack.data["fonts"]:
+		fallbacks.append(load(path))
+	variation.fallbacks = fallbacks
 	font = variation
 	ThemeDB.fallback_font = variation
 	UiStyle.apply(variation)

@@ -4,6 +4,7 @@ extends Node3D
 ## needs. This is the only script that knows about all of them.
 
 const MENU_SCENE := "res://scenes/main/main_menu.tscn"
+const SKY_HAZE := 0.15 ## Keeps the sky blue however thick the distance haze is.
 
 @onready var _bus: BusController = $Bus
 @onready var _city: CityBuilder = $City
@@ -17,6 +18,7 @@ const MENU_SCENE := "res://scenes/main/main_menu.tscn"
 @onready var _tutorial: TutorialDirector = $Tutorial
 @onready var _hud: DriveHud = $Hud
 @onready var _camera: Camera3D = $CameraRig
+@onready var _street_life: StreetLife = $StreetLife
 
 var network: RoadNetwork
 var ground: GroundSurface
@@ -65,6 +67,8 @@ func _ready() -> void:
 			route.add_hazard(feature["position"])
 
 	_city.build(map_data, network, ground, route)
+	_apply_weather_of(_city.theme)
+	_street_life.setup(network, ground, route)
 	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)
 	_bus.start_at(ground, route.start_position, route.start_heading)
 	_route_system.setup(route, _bus.spec, network)
@@ -77,6 +81,22 @@ func _ready() -> void:
 	_intro.setup(network, ground, _bus, _camera)
 	if not Profile.data.intro_done:
 		_begin_first_shift.call_deferred()
+
+
+## Sets the sky and light of the city.
+func _apply_weather_of(theme: CityTheme) -> void:
+	var environment: Environment = ($WorldEnvironment as WorldEnvironment).environment
+	var sky: ProceduralSkyMaterial = environment.sky.sky_material
+	sky.sky_top_color = theme.sky_top
+	sky.sky_horizon_color = theme.sky_horizon
+	sky.ground_horizon_color = theme.sky_horizon
+	environment.fog_light_color = theme.fog
+	environment.fog_sky_affect = SKY_HAZE
+	environment.ambient_light_color = theme.ambient
+	environment.ambient_light_energy = theme.ambient_energy
+	var sun: DirectionalLight3D = $Sun
+	sun.light_color = theme.sun_colour
+	sun.light_energy = theme.sun_energy
 
 
 ## A new driver sees the opening scene, then the tutorial, with the clock held.

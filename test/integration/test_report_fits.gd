@@ -2,7 +2,7 @@ extends GutTest
 ## The end of shift report must always show its buttons. It has to fit a 16:9
 ## phone in every language, with the longest report a shift can produce.
 
-const LANGUAGES: Array[String] = ["en", "fr", "es", "pt", "hi", "ar"]
+const LANGUAGES: Array[String] = ["en", "es_CO"]
 
 var hud: DriveHud
 

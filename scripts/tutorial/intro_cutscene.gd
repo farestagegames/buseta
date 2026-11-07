@@ -6,7 +6,7 @@ signal finished
 
 const BAR_HEIGHT := 86.0
 const CAPTIONS: Array[String] = [
-	"Northfield. A small town that runs on time.",
+	"%s. A city that never stops moving.",
 	"Seven stops. One timetable. One driver.",
 	"Your first shift starts now.",
 ]
@@ -69,7 +69,7 @@ func _process(dt: float) -> void:
 func _show_frame() -> void:
 	_camera.global_position = shots.position()
 	_camera.look_at(shots.look_target(), Vector3.UP)
-	_caption.text = shots.caption()
+	_caption.text = tr(shots.caption()).replace("%s", Country.pack.data["city_name"])
 
 
 func _road_point(network: RoadNetwork, ground: GroundSurface, road: String, along: float) -> Vector3:

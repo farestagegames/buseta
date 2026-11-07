@@ -72,7 +72,7 @@ func test_a_driver_who_passes_the_stop_is_not_stranded() -> void:
 
 
 func test_every_step_has_translated_text() -> void:
-	var strings: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(Lang.PATH))
+	var strings: Dictionary = MapLoader.read_json("res://data/packs/colombia/lang/es_CO.json")
 	for step: Dictionary in TutorialScript.STEPS:
 		assert_true(strings.has(step["text"]), step["id"])
 	for caption in IntroCutscene.CAPTIONS:

@@ -1,29 +1,135 @@
 {
-  "name": "Route 4: Riverside Tour",
-  "map": "maps/puerto_marisol.json",
-  "start": {"road": "depot_road", "along": 35, "lateral": 1.9, "dir": 1},
-  "legs": [
-    {"road": "depot_road", "dir": 1},
-    {"road": "mill_lane", "dir": 1},
-    {"road": "cross_street", "dir": 1},
-    {"road": "high_street", "dir": -1},
-    {"road": "river_road", "dir": -1},
-    {"road": "south_road", "dir": 1},
-    {"road": "orchard_way", "dir": 1},
-    {"road": "school_road", "dir": 1},
-    {"road": "mill_lane", "dir": -1},
-    {"road": "depot_road", "dir": -1}
-  ],
-  "stops": [
-    {"name": "Mill Lane", "due": 52, "road": "mill_lane", "along": 125, "dir": 1, "waiting": 4},
-    {"name": "Library", "due": 120, "road": "cross_street", "along": 190, "dir": 1, "waiting": 5},
-    {"name": "Theatre", "due": 195, "road": "high_street", "along": 145, "dir": -1, "waiting": 5},
-    {"name": "River View", "due": 265, "road": "river_road", "along": 290, "dir": -1, "waiting": 3},
-    {"name": "Quay Street", "due": 300, "road": "river_road", "along": 95, "dir": -1, "waiting": 4},
-    {"name": "Southfields", "due": 355, "road": "south_road", "along": 120, "dir": 1, "waiting": 4},
-    {"name": "Orchard Hill", "due": 410, "road": "orchard_way", "along": 190, "dir": 1, "waiting": 3},
-    {"name": "School Lane", "due": 460, "road": "school_road", "along": 115, "dir": 1, "waiting": 3},
-    {"name": "Mill Bridge", "due": 535, "road": "mill_lane", "along": 120, "dir": -1, "waiting": 0},
-    {"name": "Depot", "due": 590, "road": "depot_road", "along": 80, "dir": -1, "waiting": 0, "final": true}
-  ]
+ "name": "Route 4: Grand Tour",
+ "map": "maps/puerto_marisol.json",
+ "start": {
+  "road": "depot_road",
+  "along": 35,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {
+   "road": "depot_road",
+   "dir": 1
+  },
+  {
+   "road": "mill_lane",
+   "dir": 1
+  },
+  {
+   "road": "cross_street",
+   "dir": 1
+  },
+  {
+   "road": "high_street",
+   "dir": -1
+  },
+  {
+   "road": "river_road",
+   "dir": -1
+  },
+  {
+   "road": "south_road",
+   "dir": 1
+  },
+  {
+   "road": "orchard_way",
+   "dir": 1
+  },
+  {
+   "road": "school_road",
+   "dir": 1
+  },
+  {
+   "road": "mill_lane",
+   "dir": -1
+  },
+  {
+   "road": "depot_road",
+   "dir": -1
+  }
+ ],
+ "stops": [
+  {
+   "name": "Los Almendros",
+   "due": 52,
+   "road": "mill_lane",
+   "along": 125,
+   "dir": 1,
+   "waiting": 4
+  },
+  {
+   "name": "Biblioteca",
+   "due": 120,
+   "road": "cross_street",
+   "along": 190,
+   "dir": 1,
+   "waiting": 5
+  },
+  {
+   "name": "Teatro Caribe",
+   "due": 195,
+   "road": "high_street",
+   "along": 145,
+   "dir": -1,
+   "waiting": 5
+  },
+  {
+   "name": "Mirador del Mar",
+   "due": 265,
+   "road": "river_road",
+   "along": 290,
+   "dir": -1,
+   "waiting": 3
+  },
+  {
+   "name": "Muelle Viejo",
+   "due": 300,
+   "road": "river_road",
+   "along": 95,
+   "dir": -1,
+   "waiting": 4
+  },
+  {
+   "name": "Barrio Sur",
+   "due": 355,
+   "road": "south_road",
+   "along": 120,
+   "dir": 1,
+   "waiting": 4
+  },
+  {
+   "name": "Loma de los Mangos",
+   "due": 410,
+   "road": "orchard_way",
+   "along": 190,
+   "dir": 1,
+   "waiting": 3
+  },
+  {
+   "name": "Calle del Colegio",
+   "due": 460,
+   "road": "school_road",
+   "along": 115,
+   "dir": 1,
+   "waiting": 3
+  },
+  {
+   "name": "Puente Almendros",
+   "due": 535,
+   "road": "mill_lane",
+   "along": 120,
+   "dir": -1,
+   "waiting": 0
+  },
+  {
+   "name": "Patio Central",
+   "due": 590,
+   "road": "depot_road",
+   "along": 80,
+   "dir": -1,
+   "waiting": 0,
+   "final": true
+  }
+ ]
 }

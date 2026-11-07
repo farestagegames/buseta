@@ -2,10 +2,30 @@
   "id": "testland",
   "name": "Testland",
   "driving_side": "left",
-  "road_rules": {"speed_unit": "mph", "default_speed_limit": 48},
-  "signage": {"warning_shape": "triangle", "warning_colour": [0.9, 0.2, 0.15]},
-  "currency": {"code": "TST", "symbol": "£", "thousands": ",", "per_coin": 1},
-  "languages": [{"code": "en", "name": "English"}],
+  "road_rules": {
+    "speed_unit": "mph",
+    "default_speed_limit": 48
+  },
+  "signage": {
+    "warning_shape": "triangle",
+    "warning_colour": [
+      0.9,
+      0.2,
+      0.15
+    ]
+  },
+  "currency": {
+    "code": "TST",
+    "symbol": "£",
+    "thousands": ",",
+    "per_coin": 1
+  },
+  "languages": [
+    {
+      "code": "en",
+      "name": "English"
+    }
+  ],
   "default_language": "en",
   "content": {
     "catalog": "catalog.json",
@@ -14,6 +34,14 @@
     "passengers": "res://data/packs/colombia/passengers.json"
   },
   "sounds": {},
-  "horns": [{"id": "standard", "name": "Standard", "file": "res://assets/audio/horn_loop.wav"}],
-  "radio": []
+  "horns": [
+    {
+      "id": "standard",
+      "name": "Standard",
+      "file": "res://assets/audio/horn_loop.wav"
+    }
+  ],
+  "radio": [],
+  "city_name": "Testville",
+  "fonts": []
 }

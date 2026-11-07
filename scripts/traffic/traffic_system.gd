@@ -19,9 +19,14 @@ const BUS_FAULT_SPEED := 0.3 ## Slower than this, the bus is not to blame.
 const HIT_REPEAT_SECONDS := 1.0
 const SEPARATION_PER_TICK := 0.06
 
-const CAR_COLOURS: Array[Color] = [
-	Color(0.2, 0.3, 0.55), Color(0.75, 0.75, 0.78), Color(0.17, 0.17, 0.2), Color(0.55, 0.15, 0.15),
-	Color(0.85, 0.82, 0.72), Color(0.25, 0.4, 0.35), Color(0.9, 0.9, 0.92), Color(0.6, 0.45, 0.2),
+const MOTO_CRUISE_LOW := 10.0
+const MOTO_CRUISE_HIGH := 14.0
+const MOTO_HALF_LENGTH := 1.0
+const MOTO_HALF_WIDTH := 0.4
+const MOTO_RADIUS := 0.55
+const MOTO_COLLISION := 2.0 ## How hard a moto counts as a knock, in m/s lost.
+const MOTO_COLOURS: Array[Color] = [
+	Color(0.85, 0.15, 0.12), Color(0.12, 0.2, 0.55), Color(0.12, 0.12, 0.14), Color(0.9, 0.9, 0.92), Color(0.15, 0.55, 0.3),
 ]
 
 var graph: LaneGraph
@@ -36,6 +41,8 @@ var _bus_heading: float = 0.0
 var _bus_speed: float = 0.0
 var _bus_active: bool = false
 var _batch: MultiMesh
+var _moto_batch: MultiMesh
+var _car_colours: Array[Color] = []
 var _lamps: MultiMesh
 var _heads: Array[Dictionary] = [] ## lane, node, group, first lamp instance.
 var _approaches: Array[Dictionary] = [] ## lane, node, group, line, forward.
@@ -48,6 +55,7 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 	_ground = ground
 	_spec = spec
 	_random.seed = 4242
+	_car_colours = CityTheme.from_data(map_data).car_colours
 	graph = LaneGraph.build(network, map_data)
 	_build_signals()
 	_spawn_cars()
@@ -117,7 +125,12 @@ func _on_telemetry(data: BusTelemetry) -> void:
 
 
 func _position_of(agent: TrafficAgent) -> Vector2:
-	return (graph.lanes[agent.lane] as TrafficLane).point_at(agent.distance) + agent.nudge
+	var lane: TrafficLane = graph.lanes[agent.lane]
+	var spot := lane.point_at(agent.distance) + agent.nudge
+	if agent.is_moto:
+		var forward := lane.forward_at(agent.distance)
+		spot += Vector2(-forward.y, forward.x) * TrafficAgent.MOTO_KERB_SHIFT * float(graph.network.traffic_side)
+	return spot
 
 
 func _update_agent(index: int, dt: float) -> void:
@@ -149,6 +162,8 @@ func _gap_to_traffic(index: int, agent: TrafficAgent, lane: TrafficLane) -> Dict
 		if i == index:
 			continue
 		var other: TrafficAgent = agents[i]
+		if other.is_moto != agent.is_moto:
+			continue # Motorbikes pass on the kerb side, so neither waits for the other.
 		var gap := INF
 		if other.lane == agent.lane and other.distance > agent.distance:
 			gap = other.distance - agent.distance
@@ -158,7 +173,7 @@ func _gap_to_traffic(index: int, agent: TrafficAgent, lane: TrafficLane) -> Dict
 			var following: TrafficLane = graph.lanes[agent.next_lane]
 			if not following.next.is_empty() and other.lane == following.next[0]:
 				gap = remaining + following.length + other.distance
-		gap -= TrafficAgent.CAR_LENGTH
+		gap -= TrafficAgent.MOTO_LENGTH if agent.is_moto else TrafficAgent.CAR_LENGTH
 		if gap < float(best["gap"]):
 			best = {"gap": maxf(gap, 0.1), "speed": other.speed}
 	return best
@@ -220,7 +235,9 @@ func _ring_is_busy(agent: TrafficAgent, lane: TrafficLane) -> bool:
 
 func _gap_to_bus(agent: TrafficAgent, lane: TrafficLane) -> float:
 	var forward := lane.forward_at(agent.distance)
-	return BusFootprint.gap_ahead(_bus_position, _bus_heading, _spec, _position_of(agent), forward, CAR_HALF_LENGTH, CAR_HALF_WIDTH)
+	var half_length := MOTO_HALF_LENGTH if agent.is_moto else CAR_HALF_LENGTH
+	var half_width := MOTO_HALF_WIDTH if agent.is_moto else CAR_HALF_WIDTH
+	return BusFootprint.gap_ahead(_bus_position, _bus_heading, _spec, _position_of(agent), forward, half_length, half_width)
 
 
 ## Any contact between the bus and a car counts, whoever is moving. Only a bus
@@ -234,6 +251,9 @@ func _check_bus_hits() -> void:
 		if spot.distance_squared_to(centre) > CONTACT_CHECK_RADIUS * CONTACT_CHECK_RADIUS:
 			continue
 		var car_forward := (graph.lanes[agent.lane] as TrafficLane).forward_at(agent.distance)
+		if agent.is_moto:
+			_check_moto_hit(agent, spot, bus_velocity)
+			continue
 		if not BusFootprint.touches_car(_bus_position, _bus_heading, _spec, spot, car_forward):
 			continue
 		var away := (spot - centre).normalized()
@@ -246,6 +266,18 @@ func _check_bus_hits() -> void:
 				GameEvents.bus_collided.emit(loss)
 		elif closing > 0.0:
 			agent.stop_against_bus(away * SEPARATION_PER_TICK)
+
+
+## A motorbike stays upright: the rider just stops, and the bus takes the blame.
+func _check_moto_hit(agent: TrafficAgent, spot: Vector2, bus_velocity: Vector2) -> void:
+	if not BusFootprint.touches(_bus_position, _bus_heading, _spec, spot, MOTO_RADIUS):
+		return
+	if absf(_bus_speed) >= BUS_FAULT_SPEED and agent.stunned <= TrafficAgent.STUN_SECONDS - HIT_REPEAT_SECONDS:
+		agent.hit_by_bus(bus_velocity * 0.3)
+		GameEvents.obstacle_hit.emit("moto", 0.0)
+		GameEvents.bus_collided.emit(MOTO_COLLISION)
+	else:
+		agent.stop_against_bus((spot - _bus_position).normalized() * SEPARATION_PER_TICK)
 
 
 func _check_red_lights() -> void:
@@ -273,28 +305,47 @@ func _spawn_cars() -> void:
 		var lane_index: int = road_lanes[i * road_lanes.size() / car_count]
 		var lane: TrafficLane = graph.lanes[lane_index]
 		var start := lane.length * (0.25 + 0.5 * _random.randf())
-		agents.append(TrafficAgent.new(lane_index, start, _random.randf_range(CRUISE_LOW, CRUISE_HIGH)))
+		var car := TrafficAgent.new(lane_index, start, _random.randf_range(CRUISE_LOW, CRUISE_HIGH))
+		car.batch_index = i
+		agents.append(car)
+	var moto_count: int = GraphicsQuality.current_profile()["traffic_motos"]
+	for i in moto_count:
+		var lane_index: int = road_lanes[(i * road_lanes.size() / moto_count + 3) % road_lanes.size()]
+		var lane: TrafficLane = graph.lanes[lane_index]
+		var moto := TrafficAgent.new(lane_index, lane.length * _random.randf_range(0.1, 0.8), _random.randf_range(MOTO_CRUISE_LOW, MOTO_CRUISE_HIGH))
+		moto.is_moto = true
+		moto.batch_index = i
+		agents.append(moto)
 
 
 func _build_car_batch() -> void:
 	var field := ObstacleField.new()
-	_batch = MultiMesh.new()
-	_batch.transform_format = MultiMesh.TRANSFORM_3D
-	_batch.use_colors = true
-	_batch.mesh = field._mesh_for("car").build(LowPolyBuilder.vertex_colour_material())
+	var moto_total := agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto).size()
+	_batch = _vehicle_batch(field._mesh_for("car"), agents.size() - moto_total)
+	_moto_batch = _vehicle_batch(field._mesh_for("moto"), moto_total)
 	field.free()
-	_batch.instance_count = agents.size()
-	for i in agents.size():
-		_batch.set_instance_color(i, CAR_COLOURS[i % CAR_COLOURS.size()])
-		_write_car(i, agents[i])
+	for agent in agents:
+		var colours := MOTO_COLOURS if agent.is_moto else _car_colours
+		var batch := _moto_batch if agent.is_moto else _batch
+		batch.set_instance_color(agent.batch_index, colours[agent.batch_index % colours.size()])
+		_write_car(0, agent)
+
+
+func _vehicle_batch(builder: LowPolyBuilder, count: int) -> MultiMesh:
+	var batch := MultiMesh.new()
+	batch.transform_format = MultiMesh.TRANSFORM_3D
+	batch.use_colors = true
+	batch.mesh = builder.build(LowPolyBuilder.vertex_colour_material())
+	batch.instance_count = count
 	var instance := MultiMeshInstance3D.new()
-	instance.multimesh = _batch
+	instance.multimesh = batch
 	instance.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	instance.custom_aabb = AABB(Vector3(-2000.0, -200.0, -2000.0), Vector3(4000.0, 400.0, 4000.0))
 	add_child(instance)
+	return batch
 
 
-func _write_car(index: int, agent: TrafficAgent) -> void:
+func _write_car(_index: int, agent: TrafficAgent) -> void:
 	var lane: TrafficLane = graph.lanes[agent.lane]
 	var spot := _position_of(agent)
 	var forward := lane.forward_at(agent.distance)
@@ -302,7 +353,8 @@ func _write_car(index: int, agent: TrafficAgent) -> void:
 	var ahead := _ground.terrain_height(spot + forward * 2.0)
 	var pitch := atan2(ahead + 0.12 - height, 2.0)
 	var basis := Basis(Vector3.UP, RoadNetwork.heading_of(forward)) * Basis(Vector3.RIGHT, pitch)
-	_batch.set_instance_transform(index, Transform3D(basis, Vector3(spot.x, height, spot.y)))
+	var batch := _moto_batch if agent.is_moto else _batch
+	batch.set_instance_transform(agent.batch_index, Transform3D(basis, Vector3(spot.x, height, spot.y)))
 
 
 func _build_signals() -> void:

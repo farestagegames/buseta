@@ -1,9 +1,9 @@
 {
   "routes": [
-    {"id": "route_01", "name": "Route 1: Northfield Loop", "file": "routes/route_01.json", "cost": 0, "description": "The full loop: roundabout, river road and hills."},
-    {"id": "route_02", "name": "Route 2: Orchard Circular", "file": "routes/route_02.json", "cost": 500, "description": "Quieter streets, a hilly back road and the roundabout from the south."},
-    {"id": "route_03", "name": "Route 3: Station Shuttle", "file": "routes/route_03.json", "cost": 1000, "description": "A quick shift of tight right turns past the park and the station."},
-    {"id": "route_04", "name": "Route 4: Riverside Tour", "file": "routes/route_04.json", "cost": 2000, "description": "The longest shift: the whole town, with the river road the other way."}
+    {"id": "route_01", "name": "Route 1: Malecón Loop", "file": "routes/route_01.json", "cost": 0, "description": "The full loop: roundabout, seafront and market."},
+    {"id": "route_02", "name": "Route 2: Los Mangos Circular", "file": "routes/route_02.json", "cost": 500, "description": "Quiet barrios, a hilly back road and the roundabout from the south."},
+    {"id": "route_03", "name": "Route 3: Terminal Shuttle", "file": "routes/route_03.json", "cost": 1000, "description": "A quick shift of tight right turns past the park and the terminal."},
+    {"id": "route_04", "name": "Route 4: Grand Tour", "file": "routes/route_04.json", "cost": 2000, "description": "The longest shift: the whole city, with the seafront the other way."}
   ],
   "buses": [
     {"id": "city_12", "name": "City 12", "file": "buses/city_bus.tres", "cost": 0, "description": "The depot's 12 metre workhorse. Heavy and steady."},

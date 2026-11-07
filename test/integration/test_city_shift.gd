@@ -49,7 +49,7 @@ func test_city_is_built_with_real_size() -> void:
 func test_bus_starts_in_the_depot_road_on_the_ground() -> void:
 	var start := scene.route.start_position
 	assert_almost_eq(bus.global_position.y, scene.ground.height_at(start), 0.2)
-	assert_eq(route_system.runner.current_stop().stop_name, "Mill Lane")
+	assert_eq(route_system.runner.current_stop().stop_name, "Los Almendros")
 
 
 func test_bus_rides_on_a_hill() -> void:
@@ -264,7 +264,7 @@ func test_lamp_post_falls_and_the_bus_keeps_going() -> void:
 
 
 func test_traffic_runs_and_keeps_moving() -> void:
-	assert_eq(traffic.agents.size(), int(GraphicsQuality.current_profile()["traffic_cars"]))
+	assert_eq(traffic.agents.size(), int(GraphicsQuality.current_profile()["traffic_cars"]) + int(GraphicsQuality.current_profile()["traffic_motos"]))
 	var start: Array[Vector2] = []
 	for agent in traffic.agents:
 		start.append(traffic._position_of(agent))
@@ -520,8 +520,41 @@ func test_right_to_left_language_keeps_the_driving_controls_in_place() -> void:
 
 
 func test_changing_language_updates_prompts_live() -> void:
-	GameSettings.language = "fr"
+	GameSettings.language = "es_CO"
 	await wait_physics_frames(20)
 	var hud: DriveHud = scene.get_node("Hud")
-	assert_string_contains(hud.route_panel._line_one, "Prochain")
+	assert_string_contains(hud.route_panel._line_one, "Próxima")
 	GameSettings.language = "en"
+
+
+func test_city_has_motorbikes_and_cars_in_its_traffic() -> void:
+	var traffic: TrafficSystem = scene.traffic_for_tools()
+	var motos := traffic.agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto)
+	assert_gt(motos.size(), 0)
+	assert_gt(traffic.agents.size() - motos.size(), 0)
+
+
+func test_a_moto_rides_nearer_the_kerb_than_a_car_in_its_lane() -> void:
+	var traffic: TrafficSystem = scene.traffic_for_tools()
+	var moto: TrafficAgent = traffic.agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto)[0]
+	var lane: TrafficLane = traffic.graph.lanes[moto.lane]
+	assert_almost_eq(traffic._position_of(moto).distance_to(lane.point_at(moto.distance)), TrafficAgent.MOTO_KERB_SHIFT, 0.5)
+
+
+func test_street_life_walks_the_pavements() -> void:
+	var life: StreetLife = scene.get_node("StreetLife")
+	assert_gt(life.strollers.size(), 0)
+	var before := life.strollers[0].position()
+	await wait_frames(20)
+	assert_ne(life.strollers[0].position(), before)
+
+
+func test_hitting_a_motorbike_counts_as_a_collision() -> void:
+	var traffic: TrafficSystem = scene.traffic_for_tools()
+	var moto: TrafficAgent = traffic.agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto)[0]
+	var spot: Vector2 = traffic._position_of(moto)
+	traffic._bus_position = spot
+	traffic._bus_speed = 5.0
+	traffic._check_moto_hit(moto, spot, Vector2(5.0, 0.0))
+	await wait_physics_frames(2)
+	assert_gt(int(keeper.score.counts["collisions"]) + int(keeper.score.counts["knocked"]), 0)

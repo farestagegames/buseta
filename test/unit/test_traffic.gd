@@ -179,3 +179,10 @@ func test_oncoming_bus_in_the_cars_lane_does_stop_it() -> void:
 	var spec := BusSpec.new()
 	var gap := BusFootprint.gap_ahead(Vector2(0.0, -30.0), PI, spec, Vector2.ZERO, Vector2(0.0, -1.0), 2.2, 0.9)
 	assert_lt(gap, 30.0)
+
+
+func test_motorbikes_pass_cars_and_keep_to_the_kerb() -> void:
+	var moto := TrafficAgent.new(0, 10.0, 12.0)
+	moto.is_moto = true
+	assert_lt(TrafficAgent.MOTO_LENGTH, TrafficAgent.CAR_LENGTH)
+	assert_gt(TrafficAgent.MOTO_KERB_SHIFT, 1.0)

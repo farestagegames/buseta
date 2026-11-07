@@ -8,7 +8,14 @@ const KERB_HEIGHT := 0.12
 const KERB_RAMP := 0.25
 const PAVEMENT_WIDTH := 3.0
 
+## Eastward from this line the ground falls to the sea. Far away means no coast.
+const NO_COAST := INF
+const BEACH_DROP := 1.2
+const SEA_LEVEL := -0.6
+
 var hills: Array[Dictionary] = [] ## position: Vector2, radius: float, height: float
+var coast_x: float = NO_COAST ## Where the sand starts.
+var beach_width: float = 40.0
 var features: Array[Dictionary] = [] ## See add_speed_bump and add_pothole.
 var network: RoadNetwork = null
 
@@ -34,7 +41,14 @@ func terrain_height(point: Vector2) -> float:
 		if reach < 1.0:
 			var bell := cos(reach * PI / 2.0)
 			total += float(hill["height"]) * bell * bell
-	return total
+	return total - beach_share(point) * BEACH_DROP
+
+
+## 0 inland, rising to 1 at the waterline.
+func beach_share(point: Vector2) -> float:
+	if coast_x == NO_COAST or point.x <= coast_x:
+		return 0.0
+	return minf((point.x - coast_x) / beach_width, 1.5)
 
 
 ## Height a wheel rides on at this point.

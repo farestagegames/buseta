@@ -12,17 +12,17 @@ const PROFILES := {
 	Level.LOW: {
 		"shadows": false, "shadow_size": 1024, "shadow_distance": 0.0, "soft_shadows": 0,
 		"render_scale": 0.75, "msaa": Viewport.MSAA_DISABLED, "view_distance": 380.0,
-		"fog_density": 0.007, "traffic_cars": 8,
+		"fog_density": 0.004, "traffic_cars": 8, "traffic_motos": 8, "pedestrians": 14,
 	},
 	Level.MEDIUM: {
 		"shadows": true, "shadow_size": 2048, "shadow_distance": 42.0, "soft_shadows": 1,
 		"render_scale": 0.9, "msaa": Viewport.MSAA_DISABLED, "view_distance": 560.0,
-		"fog_density": 0.0042, "traffic_cars": 11,
+		"fog_density": 0.0022, "traffic_cars": 11, "traffic_motos": 14, "pedestrians": 26,
 	},
 	Level.HIGH: {
 		"shadows": true, "shadow_size": 4096, "shadow_distance": 55.0, "soft_shadows": 2,
 		"render_scale": 1.0, "msaa": Viewport.MSAA_2X, "view_distance": 900.0,
-		"fog_density": 0.0022, "traffic_cars": 14,
+		"fog_density": 0.0012, "traffic_cars": 14, "traffic_motos": 20, "pedestrians": 40,
 	},
 }
 
