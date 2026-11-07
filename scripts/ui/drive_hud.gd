@@ -10,7 +10,7 @@ const PERFORMANCE_WINDOW := 1.0
 
 var wheel: SteeringWheelControl
 var throttle_pedal: PedalControl
-var brake_pedal: PedalControl
+var brake_pedal: BrakeButton
 var left_button: TouchButton
 var right_button: TouchButton
 var settings_panel: SettingsPanel
@@ -27,7 +27,7 @@ var _view_button: TouchButton
 var _indicator_left: TouchButton
 var _indicator_right: TouchButton
 var _door_button: TouchButton
-var _gear_button: TouchButton
+var gear_switch: GearSwitch
 var _frame_rate: Label
 var _worst_frame: float = 0.0
 var _frame_timer: float = 0.0
@@ -150,9 +150,7 @@ func _build_pedals() -> void:
 	_place(throttle_pedal, Vector2(1.0, 1.0), Vector2(-EDGE - 150.0, -EDGE - 340.0), Vector2(150.0, 340.0))
 	_controls.add_child(throttle_pedal)
 
-	brake_pedal = PedalControl.new()
-	brake_pedal.label = "BRAKE"
-	brake_pedal.colour = Color(0.9, 0.22, 0.2)
+	brake_pedal = BrakeButton.new()
 	_place(brake_pedal, Vector2(1.0, 1.0), Vector2(-EDGE - 150.0 - GAP - 200.0, -EDGE - 230.0), Vector2(200.0, 230.0))
 	_controls.add_child(brake_pedal)
 
@@ -181,8 +179,10 @@ func _build_buttons() -> void:
 	var horn := _action_button("HORN", Vector2(1.0, 1.0), Vector2(-EDGE - 150.0 - GAP - 200.0, above_pedals), Vector2(200.0, 100.0))
 	horn.pressed_down.connect(func() -> void: GameEvents.horn_changed.emit(true))
 	horn.released.connect(func() -> void: GameEvents.horn_changed.emit(false))
-	_gear_button = _action_button("D / R", Vector2(1.0, 1.0), Vector2(-EDGE - 150.0 - GAP - 200.0, -EDGE - 230.0 - GAP - 94.0), Vector2(200.0, 94.0))
-	_gear_button.pressed_down.connect(GameEvents.gear_toggle_requested.emit)
+	gear_switch = GearSwitch.new()
+	_place(gear_switch, Vector2(1.0, 1.0), Vector2(-EDGE - 150.0 - GAP - 200.0, -EDGE - 230.0 - GAP - 94.0), Vector2(200.0, 94.0))
+	gear_switch.gear_toggled.connect(GameEvents.gear_toggle_requested.emit)
+	_controls.add_child(gear_switch)
 
 
 func _action_button(text: String, anchor: Vector2, offset: Vector2, button_size: Vector2) -> TouchButton:
@@ -245,6 +245,8 @@ func control_rect(focus: String) -> Rect2:
 			return _indicator_right.get_global_rect()
 		"doors":
 			return _door_button.get_global_rect()
+		"gear":
+			return gear_switch.get_global_rect()
 		"map":
 			return minimap.get_global_rect()
 		_:
@@ -286,8 +288,8 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	var door_lit := not data.doors_closed
 	if _door_button.lit != door_lit:
 		_door_button.lit = door_lit
-	if _gear_button.lit != data.is_reverse:
-		_gear_button.lit = data.is_reverse
+	if gear_switch.is_reverse != data.is_reverse:
+		gear_switch.is_reverse = data.is_reverse
 
 
 ## Keeps controls clear of notches and rounded corners.

@@ -215,7 +215,8 @@ func _on_indicator_toggle(side: int) -> void:
 
 
 func _on_gear_toggle() -> void:
-	model.toggle_direction()
+	if not model.toggle_direction():
+		GameEvents.hint_shown.emit("Stop the bus to change gear")
 
 
 func _on_obstacle_hit(_kind: String, speed_loss: float) -> void:

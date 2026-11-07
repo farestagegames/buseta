@@ -153,6 +153,55 @@ func test_pedal_is_stronger_higher_up() -> void:
 	assert_gt(hud.throttle_pedal.press_value_at(rect.position), hud.throttle_pedal.press_value_at(rect.end))
 
 
+func test_brake_is_a_hold_button_that_firms_up() -> void:
+	await wait_frames(2)
+	var brake := hud.brake_pedal
+	var top := brake.get_global_rect().position + Vector2(20.0, 20.0)
+	var bottom := brake.get_global_rect().end - Vector2(20.0, 20.0)
+	_touch(0, top, true, brake)
+	var from_top := brake.value
+	_touch(0, top, false, brake)
+	_touch(0, bottom, true, brake)
+	assert_eq(brake.value, from_top, "Where the thumb lands makes no difference")
+	assert_lt(brake.value, 0.81, "A first press is gentle, below the harsh-braking pull")
+	brake.hold(0.5)
+	var after_half_second := brake.value
+	assert_gt(after_half_second, from_top, "Holding firms the brake up")
+	brake.hold(5.0)
+	assert_eq(brake.value, 1.0, "A long hold reaches full brake")
+	_touch(0, bottom, false, brake)
+	assert_eq(brake.value, 0.0)
+
+
+func test_gear_switch_picks_the_half_that_is_tapped() -> void:
+	await wait_frames(2)
+	var rect := hud.gear_switch.get_global_rect()
+	var drive_half := Vector2(rect.position.x + rect.size.x * 0.25, rect.get_center().y)
+	var reverse_half := Vector2(rect.position.x + rect.size.x * 0.75, rect.get_center().y)
+	_touch(0, drive_half, true, hud.gear_switch)
+	_touch(0, drive_half, false, hud.gear_switch)
+	await wait_physics_frames(2)
+	assert_eq(bus.model.direction, BusPhysicsModel.Direction.FORWARD, "Tapping D while in drive changes nothing")
+	_touch(0, reverse_half, true, hud.gear_switch)
+	_touch(0, reverse_half, false, hud.gear_switch)
+	await wait_physics_frames(2)
+	assert_eq(bus.model.direction, BusPhysicsModel.Direction.REVERSE, "Tapping R puts the bus in reverse")
+	assert_true(hud.gear_switch.is_reverse, "and lights R")
+	_touch(0, drive_half, true, hud.gear_switch)
+	_touch(0, drive_half, false, hud.gear_switch)
+	await wait_physics_frames(2)
+	assert_false(hud.gear_switch.is_reverse)
+
+
+func test_changing_gear_while_moving_explains_why_not() -> void:
+	watch_signals(GameEvents)
+	bus.model.speed = 6.0
+	GameEvents.gear_toggle_requested.emit()
+	assert_signal_emitted_with_parameters(GameEvents, "hint_shown", ["Stop the bus to change gear"])
+	await wait_physics_frames(2)
+	assert_false(hud.gear_switch.is_reverse)
+
+
 func test_leaving_the_app_releases_held_pedals() -> void:
 	await wait_frames(2)
 	var point := hud.throttle_pedal.get_global_rect().get_center()
@@ -163,6 +212,6 @@ func test_leaving_the_app_releases_held_pedals() -> void:
 
 func test_touch_targets_are_large_enough() -> void:
 	await wait_frames(2)
-	for button: TouchZone in [hud.throttle_pedal, hud.brake_pedal, hud.wheel]:
+	for button: TouchZone in [hud.throttle_pedal, hud.brake_pedal, hud.gear_switch, hud.wheel]:
 		assert_gte(button.size.x, 90.0)
 		assert_gte(button.size.y, 90.0)

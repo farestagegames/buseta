@@ -34,3 +34,39 @@ One line each, with the reason. Newest at the bottom.
 - La Ola is a closed busway that loops round the south and east of the city, so it crosses no other road. It turns back round an island at Portal del Mar.
 - Passengers on La Ola pay at the station, so there is no stop at the ticket machine.
 - People running for the bus and the wheelchair ramp were on the old list but not your revised one, so I left them out.
+- Ten drivers instead of eight, five women and five men from their twenties to their sixties. It is a Caribbean depot: eight are costeños, most from Puerto Marisol itself, and Rubén Cardona from Medellín and Blanca Sanabria from Tunja are the two from the interior. Skin tone does not follow region: the paisa is brown-skinned, Daniela from Barranquilla is light, and the deep-skinned Esteban grew up on the Malecón.
+- The free drivers are Wilmer Pertuz and Yuleidis Simarra, both from Puerto Marisol, with Wilmer as the default: a man and a woman from the city where the game is set.
+- Prices still run from 300 to 1,200 coins, and no region or skin tone sits at one end of the list, so the cheapest drivers never look like the "basic" ones.
+- Driver names pair common first names with regional surnames such as Mestra from Córdoba and Uriana, a Wayuu clan name. Every full name was searched on the web and matches nobody notable. The Medellín driver was Hernán Zuluaga until review found that name belongs to a real man in crime news linked to Medellín, so he is now Rubén Cardona. Blanca Avella became Blanca Sanabria, as Avella reads as the senator Aída Avella.
+- Yolima Uriana, the Wayuu-heritage driver, dresses like the others. Her bio leads with wanting to drive La Ola one day, and then says she talks to her grandmother in Wayuunaiki every Sunday. No face paint or traditional dress: those carry cultural meaning and would read as a costume on a bus driver.
+- Bios are about the person rather than where they come from: family, football, coffee, Carnival, studying, saving for a buseta. Traits are spread across skin tones: Esteban, who is Black, studies engineering at night and wears glasses, Wilmer plays beach football, and Fanny's bio leads with her authority as the trainer. The Spanish uses Colombian words like tinto, mijo, izada de bandera, devolverse and patio for the depot.
+- A headwrap is a hat, not a hair style, so it covers whatever hair is under it, in the portrait and the 3D figures alike.
+- A catalog entry with the old "cap": true still wears a cap, so older packs keep working.
+- Drivers wear their own short-sleeved shirts, a polo or a guayabera, with bare forearms at the wheel. A jacket-style shirt and tie is not what anyone drives a buseta in at 32°C. Each driver has their own shirt colour, and Wilmer keeps a towel over his shoulder.
+- The cap is a baseball cap with its peak in front. The old peaked cap with a gold band read as police or security.
+- A catalog entry with the old "outfit": "uniform" now wears a polo.
+- The mirror shows only what its glass would. LowPolyBuilder can now trim any shape to a window, so a vueltiao or long braids stop at the frame instead of hanging below it.
+- The mirror face is squashed flat, as a reflection is. A face with depth peeped past the frame in taller buses and in left-hand packs, because the eye sits at a different angle to the glass there. Its side flips with the doors.
+- The mirror face is unshaded and slightly dimmed. A reflection shows the face as the windscreen lights it, and in the cab's shade deep skin tones lost their eyes.
+- An old save with a driver who has left falls back to the default driver. The bought ids stay in the save, where they do nothing, and nobody is refunded because those drivers never left this branch.
+- Passengers are 20 looks and two vendors in passengers.json. The skins, hairs and tops palettes are gone, because seated riders and pavement walkers now take their colours from the same looks.
+- Children, adults and older people each come in deep, medium and light skin tones, and so do people in work clothes. Tests keep it that way, so no role or age belongs to one skin tone.
+- The nurse is a man and the football fan is a young woman, to avoid the usual defaults.
+- The football fan wears a plain yellow shirt with denim shorts, trainers and a vueltiao, as fans do in Barranquilla. No crest and no team, and no full kit, which made her look like a player.
+- The Wayuu woman passenger wears a manta, an everyday dress in La Guajira, in one colour with a single band and nothing ceremonial.
+- The market seller carries her basket at her side. A fruit bowl on the head is the tourist-postcard palenquera, and I left that image out.
+- Walkers are dressed from a shuffled deck each time they step out, so a queue rarely shows the same person twice. Before, each pooled walker kept one random look forever.
+- A seated rider takes the colours and size of whoever walked to that seat, and whoever gets off wears the look of the rider who stood up, so nobody changes clothes on the bus. When more are aboard than there are seats, someone standing gets off and is dressed from the deck.
+- No passenger shares a driver's head: looks that matched a driver changed their hair, hat or beard. Black women and girls wear a ponytail, a bun, short natural hair or braids, and a medium-skinned schoolgirl has the braids.
+- A headwrap is low and rounded, rising up and back with a fold of a second fabric and a knot at one side. The tall stacked version read as a fez or a hard hat.
+- Things carried in the hand sit on the left, away from the right arm that pays and waves.
+- A long skirt is one panel to the ankle with the feet stepping out under it. Two swinging panels looked like wide trousers.
+- Seated riders' arms now rest on their laps. On the 2.3 m buseta, arms at the sides poked out through the wall beside a window seat.
+- Pavement walkers are now three batches, for clothes, skin and hair, instead of one. The single batch tinted every face the colour of its shirt. It costs two draw calls in total, not per person.
+- The vendors are two looks in the data, a man and a woman, picked at each stop. They replace the vendor mesh that was built in code.
+- Drivers and passengers share HeadParts for faces, hair and hats, so a vueltiao or braids look the same on both.
+- CountryPack.validate() reports a passengers file with no looks, bad colours, unknown styles or sizes out of range. The game itself falls back to one default person rather than stopping.
+- Brake is a hold button instead of a slider. It starts at 45% and firms up to full over about 1.5 s, so a quick press slows gently and stays under the harsh-braking limit, while a long hold stops hard.
+- The GO pedal stays analogue (press higher for more power): only the brake was asked about.
+- Drive and reverse is a two-half switch, D and R, with the gear in use lit green or amber. Tapping a half picks that gear, which is easier to read than a toggle.
+- Changing gear still needs the bus stopped, but a yellow tip now says "Stop the bus to change gear". Before, the button silently did nothing, which is what confused new players.

@@ -4,9 +4,9 @@ extends RefCounted
 ## moves on when the player has done what the step asks.
 
 const STEPS: Array[Dictionary] = [
-	{"id": "pull_away", "focus": "go", "text": "Welcome, driver! Press and hold GO to pull away. Press higher up for more power."},
+	{"id": "pull_away", "focus": "go", "text": "Welcome, driver! Check the gear switch shows D, then hold GO to pull away. Press higher up for more power."},
 	{"id": "steer", "focus": "steer", "text": "Steer to stay in the right-hand lane."},
-	{"id": "brake", "focus": "brake", "text": "Now press BRAKE to slow down. Higher up brakes harder."},
+	{"id": "brake", "focus": "brake", "text": "Now hold BRAKE to slow down. The longer you hold it, the harder it brakes."},
 	{"id": "view", "focus": "view", "text": "Tap VIEW to change the camera."},
 	{"id": "indicate", "focus": "indicator", "text": "You turn right ahead. Tap the right indicator to signal."},
 	{"id": "follow", "focus": "map", "text": "Follow the orange line on the map to the green beacon."},
