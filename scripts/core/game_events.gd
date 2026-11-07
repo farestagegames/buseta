@@ -11,6 +11,8 @@ signal camera_cycle_requested
 signal reset_requested
 signal bus_relocate_requested(position: Vector2, heading: float)
 signal shift_restart_requested
+signal skip_stop_requested ## Hidden test cheat.
+signal finish_shift_requested ## Hidden test cheat.
 
 # --- Raw control surfaces, consumed by DriverInputRouter ---
 signal ui_wheel_changed(normalised: float) ## -1 full left, 1 full right
@@ -34,6 +36,7 @@ signal shift_completed(summary: Dictionary)
 signal stop_session_started(stop_index: int, alighting: int, boarding: int)
 signal passenger_alighted(stop_index: int)
 signal passenger_boarded(stop_index: int)
+signal passenger_paid
 signal onboard_changed(count: int)
 signal bus_jolted(strength: float)
 signal obstacle_hit(kind: String, speed_loss: float)

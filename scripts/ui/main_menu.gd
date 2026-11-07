@@ -17,6 +17,7 @@ var _level_bar: ProgressBar
 var _tabs: Array[Button] = []
 var _current_tab: int = 0
 var _shown_locale: String = ""
+var _cheat_taps := Cheats.new()
 
 
 func _ready() -> void:
@@ -91,6 +92,9 @@ func _header() -> Control:
 	row.add_theme_constant_override("separation", 22)
 	var title := _text("City Bus Shift", 36, Color.WHITE)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if Cheats.available():
+		title.mouse_filter = Control.MOUSE_FILTER_STOP
+		title.gui_input.connect(_on_title_input)
 	row.add_child(title)
 	_level_label = _text("", 24, Color.WHITE)
 	row.add_child(_level_label)
@@ -103,6 +107,23 @@ func _header() -> Control:
 	_coins_label = _text("", 28, ACCENT)
 	row.add_child(_coins_label)
 	return row
+
+
+func _on_title_input(event: InputEvent) -> void:
+	var mouse := event as InputEventMouseButton
+	if mouse != null and mouse.pressed and mouse.button_index == MOUSE_BUTTON_LEFT:
+		if _cheat_taps.tap(Time.get_ticks_msec() / 1000.0):
+			open_cheats()
+
+
+func open_cheats() -> void:
+	var panel := CheatPanel.new()
+	panel.changed.connect(_on_cheat_used)
+	add_child(panel)
+
+
+func _on_cheat_used() -> void:
+	show_tab(_current_tab)
 
 
 func _refresh_header() -> void:

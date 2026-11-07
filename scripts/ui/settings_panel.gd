@@ -9,10 +9,12 @@ signal tutorial_requested
 var in_shift: bool = false
 
 var _mode_buttons: Array[Button] = []
-var _language_buttons: Dictionary = {}
+var language_picker: OptionButton
+var cheat_row: Control
 var _quality_buttons: Dictionary = {}
 var _sensitivity_label: Label
 var _volume_label: Label
+var _cheat_taps := Cheats.new()
 
 
 func _ready() -> void:
@@ -24,7 +26,8 @@ func _ready() -> void:
 	margin.add_child(outer)
 	add_child(margin)
 
-	outer.add_child(_label("Paused" if in_shift else "Settings", 32))
+	var title := _label("Paused" if in_shift else "Settings", 32)
+	outer.add_child(title)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -34,8 +37,8 @@ func _ready() -> void:
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(box)
 
-	_add_controls(box)
 	_add_language(box)
+	_add_controls(box)
 	_add_graphics(box)
 	if not in_shift:
 		var replay := _button("Replay tutorial")
@@ -43,6 +46,10 @@ func _ready() -> void:
 		box.add_child(replay)
 	else:
 		outer.add_child(_shift_actions())
+		if Cheats.available():
+			outer.add_child(_shift_cheats())
+			title.mouse_filter = Control.MOUSE_FILTER_STOP
+			title.gui_input.connect(_on_title_input)
 
 	GameSettings.changed.connect(_refresh)
 	_refresh()
@@ -82,21 +89,22 @@ func _add_controls(box: Container) -> void:
 
 func _add_language(box: Container) -> void:
 	box.add_child(_label("Language", 22))
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 10)
+	language_picker = OptionButton.new()
+	# Each language shows in its own script, whatever the game is set to.
+	language_picker.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	language_picker.get_popup().auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	language_picker.custom_minimum_size.y = 70.0
+	language_picker.add_theme_font_size_override("font_size", 24)
+	# Opens when the finger lifts, so scrolling past it does not open it by mistake.
+	language_picker.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	for language: Dictionary in Lang.LANGUAGES:
-		var code: String = language["code"]
-		var button := _button(language["name"])
-		button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		button.toggle_mode = true
-		button.custom_minimum_size.x = 0.0
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.pressed.connect(func() -> void: GameSettings.language = code)
-		grid.add_child(button)
-		_language_buttons[code] = button
-	box.add_child(grid)
+		language_picker.add_item(language["name"])
+	language_picker.item_selected.connect(_on_language_chosen)
+	box.add_child(language_picker)
+
+
+func _on_language_chosen(index: int) -> void:
+	GameSettings.language = Lang.LANGUAGES[index]["code"]
 
 
 func _add_graphics(box: Container) -> void:
@@ -156,6 +164,33 @@ func _shift_actions() -> Control:
 	return actions
 
 
+## Hidden until the title has been tapped seven times. English only.
+func _shift_cheats() -> Control:
+	cheat_row = HBoxContainer.new()
+	cheat_row.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	cheat_row.add_theme_constant_override("separation", 10)
+	cheat_row.visible = false
+	var skip := _button("Skip to next stop")
+	skip.pressed.connect(func() -> void:
+		closed.emit()
+		GameEvents.skip_stop_requested.emit())
+	var finish := _button("Finish shift")
+	finish.pressed.connect(func() -> void:
+		closed.emit()
+		GameEvents.finish_shift_requested.emit())
+	for button: Button in [skip, finish]:
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cheat_row.add_child(button)
+	return cheat_row
+
+
+func _on_title_input(event: InputEvent) -> void:
+	var mouse := event as InputEventMouseButton
+	if mouse != null and mouse.pressed and mouse.button_index == MOUSE_BUTTON_LEFT:
+		if _cheat_taps.tap(Time.get_ticks_msec() / 1000.0):
+			cheat_row.visible = true
+
+
 func _on_replay_tutorial() -> void:
 	Profile.reset_tutorial()
 	tutorial_requested.emit()
@@ -165,8 +200,9 @@ func _refresh() -> void:
 	for i in _mode_buttons.size():
 		_mode_buttons[i].set_pressed_no_signal(i == int(GameSettings.steering_mode))
 	var chosen := Lang.resolve(GameSettings.language, OS.get_locale_language())
-	for code: String in _language_buttons:
-		(_language_buttons[code] as Button).set_pressed_no_signal(code == chosen)
+	for i in Lang.LANGUAGES.size():
+		if Lang.LANGUAGES[i]["code"] == chosen:
+			language_picker.select(i)
 	for level: int in _quality_buttons:
 		(_quality_buttons[level] as Button).set_pressed_no_signal(level == GameSettings.graphics_quality)
 	_sensitivity_label.text = tr("Steering sensitivity: %.2f") % GameSettings.sensitivity

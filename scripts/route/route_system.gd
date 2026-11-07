@@ -44,6 +44,8 @@ func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork) -> void:
 	ledger.capacity = spec.capacity
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.reset_requested.connect(_on_recover_requested)
+	GameEvents.skip_stop_requested.connect(skip_to_next_stop)
+	GameEvents.finish_shift_requested.connect(finish_now)
 	GameEvents.shift_held_changed.connect(func(value: bool) -> void: held = value)
 
 
@@ -151,6 +153,30 @@ func _finish() -> void:
 		"left_behind": _left_behind, "time": clock,
 		"accuracy": _accuracy_total / float(maxi(_served, 1)),
 	})
+
+
+## Cheat: treats the stop in hand as served and parks in the bay after it.
+func skip_to_next_stop() -> void:
+	if finished:
+		return
+	if session != null or (_aligned and not runner.current_stop().is_final):
+		var stop := runner.current_stop()
+		session = null
+		_served += 1
+		GameEvents.stop_served.emit(runner.stop_index, stop.stop_name, 0)
+		_next_stop()
+	runner.jump_to_stop()
+	while _next_turn < runner.turns.size() and float(runner.turns[_next_turn]["distance"]) < runner.progress:
+		_next_turn += 1
+	_indicated = false
+	var next := runner.current_stop()
+	GameEvents.bus_relocate_requested.emit(next.position + next.forward() * _spec.body_centre_z(), next.heading)
+
+
+## Cheat: ends the shift where the bus is.
+func finish_now() -> void:
+	if not finished:
+		_finish()
 
 
 func _on_recover_requested() -> void:

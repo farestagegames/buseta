@@ -54,6 +54,12 @@ func update_position(point: Vector2) -> void:
 	_apply_progress(point)
 
 
+## Moves straight to the current stop, for skipping ahead.
+func jump_to_stop() -> void:
+	progress = current_stop().route_distance
+	_cursor = clampi(distances.bsearch(progress) - 1, 0, polyline.size() - 2)
+
+
 func distance_to_next_stop() -> float:
 	var stop := current_stop()
 	return maxf(stop.route_distance - progress, 0.0) if stop != null else 0.0

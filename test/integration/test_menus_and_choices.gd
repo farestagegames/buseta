@@ -83,3 +83,35 @@ func test_settings_are_saved() -> void:
 	var saved := PlayerProfile.from_dict(SaveStore.read("user://test_save_menu.json"))
 	assert_almost_eq(float(saved.settings["sensitivity"]), 1.4, 0.001)
 	GameSettings.sensitivity = 1.0
+
+
+func _settings_tab() -> SettingsPanel:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(4)
+	await wait_frames(2)
+	return menu._content.get_child(0)
+
+
+func test_language_is_a_dropdown_listing_every_language() -> void:
+	var settings: SettingsPanel = await _settings_tab()
+	assert_eq(settings.language_picker.item_count, Lang.LANGUAGES.size())
+	assert_eq(settings.language_picker.get_item_text(4), "हिन्दी", "Names stay in their own script")
+
+
+func test_choosing_from_the_dropdown_changes_the_language() -> void:
+	var settings: SettingsPanel = await _settings_tab()
+	settings.language_picker.select(1)
+	settings.language_picker.item_selected.emit(1)
+	assert_eq(GameSettings.language, "fr")
+	assert_eq(TranslationServer.get_locale(), "fr")
+	GameSettings.language = "en"
+	await wait_frames(1)
+	assert_eq(settings.language_picker.selected, 0, "Follows the setting")
+
+
+func test_dropdown_shows_the_saved_language_when_it_opens() -> void:
+	GameSettings.language = "ar"
+	var settings: SettingsPanel = await _settings_tab()
+	assert_eq(settings.language_picker.selected, 5)
+	GameSettings.language = "en"
