@@ -1,0 +1,21 @@
+{
+  "name": "Route 3: Station Shuttle",
+  "map": "res://data/maps/city_01.json",
+  "start": {"road": "depot_road", "along": 35, "lateral": 1.9, "dir": 1},
+  "legs": [
+    {"road": "depot_road", "dir": 1},
+    {"road": "park_avenue", "dir": -1},
+    {"road": "station_road", "dir": -1},
+    {"road": "cross_street", "dir": -1},
+    {"road": "mill_lane", "dir": -1},
+    {"road": "depot_road", "dir": -1}
+  ],
+  "stops": [
+    {"name": "Park Road", "due": 40, "road": "park_avenue", "along": 240, "dir": -1, "waiting": 4},
+    {"name": "Northfield Park", "due": 85, "road": "park_avenue", "along": 55, "dir": -1, "waiting": 5},
+    {"name": "Station Approach", "due": 135, "road": "station_road", "along": 150, "dir": -1, "waiting": 6},
+    {"name": "Library", "due": 210, "road": "cross_street", "along": 170, "dir": -1, "waiting": 4},
+    {"name": "Mill Bridge", "due": 280, "road": "mill_lane", "along": 120, "dir": -1, "waiting": 0},
+    {"name": "Depot", "due": 335, "road": "depot_road", "along": 80, "dir": -1, "waiting": 0, "final": true}
+  ]
+}

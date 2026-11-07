@@ -5,6 +5,7 @@ extends Node3D
 
 const GRID_CELL := 12.0
 const CHUNK_SIZE := 170.0
+const ZEBRA_GAP := 1.2 ## From the edge of a junction to its zebra crossing.
 const MAP_MARGIN := 160.0
 const PAVEMENT_OUTER := RoadNetwork.ROAD_HALF_WIDTH + GroundSurface.PAVEMENT_WIDTH
 
@@ -256,19 +257,21 @@ func _markings(road: Dictionary) -> void:
 			at += 6.0
 
 
-## Stop lines where each road meets a junction, and a zebra crossing before it.
+## A zebra crossing where each road meets a junction, and a stop line back from it.
 func _junction_lines(road: Dictionary) -> void:
 	var length: float = road["length"]
 	var start: Dictionary = _network.nodes[road["from"]]
 	var finish: Dictionary = _network.nodes[road["to"]]
-	var start_gap: float = float(start["radius"]) + 1.2
-	var end_at: float = length - float(finish["radius"]) - 1.2
+	var start_gap: float = float(start["radius"]) + ZEBRA_GAP
+	var end_at: float = length - float(finish["radius"]) - ZEBRA_GAP
 	if start["kind"] != "terminal":
-		_strip(_lines, road["id"], start_gap, start_gap + 0.4, -RoadNetwork.ROAD_HALF_WIDTH + 0.2, -0.1, LINE)
-		_zebra(road["id"], start_gap + 1.4)
+		var line_at := float(start["radius"]) + LaneGraph.STOP_LINE_GAP
+		_strip(_lines, road["id"], line_at - 0.4, line_at, -RoadNetwork.ROAD_HALF_WIDTH + 0.2, -0.1, LINE)
+		_zebra(road["id"], start_gap)
 	if finish["kind"] != "terminal":
-		_strip(_lines, road["id"], end_at - 0.4, end_at, 0.1, RoadNetwork.ROAD_HALF_WIDTH - 0.2, LINE)
-		_zebra(road["id"], end_at - 5.0)
+		var line_at := length - float(finish["radius"]) - LaneGraph.STOP_LINE_GAP
+		_strip(_lines, road["id"], line_at, line_at + 0.4, 0.1, RoadNetwork.ROAD_HALF_WIDTH - 0.2, LINE)
+		_zebra(road["id"], end_at - 3.0)
 
 
 func _zebra(road_id: String, along: float) -> void:

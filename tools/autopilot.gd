@@ -9,6 +9,7 @@ const MAX_SECONDS := 900.0
 const CRUISE := 11.0
 const LANE := 1.9
 const ROUNDABOUT_RING := 15.5
+const ROUNDABOUT_ENTRY := 22.0
 
 var _city: CityShift
 var _bus: BusController
@@ -252,10 +253,12 @@ func _lateral_at(along: float, point: Vector2, right: Vector2) -> float:
 		var spot: Vector2 = _city.network.sample(car["road"], car["along"], 2.75, car["dir"])["position"]
 		if point.distance_to(spot) < 26.0 and (spot - point).dot(right) > 0.0:
 			lateral = minf(lateral, 0.45)
+	var forward := Vector2(right.y, -right.x)
 	for line: Dictionary in map_data["cone_lines"]:
-		var from: Vector2 = _city.network.sample(line["road"], line["from"])["position"]
-		var to: Vector2 = _city.network.sample(line["road"], line["to"])["position"]
-		if Geometry2D.get_closest_point_to_segment(point, from, to).distance_to(point) < 20.0:
+		var from: Vector2 = _city.network.sample(line["road"], line["from"], line["lateral"], line["dir"])["position"]
+		var to: Vector2 = _city.network.sample(line["road"], line["to"], line["lateral"], line["dir"])["position"]
+		var same_way: bool = (to - from).dot(forward) * float(line["dir"]) > 0.0
+		if same_way and Geometry2D.get_closest_point_to_segment(point, from, to).distance_to(point) < 20.0:
 			lateral = 0.0
 	return lateral
 
@@ -309,17 +312,39 @@ func _curve_through(first: int, last: int) -> void:
 			_speeds[first + i] = minf(_speeds[first + i], 4.5)
 
 
+## Goes round the island the way traffic flows, however far round the exit is.
 func _apply_roundabouts() -> void:
 	for node: Dictionary in _city.network.nodes.values():
 		if node["kind"] != "roundabout":
 			continue
 		var centre: Vector2 = node["position"]
-		for i in _path.size():
-			var offset := _path[i] - centre
-			if absf(offset.x) < ROUNDABOUT_RING and absf(offset.y) < 8.0:
-				var angle := acos(clampf(offset.x / ROUNDABOUT_RING, -1.0, 1.0))
-				_path[i] = centre + Vector2(cos(angle), sin(angle)) * ROUNDABOUT_RING
-				_speeds[i] = 5.0
+		var inside := func(i: int) -> bool: return _path[i].distance_to(centre) < ROUNDABOUT_ENTRY
+		var i := _path.size() - 1
+		while i >= 0:
+			if not inside.call(i):
+				i -= 1
+				continue
+			var last := i
+			while i > 0 and inside.call(i - 1):
+				i -= 1
+			_circle_island(i, last, centre)
+			i -= 1
+
+
+func _circle_island(first: int, last: int, centre: Vector2) -> void:
+	var from_angle := (_path[first] - centre).angle()
+	var to_angle := (_path[last] - centre).angle()
+	while to_angle >= from_angle:
+		to_angle -= TAU
+	var steps := ceili((from_angle - to_angle) * ROUNDABOUT_RING / 3.0)
+	var ring := PackedVector2Array()
+	var speeds := PackedFloat32Array()
+	for step in steps + 1:
+		var angle := lerpf(from_angle, to_angle, float(step) / float(steps))
+		ring.append(centre + Vector2.from_angle(angle) * ROUNDABOUT_RING)
+		speeds.append(5.0)
+	_path = _path.slice(0, first) + ring + _path.slice(last + 1)
+	_speeds = _speeds.slice(0, first) + speeds + _speeds.slice(last + 1)
 
 
 func _on_finished(report: Dictionary) -> void:

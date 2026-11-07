@@ -4,7 +4,8 @@ extends RefCounted
 ## road, and a link across each junction for every legal movement.
 
 const LANE_OFFSET := 1.9
-const STOP_LINE_GAP := 1.2
+## Cars wait well back, or a bus turning right would sweep across them.
+const STOP_LINE_GAP := 5.4
 ## Traffic moves towards the centre to pass things parked in its lane.
 const PASSING_OFFSET := 0.7
 const PASSING_REACH := 13.0

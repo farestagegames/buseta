@@ -1049,6 +1049,34 @@
 "रूट 2: ऑर्चर्ड सर्कुलर",
 "المسار 2: دائرة أورتشارد"
 ],
+"Route 3: Station Shuttle": [
+"Ligne 3 : Navette de la gare",
+"Ruta 3: Lanzadera de la estación",
+"Rota 3: Circular da Estação",
+"रूट 3: स्टेशन शटल",
+"المسار 3: مكوك المحطة"
+],
+"Route 4: Riverside Tour": [
+"Ligne 4 : Tour de la rivière",
+"Ruta 4: Recorrido del río",
+"Rota 4: Volta do Rio",
+"रूट 4: नदी किनारे का सफ़र",
+"المسار 4: جولة ضفة النهر"
+],
+"A quick shift of tight right turns past the park and the station.": [
+"Un service rapide, tout en virages serrés à droite, par le parc et la gare.",
+"Un turno rápido de giros cerrados a la derecha por el parque y la estación.",
+"Um turno rápido de curvas fechadas à direita, pelo parque e pela estação.",
+"पार्क और स्टेशन से होकर तंग दाएँ मोड़ों वाली छोटी शिफ़्ट।",
+"وردية سريعة بمنعطفات ضيقة إلى اليمين عبر الحديقة والمحطة."
+],
+"The longest shift: the whole town, with the river road the other way.": [
+"Le service le plus long : toute la ville, et la route de la rivière à l'envers.",
+"El turno más largo: toda la ciudad, con la carretera del río en sentido contrario.",
+"O turno mais longo: a cidade inteira, com a estrada do rio no sentido contrário.",
+"सबसे लंबी शिफ़्ट: पूरा शहर, और नदी वाली सड़क उल्टी दिशा में।",
+"أطول وردية: المدينة كلها، وطريق النهر في الاتجاه المعاكس."
+],
 "The full loop: roundabout, river road and hills.": [
 "La boucle complète : rond-point, route de la rivière et collines.",
 "El circuito completo: rotonda, carretera del río y colinas.",
