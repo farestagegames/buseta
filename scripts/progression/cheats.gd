@@ -23,9 +23,9 @@ static func add_levels(profile: PlayerProfile, levels: int) -> void:
 	profile.xp = DriverLevel.xp_for_level(DriverLevel.level_for(profile.xp) + levels)
 
 
-## Owns every route, bus and livery, and leaves the current choices alone.
+## Owns everything in the catalog, and leaves the current choices alone.
 static func unlock_everything(profile: PlayerProfile, catalog: Catalog) -> void:
-	for kind: String in [Catalog.ROUTES, Catalog.BUSES, Catalog.LIVERIES]:
+	for kind: String in profile.owned:
 		var owned: Array = profile.owned[kind]
 		for item: Dictionary in catalog.items(kind):
 			if not owned.has(item["id"]):

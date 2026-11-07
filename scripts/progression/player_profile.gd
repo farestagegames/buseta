@@ -8,14 +8,17 @@ const VERSION := 1
 const DEFAULT_ROUTE := "route_01"
 const DEFAULT_BUS := "city_12"
 const DEFAULT_LIVERY := "classic_red"
+const DEFAULT_DRIVER := "sam_reed"
 
 var coins: int = 0
 var xp: int = 0
 var owned: Dictionary = {
 	Catalog.ROUTES: [DEFAULT_ROUTE], Catalog.BUSES: [DEFAULT_BUS], Catalog.LIVERIES: [DEFAULT_LIVERY],
+	Catalog.DRIVERS: [DEFAULT_DRIVER],
 }
 var selected: Dictionary = {
 	Catalog.ROUTES: DEFAULT_ROUTE, Catalog.BUSES: DEFAULT_BUS, Catalog.LIVERIES: DEFAULT_LIVERY,
+	Catalog.DRIVERS: DEFAULT_DRIVER,
 }
 var stats: Dictionary = {
 	"shifts": 0, "passengers": 0, "best_stars": 0, "clean_shifts": 0, "smooth_shifts": 0,
@@ -46,6 +49,14 @@ func select(kind: String, id: String) -> bool:
 		return false
 	selected[kind] = id
 	return true
+
+
+## Anything the catalog gives away is owned from the start.
+func grant_free_items(catalog: Catalog) -> void:
+	for kind: String in owned:
+		for item: Dictionary in catalog.items(kind):
+			if int(item["cost"]) == 0 and not owns(kind, item["id"]):
+				(owned[kind] as Array).append(item["id"])
 
 
 func record_best(route_id: String, score: int) -> bool:

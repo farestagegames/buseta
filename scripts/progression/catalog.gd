@@ -5,6 +5,7 @@ extends RefCounted
 const ROUTES := "routes"
 const BUSES := "buses"
 const LIVERIES := "liveries"
+const DRIVERS := "drivers"
 const PATH := "res://data/catalog.json"
 
 var data: Dictionary

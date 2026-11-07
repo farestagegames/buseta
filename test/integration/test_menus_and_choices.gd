@@ -19,7 +19,7 @@ func after_all() -> void:
 func test_every_menu_tab_opens() -> void:
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)
-	for i in 5:
+	for i in 6:
 		menu.show_tab(i)
 		await wait_frames(2)
 		assert_gt(menu._content.get_child_count(), 0, "Tab %d" % i)
@@ -88,7 +88,7 @@ func test_settings_are_saved() -> void:
 func _settings_tab() -> SettingsPanel:
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)
-	menu.show_tab(4)
+	menu.show_tab(MainMenu.SETTINGS_TAB)
 	await wait_frames(2)
 	return menu._content.get_child(0)
 
@@ -115,3 +115,63 @@ func test_dropdown_shows_the_saved_language_when_it_opens() -> void:
 	var settings: SettingsPanel = await _settings_tab()
 	assert_eq(settings.language_picker.selected, 5)
 	GameSettings.language = "en"
+
+
+func test_drivers_tab_lists_everyone() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(MainMenu.DRIVERS_TAB)
+	await wait_frames(2)
+	var rows: Node = menu._content.get_child(0).get_child(0).get_child(0)
+	assert_eq(rows.get_child_count(), Profile.catalog.items(Catalog.DRIVERS).size())
+
+
+func test_home_shows_the_chosen_driver() -> void:
+	Profile.data.coins = 5000
+	Profile.buy(Catalog.DRIVERS, "priya_nair")
+	Profile.select(Catalog.DRIVERS, "priya_nair")
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	var labels := menu.find_children("*", "Label", true, false)
+	assert_true(labels.any(func(label: Label) -> bool: return label.text == "Priya Nair"))
+
+
+func test_chosen_driver_sits_in_the_bus() -> void:
+	Profile.data.coins = 5000
+	Profile.buy(Catalog.DRIVERS, "fatima_haddad")
+	Profile.select(Catalog.DRIVERS, "fatima_haddad")
+	var city: CityShift = CITY.instantiate()
+	add_child_autofree(city)
+	var visual: BusVisual = city.get_node("Bus/Visual")
+	assert_eq(visual.driver_look.driver_name, "Fatima Haddad")
+	assert_eq(visual.driver_look.hair_style, "hijab")
+
+
+func test_cockpit_shows_the_hands_and_mirror_with_the_body_hidden() -> void:
+	var city: CityShift = CITY.instantiate()
+	add_child_autofree(city)
+	await wait_physics_frames(2)
+	var visual: BusVisual = city.get_node("Bus/Visual")
+	var camera: CameraRig = city.get_node("CameraRig")
+	while camera.view_name() != "Cockpit":
+		camera.next_view()
+	await wait_frames(2)
+	assert_false(visual.driver_visible(), "The body would block the view")
+	assert_true(visual.hands_visible())
+	assert_true(visual.mirror_face().is_visible_in_tree())
+
+
+func test_hands_follow_the_wheel_only_so_far() -> void:
+	var city: CityShift = CITY.instantiate()
+	add_child_autofree(city)
+	await wait_physics_frames(2)
+	var visual: BusVisual = city.get_node("Bus/Visual")
+	var straight: Vector3 = visual._hands[0].position
+	visual._pose_arms(0.5)
+	var turned: Vector3 = visual._hands[0].position
+	assert_gt(straight.distance_to(turned), 0.05)
+	visual._pose_arms(1.8)
+	var far: Vector3 = visual._hands[0].position
+	visual._pose_arms(3.0)
+	assert_almost_eq(far.distance_to(visual._hands[0].position), 0.0, 0.001)

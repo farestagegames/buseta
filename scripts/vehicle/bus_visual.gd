@@ -10,11 +10,15 @@ const DOOR_WIDTH := 1.25
 const DOOR_OFFSET := 0.3 ## Doorway start, measured back from the nose.
 const DOOR_SWING := deg_to_rad(105.0)
 const STEERING_WHEEL_TURNS := 3.0
+## Hands sit at ten to two, and follow the wheel this far before they slide on it.
+const HAND_SPREAD := deg_to_rad(50.0)
+const HAND_FOLLOW := deg_to_rad(70.0)
+const RIM_RADIUS := 0.22
+const MIRROR_FACE_SCALE := 0.42
 
 const DARK := Color(0.1, 0.1, 0.12)
 const TRIM := Color(0.26, 0.27, 0.3)
 const SEAT := Color(0.15, 0.25, 0.5)
-const SKIN := Color(0.85, 0.68, 0.55)
 const SHIRTS: Array[Color] = [
 	Color(0.2, 0.4, 0.75), Color(0.8, 0.3, 0.25), Color(0.25, 0.6, 0.4), Color(0.85, 0.65, 0.2),
 	Color(0.55, 0.35, 0.65), Color(0.85, 0.85, 0.85), Color(0.28, 0.3, 0.36), Color(0.15, 0.55, 0.6),
@@ -34,11 +38,16 @@ const LAMP_OFF_AMBER := Color(0.45, 0.25, 0.05)
 
 @export var spec: BusSpec
 
+var driver_look: DriverLook
 var cockpit_anchor: Node3D
 var cabin: CabinLayout
 
 var _body: Node3D
 var _steering_wheel: Node3D
+var _wheel_tilt: Node3D
+var _sleeves: Array[MeshInstance3D] = []
+var _hands: Array[MeshInstance3D] = []
+var _mirror_face: MeshInstance3D
 var _front_wheels: Array[Node3D] = []
 var _wheel_pivots: Array[Node3D] = [] ## Front left, front right, rear left, rear right.
 var _spinners: Array[Node3D] = []
@@ -71,6 +80,8 @@ func _ready() -> void:
 	_door_near_z = _front_z + DOOR_OFFSET
 	_door_far_z = _door_near_z + DOOR_WIDTH
 	cabin = CabinLayout.new(spec)
+	if driver_look == null:
+		driver_look = DriverLook.new()
 
 	_body = Node3D.new()
 	add_child(_body)
@@ -93,6 +104,14 @@ func visible_riders() -> int:
 
 func driver_visible() -> bool:
 	return _driver.visible
+
+
+func hands_visible() -> bool:
+	return _hands[0].is_visible_in_tree()
+
+
+func mirror_face() -> MeshInstance3D:
+	return _mirror_face
 
 
 ## The floor people stand on, which moves with the suspension.
@@ -151,6 +170,7 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	for i in 4:
 		_wheel_pivots[i].position.y = data.wheel_heights[i] - data.body_height + spec.wheel_radius
 	_steering_wheel.rotation.y = -data.steer_angle * STEERING_WHEEL_TURNS
+	_pose_arms(data.steer_angle * STEERING_WHEEL_TURNS)
 	for wheel in _front_wheels:
 		wheel.rotation.y = -data.steer_angle
 	_wheel_spin = fmod(_wheel_spin - data.speed * get_physics_process_delta_time() / spec.wheel_radius, TAU)
@@ -279,12 +299,12 @@ func _build_cockpit() -> void:
 	dash.mesh = b.build(LowPolyBuilder.vertex_colour_material())
 	_body.add_child(dash)
 
-	var tilt := Node3D.new()
-	tilt.position = Vector3(x, 1.38, _front_z + 0.9)
-	tilt.rotation.x = deg_to_rad(55.0)
-	_body.add_child(tilt)
+	_wheel_tilt = Node3D.new()
+	_wheel_tilt.position = Vector3(x, 1.38, _front_z + 0.9)
+	_wheel_tilt.rotation.x = deg_to_rad(55.0)
+	_body.add_child(_wheel_tilt)
 	_steering_wheel = Node3D.new()
-	tilt.add_child(_steering_wheel)
+	_wheel_tilt.add_child(_steering_wheel)
 	var rim := TorusMesh.new()
 	rim.inner_radius = 0.2
 	rim.outer_radius = 0.24
@@ -418,12 +438,62 @@ func _build_driver() -> void:
 	var b := LowPolyBuilder.new()
 	var x := spec.driver_seat_x
 	var z := _front_z + 1.72
-	b.box(Vector3(x, 1.28, z), Vector3(0.42, 0.62, 0.26), Color(0.15, 0.2, 0.35))
-	b.box(Vector3(x, 1.74, z), Vector3(0.24, 0.27, 0.25), SKIN)
-	b.box(Vector3(x, 1.9, z), Vector3(0.27, 0.07, 0.28), Color(0.12, 0.14, 0.22))
+	DriverFigure.add_torso(b, driver_look, Vector3(x, 1.28, z))
+	DriverFigure.add_head(b, driver_look, Vector3(x, 1.28 + DriverFigure.HEAD_ABOVE_CHEST, z))
 	_driver = MeshInstance3D.new()
 	(_driver as MeshInstance3D).mesh = b.build(LowPolyBuilder.vertex_colour_material())
 	_body.add_child(_driver)
+	_build_arms()
+	_build_interior_mirror()
+	_pose_arms(0.0)
+
+
+## The body is hidden in the cockpit, so the hands and the mirror show who is driving.
+func _build_arms() -> void:
+	var sleeve := DriverFigure.build_sleeve(driver_look)
+	var hand := DriverFigure.build_hand(driver_look)
+	for i in 2:
+		var arm := MeshInstance3D.new()
+		arm.mesh = sleeve
+		_body.add_child(arm)
+		_sleeves.append(arm)
+		var grip := MeshInstance3D.new()
+		grip.mesh = hand
+		_body.add_child(grip)
+		_hands.append(grip)
+
+
+## The wheel can turn further than arms can, so past a point the hands slide on the rim.
+func _pose_arms(wheel_turn: float) -> void:
+	var held := clampf(wheel_turn, -HAND_FOLLOW, HAND_FOLLOW)
+	for i in 2:
+		var side := -1.0 if i == 0 else 1.0
+		var angle := held + side * HAND_SPREAD
+		var hand := _wheel_tilt.transform * Vector3(RIM_RADIUS * sin(angle), 0.0, -RIM_RADIUS * cos(angle))
+		var elbow := Vector3(spec.driver_seat_x + side * 0.3, 1.12, _front_z + 1.62)
+		var reach := hand - elbow
+		var facing := Basis.looking_at(reach, Vector3.UP)
+		_sleeves[i].transform = Transform3D(facing * Basis.from_scale(Vector3(1.0, 1.0, reach.length())), elbow)
+		_hands[i].transform = Transform3D(facing, hand)
+
+
+func _build_interior_mirror() -> void:
+	var y := _top_y - 0.5
+	var z := _front_z + 0.4
+	var x := 0.1
+	var b := LowPolyBuilder.new()
+	b.box(Vector3(x, y + 0.2, z), Vector3(0.05, 0.3, 0.05), DARK)
+	b.box(Vector3(x, y, z), Vector3(0.46, 0.21, 0.04), DARK)
+	b.box(Vector3(x, y, z + 0.022), Vector3(0.41, 0.17, 0.005), Color(0.42, 0.5, 0.56))
+	var mirror := MeshInstance3D.new()
+	mirror.mesh = b.build(LowPolyBuilder.vertex_colour_material())
+	_body.add_child(mirror)
+	_mirror_face = MeshInstance3D.new()
+	_mirror_face.mesh = DriverFigure.build_head(driver_look)
+	_mirror_face.scale = Vector3.ONE * MIRROR_FACE_SCALE
+	_mirror_face.position = Vector3(x - 0.08, y - 0.015, z + 0.06)
+	_mirror_face.rotation.y = PI
+	_body.add_child(_mirror_face)
 
 
 func _build_lamps() -> void:

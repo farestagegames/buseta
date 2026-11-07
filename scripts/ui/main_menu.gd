@@ -1,9 +1,11 @@
 class_name MainMenu
 extends Control
-## Home, Routes, Garage, Driver and Settings. Built in code from the catalog, so
-## new routes, buses and liveries appear without any changes here.
+## Home, Routes, Garage, Drivers, Career and Settings. Built in code from the
+## catalog, so new routes, buses, liveries and drivers appear without changes here.
 
 const SHIFT_SCENE := "res://scenes/main/city_shift.tscn"
+const DRIVERS_TAB := 3
+const SETTINGS_TAB := 5
 const BACKGROUND := UiStyle.INK
 const CARD := UiStyle.CARD
 const ACCENT := UiStyle.ACCENT
@@ -52,7 +54,7 @@ func _on_settings_changed() -> void:
 	if TranslationServer.get_locale() != _shown_locale:
 		_shown_locale = TranslationServer.get_locale()
 		_refresh_header()
-		if _current_tab != 4:
+		if _current_tab != SETTINGS_TAB:
 			show_tab(_current_tab)
 
 
@@ -69,8 +71,10 @@ func show_tab(index: int) -> void:
 			_content.add_child(_routes_tab())
 		2:
 			_content.add_child(_garage_tab())
-		3:
-			_content.add_child(_driver_tab())
+		DRIVERS_TAB:
+			_content.add_child(_drivers_tab())
+		4:
+			_content.add_child(_career_tab())
 		_:
 			var settings := SettingsPanel.new()
 			settings.tutorial_requested.connect(func() -> void: show_tab(0))
@@ -136,8 +140,9 @@ func _refresh_header() -> void:
 func _navigation() -> Control:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 10)
+	column.add_theme_constant_override("separation", 8)
 	column.custom_minimum_size.x = 200.0
-	var names := ["Home", "Routes", "Garage", "Driver", "Settings"]
+	var names := ["Home", "Routes", "Garage", "Drivers", "Career", "Settings"]
 	for i in names.size():
 		var tab := _button(names[i])
 		tab.toggle_mode = true
@@ -167,12 +172,18 @@ func _home_tab() -> Control:
 	var bus := Profile.selected_item(Catalog.BUSES)
 	var livery := Profile.selected_item(Catalog.LIVERIES)
 	var card := _card()
+	var crew := HBoxContainer.new()
+	crew.add_theme_constant_override("separation", 14)
+	crew.add_child(_driver_button())
 	var lines := VBoxContainer.new()
-	lines.add_child(_text(route["name"], 30, Color.WHITE))
+	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lines.add_child(_wrapped(route["name"], 28, Color.WHITE))
 	lines.add_child(_text("%s, %s" % [bus["name"], tr(livery["name"])], 22, MUTED))
+	lines.add_child(_text(Profile.selected_item(Catalog.DRIVERS)["name"], 22, MUTED))
 	var best: int = Profile.data.best_scores.get(route["id"], -1)
 	lines.add_child(_text(tr("Best score: %d") % best if best >= 0 else tr("Not driven yet"), 22, MUTED))
-	card.add_child(lines)
+	crew.add_child(lines)
+	card.add_child(crew)
 	column.add_child(card)
 
 	var daily_card := _card()
@@ -192,6 +203,18 @@ func _home_tab() -> Control:
 	start.pressed.connect(_start_shift)
 	side.add_child(start)
 	return page
+
+
+## Today's driver. Tapping the portrait goes to the choice of drivers.
+func _driver_button() -> Control:
+	var button := Button.new()
+	button.custom_minimum_size = Vector2(112.0, 112.0)
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	button.pressed.connect(show_tab.bind(DRIVERS_TAB))
+	var badge := DriverBadge.new(CityShift.chosen_look(), 96.0)
+	badge.position = Vector2(8.0, 8.0)
+	button.add_child(badge)
+	return button
 
 
 func _start_shift() -> void:
@@ -226,12 +249,29 @@ func _garage_tab() -> Control:
 	return page
 
 
+func _drivers_tab() -> Control:
+	var page := HBoxContainer.new()
+	page.add_theme_constant_override("separation", 16)
+	var list := _list()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.size_flags_stretch_ratio = 2.0
+	page.add_child(list)
+	for item: Dictionary in Profile.catalog.items(Catalog.DRIVERS):
+		list.get_child(0).add_child(_shop_row(Catalog.DRIVERS, item, item["bio"]))
+	var preview := DriverPreview.new()
+	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(preview)
+	return page
+
+
 func _shop_row(kind: String, item: Dictionary, description: String) -> Control:
 	var card := _card()
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	if item.has("body"):
 		row.add_child(_swatch(item))
+	if kind == Catalog.DRIVERS:
+		row.add_child(DriverBadge.new(DriverLook.from_item(item)))
 	var lines := VBoxContainer.new()
 	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lines.add_child(_text(item["name"], 26, Color.WHITE))
@@ -290,7 +330,7 @@ func _swatch(item: Dictionary) -> Control:
 	return panel
 
 
-func _driver_tab() -> Control:
+func _career_tab() -> Control:
 	var list := _list()
 	var rows := list.get_child(0)
 	var stats := Profile.data.stats

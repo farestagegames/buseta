@@ -25,7 +25,7 @@ func _ready() -> void:
 	menu.show_tab(2)
 	await _frames(8)
 	await _shot("02_garage_en")
-	menu.show_tab(4)
+	menu.show_tab(MainMenu.SETTINGS_TAB)
 	await _frames(5)
 	await _shot("03_settings_en")
 	menu.show_tab(0)
@@ -35,7 +35,7 @@ func _ready() -> void:
 	GameSettings.language = "ar"
 	await _frames(8)
 	await _shot("05_home_ar")
-	menu.show_tab(4)
+	menu.show_tab(MainMenu.SETTINGS_TAB)
 	await _frames(5)
 	await _shot("06_settings_ar")
 	menu.free()

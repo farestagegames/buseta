@@ -28,7 +28,9 @@ func _enter_tree() -> void:
 	var spec := chosen_spec()
 	var bus: BusController = get_node("Bus")
 	bus.spec = spec
-	(bus.get_node("Visual") as BusVisual).spec = spec
+	var visual: BusVisual = bus.get_node("Visual")
+	visual.spec = spec
+	visual.driver_look = chosen_look()
 
 
 ## The player's bus in their livery. A copy, so the shared data stays untouched.
@@ -39,6 +41,10 @@ static func chosen_spec() -> BusSpec:
 	spec.body_colour = _colour(livery["body"])
 	spec.stripe_colour = _colour(livery["stripe"])
 	return spec
+
+
+static func chosen_look() -> DriverLook:
+	return DriverLook.from_item(Profile.selected_item(Catalog.DRIVERS))
 
 
 static func _colour(values: Array) -> Color:

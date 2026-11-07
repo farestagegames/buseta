@@ -9,6 +9,24 @@
     {"id": "city_12", "name": "City 12", "file": "res://data/buses/city_bus.tres", "cost": 0, "description": "The depot's 12 metre workhorse. Heavy and steady."},
     {"id": "midi_10", "name": "Midi 10", "file": "res://data/buses/midi_bus.tres", "cost": 2500, "description": "A nimble 10 metre bus with a tighter turning circle, but fewer seats."}
   ],
+  "drivers": [
+    {"id": "sam_reed", "name": "Sam Reed", "cost": 0, "bio": "New to the depot and keen to prove it.",
+      "skin": [0.93, 0.77, 0.65], "hair": [0.3, 0.2, 0.12], "hair_style": "short", "uniform": [0.15, 0.2, 0.35], "trim": [0.85, 0.7, 0.2]},
+    {"id": "amara_nwosu", "name": "Amara Nwosu", "cost": 0, "bio": "Knows every shortcut and never takes one.",
+      "skin": [0.36, 0.24, 0.17], "hair": [0.08, 0.06, 0.06], "hair_style": "afro", "uniform": [0.1, 0.42, 0.45], "trim": [0.95, 0.85, 0.5]},
+    {"id": "luis_ortega", "name": "Luis Ortega", "cost": 300, "bio": "Twenty years at the wheel and still smiling.",
+      "skin": [0.75, 0.55, 0.4], "hair": [0.1, 0.08, 0.07], "hair_style": "short", "beard": "moustache", "uniform": [0.25, 0.27, 0.3], "trim": [0.8, 0.25, 0.2]},
+    {"id": "mei_tanaka", "name": "Mei Tanaka", "cost": 300, "bio": "Keeps the timetable to the second.",
+      "skin": [0.95, 0.82, 0.7], "hair": [0.06, 0.05, 0.07], "hair_style": "bob", "uniform": [0.32, 0.55, 0.78], "trim": [0.12, 0.2, 0.4]},
+    {"id": "walter_novak", "name": "Walter Novak", "cost": 600, "bio": "Drove this town before the roundabout was built.",
+      "skin": [0.88, 0.72, 0.62], "hair": [0.78, 0.78, 0.78], "hair_style": "bald", "glasses": true, "cap": true, "uniform": [0.42, 0.34, 0.24], "trim": [0.9, 0.8, 0.55]},
+    {"id": "priya_nair", "name": "Priya Nair", "cost": 600, "bio": "Greets every regular by name.",
+      "skin": [0.6, 0.42, 0.3], "hair": [0.08, 0.06, 0.06], "hair_style": "plait", "uniform": [0.5, 0.13, 0.22], "trim": [0.92, 0.75, 0.3]},
+    {"id": "fatima_haddad", "name": "Fatima Haddad", "cost": 900, "bio": "Trains the new drivers. Nothing gets past her.",
+      "skin": [0.8, 0.62, 0.48], "hair": [0.13, 0.36, 0.3], "hair_style": "hijab", "glasses": true, "uniform": [0.13, 0.32, 0.24], "trim": [0.9, 0.9, 0.85]},
+    {"id": "joe_mensah", "name": "Joe Mensah", "cost": 1200, "bio": "The depot's legend. Forty years without a scratch.",
+      "skin": [0.28, 0.19, 0.14], "hair": [0.88, 0.88, 0.86], "hair_style": "bald", "beard": "full", "cap": true, "uniform": [0.1, 0.1, 0.12], "trim": [0.9, 0.72, 0.2]}
+  ],
   "liveries": [
     {"id": "classic_red", "name": "Classic Red", "body": [0.85, 0.16, 0.13], "stripe": [0.96, 0.93, 0.84], "cost": 0},
     {"id": "harbour_blue", "name": "Harbour Blue", "body": [0.12, 0.3, 0.58], "stripe": [0.9, 0.92, 0.95], "cost": 400},

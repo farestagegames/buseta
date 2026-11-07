@@ -36,6 +36,7 @@ Tilt sensor, keyboard  ---------------------->        |
 | `scripts/world` | `RoadNetwork`, `GroundSurface`, `MapLoader`, `CityBuilder`, `ObstacleField`, `KnockableProp`, `LowPolyBuilder`, `CityShift` level root, `TestGround` |
 | `scripts/route` | `RouteRunner` progress and turn hints, `RouteStop` alignment, `RouteSystem` shift flow |
 | `scripts/passengers` | `PassengerLedger`, `StopSession`, `PassengerCrowd` visuals, `CabinLayout` walking paths inside the bus |
+| `scripts/drivers` | `DriverLook` data read from the catalog, `DriverFigure` box models |
 | `scripts/audio` | `AudioDirector`, driven only by events |
 
 | `scripts/scoring` | `ShiftScore` category points, stars and coins, `DrivingMonitor`, `ScoreKeeper` |
@@ -127,6 +128,10 @@ longest possible report in every language at a 16:9 phone's height.
 driven from one constant, `LaneGraph.STOP_LINE_GAP`. A 12 m bus turning right
 sweeps its nose across the opposite lane, so the gap is what makes tight corners
 fair.
+
+**Drivers are data.** A driver is a catalog entry of colours and styles. `DriverLook`
+reads it, `DriverFigure` builds the 3D figure and `DriverBadge` draws the portrait, so
+a new driver needs no code. Drivers change nothing about how the bus handles.
 
 **Cheats in test builds only.** `Cheats.available()` is `OS.is_debug_build()`, so
 the gesture and panels do not exist in a release export. The panels are English

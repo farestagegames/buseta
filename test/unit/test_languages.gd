@@ -6,7 +6,7 @@ const LIVE_LABELS: Array[String] = [
 	"Cockpit", "Close", "Far", "Speed bump ahead", "Kerb strike", "Emergency stop", "Collision",
 	"Too fast over a bump", "Ran a red light", "No indicator", "Hit a cone", "Hit a bin", "Hit a crate",
 	"Hit a barrier", "Punctuality", "Stopping accuracy", "Smooth driving", "Traffic rules",
-	"Passenger satisfaction", "Home", "Routes", "Garage", "Driver", "Settings", "Paused",
+	"Passenger satisfaction", "Home", "Routes", "Garage", "Drivers", "Career", "Settings", "Paused",
 	"Wheel", "Tilt", "Buttons", "Tilt the phone to steer", "Invert tilt", "Resume", "Recover bus",
 	"Quit shift", "Drive again", "Main menu", "Language", "Start shift", "Daily challenge",
 	"Buses", "Liveries", "Selected", "Select", "Achievements",
@@ -118,12 +118,14 @@ func test_labels_shown_at_runtime_have_translations() -> void:
 
 func test_every_catalog_and_challenge_text_has_a_translation() -> void:
 	var catalog := Catalog.new()
-	for kind: String in [Catalog.ROUTES, Catalog.BUSES, Catalog.LIVERIES]:
+	for kind: String in [Catalog.ROUTES, Catalog.BUSES, Catalog.LIVERIES, Catalog.DRIVERS]:
 		for item: Dictionary in catalog.items(kind):
-			if kind != Catalog.BUSES:
+			if kind != Catalog.BUSES and kind != Catalog.DRIVERS:
 				assert_true(strings.has(item["name"]), item["name"])
 			if item.has("description"):
 				assert_true(strings.has(item["description"]), item["description"])
+			if item.has("bio"):
+				assert_true(strings.has(item["bio"]), item["bio"])
 	for entry: Dictionary in AchievementList.load_list():
 		assert_true(strings.has(entry["name"]), entry["name"])
 		assert_true(strings.has(entry["description"]), entry["description"])
