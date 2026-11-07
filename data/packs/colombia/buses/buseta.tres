@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BusSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/bus_spec.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Caimán B8"
+capacity = 24
+body_style = "buseta"
+body_width = 2.3
+body_height = 2.9
+wheelbase = 4.3
+front_overhang = 1.9
+rear_overhang = 2.2
+max_steer_degrees = 42.0
+steer_rate_degrees = 62.0
+max_drive_accel = 1.85
+max_brake_decel = 4.3
+door_offset = 0.25

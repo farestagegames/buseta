@@ -30,19 +30,19 @@ func test_buying_in_the_menu_spends_coins_and_selects() -> void:
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)
 	menu.show_tab(2)
-	menu._on_buy(Catalog.LIVERIES, "park_green")
+	menu._on_buy(Catalog.LIVERIES, "verde_manglar")
 	assert_eq(Profile.data.coins, 600)
-	assert_eq(Profile.data.selected[Catalog.LIVERIES], "park_green")
+	assert_eq(Profile.data.selected[Catalog.LIVERIES], "verde_manglar")
 
 
 func test_selected_livery_paints_the_bus() -> void:
 	Profile.data.coins = 1000
-	Profile.buy(Catalog.LIVERIES, "park_green")
-	Profile.select(Catalog.LIVERIES, "park_green")
+	Profile.buy(Catalog.LIVERIES, "verde_manglar")
+	Profile.select(Catalog.LIVERIES, "verde_manglar")
 	var city: CityShift = CITY.instantiate()
 	add_child_autofree(city)
 	var bus: BusController = city.get_node("Bus")
-	assert_almost_eq(bus.spec.body_colour.g, 0.42, 0.01)
+	assert_almost_eq(bus.spec.body_colour.g, 0.46, 0.01)
 	var stock: BusSpec = load("res://data/packs/colombia/buses/city_bus.tres")
 	assert_ne(stock.body_colour, bus.spec.body_colour, "Must not repaint the shared bus data")
 
@@ -54,7 +54,7 @@ func test_midi_bus_is_shorter_and_turns_tighter() -> void:
 	var city: CityShift = CITY.instantiate()
 	add_child_autofree(city)
 	var bus: BusController = city.get_node("Bus")
-	assert_eq(bus.spec.display_name, "Midi 10")
+	assert_eq(bus.spec.display_name, "Caimán B10")
 	assert_lt(bus.spec.overall_length(), 11.0)
 	var midi_radius := bus.spec.wheelbase / tan(deg_to_rad(bus.spec.max_steer_degrees))
 	var big: BusSpec = load("res://data/packs/colombia/buses/city_bus.tres")
@@ -175,3 +175,34 @@ func test_hands_follow_the_wheel_only_so_far() -> void:
 	var far: Vector3 = visual._hands[0].position
 	visual._pose_arms(3.0)
 	assert_almost_eq(far.distance_to(visual._hands[0].position), 0.0, 0.001)
+
+
+func test_garage_tries_a_paint_on_the_bus_without_buying_it() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(2)
+	await wait_frames(2)
+	menu.try_on(Catalog.LIVERIES, Profile.catalog.find(Catalog.LIVERIES, "carnaval"))
+	await wait_frames(1)
+	assert_eq(menu._garage_preview.shown_spec().pattern, "zigzag")
+	assert_eq(Profile.data.selected[Catalog.LIVERIES], PlayerProfile.DEFAULT_LIVERY)
+	assert_false(Profile.data.owns(Catalog.LIVERIES, "carnaval"))
+
+
+func test_garage_can_try_a_locked_bus() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(2)
+	await wait_frames(2)
+	menu.try_on(Catalog.BUSES, Profile.catalog.find(Catalog.BUSES, "chiva"))
+	await wait_frames(1)
+	assert_eq(menu._garage_preview.shown_spec().body_style, "chiva")
+
+
+func test_route_only_bus_is_not_on_sale_in_the_garage() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(2)
+	await wait_frames(2)
+	var labels := menu.find_children("*", "Label", true, false)
+	assert_false(labels.any(func(label: Label) -> bool: return label.text == "Alcatraz A18"))

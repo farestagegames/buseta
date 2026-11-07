@@ -6,8 +6,8 @@ extends RefCounted
 
 const VERSION := 1
 const DEFAULT_ROUTE := "route_01"
-const DEFAULT_BUS := "city_12"
-const DEFAULT_LIVERY := "classic_red"
+const DEFAULT_BUS := "buseta_8"
+const DEFAULT_LIVERY := "rojo_caribe"
 const DEFAULT_DRIVER := "sam_reed"
 
 var coins: int = 0
@@ -37,7 +37,7 @@ func owns(kind: String, id: String) -> bool:
 func buy(kind: String, item: Dictionary) -> bool:
 	var id: String = item["id"]
 	var cost: int = item["cost"]
-	if owns(kind, id) or coins < cost:
+	if owns(kind, id) or coins < cost or DriverLevel.level_for(xp) < int(item.get("level", 1)):
 		return false
 	coins -= cost
 	(owned[kind] as Array).append(id)

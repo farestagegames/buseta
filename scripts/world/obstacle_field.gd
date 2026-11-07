@@ -40,6 +40,8 @@ var _indices: Dictionary = {} ## Prop to instance index.
 var _bus_position: Vector2 = Vector2.ZERO
 var _bus_heading: float = 0.0
 var _bus_speed: float = 0.0
+var _trailer_axle: Vector2 = Vector2.ZERO
+var _trailer_heading: float = 0.0
 
 
 func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec, lamps: Array[Dictionary] = []) -> void:
@@ -83,6 +85,9 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	_bus_position = Vector2(data.position.x, data.position.z)
 	_bus_heading = data.heading
 	_bus_speed = data.speed
+	_trailer_axle = data.trailer_axle
+	_trailer_heading = data.trailer_heading
+	var reach := CHECK_RADIUS + _spec.full_length() - _spec.overall_length()
 	var bus_speed := absf(_bus_speed)
 	if bus_speed < CAR_MIN_HIT_SPEED:
 		return
@@ -92,7 +97,7 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		if not _can_be_hit(prop, bus_speed):
 			continue
 		var ground_position := Vector2(prop.position.x, prop.position.z)
-		if ground_position.distance_squared_to(centre) > CHECK_RADIUS * CHECK_RADIUS:
+		if ground_position.distance_squared_to(centre) > reach * reach:
 			continue
 		var touching := false
 		if prop.heavy:
@@ -100,6 +105,8 @@ func _on_telemetry(data: BusTelemetry) -> void:
 			touching = BusFootprint.touches_car(_bus_position, _bus_heading, _spec, ground_position, car_forward)
 		else:
 			touching = BusFootprint.touches(_bus_position, _bus_heading, _spec, ground_position, prop.radius)
+		if _spec.is_articulated() and BusFootprint.touches_trailer(_trailer_axle, _trailer_heading, _spec, ground_position, prop.radius):
+			touching = true
 		if touching:
 			if prop.heavy:
 				_shove(prop, forward, ground_position - centre)

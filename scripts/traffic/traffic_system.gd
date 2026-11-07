@@ -40,6 +40,8 @@ var _bus_position: Vector2 = Vector2.ZERO
 var _bus_heading: float = 0.0
 var _bus_speed: float = 0.0
 var _bus_active: bool = false
+var _trailer_axle: Vector2 = Vector2.ZERO
+var _trailer_heading: float = 0.0
 var _batch: MultiMesh
 var _moto_batch: MultiMesh
 var _car_colours: Array[Color] = []
@@ -122,6 +124,8 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	_bus_heading = data.heading
 	_bus_speed = data.speed
 	_bus_active = true
+	_trailer_axle = data.trailer_axle
+	_trailer_heading = data.trailer_heading
 
 
 func _position_of(agent: TrafficAgent) -> Vector2:
@@ -254,7 +258,7 @@ func _check_bus_hits() -> void:
 		if agent.is_moto:
 			_check_moto_hit(agent, spot, bus_velocity)
 			continue
-		if not BusFootprint.touches_car(_bus_position, _bus_heading, _spec, spot, car_forward):
+		if not BusFootprint.touches_car(_bus_position, _bus_heading, _spec, spot, car_forward) and not _trailer_touches(spot, BusFootprint.CAR_CIRCLE_RADIUS):
 			continue
 		var away := (spot - centre).normalized()
 		var closing := (bus_velocity - car_forward * agent.speed).length()
@@ -270,7 +274,7 @@ func _check_bus_hits() -> void:
 
 ## A motorbike stays upright: the rider just stops, and the bus takes the blame.
 func _check_moto_hit(agent: TrafficAgent, spot: Vector2, bus_velocity: Vector2) -> void:
-	if not BusFootprint.touches(_bus_position, _bus_heading, _spec, spot, MOTO_RADIUS):
+	if not BusFootprint.touches(_bus_position, _bus_heading, _spec, spot, MOTO_RADIUS) and not _trailer_touches(spot, MOTO_RADIUS):
 		return
 	if absf(_bus_speed) >= BUS_FAULT_SPEED and agent.stunned <= TrafficAgent.STUN_SECONDS - HIT_REPEAT_SECONDS:
 		agent.hit_by_bus(bus_velocity * 0.3)
@@ -278,6 +282,10 @@ func _check_moto_hit(agent: TrafficAgent, spot: Vector2, bus_velocity: Vector2) 
 		GameEvents.bus_collided.emit(MOTO_COLLISION)
 	else:
 		agent.stop_against_bus((spot - _bus_position).normalized() * SEPARATION_PER_TICK)
+
+
+func _trailer_touches(spot: Vector2, radius: float) -> bool:
+	return _spec.is_articulated() and BusFootprint.touches_trailer(_trailer_axle, _trailer_heading, _spec, spot, radius)
 
 
 func _check_red_lights() -> void:

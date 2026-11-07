@@ -21,3 +21,8 @@ One line each, with the reason. Newest at the bottom.
 - Street stalls can be knocked over and cost points, but no vendor stands at them: a person flying through the air is not the warmth you asked for.
 - A hit motorbike stays upright and the rider just stops. It counts as a collision, with nothing shown that could be read as an injury.
 - Cars include many yellow taxis, as in Colombian cities.
+- Fictional makers are Caimán and Alcatraz, and the rapid-transit line is La Ola. None of these is a real bus brand or operator as far as I know.
+- The old City 12 and Midi 10 stay as the Caimán Busetón 12 and Caimán B10, so that work and any saves that own them carry over.
+- The chiva needs driver level 5 as well as $400.000, to make it feel like a special unlock. Catalog items can now set a `level`.
+- The articulated bus comes with its route, not from the garage: it only makes sense on the busway.
+- A chiva has an open step instead of doors, so the door button opens and closes nothing visible but still runs the stop.

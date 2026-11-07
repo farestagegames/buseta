@@ -16,8 +16,8 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | --- | --- | --- | --- | --- |
 | 1 | Country packs | Done | `milestone-country-packs` | Colombia pack, left-hand Testland fixture, autopilot drove a full left-hand shift |
 | 2 | Colombian city | Done | `milestone-colombian-city` | Puerto Marisol: coast, palms, colour, stalls, bunting, pedestrians, motorbikes, taxis, more bumps and potholes |
-| 3 | Colombian buses and liveries | In progress | | Includes the old bus customisation item |
-| 4 | Colombian gameplay | Not started | | Includes the old passenger behaviours item |
+| 3 | Colombian buses and liveries | Done | `milestone-colombian-buses` | Buseta starter, B10, busetón, chiva, articulated with real joint physics, 11 patterned liveries, garage try-on. The articulated drives in item 4 |
+| 4 | Colombian gameplay | In progress | | Includes the old passenger behaviours item |
 | 5 | Drivers and passengers | Not started | | |
 | 6 | Language | Partly done | | Text moved to per-language files early, Colombian wording still to review |
 | 7 | Audio | Not started | | |

@@ -23,6 +23,7 @@ var _start_heading: float
 var _telemetry := BusTelemetry.new()
 var _wheels: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 0.0])
 var _wheel_detail: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 0.0])
+var _trailer_shape: CollisionShape3D
 
 
 func _ready() -> void:
@@ -68,6 +69,7 @@ func _physics_process(dt: float) -> void:
 	rotation.y = model.heading
 	var planar_velocity := model.velocity()
 	velocity = Vector3(planar_velocity.x, 0.0, planar_velocity.y)
+	_swing_trailer_shape()
 	move_and_slide()
 	_resolve_collisions()
 
@@ -151,6 +153,9 @@ func _publish_telemetry() -> void:
 	data.position = global_position
 	data.heading = model.heading
 	data.door_position = _door_position()
+	data.trailer_angle = model.articulation()
+	data.trailer_axle = model.trailer_axle
+	data.trailer_heading = model.trailer_heading
 	data.body_height = suspension.height
 	data.ground_pitch = suspension.pitch
 	data.ground_roll = suspension.roll
@@ -163,7 +168,7 @@ func _door_position() -> Vector3:
 	var forward := model.forward_vector()
 	var right := Vector2(-forward.y, forward.x)
 	var ground := Vector2(global_position.x, global_position.z)
-	ground += forward * (spec.wheelbase + spec.front_overhang - BusVisual.DOOR_OFFSET - BusVisual.DOOR_WIDTH / 2.0)
+	ground += forward * (spec.wheelbase + spec.front_overhang - spec.door_offset - BusVisual.DOOR_WIDTH / 2.0)
 	ground += right * (spec.body_width / 2.0 + 0.3) * float(spec.door_side)
 	return Vector3(ground.x, surface.height_at(ground), ground.y)
 
@@ -175,6 +180,24 @@ func _build_collision() -> void:
 	shape.shape = box
 	shape.position = Vector3(0.0, COLLISION_CLEARANCE + box.size.y / 2.0, spec.body_centre_z())
 	add_child(shape)
+	if spec.is_articulated():
+		var rear_box := BoxShape3D.new()
+		rear_box.size = Vector3(spec.body_width, box.size.y, spec.trailer_wheelbase + spec.trailer_overhang - 0.8)
+		_trailer_shape = CollisionShape3D.new()
+		_trailer_shape.shape = rear_box
+		add_child(_trailer_shape)
+		_swing_trailer_shape()
+
+
+## Keeps the rear section solid wherever the joint has folded it to.
+func _swing_trailer_shape() -> void:
+	if _trailer_shape == null:
+		return
+	var fold := model.trailer_heading - model.heading
+	var middle := (spec.trailer_wheelbase + spec.trailer_overhang) / 2.0
+	var height := COLLISION_CLEARANCE + (spec.body_height - COLLISION_CLEARANCE) / 2.0
+	_trailer_shape.rotation.y = fold
+	_trailer_shape.position = Vector3(sin(fold) * middle, height, spec.hitch_offset + cos(fold) * middle)
 
 
 func _on_drive_input(steer: float, throttle: float, brake: float) -> void:

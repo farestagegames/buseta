@@ -21,8 +21,8 @@ func _init(spec: BusSpec) -> void:
 	var front := -(spec.wheelbase + spec.front_overhang)
 	var side := float(spec.door_side)
 	var half := spec.body_width / 2.0
-	var door_z := front + BusVisual.DOOR_OFFSET + BusVisual.DOOR_WIDTH / 2.0
-	var behind_door := front + BusVisual.DOOR_OFFSET + BusVisual.DOOR_WIDTH
+	var door_z := front + spec.door_offset + BusVisual.DOOR_WIDTH / 2.0
+	var behind_door := front + spec.door_offset + BusVisual.DOOR_WIDTH
 	kerb = Vector3((half + 0.3) * side, 0.0, door_z)
 	step = Vector3((half - 0.1) * side, STEP_HEIGHT, door_z)
 	inside_door = Vector3((half - 0.6) * side, FLOOR_HEIGHT, door_z + 0.05)

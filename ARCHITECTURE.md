@@ -159,6 +159,12 @@ mix, palms and sky, read by `CityTheme`, and the `coast` block adds a beach and 
 `TrafficAgent`s that keep to the kerb side of a lane and ignore cars, so they filter
 past queues without any lane-changing logic.
 
+**Bus bodies and paint are data.** `BusSpec.body_style` picks the shell, and a livery
+sets colours and a pattern drawn by `BusVisual._paint_livery` as flat shapes in the
+merged body mesh. The rear section of an articulated bus is a trailer: `BusPhysicsModel`
+drags its axle behind the joint, so it cuts in on bends, and it has its own collision
+shape and footprint.
+
 **Cheats in test builds only.** `Cheats.available()` is `OS.is_debug_build()`, so
 the gesture and panels do not exist in a release export. The panels are English
 only, and each cheat is a small function on `PlayerProfile` or `RouteSystem`.

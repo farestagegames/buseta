@@ -57,14 +57,41 @@ extends Resource
 ## Sideways position of the driver's seat, in metres from the centre line.
 @export var driver_seat_x: float = -0.7
 @export var door_open_time: float = 1.2
+## Where the doorway starts, measured back from the nose.
+@export var door_offset: float = 0.3
+## Extra length ahead of the cab, for a bus with a bonnet.
+@export var cab_offset: float = 0.0
+@export_enum("city", "buseta", "chiva", "articulated") var body_style: String = "city"
+
+@export_group("Articulation")
+## From the rear axle back to the joint. Zero means a rigid bus.
+@export var hitch_offset: float = 0.0
+## From the joint back to the rear section's axle.
+@export var trailer_wheelbase: float = 0.0
+## From the rear section's axle back to the tail.
+@export var trailer_overhang: float = 0.0
 
 @export_group("Paint")
 @export var body_colour: Color = Color(0.85, 0.16, 0.13)
 @export var stripe_colour: Color = Color(0.96, 0.93, 0.84)
+@export var accent_colour: Color = Color(0.98, 0.76, 0.2)
+@export var roof_colour: Color = Color(0.85, 0.16, 0.13)
+@export_enum("plain", "bands", "zigzag", "waves", "diamonds", "chevrons", "sunburst", "flowers") var pattern: String = "plain"
 
 
 func overall_length() -> float:
 	return front_overhang + wheelbase + rear_overhang
+
+
+func is_articulated() -> bool:
+	return trailer_wheelbase > 0.0
+
+
+## Nose to tail, with any rear section.
+func full_length() -> float:
+	if not is_articulated():
+		return overall_length()
+	return front_overhang + wheelbase + hitch_offset + trailer_wheelbase + trailer_overhang
 
 
 ## Distance from the rear axle, which is the vehicle origin, to the middle of

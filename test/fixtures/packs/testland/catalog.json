@@ -1,6 +1,45 @@
 {
-  "routes": [{"id": "test_loop", "name": "Test Loop", "file": "routes/test_loop.json", "cost": 0, "description": "A left-hand copy of the first route."}],
-  "buses": [{"id": "test_bus", "name": "Test Bus", "file": "res://data/packs/colombia/buses/city_bus.tres", "cost": 0, "description": "A bus."}],
-  "liveries": [{"id": "test_paint", "name": "Test Paint", "body": [0.2, 0.3, 0.8], "stripe": [0.9, 0.9, 0.9], "cost": 0}],
-  "drivers": [{"id": "test_driver", "name": "Test Driver", "cost": 0, "bio": "Drives on the left."}]
+ "routes": [
+  {
+   "id": "test_loop",
+   "name": "Test Loop",
+   "file": "routes/test_loop.json",
+   "cost": 0,
+   "description": "A left-hand copy of the first route."
+  }
+ ],
+ "buses": [
+  {
+   "id": "test_bus",
+   "name": "Test Bus",
+   "file": "res://data/packs/colombia/buses/city_bus.tres",
+   "cost": 0,
+   "description": "A bus."
+  }
+ ],
+ "liveries": [
+  {
+   "id": "test_paint",
+   "name": "Test Paint",
+   "body": [
+    0.2,
+    0.3,
+    0.8
+   ],
+   "stripe": [
+    0.9,
+    0.9,
+    0.9
+   ],
+   "cost": 0
+  }
+ ],
+ "drivers": [
+  {
+   "id": "test_driver",
+   "name": "Test Driver",
+   "cost": 0,
+   "bio": "Drives on the left."
+  }
+ ]
 }

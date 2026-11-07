@@ -37,11 +37,21 @@ func _enter_tree() -> void:
 
 ## The player's bus in their livery. A copy, so the shared data stays untouched.
 static func chosen_spec() -> BusSpec:
+	var route := Profile.selected_item(Catalog.ROUTES)
 	var bus_item := Profile.selected_item(Catalog.BUSES)
-	var livery := Profile.selected_item(Catalog.LIVERIES)
+	if route.has("only_bus"):
+		bus_item = Profile.catalog.find(Catalog.BUSES, route["only_bus"])
+	return spec_for(bus_item, Profile.selected_item(Catalog.LIVERIES))
+
+
+## A copy, so the shared data stays untouched.
+static func spec_for(bus_item: Dictionary, livery: Dictionary) -> BusSpec:
 	var spec: BusSpec = (load(bus_item["file"]) as BusSpec).duplicate()
 	spec.body_colour = _colour(livery["body"])
 	spec.stripe_colour = _colour(livery["stripe"])
+	spec.accent_colour = _colour(livery.get("accent", livery["stripe"]))
+	spec.roof_colour = _colour(livery.get("roof", livery["body"]))
+	spec.pattern = livery.get("pattern", "plain")
 	spec.keep_to_side(Country.pack.traffic_side)
 	return spec
 

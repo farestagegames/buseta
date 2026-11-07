@@ -20,6 +20,10 @@ var _tabs: Array[Button] = []
 var _current_tab: int = 0
 var _shown_locale: String = ""
 var _cheat_taps := Cheats.new()
+var _garage_preview: BusPreview
+var _preview_note: Label
+var _preview_bus: Dictionary = {}
+var _preview_livery: Dictionary = {}
 
 
 func _ready() -> void:
@@ -236,17 +240,45 @@ func _garage_tab() -> Control:
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.size_flags_stretch_ratio = 1.5
 	page.add_child(list)
-	var preview := BusPreview.new()
-	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.add_child(preview)
+	var side := VBoxContainer.new()
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(side)
+	_garage_preview = BusPreview.new()
+	_garage_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	side.add_child(_garage_preview)
+	_preview_note = _text("Tap a bus or paint to try it", 20, MUTED)
+	_preview_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	side.add_child(_preview_note)
+	_preview_bus = Profile.selected_item(Catalog.BUSES)
+	_preview_livery = Profile.selected_item(Catalog.LIVERIES)
 	var rows := list.get_child(0)
 	rows.add_child(_text("Buses", 26, ACCENT))
 	for item: Dictionary in Profile.catalog.items(Catalog.BUSES):
-		rows.add_child(_shop_row(Catalog.BUSES, item, item.get("description", "")))
+		if not item.get("route_only", false):
+			rows.add_child(_garage_row(Catalog.BUSES, item, item.get("description", "")))
 	rows.add_child(_text("Liveries", 26, ACCENT))
 	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
-		rows.add_child(_shop_row(Catalog.LIVERIES, item, ""))
+		rows.add_child(_garage_row(Catalog.LIVERIES, item, ""))
 	return page
+
+
+## Tapping a row tries it on the preview bus, owned or not.
+func _garage_row(kind: String, item: Dictionary, description: String) -> Control:
+	var row := _shop_row(kind, item, description)
+	row.gui_input.connect(func(event: InputEvent) -> void:
+		var mouse := event as InputEventMouseButton
+		if mouse != null and not mouse.pressed and mouse.button_index == MOUSE_BUTTON_LEFT:
+			try_on(kind, item))
+	return row
+
+
+func try_on(kind: String, item: Dictionary) -> void:
+	if kind == Catalog.BUSES:
+		_preview_bus = item
+	else:
+		_preview_livery = item
+	_garage_preview.show_spec(CityShift.spec_for(_preview_bus, _preview_livery))
+	_preview_note.text = "%s, %s" % [_preview_bus["name"], tr(_preview_livery["name"])]
 
 
 func _drivers_tab() -> Control:
@@ -288,12 +320,16 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 	var button := _button("")
 	button.custom_minimum_size = Vector2(170.0, 72.0)
 	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var level := DriverLevel.level_for(Profile.data.xp)
 	if Profile.data.selected[kind] == id:
 		button.text = "Selected"
 		button.disabled = true
 	elif Profile.data.owns(kind, id):
 		button.text = "Select"
 		button.pressed.connect(_on_select.bind(kind, id))
+	elif int(item.get("level", 1)) > level:
+		button.text = tr("Level %d") % int(item["level"])
+		button.disabled = true
 	else:
 		button.text = tr("Buy %s") % Country.pack.money(item["cost"])
 		button.disabled = Profile.data.coins < int(item["cost"])

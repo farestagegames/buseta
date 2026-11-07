@@ -19,6 +19,16 @@ static func touches(rear_axle: Vector2, heading: float, spec: BusSpec, point: Ve
 		and across < spec.body_width / 2.0 + radius
 
 
+## The rear section of an articulated bus, measured from its own axle.
+static func touches_trailer(axle: Vector2, heading: float, spec: BusSpec, point: Vector2, radius: float) -> bool:
+	var forward := Vector2(-sin(heading), -cos(heading))
+	var right := Vector2(-forward.y, forward.x)
+	var offset := point - axle
+	var along := offset.dot(forward)
+	return along > -spec.trailer_overhang - radius and along < spec.trailer_wheelbase + radius \
+		and absf(offset.dot(right)) < spec.body_width / 2.0 + radius
+
+
 ## Tests a car against the bus. A car is long and narrow, so it is two circles
 ## along its length. One big circle would clip a bus passing it cleanly.
 static func touches_car(rear_axle: Vector2, heading: float, spec: BusSpec, car_position: Vector2, car_forward: Vector2) -> bool:

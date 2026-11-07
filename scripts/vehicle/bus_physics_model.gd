@@ -14,6 +14,8 @@ enum Direction { FORWARD = 1, REVERSE = -1 }
 ## Below this speed the bus counts as stopped for gear changes and doors.
 const STOPPED_SPEED := 0.3
 const GRAVITY := 9.81
+## How far a joint can fold before the rear section is dragged round with it.
+const MAX_ARTICULATION := deg_to_rad(52.0)
 
 var position: Vector2 = Vector2.ZERO ## X and Z on the ground plane.
 var heading: float = 0.0
@@ -31,6 +33,9 @@ var yaw_rate: float = 0.0
 var body_roll: float = 0.0 ## Radians, positive leans to the right.
 var body_pitch: float = 0.0 ## Radians, positive is nose up.
 
+var trailer_axle: Vector2 = Vector2.ZERO ## Only moves on an articulated bus.
+var trailer_heading: float = 0.0
+
 var gearbox: AutomaticGearbox
 
 var _spec: BusSpec
@@ -41,6 +46,7 @@ var _pitch_velocity: float = 0.0
 func _init(spec: BusSpec) -> void:
 	_spec = spec
 	gearbox = AutomaticGearbox.new(spec)
+	_line_up_trailer()
 
 
 func is_stopped() -> bool:
@@ -75,6 +81,7 @@ func step(steer_input: float, throttle_input: float, brake_input: float, dt: flo
 	heading += yaw_rate * dt
 	position += velocity() * dt
 	lateral_accel = -yaw_rate * speed
+	_follow_with_trailer()
 	_update_body(dt)
 
 
@@ -95,6 +102,35 @@ func reset(new_position: Vector2, new_heading: float) -> void:
 	body_pitch = 0.0
 	_roll_velocity = 0.0
 	_pitch_velocity = 0.0
+	_line_up_trailer()
+
+
+## Angle between the two sections. Zero is straight.
+func articulation() -> float:
+	return angle_difference(heading, trailer_heading)
+
+
+func _hitch() -> Vector2:
+	return position - forward_vector() * _spec.hitch_offset
+
+
+func _line_up_trailer() -> void:
+	trailer_heading = heading
+	trailer_axle = _hitch() - forward_vector() * _spec.trailer_wheelbase
+
+
+## The rear section's axle can only roll where it points, so it trails behind the
+## joint the way a real one does, cutting in on bends.
+func _follow_with_trailer() -> void:
+	if not _spec.is_articulated():
+		return
+	var hitch := _hitch()
+	var pull := (hitch - trailer_axle).normalized()
+	var angle := RoadNetwork.heading_of(pull)
+	var fold := clampf(angle_difference(heading, angle), -MAX_ARTICULATION, MAX_ARTICULATION)
+	trailer_heading = heading + fold
+	var along := Vector2(-sin(trailer_heading), -cos(trailer_heading))
+	trailer_axle = hitch - along * _spec.trailer_wheelbase
 
 
 ## Largest road wheel angle the tyres can hold at the current speed.

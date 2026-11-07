@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BusSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/bus_spec.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Alcatraz A18"
+capacity = 120
+body_style = "articulated"
+body_width = 2.55
+body_height = 3.1
+wheelbase = 5.9
+front_overhang = 2.7
+rear_overhang = 1.1
+hitch_offset = 1.4
+trailer_wheelbase = 6.0
+trailer_overhang = 2.6
+max_steer_degrees = 40.0
+steer_rate_degrees = 42.0
+max_drive_accel = 1.35
+max_brake_decel = 3.8

@@ -1,13 +1,27 @@
 class_name BusPreview
 extends PreviewStage
-## A slowly turning 3D bus in the player's chosen bus and livery.
+## A slowly turning 3D bus. It starts as the player's own, and the garage can show
+## any bus and livery on it before they are bought.
+
+var _visual: BusVisual
+var _camera_distance: float = 15.5
 
 
 func _ready() -> void:
-	build_stage(Vector3(0.0, 4.4, 15.5), -10.0, 42.0)
-	var spec := CityShift.chosen_spec()
-	var visual := BusVisual.new()
-	visual.spec = spec
-	visual.driver_look = CityShift.chosen_look()
-	visual.position.z = -spec.body_centre_z()
-	pivot.add_child(visual)
+	build_stage(Vector3(0.0, 4.4, _camera_distance), -10.0, 42.0)
+	show_spec(CityShift.chosen_spec())
+
+
+func show_spec(spec: BusSpec) -> void:
+	if _visual != null:
+		_visual.free()
+	_visual = BusVisual.new()
+	_visual.spec = spec
+	_visual.driver_look = CityShift.chosen_look()
+	_visual.position.z = spec.front_overhang + spec.wheelbase - spec.full_length() / 2.0
+	pivot.add_child(_visual)
+	stage.get_camera_3d().position.z = _camera_distance * clampf(spec.full_length() / 12.0, 0.8, 1.6)
+
+
+func shown_spec() -> BusSpec:
+	return _visual.spec

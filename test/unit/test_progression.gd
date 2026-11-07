@@ -21,8 +21,8 @@ func _report(score: int = 80, stars: int = 4) -> Dictionary:
 
 func test_new_player_starts_with_the_free_items() -> void:
 	assert_true(profile.owns(Catalog.ROUTES, "route_01"))
-	assert_true(profile.owns(Catalog.BUSES, "city_12"))
-	assert_true(profile.owns(Catalog.LIVERIES, "classic_red"))
+	assert_true(profile.owns(Catalog.BUSES, "buseta_8"))
+	assert_true(profile.owns(Catalog.LIVERIES, "rojo_caribe"))
 	assert_false(profile.owns(Catalog.ROUTES, "route_02"))
 
 
@@ -60,20 +60,20 @@ func test_cannot_pay_twice_for_the_same_item() -> void:
 
 func test_cannot_select_what_you_do_not_own() -> void:
 	assert_false(profile.select(Catalog.BUSES, "midi_10"))
-	assert_eq(profile.selected[Catalog.BUSES], "city_12")
+	assert_eq(profile.selected[Catalog.BUSES], "buseta_8")
 
 
 func test_profile_survives_a_round_trip() -> void:
 	profile.coins = 1234
 	profile.xp = 900
-	(profile.owned[Catalog.LIVERIES] as Array).append("park_green")
-	profile.select(Catalog.LIVERIES, "park_green")
+	(profile.owned[Catalog.LIVERIES] as Array).append("verde_manglar")
+	profile.select(Catalog.LIVERIES, "verde_manglar")
 	profile.achievements.append("first_shift")
 	profile.record_best("route_01", 77)
 	profile.last_daily = "2026-11-06"
 	var copy := PlayerProfile.from_dict(JSON.parse_string(JSON.stringify(profile.to_dict())))
 	assert_eq(copy.coins, 1234)
-	assert_eq(copy.selected[Catalog.LIVERIES], "park_green")
+	assert_eq(copy.selected[Catalog.LIVERIES], "verde_manglar")
 	assert_eq(copy.achievements.size(), 1)
 	assert_eq(int(copy.best_scores["route_01"]), 77)
 	assert_eq(copy.last_daily, "2026-11-06")
@@ -83,14 +83,14 @@ func test_damaged_save_fields_fall_back_safely() -> void:
 	var copy := PlayerProfile.from_dict({"coins": "lots", "xp": -50, "owned": 7, "selected": {"buses": "midi_10"}, "stats": "x", "achievements": [1, "first_shift"]})
 	assert_eq(copy.coins, 0)
 	assert_eq(copy.xp, 0)
-	assert_eq(copy.selected[Catalog.BUSES], "city_12", "Cannot select what the save does not own")
+	assert_eq(copy.selected[Catalog.BUSES], "buseta_8", "Cannot select what the save does not own")
 	assert_eq(copy.achievements, ["first_shift"] as Array[String])
 
 
 func test_empty_save_is_a_new_player() -> void:
 	var copy := PlayerProfile.from_dict({})
 	assert_eq(copy.coins, 0)
-	assert_true(copy.owns(Catalog.BUSES, "city_12"))
+	assert_true(copy.owns(Catalog.BUSES, "buseta_8"))
 
 
 func test_store_writes_and_reads() -> void:

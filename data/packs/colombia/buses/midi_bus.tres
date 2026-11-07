@@ -4,7 +4,8 @@
 
 [resource]
 script = ExtResource("1")
-display_name = "Midi 10"
+display_name = "Caimán B10"
+body_style = "buseta"
 body_width = 2.4
 wheelbase = 5.0
 front_overhang = 2.3

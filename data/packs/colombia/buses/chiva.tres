@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="BusSpec" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/bus_spec.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "La Chiva"
+capacity = 36
+body_style = "chiva"
+body_width = 2.45
+body_height = 3.0
+wheelbase = 5.0
+front_overhang = 3.3
+rear_overhang = 2.4
+cab_offset = 1.9
+door_offset = 3.9
+max_steer_degrees = 38.0
+steer_rate_degrees = 44.0
+max_drive_accel = 1.3
+top_speed = 16.0
+max_lateral_accel = 2.6
+max_brake_decel = 3.4

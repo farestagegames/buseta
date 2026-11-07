@@ -110,9 +110,14 @@ func _update_follow(view: Dictionary, dt: float) -> void:
 	var orbit_heading := _follow_heading + _door_orbit
 	var behind := Vector3(sin(orbit_heading), 0.0, cos(orbit_heading))
 	var ahead := Vector3(sin(_follow_heading), 0.0, cos(_follow_heading)) * -float(view["look_ahead"]) * (1.0 - _door_focus)
-	var zoom := lerpf(1.0, DOOR_ZOOM, _door_focus)
+	var zoom := lerpf(_size_zoom(), DOOR_ZOOM, _door_focus)
 	global_position = centre + behind * float(view["distance"]) * zoom + Vector3.UP * float(view["height"]) * zoom
 	look_at(centre + ahead + Vector3.UP * float(view["look_height"]), Vector3.UP)
+
+
+## Longer buses need the camera further back to fit in the frame.
+func _size_zoom() -> float:
+	return clampf(_bus.spec.full_length() / 12.0, 0.85, 1.5)
 
 
 func _announce_view() -> void:
