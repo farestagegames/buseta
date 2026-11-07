@@ -191,8 +191,8 @@ func test_boarding_is_paced() -> void:
 
 
 func test_city_data_files_load_and_every_stop_is_on_the_route() -> void:
-	var route_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/routes/route_01.json"))
-	var map_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(route_data["map"]))
+	var route_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/packs/colombia/routes/route_01.json"))
+	var map_data: Dictionary = MapLoader.read_map_of(route_data)
 	var city := RoadNetwork.from_data(map_data)
 	var route := RouteRunner.build(route_data, city)
 	assert_between(route.stops.size(), 6, 9, "Brief asks for 6 to 8 stops plus the depot")
@@ -204,8 +204,8 @@ func test_city_data_files_load_and_every_stop_is_on_the_route() -> void:
 
 
 func test_city_steepest_road_is_drivable() -> void:
-	var route_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/routes/route_01.json"))
-	var map_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(route_data["map"]))
+	var route_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/packs/colombia/routes/route_01.json"))
+	var map_data: Dictionary = MapLoader.read_map_of(route_data)
 	var city := RoadNetwork.from_data(map_data)
 	var ground := GroundSurface.new()
 	for hill: Dictionary in map_data["hills"]:
@@ -221,8 +221,8 @@ func test_city_steepest_road_is_drivable() -> void:
 
 
 func test_route_has_no_corners_tighter_than_a_bus_can_take() -> void:
-	var route_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/routes/route_01.json"))
-	var map_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(route_data["map"]))
+	var route_data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/packs/colombia/routes/route_01.json"))
+	var map_data: Dictionary = MapLoader.read_map_of(route_data)
 	var city := RoadNetwork.from_data(map_data)
 	var tightest := INF
 	for road: Dictionary in city.roads.values():

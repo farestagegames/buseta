@@ -6,13 +6,20 @@ const ROUTES := "routes"
 const BUSES := "buses"
 const LIVERIES := "liveries"
 const DRIVERS := "drivers"
-const PATH := "res://data/catalog.json"
 
 var data: Dictionary
 
 
+## Reads the current country's catalog unless given one, as tests do.
 func _init(catalog_data: Dictionary = {}) -> void:
-	data = catalog_data if not catalog_data.is_empty() else MapLoader.read_json(PATH)
+	if not catalog_data.is_empty():
+		data = catalog_data
+		return
+	data = MapLoader.read_json(Country.pack.content_path("catalog"))
+	for kind: String in data:
+		for item: Dictionary in data[kind]:
+			if item.has("file"):
+				item["file"] = Country.pack.resolve(item["file"])
 
 
 func items(kind: String) -> Array:

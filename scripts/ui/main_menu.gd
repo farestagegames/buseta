@@ -134,7 +134,7 @@ func _refresh_header() -> void:
 	var xp := Profile.data.xp
 	_level_label.text = tr("Level %d") % DriverLevel.level_for(xp)
 	_level_bar.value = DriverLevel.progress(xp)
-	_coins_label.text = tr("%d coins") % Profile.data.coins
+	_coins_label.text = Country.pack.money(Profile.data.coins)
 
 
 func _navigation() -> Control:
@@ -193,7 +193,7 @@ func _home_tab() -> Control:
 	var done := Profile.data.last_daily == today
 	daily_lines.add_child(_text("Daily challenge", 22, ACCENT))
 	daily_lines.add_child(_wrapped(challenge["text"], 24, Color.WHITE))
-	daily_lines.add_child(_text(tr("Done today") if done else tr("Reward: %d coins") % DailyChallenge.REWARD_COINS, 20, GOOD if done else MUTED))
+	daily_lines.add_child(_text(tr("Done today") if done else tr("Reward: %s") % Country.pack.money(DailyChallenge.REWARD_COINS), 20, GOOD if done else MUTED))
 	daily_card.add_child(daily_lines)
 	column.add_child(daily_card)
 
@@ -295,7 +295,7 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 		button.text = "Select"
 		button.pressed.connect(_on_select.bind(kind, id))
 	else:
-		button.text = tr("Buy %d") % item["cost"]
+		button.text = tr("Buy %s") % Country.pack.money(item["cost"])
 		button.disabled = Profile.data.coins < int(item["cost"])
 		button.pressed.connect(_on_buy.bind(kind, id))
 	return button

@@ -15,6 +15,7 @@ var polyline: PackedVector2Array = PackedVector2Array()
 var distances: PackedFloat32Array = PackedFloat32Array()
 var turns: Array[Dictionary] = [] ## distance: float, text: String
 var hazards: PackedFloat32Array = PackedFloat32Array() ## Route distance of each bump.
+var traffic_side: int = 1
 var start_position: Vector2 = Vector2.ZERO
 var start_heading: float = 0.0
 var stop_index: int = 0
@@ -26,6 +27,7 @@ var _cursor: int = 0
 static func build(data: Dictionary, network: RoadNetwork) -> RouteRunner:
 	var runner := RouteRunner.new()
 	runner.route_name = data["name"]
+	runner.traffic_side = network.traffic_side
 	runner._build_polyline(data["legs"], network)
 	var start: Dictionary = data["start"]
 	var placed: Dictionary = network.sample(start["road"], start["along"], start["lateral"], start["dir"])
@@ -97,8 +99,8 @@ func hazard_ahead() -> bool:
 func recovery_pose() -> Dictionary:
 	var index := clampi(_cursor, 0, polyline.size() - 2)
 	var forward := (polyline[index + 1] - polyline[index]).normalized()
-	var right := Vector2(-forward.y, forward.x)
-	return {"position": polyline[index] + right * RoadNetwork.LANE_WIDTH / 2.0,
+	var kerb := Vector2(-forward.y, forward.x) * float(traffic_side)
+	return {"position": polyline[index] + kerb * RoadNetwork.LANE_WIDTH / 2.0,
 		"heading": RoadNetwork.heading_of(forward)}
 
 

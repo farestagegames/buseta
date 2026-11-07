@@ -36,9 +36,12 @@ var _bump_spots: Array[Vector2] = []
 var _next_turn: int = 0
 var _jolt_places: Dictionary = {}
 var _off_road_places: Dictionary = {}
+var _map_data: Dictionary = {}
 
 
 func _ready() -> void:
+	if OS.get_environment("AUTOPILOT_PACK") != "":
+		Country.use_pack(OS.get_environment("AUTOPILOT_PACK"))
 	Profile.load_from("user://autopilot_save.json")
 	Profile.data.intro_done = true
 	var chosen := OS.get_environment("AUTOPILOT_ROUTE")
@@ -232,15 +235,15 @@ func _build_path() -> void:
 		var before := line[maxi(i - 1, 0)]
 		var after := line[mini(i + 1, line.size() - 1)]
 		var forward := (after - before).normalized()
-		var right := Vector2(-forward.y, forward.x)
-		var point := line[i] + right * _lateral_at(along, line[i], right)
+		var right := Vector2(-forward.y, forward.x) * float(_city.network.traffic_side)
+		var point := line[i] + right * _lateral_at(along, line[i], forward, right)
 		_path.append(point)
 		_speeds.append(_speed_at(i))
 	_apply_roundabouts()
 	_smooth_junctions()
 
 
-func _lateral_at(along: float, point: Vector2, right: Vector2) -> float:
+func _lateral_at(along: float, point: Vector2, forward: Vector2, right: Vector2) -> float:
 	var lateral := LANE
 	for stop in _city.route.stops:
 		var relative := along - stop.route_distance
@@ -248,12 +251,11 @@ func _lateral_at(along: float, point: Vector2, right: Vector2) -> float:
 			var share := smoothstep(-30.0, -10.0, relative)
 			share = minf(share, 1.0 - smoothstep(8.0, 30.0, relative))
 			lateral = lerpf(LANE, RoadNetwork.ROAD_HALF_WIDTH + 1.25, share)
-	var map_data := MapLoader.read_json("res://data/maps/city_01.json")
+	var map_data := _city_map()
 	for car: Dictionary in map_data["parked_cars"]:
 		var spot: Vector2 = _city.network.sample(car["road"], car["along"], 2.75, car["dir"])["position"]
 		if point.distance_to(spot) < 26.0 and (spot - point).dot(right) > 0.0:
 			lateral = minf(lateral, 0.45)
-	var forward := Vector2(right.y, -right.x)
 	for line: Dictionary in map_data["cone_lines"]:
 		var from: Vector2 = _city.network.sample(line["road"], line["from"], line["lateral"], line["dir"])["position"]
 		var to: Vector2 = _city.network.sample(line["road"], line["to"], line["lateral"], line["dir"])["position"]
@@ -261,6 +263,12 @@ func _lateral_at(along: float, point: Vector2, right: Vector2) -> float:
 		if same_way and Geometry2D.get_closest_point_to_segment(point, from, to).distance_to(point) < 20.0:
 			lateral = 0.0
 	return lateral
+
+
+func _city_map() -> Dictionary:
+	if _map_data.is_empty():
+		_map_data = MapLoader.read_map_of(MapLoader.read_json(Profile.selected_item(Catalog.ROUTES)["file"]))
+	return _map_data
 
 
 func _speed_at(index: int) -> float:
@@ -334,9 +342,10 @@ func _apply_roundabouts() -> void:
 func _circle_island(first: int, last: int, centre: Vector2) -> void:
 	var from_angle := (_path[first] - centre).angle()
 	var to_angle := (_path[last] - centre).angle()
-	while to_angle >= from_angle:
-		to_angle -= TAU
-	var steps := ceili((from_angle - to_angle) * ROUNDABOUT_RING / 3.0)
+	var spin := float(_city.network.traffic_side)
+	while (to_angle - from_angle) * spin >= 0.0:
+		to_angle -= TAU * spin
+	var steps := ceili(absf(from_angle - to_angle) * ROUNDABOUT_RING / 3.0)
 	var ring := PackedVector2Array()
 	var speeds := PackedFloat32Array()
 	for step in steps + 1:

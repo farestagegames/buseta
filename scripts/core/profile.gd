@@ -15,6 +15,7 @@ var _path: String = SAVE_PATH
 func _ready() -> void:
 	load_from(_path)
 	GameSettings.changed.connect(_on_settings_changed)
+	Country.pack_changed.connect(_on_pack_changed)
 
 
 ## Tests use this to keep away from the real save.
@@ -64,6 +65,10 @@ func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_APPLICATION_FOCUS_OUT:
 			save()
+
+
+func _on_pack_changed() -> void:
+	catalog = Catalog.new()
 
 
 func _apply_settings() -> void:

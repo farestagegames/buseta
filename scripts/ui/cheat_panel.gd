@@ -4,7 +4,7 @@ extends ColorRect
 
 signal changed
 
-const LEVEL_NOTE := "%d coins, level %d"
+const LEVEL_NOTE := "%s, level %d"
 
 var _status: Label
 
@@ -39,8 +39,8 @@ func _ready() -> void:
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
-	grid.add_child(_cheat("+1,000 coins", Cheats.add_coins.bind(1000)))
-	grid.add_child(_cheat("+10,000 coins", Cheats.add_coins.bind(10000)))
+	grid.add_child(_cheat("+" + Country.pack.money(1000), Cheats.add_coins.bind(1000)))
+	grid.add_child(_cheat("+" + Country.pack.money(10000), Cheats.add_coins.bind(10000)))
 	grid.add_child(_cheat("+1 level", Cheats.add_levels.bind(1)))
 	grid.add_child(_cheat("+5 levels", Cheats.add_levels.bind(5)))
 	column.add_child(grid)
@@ -69,7 +69,7 @@ func _apply(action: Callable) -> void:
 
 
 func _refresh() -> void:
-	_status.text = LEVEL_NOTE % [Profile.data.coins, DriverLevel.level_for(Profile.data.xp)]
+	_status.text = LEVEL_NOTE % [Country.pack.money(Profile.data.coins), DriverLevel.level_for(Profile.data.xp)]
 
 
 func _button(text: String) -> Button:

@@ -48,7 +48,7 @@ var _reverse_timer: float = 0.0
 
 func _ready() -> void:
 	for key: String in SOUNDS:
-		_streams[key] = load(SOUNDS[key])
+		_streams[key] = load(Country.pack.sound(key, SOUNDS[key]))
 	_engine = _make_loop("engine", -22.0)
 	_horn = _make_loop("horn", -13.0)
 	_engine.play()

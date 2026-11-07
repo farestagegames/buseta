@@ -1,6 +1,6 @@
 {
   "name": "Route 1: Northfield Loop",
-  "map": "res://data/maps/city_01.json",
+  "map": "res://data/packs/colombia/maps/puerto_marisol.json",
   "start": {"road": "depot_road", "along": 35, "lateral": 1.9, "dir": 1},
   "legs": [
     {"road": "depot_road", "dir": 1},

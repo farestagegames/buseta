@@ -17,6 +17,7 @@ const BAY_LENGTH := 32.0
 const BAY_DEPTH := 3.3
 const BAY_TAPER := 10.0
 
+var traffic_side: int = 1 ## 1 where traffic keeps right, -1 where it keeps left.
 var nodes: Dictionary = {} ## id to {id, position, kind, radius, island}
 var roads: Dictionary = {} ## id to {id, from, to, points, lengths, length}
 
@@ -24,8 +25,9 @@ var _capsules: Array[Dictionary] = [] ## a, b, radius
 var _grid: Dictionary = {} ## Cell key to PackedInt32Array of capsule indices.
 
 
-static func from_data(data: Dictionary) -> RoadNetwork:
+static func from_data(data: Dictionary, side: int = 1, default_limit: float = DEFAULT_SPEED_LIMIT) -> RoadNetwork:
 	var network := RoadNetwork.new()
+	network.traffic_side = side
 	for entry: Dictionary in data["nodes"]:
 		network.add_node(entry["id"], Vector2(entry["x"], entry["z"]), entry.get("kind", "junction"),
 			entry.get("radius", JUNCTION_RADIUS), entry.get("island", 0.0))
@@ -34,7 +36,7 @@ static func from_data(data: Dictionary) -> RoadNetwork:
 		for point: Array in entry.get("via", []):
 			via.append(Vector2(point[0], point[1]))
 		network.add_road(entry["id"], entry["from"], entry["to"], via)
-		network.roads[entry["id"]]["speed_limit"] = entry.get("speed_limit", DEFAULT_SPEED_LIMIT)
+		network.roads[entry["id"]]["speed_limit"] = entry.get("speed_limit", default_limit)
 		network.roads[entry["id"]]["traffic"] = entry.get("traffic", true)
 	return network
 
@@ -57,10 +59,13 @@ func add_road(id: String, from_node: String, to_node: String, via: Array[Vector2
 		"length": lengths[lengths.size() - 1]}
 
 
-## Road space to world. along is metres from the road's first node. lateral is
-## metres to the right of travel. dir 1 travels first node to last, -1 reverses.
+## Road space to world. along is metres from the road's first node.
+## Given a dir, 1 travelling first node to last or -1 reversed, lateral is metres
+## towards the kerb that traffic keeps to, so everything placed this way swaps
+## sides in a left-hand country. With no dir, lateral is metres to the right of
+## the road's own direction.
 ## Returns {position: Vector2, forward: Vector2, heading: float}.
-func sample(road_id: String, along: float, lateral: float = 0.0, dir: int = 1) -> Dictionary:
+func sample(road_id: String, along: float, lateral: float = 0.0, dir: int = 0) -> Dictionary:
 	var road: Dictionary = roads[road_id]
 	var points: PackedVector2Array = road["points"]
 	var lengths: PackedFloat32Array = road["lengths"]
@@ -71,9 +76,10 @@ func sample(road_id: String, along: float, lateral: float = 0.0, dir: int = 1) -
 	var span := lengths[index + 1] - lengths[index]
 	var share := (distance - lengths[index]) / span if span > 0.0 else 0.0
 	var centre := points[index].lerp(points[index + 1], share)
-	var forward := (points[index + 1] - points[index]).normalized() * float(dir)
+	var forward := (points[index + 1] - points[index]).normalized() * float(1 if dir == 0 else dir)
 	var right := Vector2(-forward.y, forward.x)
-	return {"position": centre + right * lateral, "forward": forward, "heading": heading_of(forward)}
+	var kerb_side := 1.0 if dir == 0 else float(traffic_side)
+	return {"position": centre + right * lateral * kerb_side, "forward": forward, "heading": heading_of(forward)}
 
 
 static func heading_of(forward: Vector2) -> float:

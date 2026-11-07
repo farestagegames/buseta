@@ -7,12 +7,12 @@ var map_data: Dictionary
 
 func before_each() -> void:
 	catalog = Catalog.new()
-	map_data = MapLoader.read_json("res://data/maps/city_01.json")
+	map_data = MapLoader.read_json("res://data/packs/colombia/maps/puerto_marisol.json")
 
 
 func _build(item: Dictionary) -> RouteRunner:
 	var data := MapLoader.read_json(item["file"])
-	return RouteRunner.build(data, RoadNetwork.from_data(MapLoader.read_json(data["map"])))
+	return RouteRunner.build(data, RoadNetwork.from_data(MapLoader.read_map_of(data)))
 
 
 func test_game_launches_with_four_routes_that_cost_more_as_they_go() -> void:

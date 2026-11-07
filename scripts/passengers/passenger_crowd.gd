@@ -18,25 +18,8 @@ const PERSONAL_SPACE := 0.62
 const LOOK_VARIETY := 18
 const LOOK_PACES: Array[float] = [1.0, 1.05, 0.95, 1.1, 1.0, 0.65, 1.0, 1.05, 0.95, 1.1, 1.0, 0.65, 1.0, 1.05, 0.95, 1.1, 1.0, 0.65]
 
-const SKINS: Array[Color] = [
-	Color(0.93, 0.77, 0.65), Color(0.85, 0.66, 0.52), Color(0.68, 0.48, 0.34),
-	Color(0.48, 0.32, 0.22), Color(0.33, 0.22, 0.16),
-]
-const HAIRS: Array[Color] = [
-	Color(0.12, 0.09, 0.07), Color(0.3, 0.2, 0.12), Color(0.55, 0.38, 0.18),
-	Color(0.72, 0.6, 0.35), Color(0.75, 0.75, 0.76), Color(0.45, 0.2, 0.1),
-]
-const TOPS: Array[Color] = [
-	Color(0.2, 0.4, 0.75), Color(0.8, 0.3, 0.25), Color(0.25, 0.55, 0.4), Color(0.85, 0.65, 0.2),
-	Color(0.55, 0.35, 0.65), Color(0.28, 0.3, 0.36), Color(0.85, 0.85, 0.82), Color(0.5, 0.32, 0.22),
-	Color(0.15, 0.55, 0.6), Color(0.75, 0.45, 0.55),
-]
-const TROUSERS: Array[Color] = [
-	Color(0.16, 0.2, 0.32), Color(0.1, 0.1, 0.12), Color(0.42, 0.36, 0.28),
-	Color(0.3, 0.32, 0.36), Color(0.55, 0.5, 0.42),
-]
 const SHOE := Color(0.08, 0.08, 0.09)
-const BAG_COLOURS: Array[Color] = [Color(0.2, 0.2, 0.22), Color(0.5, 0.3, 0.16), Color(0.7, 0.25, 0.25), Color(0.2, 0.35, 0.5)]
+const OLDER_HAIR := Color(0.75, 0.75, 0.76)
 
 ## Spawned walkers in each role, in order. Public for tests.
 var waiting: Array[Walker] = []
@@ -47,6 +30,7 @@ var getting_off: Array[Walker] = [] ## On the bus, heading for the door.
 
 var _route: RouteRunner
 var _visual: BusVisual
+var _kerb_side: float = 1.0 ## Which side of the bus the pavement is on.
 var _cabin: CabinLayout
 var _ground: GroundSurface
 var _pool: Array[Walker] = []
@@ -144,6 +128,7 @@ func setup(route: RouteRunner, ground: GroundSurface, visual: BusVisual) -> void
 	_ground = ground
 	_visual = visual
 	_cabin = visual.cabin
+	_kerb_side = float(visual.spec.door_side)
 	_random.seed = 77
 	_build_meshes()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
@@ -258,14 +243,14 @@ func _spawn_waiting(stop: RouteStop) -> void:
 	waiting.clear()
 	_queueing = false
 	var forward := stop.forward()
-	var right := Vector2(-forward.y, forward.x)
+	var right := Vector2(-forward.y, forward.x) * _kerb_side
 	for i in mini(stop.waiting, MAX_WAITING):
 		var spot := stop.position + right * (RoadNetwork.BAY_DEPTH / 2.0 + 1.3 + _random.randf_range(0.0, 1.2)) \
 			+ forward * (float(i) * 1.1 - 4.0)
 		var walker := _take_walker()
 		walker.position = Vector3(spot.x, _ground.height_at(spot), spot.y)
 		walker.target = walker.position
-		walker.base_yaw = stop.heading + PI / 2.0
+		walker.base_yaw = stop.heading + PI / 2.0 * _kerb_side
 		walker.rotation.y = walker.base_yaw
 		waiting.append(walker)
 
@@ -275,7 +260,7 @@ func _queue_point(place: int) -> Vector3:
 	if stop == null:
 		return _door
 	var forward := stop.forward()
-	var right := Vector2(-forward.y, forward.x)
+	var right := Vector2(-forward.y, forward.x) * _kerb_side
 	var spot := Vector2(_door.x, _door.z) + right * 0.6 - forward * (float(place + 1) * QUEUE_GAP)
 	return Vector3(spot.x, _door.y, spot.y)
 
@@ -329,7 +314,7 @@ func _on_alighted(_stop_index: int) -> void:
 func _walk_away(walker: Walker) -> void:
 	walker.reparent(self, false)
 	walker.position = _door
-	var right := Vector2(-_bus_forward.y, _bus_forward.x)
+	var right := Vector2(-_bus_forward.y, _bus_forward.x) * _kerb_side
 	var goal := Vector2(_door.x, _door.z) + right * _random.randf_range(2.6, 4.0) + _bus_forward * _random.randf_range(3.0, 10.0)
 	walker.target = Vector3(goal.x, _door.y, goal.y)
 	leaving.append(walker)
@@ -402,18 +387,25 @@ func _limb(mesh: ArrayMesh, pivot: Vector3) -> Node3D:
 	return joint
 
 
-func _pick(colours: Array[Color]) -> Color:
-	return colours[_random.randi_range(0, colours.size() - 1)]
+func _pick(colours: Array) -> Color:
+	var value: Array = colours[_random.randi_range(0, colours.size() - 1)]
+	return Color(value[0], value[1], value[2])
 
 
 ## A fixed set of people, mixing skin, hair, clothes, build and what they carry.
 func _build_meshes() -> void:
 	var material := LowPolyBuilder.vertex_colour_material()
+	var designs := Country.pack.passengers()
+	var skins: Array = designs["skins"]
+	var hairs: Array = designs["hairs"]
+	var tops: Array = designs["tops"]
+	var lowers: Array = designs["lowers"]
+	var bags: Array = designs["bags"]
 	for i in LOOK_VARIETY:
-		var top := _pick(TOPS)
-		var skin := _pick(SKINS)
+		var top := _pick(tops)
+		var skin := _pick(skins)
 		var older := i % 6 == 5
-		var hair := HAIRS[4] if older else _pick(HAIRS)
+		var hair := OLDER_HAIR if older else _pick(hairs)
 		var long_hair := i % 3 == 1
 		var wears_skirt := i % 6 == 1
 		var b := LowPolyBuilder.new()
@@ -429,15 +421,15 @@ func _build_meshes() -> void:
 		if long_hair:
 			b.box(Vector3(0.0, 1.57, 0.12), Vector3(0.24, 0.32, 0.05), hair)
 		if wears_skirt:
-			b.box(Vector3(0.0, 0.78, 0.0), Vector3(0.42, 0.38, 0.28), _pick(TROUSERS))
+			b.box(Vector3(0.0, 0.78, 0.0), Vector3(0.42, 0.38, 0.28), _pick(lowers))
 		match i % 5:
 			1:
-				b.box(Vector3(0.0, 1.27, 0.17), Vector3(0.32, 0.42, 0.12), _pick(BAG_COLOURS))
+				b.box(Vector3(0.0, 1.27, 0.17), Vector3(0.32, 0.42, 0.12), _pick(bags))
 			2:
-				b.box(Vector3(0.33, 0.95, 0.0), Vector3(0.1, 0.24, 0.26), _pick(BAG_COLOURS))
+				b.box(Vector3(0.33, 0.95, 0.0), Vector3(0.1, 0.24, 0.26), _pick(bags))
 			3:
-				b.box(Vector3(0.0, 1.92, 0.0), Vector3(0.25, 0.08, 0.26), _pick(TOPS))
-				b.box(Vector3(0.0, 1.89, -0.13), Vector3(0.22, 0.03, 0.1), _pick(TOPS))
+				b.box(Vector3(0.0, 1.92, 0.0), Vector3(0.25, 0.08, 0.26), _pick(tops))
+				b.box(Vector3(0.0, 1.89, -0.13), Vector3(0.22, 0.03, 0.1), _pick(tops))
 		if older:
 			b.box(Vector3(0.36, 0.5, -0.1), Vector3(0.04, 1.0, 0.04), Color(0.3, 0.2, 0.12))
 		_body_meshes.append(b.build(material))
@@ -445,7 +437,8 @@ func _build_meshes() -> void:
 		arm.box(Vector3(0.0, -0.22, 0.0), Vector3(0.1, 0.46, 0.11), top)
 		arm.box(Vector3(0.0, -0.5, 0.0), Vector3(0.09, 0.12, 0.1), skin)
 		_arm_meshes.append(arm.build(material))
-	for colour in TROUSERS:
+	for lower: Array in lowers:
+		var colour := Color(lower[0], lower[1], lower[2])
 		var leg := LowPolyBuilder.new()
 		leg.box(Vector3(0.0, -0.39, 0.0), Vector3(0.16, 0.74, 0.18), colour)
 		leg.box(Vector3(0.0, -0.8, -0.03), Vector3(0.16, 0.1, 0.26), SHOE)

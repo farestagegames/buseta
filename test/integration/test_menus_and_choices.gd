@@ -43,7 +43,7 @@ func test_selected_livery_paints_the_bus() -> void:
 	add_child_autofree(city)
 	var bus: BusController = city.get_node("Bus")
 	assert_almost_eq(bus.spec.body_colour.g, 0.42, 0.01)
-	var stock: BusSpec = load("res://data/buses/city_bus.tres")
+	var stock: BusSpec = load("res://data/packs/colombia/buses/city_bus.tres")
 	assert_ne(stock.body_colour, bus.spec.body_colour, "Must not repaint the shared bus data")
 
 
@@ -57,7 +57,7 @@ func test_midi_bus_is_shorter_and_turns_tighter() -> void:
 	assert_eq(bus.spec.display_name, "Midi 10")
 	assert_lt(bus.spec.overall_length(), 11.0)
 	var midi_radius := bus.spec.wheelbase / tan(deg_to_rad(bus.spec.max_steer_degrees))
-	var big: BusSpec = load("res://data/buses/city_bus.tres")
+	var big: BusSpec = load("res://data/packs/colombia/buses/city_bus.tres")
 	assert_lt(midi_radius, big.wheelbase / tan(deg_to_rad(big.max_steer_degrees)))
 	var system: RouteSystem = city.get_node("RouteSystem")
 	assert_eq(system.ledger.capacity, 30)
@@ -95,7 +95,7 @@ func _settings_tab() -> SettingsPanel:
 
 func test_language_is_a_dropdown_listing_every_language() -> void:
 	var settings: SettingsPanel = await _settings_tab()
-	assert_eq(settings.language_picker.item_count, Lang.LANGUAGES.size())
+	assert_eq(settings.language_picker.item_count, Country.pack.languages().size())
 	assert_eq(settings.language_picker.get_item_text(4), "हिन्दी", "Names stay in their own script")
 
 

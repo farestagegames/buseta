@@ -14,6 +14,11 @@ static func read_json(path: String) -> Dictionary:
 	return parsed
 
 
+## The map a route runs on, wherever its country pack keeps it.
+static func read_map_of(route_data: Dictionary) -> Dictionary:
+	return read_json(Country.pack.resolve(route_data["map"]))
+
+
 static func build_ground(map_data: Dictionary, network: RoadNetwork) -> GroundSurface:
 	var ground := GroundSurface.new()
 	ground.network = network

@@ -14,8 +14,8 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 
 | # | Item | State | Tag | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | Country packs | In progress | | |
-| 2 | Colombian city | Not started | | |
+| 1 | Country packs | Done | `milestone-country-packs` | Colombia pack, left-hand Testland fixture, autopilot drove a full left-hand shift |
+| 2 | Colombian city | In progress | | |
 | 3 | Colombian buses and liveries | Not started | | Includes the old bus customisation item |
 | 4 | Colombian gameplay | Not started | | Includes the old passenger behaviours item |
 | 5 | Drivers and passengers | Not started | | |

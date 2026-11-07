@@ -1384,5 +1384,40 @@
 "A lenda da garagem. Quarenta anos sem um arranhão.",
 "डिपो की मिसाल। चालीस साल, एक खरोंच तक नहीं।",
 "أسطورة المرآب. أربعون عامًا بلا خدش."
+],
+"%s earned": [
+"%s gagnés",
+"%s ganados",
+"%s ganhos",
+"%s कमाए",
+"ربحت %s"
+],
+"Reward: %s": [
+"Récompense : %s",
+"Premio: %s",
+"Prêmio: %s",
+"इनाम: %s",
+"الجائزة: %s"
+],
+"Daily challenge done: +%s": [
+"Défi du jour réussi : +%s",
+"Reto del día cumplido: +%s",
+"Desafio do dia concluído: +%s",
+"आज की चुनौती पूरी: +%s",
+"اكتمل التحدي اليومي: +%s"
+],
+"Buy %s": [
+"Acheter %s",
+"Comprar %s",
+"Comprar %s",
+"%s में खरीदें",
+"اشترِ %s"
+],
+"mph": [
+"mph",
+"mph",
+"mph",
+"मील/घं",
+"ميل/س"
 ]
 }

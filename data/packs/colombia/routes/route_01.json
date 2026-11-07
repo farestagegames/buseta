@@ -1,0 +1,25 @@
+{
+  "name": "Route 1: Northfield Loop",
+  "map": "maps/puerto_marisol.json",
+  "start": {"road": "depot_road", "along": 35, "lateral": 1.9, "dir": 1},
+  "legs": [
+    {"road": "depot_road", "dir": 1},
+    {"road": "mill_lane", "dir": 1},
+    {"road": "market_street", "dir": 1},
+    {"road": "river_road", "dir": 1},
+    {"road": "high_street", "dir": 1},
+    {"road": "station_road", "dir": 1},
+    {"road": "park_avenue", "dir": 1},
+    {"road": "depot_road", "dir": -1}
+  ],
+  "stops": [
+    {"name": "Mill Lane", "due": 53, "road": "mill_lane", "along": 125, "dir": 1, "waiting": 4},
+    {"name": "Market Square", "due": 130, "road": "market_street", "along": 95, "dir": 1, "waiting": 6},
+    {"name": "Riverside", "due": 184, "road": "river_road", "along": 130, "dir": 1, "waiting": 3},
+    {"name": "Hill Top", "due": 218, "road": "river_road", "along": 285, "dir": 1, "waiting": 4},
+    {"name": "Town Hall", "due": 285, "road": "high_street", "along": 145, "dir": 1, "waiting": 5},
+    {"name": "Railway Station", "due": 356, "road": "station_road", "along": 150, "dir": 1, "waiting": 6},
+    {"name": "Park Gates", "due": 415, "road": "park_avenue", "along": 165, "dir": 1, "waiting": 0},
+    {"name": "Depot", "due": 470, "road": "depot_road", "along": 80, "dir": -1, "waiting": 0, "final": true}
+  ]
+}

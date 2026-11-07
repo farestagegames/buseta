@@ -60,7 +60,7 @@ func test_coin_cheat_reaches_the_save_and_the_menu_header() -> void:
 	panel._apply(Cheats.add_coins.bind(1000))
 	await wait_frames(2)
 	assert_eq(Profile.data.coins, 1000)
-	assert_string_contains(menu._coins_label.text, "1000")
+	assert_eq(menu._coins_label.text, Country.pack.money(1000))
 	assert_eq(PlayerProfile.from_dict(SaveStore.read("user://test_save_cheats.json")).coins, 1000)
 
 

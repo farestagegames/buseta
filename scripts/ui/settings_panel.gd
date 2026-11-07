@@ -97,14 +97,14 @@ func _add_language(box: Container) -> void:
 	language_picker.add_theme_font_size_override("font_size", 24)
 	# Opens when the finger lifts, so scrolling past it does not open it by mistake.
 	language_picker.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
-	for language: Dictionary in Lang.LANGUAGES:
+	for language: Dictionary in Country.pack.languages():
 		language_picker.add_item(language["name"])
 	language_picker.item_selected.connect(_on_language_chosen)
 	box.add_child(language_picker)
 
 
 func _on_language_chosen(index: int) -> void:
-	GameSettings.language = Lang.LANGUAGES[index]["code"]
+	GameSettings.language = Country.pack.languages()[index]["code"]
 
 
 func _add_graphics(box: Container) -> void:
@@ -200,8 +200,9 @@ func _refresh() -> void:
 	for i in _mode_buttons.size():
 		_mode_buttons[i].set_pressed_no_signal(i == int(GameSettings.steering_mode))
 	var chosen := Lang.resolve(GameSettings.language, OS.get_locale_language())
-	for i in Lang.LANGUAGES.size():
-		if Lang.LANGUAGES[i]["code"] == chosen:
+	var languages := Country.pack.languages()
+	for i in languages.size():
+		if languages[i]["code"] == chosen:
 			language_picker.select(i)
 	for level: int in _quality_buttons:
 		(_quality_buttons[level] as Button).set_pressed_no_signal(level == GameSettings.graphics_quality)

@@ -5,11 +5,6 @@ extends Node
 
 const PATH := "res://data/lang/strings.json"
 const LOCALES: Array[String] = ["fr", "es", "pt", "hi", "ar"] ## Order of each entry in the file.
-const LANGUAGES: Array[Dictionary] = [
-	{"code": "en", "name": "English"}, {"code": "fr", "name": "Français"},
-	{"code": "es", "name": "Español"}, {"code": "pt", "name": "Português"},
-	{"code": "hi", "name": "हिन्दी"}, {"code": "ar", "name": "العربية"},
-]
 const HINDI_FONT := "res://assets/fonts/NotoSansDevanagari-Regular.ttf"
 const ARABIC_FONT := "res://assets/fonts/NotoSansArabic-Regular.ttf"
 
@@ -30,12 +25,13 @@ func apply() -> void:
 		TranslationServer.set_locale(wanted)
 
 
+## The player's choice, then the phone's language, then the country's own.
 static func resolve(setting: String, phone_language: String) -> String:
 	var choice := setting if setting != "" else phone_language
-	for language: Dictionary in LANGUAGES:
+	for language: Dictionary in Country.pack.languages():
 		if language["code"] == choice:
 			return choice
-	return "en"
+	return Country.pack.data["default_language"]
 
 
 func _load_translations() -> void:

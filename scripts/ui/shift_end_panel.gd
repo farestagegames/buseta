@@ -121,7 +121,7 @@ func show_report(report: Dictionary) -> void:
 	var minutes := int(report["time"]) / 60
 	var seconds := int(report["time"]) % 60
 	_headline.text = tr("Shift complete: %d points in %d:%02d") % [report["score"], minutes, seconds]
-	_coins.text = tr("%d coins earned") % report["coins"]
+	_coins.text = tr("%s earned") % Country.pack.money(report["coins"])
 	var categories: Dictionary = report["categories"]
 	for key: String in _bars:
 		(_bars[key] as ProgressBar).value = categories[key]
@@ -141,7 +141,7 @@ func _reward_lines(rewards: Dictionary) -> String:
 	if rewards["new_best"]:
 		lines.append(tr("New best score!"))
 	if int(rewards["daily_coins"]) > 0:
-		lines.append(tr("Daily challenge done: +%d coins") % rewards["daily_coins"])
+		lines.append(tr("Daily challenge done: +%s") % Country.pack.money(rewards["daily_coins"]))
 	for entry: Dictionary in rewards["achievements"]:
 		lines.append(tr("Achievement: %s") % tr(entry["name"]))
 	return "   ".join(lines)
@@ -153,7 +153,7 @@ func _on_double_coins() -> void:
 		if earned:
 			Profile.data.coins += _coins_earned
 			Profile.save()
-			_coins.text = tr("%d coins earned") % (_coins_earned * 2))
+			_coins.text = tr("%s earned") % Country.pack.money(_coins_earned * 2))
 
 
 func _action(text: String) -> Button:

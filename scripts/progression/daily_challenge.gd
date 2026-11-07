@@ -2,12 +2,11 @@ class_name DailyChallenge
 extends RefCounted
 ## The same challenge for everyone on a given date, chosen from a data file.
 
-const PATH := "res://data/daily_challenges.json"
 const REWARD_COINS := 200
 
 
 static func load_list() -> Array:
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(Country.pack.content_path("daily_challenges")))
 	return parsed if parsed is Array else []
 
 

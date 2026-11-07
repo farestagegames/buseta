@@ -11,3 +11,7 @@ One line each, with the reason. Newest at the bottom.
 - Pivot to Colombia received mid-night. Stopped before starting liveries, tagged `milestone-pre-colombia-pivot`, and replaced the remaining backlog as you asked.
 - Boost/arcade level is off tonight's plan: your revised backlog replaces the remaining items and does not list it. It is not rejected, so ask if you want it back.
 - Old map expansion is off the plan: the Colombian city rework replaces it.
+- The city is called Puerto Marisol, from "mar y sol": it sounds Caribbean and no real Colombian city has that name as far as I know.
+- Money keeps its internal unit, and each pack sets how much one is worth. In Colombia one coin shows as $100, so a route at 500 reads $50.000 and a fare can be a real-looking $2.900.
+- Packs live in `data/packs/<country>`, and the left-hand test pack lives in `test/fixtures` so it never ships.
+- Colombia keeps all six languages until item 6, so the game stays playable in the meantime.

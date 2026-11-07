@@ -62,8 +62,10 @@ func _notification(what: int) -> void:
 func _draw() -> void:
 	draw_style_box(_style, Rect2(Vector2.ZERO, size))
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(0.0, 62.0), str(_speed_kmh), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 58, Color.WHITE)
-	draw_string(font, Vector2(0.0, 88.0), tr("km/h"), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 20, Color(1, 1, 1, 0.7))
+	var speed := roundi(Country.pack.display_speed(_speed_kmh))
+	var unit := tr("km/h") if Country.pack.speed_unit() == "kmh" else tr("mph")
+	draw_string(font, Vector2(0.0, 62.0), str(speed), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 58, Color.WHITE)
+	draw_string(font, Vector2(0.0, 88.0), unit, HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 20, Color(1, 1, 1, 0.7))
 	draw_string(font, Vector2(size.x * 0.6, 50.0), _gear_text, HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 40, Color(0.98, 0.72, 0.15))
 	draw_string(font, Vector2(size.x * 0.6, 84.0), tr(status_text()), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 18, Color(1, 1, 1, 0.8))
 	if _speed_limit > 0.0:
@@ -71,7 +73,8 @@ func _draw() -> void:
 		var over := float(_speed_kmh) > _speed_limit + DrivingMonitor.SPEED_GRACE_KMH
 		draw_circle(sign_centre, 28.0, Color(1.0, 0.25, 0.2) if over else Color(0.9, 0.12, 0.1))
 		draw_circle(sign_centre, 21.0, Color.WHITE)
-		draw_string(font, sign_centre + Vector2(-21.0, 8.0), str(roundi(_speed_limit)), HORIZONTAL_ALIGNMENT_CENTER, 42.0, 22, Color.BLACK)
+		var limit := roundi(Country.pack.display_speed(_speed_limit))
+		draw_string(font, sign_centre + Vector2(-21.0, 8.0), str(limit), HORIZONTAL_ALIGNMENT_CENTER, 42.0, 22, Color.BLACK)
 	var bar_y := size.y - 8.0
 	var mid := size.x / 2.0
 	draw_line(Vector2(mid - 120.0, bar_y), Vector2(mid + 120.0, bar_y), Color(1, 1, 1, 0.2), 5.0)

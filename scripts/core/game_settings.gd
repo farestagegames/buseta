@@ -36,7 +36,7 @@ var show_performance: bool = false:
 		changed.emit()
 
 
-## A language code from Lang.LANGUAGES. Empty follows the phone's language.
+## A language code from Country.pack.languages(). Empty follows the phone's language.
 var language: String = "":
 	set(value):
 		language = value

@@ -144,14 +144,17 @@ func _curve_points(link: TrafficLane, start: Vector2, into: Vector2, finish: Vec
 
 ## Right-hand traffic circles anticlockwise on the map, so the angle falls.
 func _ring_points(link: TrafficLane, centre: Vector2, start: Vector2, finish: Vector2) -> void:
+	# Traffic circles anticlockwise on the map when it keeps right, and clockwise
+	# when it keeps left.
+	var spin := float(network.traffic_side)
 	var from_angle := (start - centre).angle()
 	var to_angle := (finish - centre).angle()
-	var sweep := wrapf(from_angle - to_angle, 0.0, TAU)
+	var sweep := wrapf((from_angle - to_angle) * spin, 0.0, TAU)
 	if sweep < 0.2:
 		sweep += TAU
 	link.points.append(start)
 	var steps := maxi(int(sweep / 0.25), 4)
 	for i in range(1, steps):
-		var angle := from_angle - sweep * float(i) / float(steps)
+		var angle := from_angle - spin * sweep * float(i) / float(steps)
 		link.points.append(centre + Vector2.RIGHT.rotated(angle) * RING_RADIUS)
 	link.points.append(finish)

@@ -184,9 +184,10 @@ func _gap_to_stop(agent: TrafficAgent, lane: TrafficLane) -> float:
 	return INF
 
 
-## Left turns give way to oncoming traffic going straight on.
+## Turns across the oncoming lane give way to traffic going straight on.
 func _must_yield_turning(agent: TrafficAgent, lane: TrafficLane, remaining: float) -> bool:
-	if agent.next_lane < 0 or (graph.lanes[agent.next_lane] as TrafficLane).turn != -1 or remaining > YIELD_DISTANCE:
+	var across_traffic := -graph.network.traffic_side
+	if agent.next_lane < 0 or (graph.lanes[agent.next_lane] as TrafficLane).turn != across_traffic or remaining > YIELD_DISTANCE:
 		return false
 	var heading := lane.forward_at(lane.length - 0.1)
 	for other in agents:
@@ -342,8 +343,8 @@ func _build_signals() -> void:
 func _build_signal_head(housing: LowPolyBuilder, index: int) -> void:
 	var approach: Dictionary = _approaches[index]
 	var forward: Vector2 = approach["forward"]
-	var right := Vector2(-forward.y, forward.x)
-	var spot: Vector2 = approach["line"] + right * 2.6
+	var kerb := Vector2(-forward.y, forward.x) * float(graph.network.traffic_side)
+	var spot: Vector2 = approach["line"] + kerb * 2.6
 	var y := _ground.terrain_height(spot)
 	var yaw := RoadNetwork.heading_of(forward)
 	var pole := Color(0.15, 0.16, 0.18)

@@ -24,11 +24,31 @@ Tilt sensor, keyboard  ---------------------->        |
                                  BusVisual, CameraRig, HudGauge, later scoring
 ```
 
+## Country packs
+
+A country is a folder in `data/packs`, with `pack.json` at its root. It sets the
+driving side, road rules, signage, currency, languages, sounds and radio, and points
+to the catalog of routes, buses, liveries and drivers, plus passenger designs,
+achievements and daily challenges. `Country.pack` is the live pack and
+`CountryPack.validate()` lists anything wrong with one. Paths in a pack are relative
+to its folder unless they start with `res://`.
+
+Left-hand driving needs no special code. `RoadNetwork.sample` takes a `dir` for
+anything placed relative to traffic, and then `lateral` means "towards the kerb
+traffic keeps to", so lanes, bays, parked cars and cones all swap sides together.
+`BusSpec.keep_to_side` mirrors the door and driver, and `LaneGraph` turns the
+roundabouts the other way. `test/fixtures/packs/testland` is a small left-hand pack
+that proves this. Its tests run a real stop, and the autopilot can drive it:
+
+```bash
+AUTOPILOT_PACK=res://test/fixtures/packs/testland/pack.json AUTOPILOT_ROUTE=test_loop AUTOPILOT_BUS=test_bus tools/autopilot.sh
+```
+
 ## Modules
 
 | Folder | Contents |
 | --- | --- |
-| `scripts/core` | `GameEvents` signal bus, `GameSettings` player settings |
+| `scripts/core` | `GameEvents` signal bus, `GameSettings` player settings, `CountryPack` and the `Country` autoload |
 | `scripts/vehicle` | `BusSpec` data, `BusPhysicsModel` handling, `AutomaticGearbox`, `BusDoors`, `BusIndicators`, `BusController` scene wrapper, `BusVisual` |
 | `scripts/input` | `SteeringMapper` for all three steering modes, `WheelTracker`, `DriverInputRouter` |
 | `scripts/camera` | `CameraRig` with cockpit, close and far views |

@@ -6,8 +6,8 @@ var graph: LaneGraph
 
 
 func _city() -> Dictionary:
-	var route: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/routes/route_01.json"))
-	return JSON.parse_string(FileAccess.get_file_as_string(route["map"]))
+	var route: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/packs/colombia/routes/route_01.json"))
+	return MapLoader.read_map_of(route)
 
 
 func before_each() -> void:

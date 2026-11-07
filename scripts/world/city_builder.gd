@@ -45,6 +45,7 @@ var building_count: int = 0
 var lamp_spots: Array[Dictionary] = [] ## position and yaw, for ObstacleField.
 
 var _network: RoadNetwork
+var _keep: float = 1.0 ## 1 where traffic keeps right, -1 where it keeps left.
 var _ground: GroundSurface
 var _random := RandomNumberGenerator.new()
 var _solid: StaticBody3D
@@ -64,6 +65,7 @@ var _signs: Array[Dictionary] = []
 
 func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, route: RouteRunner) -> void:
 	_network = network
+	_keep = float(network.traffic_side)
 	_ground = ground
 	_height_of = ground.terrain_height
 	_random.seed = 1187
@@ -264,13 +266,15 @@ func _junction_lines(road: Dictionary) -> void:
 	var finish: Dictionary = _network.nodes[road["to"]]
 	var start_gap: float = float(start["radius"]) + ZEBRA_GAP
 	var end_at: float = length - float(finish["radius"]) - ZEBRA_GAP
+	var near := minf(0.1 * _keep, (RoadNetwork.ROAD_HALF_WIDTH - 0.2) * _keep)
+	var far := maxf(0.1 * _keep, (RoadNetwork.ROAD_HALF_WIDTH - 0.2) * _keep)
 	if start["kind"] != "terminal":
 		var line_at := float(start["radius"]) + LaneGraph.STOP_LINE_GAP
-		_strip(_lines, road["id"], line_at - 0.4, line_at, -RoadNetwork.ROAD_HALF_WIDTH + 0.2, -0.1, LINE)
+		_strip(_lines, road["id"], line_at - 0.4, line_at, -far, -near, LINE)
 		_zebra(road["id"], start_gap)
 	if finish["kind"] != "terminal":
 		var line_at := length - float(finish["radius"]) - LaneGraph.STOP_LINE_GAP
-		_strip(_lines, road["id"], line_at, line_at + 0.4, 0.1, RoadNetwork.ROAD_HALF_WIDTH - 0.2, LINE)
+		_strip(_lines, road["id"], line_at, line_at + 0.4, near, far, LINE)
 		_zebra(road["id"], end_at - 3.0)
 
 
@@ -300,7 +304,7 @@ func _bay(b: LowPolyBuilder, stop: RouteStop) -> void:
 	var edge := RoadNetwork.ROAD_HALF_WIDTH - 0.1
 	var from := stop.along - half
 	var to := stop.along + half
-	var side := float(stop.dir)
+	var side := float(stop.dir) * _keep
 	var inner := edge * side
 	var outer := (edge + depth) * side
 	var walk := (edge + depth + 3.2) * side
@@ -364,7 +368,7 @@ func _feature_visual(feature: Dictionary) -> void:
 ## Painted bars across the lane and a warning sign, so a bump is never a surprise.
 ## approach is -1 for traffic heading along the road, and 1 for the opposite way.
 func _bump_warning(road_id: String, along: float, approach: float) -> void:
-	var side := -approach
+	var side := -approach * _keep
 	for i in 3:
 		var at := along + approach * float(i) * 2.2
 		var low := minf(0.15 * side, 3.4 * side)
@@ -392,13 +396,20 @@ func _build_scenery(b: LowPolyBuilder, route: RouteRunner) -> LowPolyBuilder:
 		var y: float = sign_data["y"]
 		var yaw: float = sign_data["yaw"]
 		b.turned_box(_at(spot, y + 1.3), Vector3(0.09, 2.6, 0.09), yaw, Color(0.25, 0.26, 0.28))
-		b.turned_box(_at(spot, y + 2.6), Vector3(0.75, 0.75, 0.05), yaw + PI / 4.0, YELLOW)
+		_warning_sign(b, spot, y + 2.6, yaw)
 	return b
+
+
+## A diamond in Colombia. Each country's pack picks its own shape and colour.
+func _warning_sign(b: LowPolyBuilder, spot: Vector2, height: float, yaw: float) -> void:
+	var colour := Country.pack.colour("signage", "warning_colour", YELLOW)
+	var tilt := PI / 4.0 if Country.pack.data["signage"].get("warning_shape") == "diamond" else 0.0
+	b.turned_box(_at(spot, height), Vector3(0.75, 0.75, 0.05), yaw + tilt, colour)
 
 
 func _shelter(b: LowPolyBuilder, stop: RouteStop) -> void:
 	var forward := stop.forward()
-	var right := Vector2(-forward.y, forward.x)
+	var right := Vector2(-forward.y, forward.x) * _keep
 	var spot := stop.position + right * (RoadNetwork.BAY_DEPTH / 2.0 + 2.6)
 	var y := _ground.terrain_height(spot)
 	var yaw := stop.heading
@@ -410,7 +421,7 @@ func _shelter(b: LowPolyBuilder, stop: RouteStop) -> void:
 		b.turned_box(_at(spot + forward * end, y + 1.3), Vector3(1.2, 2.4, 0.1), yaw, Color(0.3, 0.42, 0.5))
 	var pole := stop.position + forward * 8.0 + right * (RoadNetwork.BAY_DEPTH / 2.0 + 0.8)
 	b.turned_box(_at(pole, y + 1.6), Vector3(0.12, 3.2, 0.12), yaw, Color(0.2, 0.2, 0.25))
-	b.turned_box(_at(pole, y + 3.1), Vector3(0.1, 0.7, 0.8), yaw, Color(0.1, 0.4, 0.8))
+	b.turned_box(_at(pole, y + 3.1), Vector3(0.1, 0.7, 0.8), yaw, Country.pack.colour("signage", "bus_stop_colour", Color(0.1, 0.4, 0.8)))
 
 
 func _at(point: Vector2, height: float) -> Vector3:

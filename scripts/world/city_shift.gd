@@ -40,6 +40,7 @@ static func chosen_spec() -> BusSpec:
 	var spec: BusSpec = (load(bus_item["file"]) as BusSpec).duplicate()
 	spec.body_colour = _colour(livery["body"])
 	spec.stripe_colour = _colour(livery["stripe"])
+	spec.keep_to_side(Country.pack.traffic_side)
 	return spec
 
 
@@ -53,8 +54,8 @@ static func _colour(values: Array) -> Color:
 
 func _ready() -> void:
 	var route_data := MapLoader.read_json(Profile.selected_item(Catalog.ROUTES)["file"])
-	var map_data := MapLoader.read_json(route_data["map"])
-	network = RoadNetwork.from_data(map_data)
+	var map_data := MapLoader.read_map_of(route_data)
+	network = RoadNetwork.from_data(map_data, Country.pack.traffic_side, Country.pack.default_speed_limit())
 	route = RouteRunner.build(route_data, network)
 	for stop in route.stops:
 		network.add_bay(stop.road, stop.along, stop.dir)

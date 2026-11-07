@@ -1,6 +1,6 @@
 {
   "name": "Route 4: Riverside Tour",
-  "map": "res://data/maps/city_01.json",
+  "map": "maps/puerto_marisol.json",
   "start": {"road": "depot_road", "along": 35, "lateral": 1.9, "dir": 1},
   "legs": [
     {"road": "depot_road", "dir": 1},

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/vehicle/bus_controller.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/vehicle/bus_visual.gd" id="2"]
-[ext_resource type="Resource" path="res://data/buses/city_bus.tres" id="3"]
+[ext_resource type="Resource" path="res://data/packs/colombia/buses/city_bus.tres" id="3"]
 
 [node name="Bus" type="CharacterBody3D"]
 motion_mode = 1

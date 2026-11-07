@@ -71,3 +71,9 @@ func overall_length() -> float:
 ## the body. Negative Z is forward.
 func body_centre_z() -> float:
 	return -(wheelbase + front_overhang - rear_overhang) / 2.0
+
+
+## Doors go on the kerb side and the driver sits by the middle of the road.
+func keep_to_side(side: int) -> void:
+	door_side = side
+	driver_seat_x = -absf(driver_seat_x) * float(side)

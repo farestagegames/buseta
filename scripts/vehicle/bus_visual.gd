@@ -19,18 +19,6 @@ const MIRROR_FACE_SCALE := 0.42
 const DARK := Color(0.1, 0.1, 0.12)
 const TRIM := Color(0.26, 0.27, 0.3)
 const SEAT := Color(0.15, 0.25, 0.5)
-const SHIRTS: Array[Color] = [
-	Color(0.2, 0.4, 0.75), Color(0.8, 0.3, 0.25), Color(0.25, 0.6, 0.4), Color(0.85, 0.65, 0.2),
-	Color(0.55, 0.35, 0.65), Color(0.85, 0.85, 0.85), Color(0.28, 0.3, 0.36), Color(0.15, 0.55, 0.6),
-]
-const SKINS: Array[Color] = [
-	Color(0.93, 0.77, 0.65), Color(0.85, 0.66, 0.52), Color(0.68, 0.48, 0.34),
-	Color(0.48, 0.32, 0.22), Color(0.33, 0.22, 0.16),
-]
-const HAIRS: Array[Color] = [
-	Color(0.12, 0.09, 0.07), Color(0.3, 0.2, 0.12), Color(0.55, 0.38, 0.18),
-	Color(0.72, 0.6, 0.35), Color(0.75, 0.75, 0.76),
-]
 const POLE := Color(0.9, 0.72, 0.15)
 const MACHINE_SCREEN := Color(0.35, 0.85, 0.55)
 const LAMP_OFF_RED := Color(0.35, 0.05, 0.05)
@@ -407,6 +395,7 @@ func _build_riders() -> void:
 	var hair := LowPolyBuilder.new()
 	hair.box(Vector3(0.0, 0.96, 0.01), Vector3(0.23, 0.07, 0.24), Color.WHITE)
 	hair.box(Vector3(0.0, 0.85, 0.1), Vector3(0.23, 0.2, 0.05), Color.WHITE)
+	var designs := Country.pack.passengers()
 	_riders = _rider_batch(torso, order.size())
 	_rider_heads = _rider_batch(head, order.size())
 	_rider_hair = _rider_batch(hair, order.size())
@@ -415,9 +404,14 @@ func _build_riders() -> void:
 		_riders.set_instance_transform(i, place)
 		_rider_heads.set_instance_transform(i, place)
 		_rider_hair.set_instance_transform(i, place)
-		_riders.set_instance_color(i, SHIRTS[i % SHIRTS.size()])
-		_rider_heads.set_instance_color(i, SKINS[i % SKINS.size()])
-		_rider_hair.set_instance_color(i, HAIRS[(i * 3) % HAIRS.size()])
+		_riders.set_instance_color(i, _design_colour(designs["tops"], i))
+		_rider_heads.set_instance_color(i, _design_colour(designs["skins"], i))
+		_rider_hair.set_instance_color(i, _design_colour(designs["hairs"], i * 3))
+
+
+func _design_colour(colours: Array, index: int) -> Color:
+	var value: Array = colours[index % colours.size()]
+	return Color(value[0], value[1], value[2])
 
 
 func _rider_batch(builder: LowPolyBuilder, count: int) -> MultiMesh:
@@ -480,7 +474,7 @@ func _pose_arms(wheel_turn: float) -> void:
 func _build_interior_mirror() -> void:
 	var y := _top_y - 0.5
 	var z := _front_z + 0.4
-	var x := 0.1
+	var x := 0.1 * float(spec.door_side)
 	var b := LowPolyBuilder.new()
 	b.box(Vector3(x, y + 0.2, z), Vector3(0.05, 0.3, 0.05), DARK)
 	b.box(Vector3(x, y, z), Vector3(0.46, 0.21, 0.04), DARK)

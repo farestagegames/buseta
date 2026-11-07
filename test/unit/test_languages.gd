@@ -43,7 +43,7 @@ func _scripts_in(path: String, into: Array[String]) -> void:
 
 
 func test_game_offers_six_languages() -> void:
-	assert_eq(Lang.LANGUAGES.size(), 6)
+	assert_eq(Country.pack.languages().size(), 6)
 
 
 func test_every_entry_has_every_language_and_no_blanks() -> void:
@@ -154,8 +154,8 @@ func test_phone_language_is_followed_until_the_player_chooses() -> void:
 	assert_eq(Lang.resolve("fr", "es"), "fr")
 
 
-func test_unsupported_phone_language_falls_back_to_english() -> void:
-	assert_eq(Lang.resolve("", "de"), "en")
+func test_unsupported_phone_language_falls_back_to_the_countrys_own() -> void:
+	assert_eq(Lang.resolve("", "de"), Country.pack.data["default_language"])
 
 
 func test_fonts_cover_hindi_and_arabic() -> void:
