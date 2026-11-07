@@ -35,13 +35,13 @@ Tilt sensor, keyboard  ---------------------->        |
 | `scripts/ui` | Multi-touch controls, HUD and settings panel |
 | `scripts/world` | `RoadNetwork`, `GroundSurface`, `MapLoader`, `CityBuilder`, `ObstacleField`, `KnockableProp`, `LowPolyBuilder`, `CityShift` level root, `TestGround` |
 | `scripts/route` | `RouteRunner` progress and turn hints, `RouteStop` alignment, `RouteSystem` shift flow |
-| `scripts/passengers` | `PassengerLedger`, `StopSession`, `PassengerCrowd` visuals |
+| `scripts/passengers` | `PassengerLedger`, `StopSession`, `PassengerCrowd` visuals, `CabinLayout` walking paths inside the bus |
 | `scripts/audio` | `AudioDirector`, driven only by events |
 
 | `scripts/scoring` | `ShiftScore` category points, stars and coins, `DrivingMonitor`, `ScoreKeeper` |
 | `scripts/traffic` | `TrafficLightPlan`, `LaneGraph`, `TrafficLane`, `TrafficAgent`, `TrafficSystem` |
 
-| `scripts/progression` | `PlayerProfile`, `SaveStore`, `Catalog`, `ShiftRewards`, `DriverLevel`, `DailyChallenge`, `AchievementList`, `AdProvider`, `ProgressionSystem` |
+| `scripts/progression` | `PlayerProfile`, `SaveStore`, `Catalog`, `ShiftRewards`, `DriverLevel`, `DailyChallenge`, `AchievementList`, `AdProvider`, `ProgressionSystem`, `Cheats` |
 | `scripts/core/profile.gd` | Autoload holding the live profile and saving it |
 | `scripts/core/lang.gd` | Autoload for languages and fonts |
 | `scripts/core/graphics_quality.gd` | Low, medium and high as data, and matching a phone to a level |
@@ -106,8 +106,31 @@ is never penalised, and any valid stop scores at least 60% for accuracy.
 phone only draws what the camera can see. This halved triangles per frame. The cost
 is more draw calls, which is the number to watch on low-end GPUs.
 
-**Languages.** Anything drawn by hand calls `tr()`, and the driving HUD is locked
-left to right, so Arabic mirrors the menus but never moves the wheel or pedals.
+**Languages.** Anything drawn by hand calls `tr()`, and the driving controls are
+locked left to right, so Arabic mirrors the menus, the pause panel and the shift
+report but never moves the wheel or pedals.
+
+**People on the bus.** `StopSession` still decides who boards and when, one person
+at a time, and knows nothing of walking. `PassengerCrowd` then shows it: a boarder
+is reparented to the bus body, follows the `CabinLayout` path past the ticket
+machine, and stops being a walker on reaching their row. `BusVisual` holds that seat
+empty in the rider batch until then, so nobody appears sitting before they arrive.
+`passenger_paid` comes from the crowd, because the sound has to match the moment on
+screen rather than the moment the ledger changed. In the cockpit view `CameraRig`
+turns the driver's head to the doorway while the doors are open.
+
+**Reports that always fit.** The shift report keeps its buttons in a column of
+fixed height, and everything that can grow scrolls. `test_report_fits` renders the
+longest possible report in every language at a 16:9 phone's height.
+
+**Stop lines behind the zebra.** Cars wait 5.4 m back from a junction, painted and
+driven from one constant, `LaneGraph.STOP_LINE_GAP`. A 12 m bus turning right
+sweeps its nose across the opposite lane, so the gap is what makes tight corners
+fair.
+
+**Cheats in test builds only.** `Cheats.available()` is `OS.is_debug_build()`, so
+the gesture and panels do not exist in a release export. The panels are English
+only, and each cheat is a small function on `PlayerProfile` or `RouteSystem`.
 
 **Autopilot check.** `tools/autopilot.sh` drives a whole shift through the real
 controls. Run it after changing a map, because a route that passes its data tests

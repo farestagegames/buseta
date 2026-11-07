@@ -14,6 +14,8 @@ Shift" is a working title. Traffic drives on the right.
   levels, achievements and menus: done.
 - Phase 5, UI and audio polish, graphics quality, languages, opening scene and
   tutorial: built. Profiling on a low-end phone is still to do.
+- Launch content: four routes, a boarding view from the driver's seat and hidden
+  test cheats.
 - After Phase 5: an arcade bonus level with boosts, kept separate from shifts.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for how the code is organised and
@@ -58,13 +60,27 @@ tools/autopilot.sh
 ```
 
 Set `AUTOPILOT_ROUTE` and `AUTOPILOT_BUS` to a catalog id to test a specific pair.
+The autopilot steers by the rear axle and pulls out of bays without looking, so an
+odd car contact in its report is not always a problem with the route.
+
+## Hidden cheats
+
+Test builds have cheats for skipping ahead. `Cheats.available()` is false in a
+release export, so a store build never offers them.
+
+- Main menu: tap the "City Bus Shift" title seven times, each within about a second
+  of the last, for coins, driver levels and unlocking everything.
+- During a shift: open MENU and tap the "Paused" title seven times for "Skip to next
+  stop" and "Finish shift". A finished shift pays out like a normal one.
 
 ## Adding content
 
 - A map is a JSON file in `data/maps`: nodes, roads, hills, bumps, potholes,
   parked cars and knockable props.
 - A route is a JSON file in `data/routes`: the roads it follows, its stops and
-  when each stop is due, in seconds from the start of the shift.
+  when each stop is due, in seconds from the start of the shift. Set the times
+  from the arrivals `tools/autopilot.sh` prints. Going round a roundabout to an exit
+  on the left takes about 20 seconds longer than going straight on.
 - Each road can set `speed_limit` in km/h, and `traffic: false` to keep cars off it.
 - A bus is a `BusSpec` resource in `data/buses`.
 - `data/catalog.json` lists what can be unlocked and its cost. Add a route, bus or
