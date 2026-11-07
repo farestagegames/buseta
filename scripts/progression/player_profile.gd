@@ -8,7 +8,11 @@ const VERSION := 1
 const DEFAULT_ROUTE := "route_01"
 const DEFAULT_BUS := "buseta_8"
 const DEFAULT_LIVERY := "rojo_caribe"
-const DEFAULT_DRIVER := "sam_reed"
+const DEFAULT_DRIVER := "wilmer_pertuz"
+const DEFAULTS := {
+	Catalog.ROUTES: DEFAULT_ROUTE, Catalog.BUSES: DEFAULT_BUS, Catalog.LIVERIES: DEFAULT_LIVERY,
+	Catalog.DRIVERS: DEFAULT_DRIVER,
+}
 
 var coins: int = 0
 var xp: int = 0
@@ -16,10 +20,7 @@ var owned: Dictionary = {
 	Catalog.ROUTES: [DEFAULT_ROUTE], Catalog.BUSES: [DEFAULT_BUS], Catalog.LIVERIES: [DEFAULT_LIVERY],
 	Catalog.DRIVERS: [DEFAULT_DRIVER],
 }
-var selected: Dictionary = {
-	Catalog.ROUTES: DEFAULT_ROUTE, Catalog.BUSES: DEFAULT_BUS, Catalog.LIVERIES: DEFAULT_LIVERY,
-	Catalog.DRIVERS: DEFAULT_DRIVER,
-}
+var selected: Dictionary = DEFAULTS.duplicate()
 var stats: Dictionary = {
 	"shifts": 0, "passengers": 0, "best_stars": 0, "clean_shifts": 0, "smooth_shifts": 0,
 }
@@ -57,6 +58,20 @@ func grant_free_items(catalog: Catalog) -> void:
 		for item: Dictionary in catalog.items(kind):
 			if int(item["cost"]) == 0 and not owns(kind, item["id"]):
 				(owned[kind] as Array).append(item["id"])
+
+
+## A choice the catalog no longer has, such as a driver from an older version of the
+## game, goes back to the default, or to the first item owned if there is none.
+func repair_choices(catalog: Catalog) -> void:
+	for kind: String in selected:
+		if not catalog.find(kind, selected[kind]).is_empty():
+			continue
+		var fallback: String = DEFAULTS[kind]
+		if catalog.find(kind, fallback).is_empty() or not owns(kind, fallback):
+			var owned_items := catalog.items(kind).filter(func(item: Dictionary) -> bool: return owns(kind, item["id"]))
+			fallback = owned_items[0]["id"] if not owned_items.is_empty() else ""
+		if fallback != "":
+			selected[kind] = fallback
 
 
 func record_best(route_id: String, score: int) -> bool:

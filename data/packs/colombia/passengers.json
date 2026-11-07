@@ -1,8 +1,157 @@
 {
-  "skins": [[0.93, 0.77, 0.65], [0.85, 0.66, 0.52], [0.68, 0.48, 0.34], [0.48, 0.32, 0.22], [0.33, 0.22, 0.16]],
-  "hairs": [[0.12, 0.09, 0.07], [0.3, 0.2, 0.12], [0.55, 0.38, 0.18], [0.72, 0.6, 0.35], [0.75, 0.75, 0.76], [0.45, 0.2, 0.1]],
-  "tops": [[0.2, 0.4, 0.75], [0.8, 0.3, 0.25], [0.25, 0.55, 0.4], [0.85, 0.65, 0.2], [0.55, 0.35, 0.65],
-    [0.28, 0.3, 0.36], [0.85, 0.85, 0.82], [0.5, 0.32, 0.22], [0.15, 0.55, 0.6], [0.75, 0.45, 0.55]],
-  "lowers": [[0.16, 0.2, 0.32], [0.1, 0.1, 0.12], [0.42, 0.36, 0.28], [0.3, 0.32, 0.36], [0.55, 0.5, 0.42]],
-  "bags": [[0.2, 0.2, 0.22], [0.5, 0.3, 0.16], [0.7, 0.25, 0.25], [0.2, 0.35, 0.5]]
+  "looks": [
+    {
+      "id": "schoolboy", "size": 0.66, "pace": 1.05,
+      "skin": [0.36, 0.24, 0.17], "hair": [0.07, 0.05, 0.05], "hair_style": "short",
+      "top": [0.95, 0.95, 0.93],
+      "lower": [0.24, 0.27, 0.35], "shoes": [0.08, 0.08, 0.09],
+      "carry": "backpack", "carry_colour": [0.8, 0.18, 0.18]
+    },
+    {
+      "id": "schoolgirl", "size": 0.62, "pace": 1.05,
+      "skin": [0.66, 0.48, 0.35], "hair": [0.12, 0.08, 0.06], "hair_style": "braids",
+      "top": [0.95, 0.95, 0.93], "top_style": "pinafore", "trim": [0.16, 0.22, 0.45],
+      "lower": [0.16, 0.22, 0.45], "lower_style": "skirt", "socks": [0.95, 0.95, 0.93], "shoes": [0.08, 0.08, 0.09],
+      "carry": "backpack", "carry_colour": [0.55, 0.32, 0.75]
+    },
+    {
+      "id": "small_boy_in_a_cap", "size": 0.55,
+      "skin": [0.91, 0.75, 0.63], "hair": [0.36, 0.22, 0.12], "hair_style": "short",
+      "top": [0.88, 0.22, 0.2], "trim": [0.95, 0.95, 0.93],
+      "lower": [0.25, 0.38, 0.65], "lower_style": "shorts", "shoes": [0.93, 0.93, 0.93],
+      "hat": "cap", "hat_colour": [0.15, 0.45, 0.85]
+    },
+    {
+      "id": "university_student",
+      "skin": [0.72, 0.53, 0.4], "hair": [0.2, 0.12, 0.07], "hair_style": "bun", "earrings": true,
+      "top": [0.45, 0.8, 0.66],
+      "lower": [0.22, 0.3, 0.5], "shoes": [0.93, 0.93, 0.93],
+      "carry": "backpack", "carry_colour": [0.16, 0.16, 0.19]
+    },
+    {
+      "id": "student_with_books",
+      "skin": [0.38, 0.25, 0.17], "hair": [0.07, 0.05, 0.05], "hair_style": "short", "glasses": true,
+      "top": [0.55, 0.57, 0.62],
+      "lower": [0.2, 0.26, 0.42], "shoes": [0.85, 0.3, 0.2],
+      "carry": "books", "carry_colour": [0.2, 0.45, 0.72]
+    },
+    {
+      "id": "nurse_in_scrubs",
+      "skin": [0.3, 0.19, 0.13], "hair": [0.07, 0.05, 0.05], "hair_style": "short",
+      "top": [0.25, 0.6, 0.62], "top_style": "scrubs", "trim": [0.18, 0.48, 0.5],
+      "lower": [0.25, 0.6, 0.62], "shoes": [0.93, 0.93, 0.93]
+    },
+    {
+      "id": "office_worker_with_a_briefcase",
+      "skin": [0.38, 0.25, 0.17], "hair": [0.07, 0.05, 0.05], "hair_style": "short",
+      "top": [0.7, 0.82, 0.95], "sleeves": "long",
+      "lower": [0.2, 0.21, 0.24], "shoes": [0.1, 0.08, 0.07],
+      "carry": "briefcase", "carry_colour": [0.32, 0.2, 0.12]
+    },
+    {
+      "id": "office_worker_in_a_skirt",
+      "skin": [0.95, 0.82, 0.72], "hair": [0.2, 0.12, 0.07], "hair_style": "bob", "earrings": true,
+      "top": [0.95, 0.52, 0.45], "sleeves": "long",
+      "lower": [0.13, 0.13, 0.15], "lower_style": "skirt", "shoes": [0.1, 0.1, 0.1],
+      "carry": "handbag", "carry_colour": [0.6, 0.35, 0.2]
+    },
+    {
+      "id": "market_seller_with_a_basket",
+      "skin": [0.83, 0.65, 0.51], "hair": [0.07, 0.05, 0.05], "hair_style": "ponytail", "earrings": true,
+      "top": [0.62, 0.48, 0.75], "top_style": "apron", "trim": [0.2, 0.6, 0.38],
+      "lower": [0.28, 0.28, 0.33], "lower_style": "skirt", "shoes": [0.4, 0.26, 0.16],
+      "carry": "basket", "carry_colour": [0.72, 0.55, 0.3]
+    },
+    {
+      "id": "grandmother_with_a_mochila", "size": 0.95, "pace": 0.7,
+      "skin": [0.38, 0.25, 0.17], "hair": [0.78, 0.78, 0.76], "hair_style": "bun", "glasses": true, "earrings": true,
+      "top": [0.92, 0.55, 0.65], "trim": [0.95, 0.88, 0.75],
+      "lower": [0.2, 0.22, 0.42], "lower_style": "long_skirt", "shoes": [0.12, 0.1, 0.1],
+      "carry": "mochila", "carry_colour": [0.9, 0.2, 0.3], "stripes": [[0.95, 0.72, 0.1], [0.1, 0.6, 0.55], [0.2, 0.3, 0.78], [0.98, 0.48, 0.12], [0.95, 0.95, 0.9]]
+    },
+    {
+      "id": "older_man_with_a_cane", "pace": 0.72,
+      "skin": [0.64, 0.46, 0.33], "hair": [0.78, 0.78, 0.76], "hair_style": "bald",
+      "top": [0.62, 0.78, 0.6],
+      "lower": [0.42, 0.32, 0.22], "shoes": [0.3, 0.2, 0.12],
+      "hat": "cap", "hat_colour": [0.86, 0.82, 0.7], "cane": true
+    },
+    {
+      "id": "young_woman_with_a_ponytail",
+      "skin": [0.3, 0.19, 0.13], "hair": [0.07, 0.05, 0.05], "hair_style": "ponytail", "earrings": true,
+      "top": [0.98, 0.55, 0.15],
+      "lower": [0.2, 0.27, 0.48], "shoes": [0.93, 0.93, 0.93],
+      "carry": "handbag", "carry_colour": [0.85, 0.75, 0.6]
+    },
+    {
+      "id": "man_in_a_guayabera",
+      "skin": [0.36, 0.24, 0.17], "hair": [0.07, 0.05, 0.05], "hair_style": "short",
+      "top": [0.96, 0.95, 0.9], "top_style": "guayabera", "trim": [0.84, 0.83, 0.78],
+      "lower": [0.78, 0.7, 0.55], "shoes": [0.35, 0.22, 0.12]
+    },
+    {
+      "id": "football_fan_in_yellow",
+      "skin": [0.5, 0.34, 0.24], "hair": [0.07, 0.05, 0.05], "hair_style": "ponytail", "earrings": true,
+      "top": [0.98, 0.82, 0.12],
+      "lower": [0.3, 0.42, 0.62], "lower_style": "shorts", "shoes": [0.93, 0.93, 0.93],
+      "hat": "vueltiao"
+    },
+    {
+      "id": "construction_worker",
+      "skin": [0.72, 0.53, 0.4], "hair": [0.07, 0.05, 0.05], "hair_style": "short",
+      "top": [0.5, 0.5, 0.53], "top_style": "vest", "trim": [0.98, 0.45, 0.08],
+      "lower": [0.22, 0.28, 0.45], "shoes": [0.38, 0.26, 0.14],
+      "hat": "hard_hat", "hat_colour": [0.95, 0.95, 0.92]
+    },
+    {
+      "id": "young_mother",
+      "skin": [0.83, 0.65, 0.51], "hair": [0.2, 0.12, 0.07], "hair_style": "long", "earrings": true,
+      "top": [0.2, 0.68, 0.74],
+      "lower": [0.22, 0.3, 0.5], "shoes": [0.5, 0.32, 0.2],
+      "carry": "baby", "carry_colour": [0.95, 0.75, 0.3]
+    },
+    {
+      "id": "fisherman",
+      "skin": [0.5, 0.34, 0.24], "hair": [0.07, 0.05, 0.05], "hair_style": "short",
+      "top": [0.92, 0.92, 0.9], "sleeves": "none", "trim": [0.4, 0.3, 0.2],
+      "lower": [0.55, 0.5, 0.4], "lower_style": "shorts", "shoes": [0.25, 0.18, 0.12],
+      "hat": "sun_hat", "hat_colour": [0.85, 0.8, 0.65], "carry": "bucket", "carry_colour": [0.2, 0.5, 0.85]
+    },
+    {
+      "id": "teacher_with_short_natural_hair",
+      "skin": [0.3, 0.19, 0.13], "hair": [0.07, 0.05, 0.05], "hair_style": "afro", "glasses": true, "earrings": true,
+      "top": [0.2, 0.55, 0.35], "sleeves": "long", "trim": [0.98, 0.8, 0.2],
+      "lower": [0.28, 0.2, 0.16], "lower_style": "skirt", "shoes": [0.12, 0.1, 0.1],
+      "carry": "books", "carry_colour": [0.62, 0.2, 0.22]
+    },
+    {
+      "id": "woman_in_a_manta",
+      "skin": [0.52, 0.36, 0.25], "hair": [0.07, 0.05, 0.05], "hair_style": "plait",
+      "top": [0.85, 0.25, 0.5], "top_style": "dress", "trim": [0.98, 0.82, 0.3],
+      "lower": [0.85, 0.25, 0.5], "lower_style": "long_skirt", "shoes": [0.4, 0.26, 0.16]
+    },
+    {
+      "id": "retired_man_with_a_newspaper", "size": 0.97, "pace": 0.76,
+      "skin": [0.95, 0.82, 0.72], "hair": [0.9, 0.9, 0.88], "hair_style": "short", "glasses": true,
+      "top": [0.55, 0.68, 0.82], "trim": [0.25, 0.3, 0.28],
+      "lower": [0.45, 0.45, 0.48], "shoes": [0.12, 0.1, 0.1],
+      "carry": "books", "carry_colour": [0.92, 0.92, 0.88]
+    }
+  ],
+  "vendors": [
+    {
+      "id": "drinks_vendor",
+      "skin": [0.38, 0.25, 0.17], "hair": [0.07, 0.05, 0.05], "hair_style": "short",
+      "top": [0.95, 0.95, 0.92], "top_style": "apron", "trim": [0.15, 0.55, 0.45],
+      "lower": [0.2, 0.22, 0.3], "shoes": [0.08, 0.08, 0.09],
+      "hat": "cap", "hat_colour": [0.92, 0.72, 0.15], "carry": "cool_box", "carry_colour": [0.1, 0.35, 0.7]
+    },
+    {
+      "id": "juice_vendor",
+      "skin": [0.83, 0.65, 0.51], "hair": [0.2, 0.12, 0.07], "hair_style": "ponytail", "earrings": true,
+      "top": [0.95, 0.95, 0.92], "top_style": "apron", "trim": [0.9, 0.3, 0.25],
+      "lower": [0.2, 0.22, 0.3], "shoes": [0.08, 0.08, 0.09],
+      "hat": "cap", "hat_colour": [0.15, 0.55, 0.45], "carry": "cool_box", "carry_colour": [0.85, 0.2, 0.2]
+    }
+  ]
 }

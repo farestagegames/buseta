@@ -78,225 +78,307 @@
  ],
  "drivers": [
   {
-   "id": "sam_reed",
-   "name": "Sam Reed",
+   "id": "wilmer_pertuz",
+   "name": "Wilmer Pertuz",
    "cost": 0,
-   "bio": "New to the depot and keen to prove it.",
+   "bio": "Born two streets from the depot. Plays football on the beach after every early shift.",
    "skin": [
-    0.93,
-    0.77,
-    0.65
-   ],
-   "hair": [
-    0.3,
-    0.2,
-    0.12
-   ],
-   "hair_style": "short",
-   "uniform": [
-    0.15,
-    0.2,
-    0.35
-   ],
-   "trim": [
-    0.85,
-    0.7,
-    0.2
-   ]
-  },
-  {
-   "id": "amara_nwosu",
-   "name": "Amara Nwosu",
-   "cost": 0,
-   "bio": "Knows every shortcut and never takes one.",
-   "skin": [
-    0.36,
-    0.24,
-    0.17
+    0.6,
+    0.42,
+    0.29
    ],
    "hair": [
     0.08,
     0.06,
-    0.06
-   ],
-   "hair_style": "afro",
-   "uniform": [
-    0.1,
-    0.42,
-    0.45
-   ],
-   "trim": [
-    0.95,
-    0.85,
-    0.5
-   ]
-  },
-  {
-   "id": "luis_ortega",
-   "name": "Luis Ortega",
-   "cost": 300,
-   "bio": "Twenty years at the wheel and still smiling.",
-   "skin": [
-    0.75,
-    0.55,
-    0.4
-   ],
-   "hair": [
-    0.1,
-    0.08,
-    0.07
+    0.05
    ],
    "hair_style": "short",
-   "beard": "moustache",
+   "beard": "thin_moustache",
+   "hat": "cap",
+   "towel": true,
+   "accent": [
+    0.82,
+    0.18,
+    0.15
+   ],
    "uniform": [
-    0.25,
-    0.27,
-    0.3
+    0.4,
+    0.64,
+    0.86
    ],
    "trim": [
-    0.8,
-    0.25,
-    0.2
+    0.95,
+    0.95,
+    0.93
    ]
   },
   {
-   "id": "mei_tanaka",
-   "name": "Mei Tanaka",
-   "cost": 300,
-   "bio": "Keeps the timetable to the second.",
+   "id": "yuleidis_simarra",
+   "name": "Yuleidis Simarra",
+   "cost": 0,
+   "bio": "Saving up for a buseta of her own. She has already picked its colours.",
    "skin": [
-    0.95,
-    0.82,
-    0.7
+    0.3,
+    0.19,
+    0.13
    ],
    "hair": [
     0.06,
     0.05,
-    0.07
+    0.05
    ],
-   "hair_style": "bob",
+   "hair_style": "braids",
+   "accent": [
+    0.95,
+    0.62,
+    0.15
+   ],
+   "earrings": true,
    "uniform": [
-    0.32,
-    0.55,
-    0.78
+    0.08,
+    0.45,
+    0.48
    ],
    "trim": [
-    0.12,
-    0.2,
-    0.4
+    0.95,
+    0.95,
+    0.9
    ]
   },
   {
-   "id": "walter_novak",
-   "name": "Walter Novak",
-   "cost": 600,
-   "bio": "Drove this town before the roundabout was built.",
+   "id": "ruben_cardona",
+   "name": "Rubén Cardona",
+   "cost": 300,
+   "bio": "Came from Medellín on holiday twenty years ago and never went home.",
    "skin": [
-    0.88,
+    0.68,
+    0.49,
+    0.35
+   ],
+   "hair": [
+    0.16,
+    0.11,
+    0.08
+   ],
+   "hair_style": "short",
+   "greying": true,
+   "beard": "moustache",
+   "outfit": "guayabera",
+   "uniform": [
     0.72,
+    0.84,
+    0.95
+   ],
+   "trim": [
+    0.55,
+    0.68,
+    0.82
+   ]
+  },
+  {
+   "id": "yolima_uriana",
+   "name": "Yolima Uriana",
+   "cost": 300,
+   "bio": "Wants to drive La Ola one day. Every Sunday she calls her grandmother and they talk in Wayuunaiki.",
+   "skin": [
+    0.6,
+    0.41,
+    0.28
+   ],
+   "hair": [
+    0.05,
+    0.04,
+    0.04
+   ],
+   "hair_style": "long",
+   "earrings": true,
+   "uniform": [
+    0.55,
+    0.12,
+    0.2
+   ],
+   "trim": [
+    0.98,
+    0.78,
+    0.25
+   ]
+  },
+  {
+   "id": "esteban_angulo",
+   "name": "Esteban Angulo",
+   "cost": 450,
+   "bio": "Grew up on the Malecón. Studies engineering at night and drives by day.",
+   "skin": [
+    0.36,
+    0.24,
+    0.16
+   ],
+   "hair": [
+    0.06,
+    0.05,
+    0.05
+   ],
+   "hair_style": "fade",
+   "beard": "goatee",
+   "glasses": true,
+   "uniform": [
+    0.95,
+    0.95,
+    0.93
+   ],
+   "trim": [
+    0.2,
+    0.45,
+    0.75
+   ]
+  },
+  {
+   "id": "blanca_sanabria",
+   "name": "Blanca Sanabria",
+   "cost": 600,
+   "bio": "Came down from Tunja for the sun. Brings a flask of coffee for the whole depot.",
+   "skin": [
+    0.93,
+    0.78,
+    0.68
+   ],
+   "hair": [
+    0.76,
+    0.75,
+    0.74
+   ],
+   "hair_style": "bob",
+   "glasses": true,
+   "earrings": true,
+   "uniform": [
+    0.32,
+    0.2,
+    0.45
+   ],
+   "trim": [
+    0.88,
+    0.85,
+    0.92
+   ]
+  },
+  {
+   "id": "daniela_delahoz",
+   "name": "Daniela De la Hoz",
+   "cost": 600,
+   "bio": "Counts down the days to Carnival all year round.",
+   "skin": [
+    0.9,
+    0.74,
     0.62
    ],
    "hair": [
-    0.78,
-    0.78,
-    0.78
+    0.2,
+    0.12,
+    0.07
    ],
-   "hair_style": "bald",
-   "glasses": true,
-   "cap": true,
+   "hair_style": "curly",
+   "earrings": true,
    "uniform": [
-    0.42,
-    0.34,
-    0.24
-   ],
-   "trim": [
-    0.9,
-    0.8,
-    0.55
-   ]
-  },
-  {
-   "id": "priya_nair",
-   "name": "Priya Nair",
-   "cost": 600,
-   "bio": "Greets every regular by name.",
-   "skin": [
-    0.6,
-    0.42,
+    0.85,
+    0.24,
     0.3
    ],
-   "hair": [
-    0.08,
-    0.06,
-    0.06
-   ],
-   "hair_style": "plait",
-   "uniform": [
-    0.5,
-    0.13,
-    0.22
-   ],
    "trim": [
-    0.92,
-    0.75,
+    0.98,
+    0.85,
     0.3
    ]
   },
   {
-   "id": "fatima_haddad",
-   "name": "Fatima Haddad",
+   "id": "fanny_mosquera",
+   "name": "Fanny Mosquera",
    "cost": 900,
-   "bio": "Trains the new drivers. Nothing gets past her.",
+   "bio": "Trains the new drivers. Nothing gets past her, and she still calls them all mijo.",
    "skin": [
-    0.8,
-    0.62,
-    0.48
+    0.33,
+    0.21,
+    0.15
    ],
    "hair": [
-    0.13,
-    0.36,
-    0.3
+    0.06,
+    0.05,
+    0.05
    ],
-   "hair_style": "hijab",
-   "glasses": true,
-   "uniform": [
-    0.13,
-    0.32,
-    0.24
-   ],
-   "trim": [
-    0.9,
-    0.9,
-    0.85
-   ]
-  },
-  {
-   "id": "joe_mensah",
-   "name": "Joe Mensah",
-   "cost": 1200,
-   "bio": "The depot's legend. Forty years without a scratch.",
-   "skin": [
-    0.28,
-    0.19,
-    0.14
-   ],
-   "hair": [
-    0.88,
-    0.88,
-    0.86
-   ],
-   "hair_style": "bald",
-   "beard": "full",
-   "cap": true,
-   "uniform": [
-    0.1,
-    0.1,
+   "hair_style": "short",
+   "hat": "headwrap",
+   "accent": [
+    0.98,
+    0.68,
     0.12
    ],
+   "earrings": true,
+   "uniform": [
+    0.15,
+    0.4,
+    0.28
+   ],
    "trim": [
-    0.9,
-    0.72,
+    0.75,
+    0.15,
     0.2
+   ]
+  },
+  {
+   "id": "nicolas_forero",
+   "name": "Nicolás Forero",
+   "cost": 900,
+   "bio": "Never misses his daughter's school assembly, so he always asks for the early shift.",
+   "skin": [
+    0.84,
+    0.66,
+    0.52
+   ],
+   "hair": [
+    0.15,
+    0.1,
+    0.07
+   ],
+   "hair_style": "short",
+   "beard": "full",
+   "uniform": [
+    0.22,
+    0.24,
+    0.28
+   ],
+   "trim": [
+    0.85,
+    0.2,
+    0.18
+   ]
+  },
+  {
+   "id": "ramiro_mestra",
+   "name": "Ramiro Mestra",
+   "cost": 1200,
+   "bio": "From Lorica, on the Sinú. Forty years at the wheel, in the same hat.",
+   "skin": [
+    0.66,
+    0.47,
+    0.33
+   ],
+   "hair": [
+    0.82,
+    0.81,
+    0.79
+   ],
+   "hair_style": "short",
+   "beard": "thin_moustache",
+   "hat": "vueltiao",
+   "outfit": "guayabera",
+   "uniform": [
+    0.95,
+    0.94,
+    0.88
+   ],
+   "trim": [
+    0.84,
+    0.82,
+    0.74
    ]
   }
  ],

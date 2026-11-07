@@ -53,9 +53,9 @@ AUTOPILOT_PACK=res://test/fixtures/packs/testland/pack.json AUTOPILOT_ROUTE=test
 | `scripts/input` | `SteeringMapper` for all three steering modes, `WheelTracker`, `DriverInputRouter` |
 | `scripts/camera` | `CameraRig` with cockpit, close and far views |
 | `scripts/ui` | Multi-touch controls, HUD and settings panel |
-| `scripts/world` | `RoadNetwork`, `GroundSurface`, `MapLoader`, `CityBuilder`, `ObstacleField`, `KnockableProp`, `LowPolyBuilder`, `CityShift` level root, `TestGround` |
+| `scripts/world` | `RoadNetwork`, `GroundSurface`, `MapLoader`, `CityBuilder`, `ObstacleField`, `KnockableProp`, `LowPolyBuilder`, `HeadParts` faces, hair and hats, `CityShift` level root, `TestGround` |
 | `scripts/route` | `RouteRunner` progress and turn hints, `RouteStop` alignment, `RouteSystem` shift flow |
-| `scripts/passengers` | `PassengerLedger`, `StopSession`, `PassengerCrowd` visuals, `CabinLayout` walking paths inside the bus |
+| `scripts/passengers` | `PassengerLedger`, `StopSession`, `PassengerCrowd` visuals, `CabinLayout` walking paths inside the bus, `PassengerLooks` and `PassengerLook` data read from the pack, `PassengerFigure` meshes |
 | `scripts/drivers` | `DriverLook` data read from the catalog, `DriverFigure` box models |
 | `scripts/audio` | `AudioDirector`, driven only by events |
 
@@ -151,7 +151,19 @@ fair.
 
 **Drivers are data.** A driver is a catalog entry of colours and styles. `DriverLook`
 reads it, `DriverFigure` builds the 3D figure and `DriverBadge` draws the portrait, so
-a new driver needs no code. Drivers change nothing about how the bus handles.
+a new driver needs no code. Drivers change nothing about how the bus handles. The
+interior mirror trims the head to its glass with `LowPolyBuilder.clip` and squashes it
+flat, so a tall hat or long braids stop at the frame from any seat in any bus.
+`CountryPack.validate()` names a driver's misspelt style or bad colour.
+
+**Passengers are data.** The pack's `passengers.json` lists looks: a person's colours,
+hair, clothes, hat and whatever they carry, with `size` for children and `pace` for
+older people. `PassengerLooks` reads it and never fails, falling back to one default
+person, while `CountryPack.validate()` reports anything wrong. `PassengerCrowd` builds
+each look once as a body, an arm and a leg mesh, and dresses walkers from a shuffled
+deck as they step out. Seated riders and pavement walkers take their colours from the
+same looks, and a rider keeps the look of whoever walked to that seat. Drivers and
+passengers share `HeadParts`, so a vueltiao or braids look the same on both.
 
 **Cities are themed by data.** The `theme` block of a map sets the colours, building
 mix, palms and sky, read by `CityTheme`, and the `coast` block adds a beach and sea.

@@ -1,7 +1,8 @@
 class_name PassengerCrowd
 extends Node3D
 ## The people you can see. Purely visual: it follows passenger events and never
-## decides who boards. Walkers come from a small pool to keep phones happy. Once
+## decides who boards. Walkers come from a small pool to keep phones happy, and are
+## dressed as one of the pack's passenger looks each time they step out. Once
 ## aboard they belong to the bus body, so they ride its suspension and leave with
 ## it, and they stay on their feet until they reach a seat.
 
@@ -16,11 +17,8 @@ const WAVE_ARM := 2.7
 const QUEUE_GAP := 0.8
 ## Keep at least this far apart, in metres.
 const PERSONAL_SPACE := 0.62
-const LOOK_VARIETY := 18
-const LOOK_PACES: Array[float] = [1.0, 1.05, 0.95, 1.1, 1.0, 0.65, 1.0, 1.05, 0.95, 1.1, 1.0, 0.65, 1.0, 1.05, 0.95, 1.1, 1.0, 0.65]
-
-const SHOE := Color(0.08, 0.08, 0.09)
-const OLDER_HAIR := Color(0.75, 0.75, 0.76)
+## Two people in the same look still differ a little in height.
+const HEIGHT_VARIETY := 0.04
 
 ## Spawned walkers in each role, in order. Public for tests.
 var waiting: Array[Walker] = []
@@ -37,10 +35,10 @@ var _kerb_side: float = 1.0 ## Which side of the bus the pavement is on.
 var _cabin: CabinLayout
 var _ground: GroundSurface
 var _pool: Array[Walker] = []
-var _body_meshes: Array[ArrayMesh] = []
-var _vendor_mesh: ArrayMesh
-var _leg_meshes: Array[ArrayMesh] = []
-var _arm_meshes: Array[ArrayMesh] = []
+var _outfits: Array[Outfit] = []
+var _vendor_outfits: Array[Outfit] = []
+var _outfit_of: Dictionary = {} ## PassengerLook to its Outfit.
+var _deck: Array[int] = [] ## Outfits still to deal before shuffling again.
 var _spawned_for: int = -1
 var _door: Vector3 = Vector3.ZERO
 var _doors_shut: bool = true
@@ -58,6 +56,8 @@ class Walker:
 	var left_arm: Node3D
 	var right_arm: Node3D
 	var pace: float = 1.0 ## Older people walk more slowly.
+	var leg_swing: float = 1.0 ## Less in a long skirt.
+	var look: PassengerLook
 	var idle_time: float = 0.0
 	var base_yaw: float = 0.0
 	var path: Array[Vector3] = [] ## Points still to walk through the bus.
@@ -65,7 +65,6 @@ class Walker:
 	var seat: int = -1
 	var waving: bool = false ## Flagging down the bus.
 	var is_vendor: bool = false
-	var usual_body: ArrayMesh
 
 	func step(dt: float, speed: float, ground: GroundSurface) -> bool:
 		var flat := Vector2(target.x - position.x, target.z - position.z)
@@ -113,8 +112,8 @@ class Walker:
 		rotation.y = base_yaw
 		stride += dt * speed * 5.5
 		var swing := sin(stride) * 0.55
-		left_leg.rotation.x = swing
-		right_leg.rotation.x = -swing
+		left_leg.rotation.x = swing * leg_swing
+		right_leg.rotation.x = -swing * leg_swing
 		left_arm.rotation.x = -swing * 0.8
 		right_arm.rotation.x = swing * 0.8
 
@@ -129,6 +128,20 @@ class Walker:
 		right_arm.rotation.x = lerpf(right_arm.rotation.x, arm_goal, ease_out)
 		rotation.y = base_yaw + sin(idle_time * 0.7 + stride) * 0.22
 		rotation.z = sin(idle_time * 0.45 + stride) * 0.025
+
+
+## One look's meshes, built once and shared by every walker wearing it.
+class Outfit:
+	var look: PassengerLook
+	var body: ArrayMesh
+	var arm: ArrayMesh
+	var leg: ArrayMesh
+
+	func _init(passenger: PassengerLook, material: Material) -> void:
+		look = passenger
+		body = PassengerFigure.build_body(look, material)
+		arm = PassengerFigure.build_arm(look, material)
+		leg = PassengerFigure.build_leg(look, material)
 
 
 func setup(route: RouteRunner, ground: GroundSurface, visual: BusVisual) -> void:
@@ -262,9 +275,8 @@ func _spawn_waiting(stop: RouteStop) -> void:
 	var right := Vector2(-forward.y, forward.x) * _kerb_side
 	if stop.vendor:
 		var pitch := stop.position + right * (stop.waiting_distance() + 0.6) + forward * 5.0
-		vendor_waiting = _take_walker()
+		vendor_waiting = _take_walker(_vendor_outfits[_random.randi_range(0, _vendor_outfits.size() - 1)])
 		vendor_waiting.is_vendor = true
-		(vendor_waiting.get_child(0) as MeshInstance3D).mesh = _vendor_mesh
 		vendor_waiting.position = Vector3(pitch.x, _ground.height_at(pitch), pitch.y)
 		vendor_waiting.target = vendor_waiting.position
 	for i in mini(stop.waiting, MAX_WAITING):
@@ -328,7 +340,7 @@ func _sit_down(walker: Walker) -> void:
 	if walker.is_vendor:
 		selling.append(walker)
 		return
-	_visual.fill_seat(walker.seat)
+	_visual.fill_seat(walker.seat, walker.look)
 	_release(walker)
 
 
@@ -349,8 +361,14 @@ func _on_vendor_left() -> void:
 	selling.clear()
 
 
+## Whoever stands up from the last seat walks out, looking as they did sitting.
+## While more are aboard than there are seats, someone standing gets off instead,
+## no seat empties, and they are dressed from the deck.
 func _on_alighted(_stop_index: int) -> void:
-	var walker := _take_walker()
+	var outfit: Outfit = null
+	if _visual.riders_standing() == 0:
+		outfit = _outfit_of.get(_visual.rider_look(_visual.visible_riders() - 1)) as Outfit
+	var walker := _take_walker(outfit)
 	walker.reparent(_visual.cabin_floor(), false)
 	walker.position = _cabin.exit_start
 	walker.path = _cabin.alighting_path()
@@ -383,15 +401,42 @@ func _on_stop_finished() -> void:
 		walker.target = walker.position
 
 
-func _take_walker() -> Walker:
+## Someone from the pool, dressed in the given outfit or the next from the deck.
+func _take_walker(outfit: Outfit = null) -> Walker:
 	var walker: Walker
 	if _pool.is_empty():
 		walker = _build_walker()
 		add_child(walker)
 	else:
 		walker = _pool.pop_back()
+	_dress(walker, outfit if outfit != null else _next_outfit())
 	walker.visible = true
 	return walker
+
+
+## Deals looks from a shuffled deck, so a queue rarely shows the same person twice.
+func _next_outfit() -> Outfit:
+	if _deck.is_empty():
+		for i in _outfits.size():
+			_deck.append(i)
+		for i in range(_deck.size() - 1, 0, -1):
+			var swap := _random.randi_range(0, i)
+			var held := _deck[i]
+			_deck[i] = _deck[swap]
+			_deck[swap] = held
+	return _outfits[_deck.pop_back()]
+
+
+func _dress(walker: Walker, outfit: Outfit) -> void:
+	walker.look = outfit.look
+	(walker.get_child(0) as MeshInstance3D).mesh = outfit.body
+	for leg: Node3D in [walker.left_leg, walker.right_leg]:
+		(leg.get_child(0) as MeshInstance3D).mesh = outfit.leg
+	for arm: Node3D in [walker.left_arm, walker.right_arm]:
+		(arm.get_child(0) as MeshInstance3D).mesh = outfit.arm
+	walker.scale = Vector3.ONE * outfit.look.size * _random.randf_range(1.0 - HEIGHT_VARIETY, 1.0 + HEIGHT_VARIETY)
+	walker.pace = outfit.look.pace
+	walker.leg_swing = PassengerFigure.leg_swing(outfit.look)
 
 
 func _release(walker: Walker) -> void:
@@ -401,7 +446,6 @@ func _release(walker: Walker) -> void:
 	walker.seat = -1
 	walker.waving = false
 	walker.is_vendor = false
-	(walker.get_child(0) as MeshInstance3D).mesh = walker.usual_body
 	if walker.get_parent() != self:
 		walker.reparent(self, false)
 	_pool.append(walker)
@@ -410,111 +454,33 @@ func _release(walker: Walker) -> void:
 func _build_walker() -> Walker:
 	var walker := Walker.new()
 	walker.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	var look := _random.randi_range(0, _body_meshes.size() - 1)
-	var body := MeshInstance3D.new()
-	body.mesh = _body_meshes[look]
-	walker.usual_body = body.mesh
-	walker.add_child(body)
-	var leg_mesh := _leg_meshes[_random.randi_range(0, _leg_meshes.size() - 1)]
-	walker.left_leg = _limb(leg_mesh, Vector3(-0.1, 0.86, 0.0))
-	walker.right_leg = _limb(leg_mesh, Vector3(0.1, 0.86, 0.0))
-	var arm_mesh := _arm_meshes[look]
-	walker.left_arm = _limb(arm_mesh, Vector3(-0.27, 1.46, 0.0))
-	walker.right_arm = _limb(arm_mesh, Vector3(0.27, 1.46, 0.0))
+	walker.add_child(MeshInstance3D.new())
+	var hip := PassengerFigure.HIP
+	var shoulder := PassengerFigure.SHOULDER
+	walker.left_leg = _limb(Vector3(-hip.x, hip.y, hip.z))
+	walker.right_leg = _limb(hip)
+	walker.left_arm = _limb(Vector3(-shoulder.x, shoulder.y, shoulder.z))
+	walker.right_arm = _limb(shoulder)
 	for limb: Node3D in [walker.left_leg, walker.right_leg, walker.left_arm, walker.right_arm]:
 		walker.add_child(limb)
-	var size := _random.randf_range(0.9, 1.08)
-	walker.scale = Vector3.ONE * size
 	walker.stride = _random.randf_range(0.0, TAU)
-	walker.pace = LOOK_PACES[look]
 	return walker
 
 
-func _limb(mesh: ArrayMesh, pivot: Vector3) -> Node3D:
+func _limb(pivot: Vector3) -> Node3D:
 	var joint := Node3D.new()
 	joint.position = pivot
-	var limb := MeshInstance3D.new()
-	limb.mesh = mesh
-	joint.add_child(limb)
+	joint.add_child(MeshInstance3D.new())
 	return joint
 
 
-func _pick(colours: Array) -> Color:
-	var value: Array = colours[_random.randi_range(0, colours.size() - 1)]
-	return Color(value[0], value[1], value[2])
-
-
-## A street vendor: an apron and cap, with a cool box of drinks on one shoulder.
-func _build_vendor_mesh(material: Material, skins: Array, hairs: Array) -> ArrayMesh:
-	var b := LowPolyBuilder.new()
-	var shirt := Color(0.95, 0.95, 0.92)
-	var apron := Color(0.15, 0.55, 0.45)
-	var skin := _pick(skins)
-	b.box(Vector3(0.0, 1.26, 0.0), Vector3(0.42, 0.56, 0.23), shirt)
-	b.box(Vector3(0.0, 1.5, 0.0), Vector3(0.47, 0.1, 0.25), shirt)
-	b.box(Vector3(0.0, 1.1, -0.125), Vector3(0.36, 0.5, 0.02), apron)
-	b.box(Vector3(0.0, 0.99, 0.0), Vector3(0.4, 0.14, 0.23), apron)
-	b.box(Vector3(0.0, 1.58, 0.0), Vector3(0.1, 0.1, 0.1), skin)
-	b.box(Vector3(0.0, 1.73, 0.0), Vector3(0.21, 0.24, 0.22), skin)
-	b.box(Vector3(0.0, 1.76, 0.1), Vector3(0.23, 0.2, 0.05), _pick(hairs))
-	for side: float in [-0.055, 0.055]:
-		b.box(Vector3(side, 1.76, -0.112), Vector3(0.035, 0.03, 0.01), Color(0.06, 0.06, 0.08))
-	b.box(Vector3(0.0, 1.88, 0.01), Vector3(0.25, 0.08, 0.26), Color(0.92, 0.72, 0.15))
-	b.box(Vector3(0.0, 1.85, -0.16), Vector3(0.2, 0.03, 0.12), Color(0.92, 0.72, 0.15))
-	b.box(Vector3(0.36, 1.0, 0.0), Vector3(0.22, 0.34, 0.5), Color(0.1, 0.35, 0.7))
-	b.box(Vector3(0.36, 1.2, 0.0), Vector3(0.24, 0.06, 0.52), Color(0.95, 0.95, 0.95))
-	return b.build(material)
-
-
-## A fixed set of people, mixing skin, hair, clothes, build and what they carry.
+## Every look in the pack, built once with one shared material.
 func _build_meshes() -> void:
 	var material := LowPolyBuilder.vertex_colour_material()
-	var designs := Country.pack.passengers()
-	var skins: Array = designs["skins"]
-	var hairs: Array = designs["hairs"]
-	var tops: Array = designs["tops"]
-	var lowers: Array = designs["lowers"]
-	var bags: Array = designs["bags"]
-	for i in LOOK_VARIETY:
-		var top := _pick(tops)
-		var skin := _pick(skins)
-		var older := i % 6 == 5
-		var hair := OLDER_HAIR if older else _pick(hairs)
-		var long_hair := i % 3 == 1
-		var wears_skirt := i % 6 == 1
-		var b := LowPolyBuilder.new()
-		b.box(Vector3(0.0, 1.26, 0.0), Vector3(0.42, 0.56, 0.23), top)
-		b.box(Vector3(0.0, 1.5, 0.0), Vector3(0.47, 0.1, 0.25), top)
-		b.box(Vector3(0.0, 0.99, 0.0), Vector3(0.4, 0.14, 0.23), top.darkened(0.25))
-		b.box(Vector3(0.0, 1.58, 0.0), Vector3(0.1, 0.1, 0.1), skin)
-		b.box(Vector3(0.0, 1.73, 0.0), Vector3(0.21, 0.24, 0.22), skin)
-		b.box(Vector3(0.0, 1.87, 0.01), Vector3(0.23, 0.07, 0.24), hair)
-		b.box(Vector3(0.0, 1.76, 0.1), Vector3(0.23, 0.2, 0.05), hair)
-		for side: float in [-0.055, 0.055]:
-			b.box(Vector3(side, 1.76, -0.112), Vector3(0.035, 0.03, 0.01), Color(0.06, 0.06, 0.08))
-		if long_hair:
-			b.box(Vector3(0.0, 1.57, 0.12), Vector3(0.24, 0.32, 0.05), hair)
-		if wears_skirt:
-			b.box(Vector3(0.0, 0.78, 0.0), Vector3(0.42, 0.38, 0.28), _pick(lowers))
-		match i % 5:
-			1:
-				b.box(Vector3(0.0, 1.27, 0.17), Vector3(0.32, 0.42, 0.12), _pick(bags))
-			2:
-				b.box(Vector3(0.33, 0.95, 0.0), Vector3(0.1, 0.24, 0.26), _pick(bags))
-			3:
-				b.box(Vector3(0.0, 1.92, 0.0), Vector3(0.25, 0.08, 0.26), _pick(tops))
-				b.box(Vector3(0.0, 1.89, -0.13), Vector3(0.22, 0.03, 0.1), _pick(tops))
-		if older:
-			b.box(Vector3(0.36, 0.5, -0.1), Vector3(0.04, 1.0, 0.04), Color(0.3, 0.2, 0.12))
-		_body_meshes.append(b.build(material))
-		var arm := LowPolyBuilder.new()
-		arm.box(Vector3(0.0, -0.22, 0.0), Vector3(0.1, 0.46, 0.11), top)
-		arm.box(Vector3(0.0, -0.5, 0.0), Vector3(0.09, 0.12, 0.1), skin)
-		_arm_meshes.append(arm.build(material))
-	_vendor_mesh = _build_vendor_mesh(material, skins, hairs)
-	for lower: Array in lowers:
-		var colour := Color(lower[0], lower[1], lower[2])
-		var leg := LowPolyBuilder.new()
-		leg.box(Vector3(0.0, -0.39, 0.0), Vector3(0.16, 0.74, 0.18), colour)
-		leg.box(Vector3(0.0, -0.8, -0.03), Vector3(0.16, 0.1, 0.26), SHOE)
-		_leg_meshes.append(leg.build(material))
+	var cast := Country.pack.passenger_looks()
+	for look in cast.looks:
+		var outfit := Outfit.new(look, material)
+		_outfits.append(outfit)
+		_outfit_of[look] = outfit
+	for look in cast.vendors:
+		_vendor_outfits.append(_outfit_of[look] if _outfit_of.has(look) else Outfit.new(look, material))

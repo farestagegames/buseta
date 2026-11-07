@@ -19,6 +19,8 @@ var traffic_side: int = RIGHT_HAND
 var data: Dictionary = {}
 var folder: String = ""
 
+var _passenger_looks: PassengerLooks
+
 
 static func read(pack_file: String) -> CountryPack:
 	var pack := CountryPack.new()
@@ -68,8 +70,13 @@ func colour(section: String, key: String, fallback: Color) -> Color:
 	return fallback
 
 
-func passengers() -> Dictionary:
-	return MapLoader.read_json(content_path("passengers"))
+## How the people in the street and on the bus look. Read once, and never fails.
+func passenger_looks() -> PassengerLooks:
+	if _passenger_looks == null:
+		var content: Variant = data.get("content")
+		var file: Variant = (content as Dictionary).get("passengers") if content is Dictionary else null
+		_passenger_looks = PassengerLooks.read(resolve(file) if file is String else "")
+	return _passenger_looks
 
 
 ## In-game coins as this country's money, such as $12.500.
@@ -157,6 +164,9 @@ func _check_content(problems: Array[String]) -> void:
 			ids[item["id"]] = true
 	for bus: Dictionary in catalog.get(Catalog.BUSES, []):
 		_check_file(problems, bus["file"], "bus %s" % bus["id"])
+	problems.append_array(PassengerLooks.check(PassengerLooks.parse_file(content_path("passengers"))))
+	for driver: Dictionary in catalog.get(Catalog.DRIVERS, []):
+		problems.append_array(DriverLook.check(driver))
 	for route: Dictionary in catalog.get(Catalog.ROUTES, []):
 		_check_route(problems, route)
 

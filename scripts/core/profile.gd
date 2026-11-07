@@ -23,6 +23,7 @@ func load_from(path: String) -> void:
 	_path = path
 	data = PlayerProfile.from_dict(SaveStore.read(path))
 	data.grant_free_items(catalog)
+	data.repair_choices(catalog)
 	_apply_settings()
 
 

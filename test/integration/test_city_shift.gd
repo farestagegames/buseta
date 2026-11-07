@@ -389,6 +389,17 @@ func test_passengers_vary_and_have_working_arms() -> void:
 	assert_gt(sizes.size(), 2, "People should not all be the same height")
 
 
+func test_waiting_people_take_their_height_and_pace_from_their_look() -> void:
+	var stop: RouteStop = scene.route.stops[1]
+	route_system.runner.stop_index = 1
+	GameEvents.bus_relocate_requested.emit(stop.position + stop.forward() * bus.spec.body_centre_z(), stop.heading)
+	await wait_physics_frames(3)
+	assert_gt(crowd.waiting.size(), 0)
+	for walker in crowd.waiting:
+		assert_almost_eq(walker.scale.x / walker.look.size, 1.0, PassengerCrowd.HEIGHT_VARIETY + 0.001, walker.look.id)
+		assert_eq(walker.pace, walker.look.pace)
+
+
 func test_one_long_scrape_counts_as_one_collision() -> void:
 	await wait_physics_frames(2)
 	for i in 8:
@@ -549,6 +560,14 @@ func test_street_life_walks_the_pavements() -> void:
 	var before := life.strollers[0].position()
 	await wait_frames(20)
 	assert_ne(life.strollers[0].position(), before)
+
+
+func test_people_on_the_pavement_are_the_passengers_looks() -> void:
+	var life: StreetLife = scene.get_node("StreetLife")
+	var looks := Country.pack.passenger_looks().looks
+	for stroller in life.strollers:
+		assert_true(looks.has(stroller.look))
+	assert_eq(life._batches.size(), 3, "Clothes, skin and hair")
 
 
 func test_hitting_a_motorbike_counts_as_a_collision() -> void:

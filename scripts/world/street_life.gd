@@ -1,7 +1,8 @@
 class_name StreetLife
 extends Node3D
-## People walking the pavements. They are drawn as one instanced batch and only
-## ever follow the pavement, so a busy street costs almost nothing.
+## People walking the pavements. They are drawn as three instanced batches, for
+## clothes, skin and hair, and only ever follow the pavement, so a busy street costs
+## almost nothing. Each is one of the pack's passenger looks.
 
 const SIDE_DISTANCE := RoadNetwork.ROAD_HALF_WIDTH + 1.7
 ## Near a bus stop the pavement moves back to make room for the bay.
@@ -12,7 +13,7 @@ const WALK_HIGH := 1.5
 var strollers: Array[Stroller] = []
 
 var _ground: GroundSurface
-var _batch: MultiMesh
+var _batches: Array[MultiMesh] = [] ## Clothes, skin, then hair.
 
 
 class Stroller:
@@ -21,6 +22,7 @@ class Stroller:
 	var along: float = 0.0
 	var speed: float = 1.2
 	var heading: int = 1
+	var look: PassengerLook ## Who is walking, which sets their colours and size.
 
 	## Walks to the end of the pavement, then turns around.
 	func walk(dt: float) -> void:
@@ -77,26 +79,45 @@ func _pavement(network: RoadNetwork, road: Dictionary, side: float, route: Route
 	return path
 
 
+## Instance colours multiply the mesh's own, so each batch is white where it takes
+## a look's colour: the shirt, the face and hands, and the hair or hat.
 func _build_batch(random: RandomNumberGenerator) -> void:
-	var b := LowPolyBuilder.new()
-	b.box(Vector3(0.0, 1.22, 0.0), Vector3(0.42, 0.62, 0.24), Color.WHITE)
-	b.box(Vector3(0.0, 0.46, 0.0), Vector3(0.36, 0.9, 0.2), Color(0.28, 0.28, 0.3))
-	b.box(Vector3(0.0, 1.66, 0.0), Vector3(0.22, 0.24, 0.22), Color(0.7, 0.55, 0.45))
-	_batch = MultiMesh.new()
-	_batch.transform_format = MultiMesh.TRANSFORM_3D
-	_batch.use_colors = true
-	_batch.mesh = b.build(LowPolyBuilder.vertex_colour_material())
-	_batch.instance_count = strollers.size()
-	var tops: Array = Country.pack.passengers()["tops"]
+	var clothes := LowPolyBuilder.new()
+	clothes.box(Vector3(0.0, 1.22, 0.0), Vector3(0.42, 0.62, 0.24), Color.WHITE)
+	clothes.box(Vector3(0.0, 0.46, 0.0), Vector3(0.36, 0.9, 0.2), Color(0.28, 0.28, 0.3))
+	var skin := LowPolyBuilder.new()
+	skin.box(Vector3(0.0, 1.66, 0.0), Vector3(0.22, 0.24, 0.22), Color.WHITE)
+	for side: float in [-0.25, 0.25]:
+		skin.box(Vector3(side, 0.95, 0.0), Vector3(0.08, 0.11, 0.09), Color.WHITE)
+	var hair := LowPolyBuilder.new()
+	hair.box(Vector3(0.0, 1.8, 0.01), Vector3(0.24, 0.06, 0.24), Color.WHITE)
+	hair.box(Vector3(0.0, 1.71, 0.1), Vector3(0.24, 0.17, 0.05), Color.WHITE)
+	var material := LowPolyBuilder.vertex_colour_material()
+	for builder: LowPolyBuilder in [clothes, skin, hair]:
+		_batches.append(_batch_of(builder, material))
+	var looks := Country.pack.passenger_looks().looks
 	for i in strollers.size():
-		var top: Array = tops[random.randi_range(0, tops.size() - 1)]
-		_batch.set_instance_color(i, Color(top[0], top[1], top[2]))
+		var look := looks[random.randi_range(0, looks.size() - 1)]
+		strollers[i].look = look
+		strollers[i].speed *= look.pace
+		_batches[0].set_instance_color(i, look.top)
+		_batches[1].set_instance_color(i, look.skin)
+		_batches[2].set_instance_color(i, look.crown_colour())
+
+
+func _batch_of(builder: LowPolyBuilder, material: Material) -> MultiMesh:
+	var batch := MultiMesh.new()
+	batch.transform_format = MultiMesh.TRANSFORM_3D
+	batch.use_colors = true
+	batch.mesh = builder.build(material)
+	batch.instance_count = strollers.size()
 	var instance := MultiMeshInstance3D.new()
-	instance.multimesh = _batch
+	instance.multimesh = batch
 	instance.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	instance.custom_aabb = AABB(Vector3(-2000.0, -200.0, -2000.0), Vector3(4000.0, 400.0, 4000.0))
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
+	return batch
 
 
 func _process(dt: float) -> void:
@@ -105,4 +126,7 @@ func _process(dt: float) -> void:
 		stroller.walk(dt)
 		var spot := stroller.position()
 		var facing := RoadNetwork.heading_of(stroller.direction())
-		_batch.set_instance_transform(i, Transform3D(Basis(Vector3.UP, facing), Vector3(spot.x, _ground.terrain_height(spot) + 0.12, spot.y)))
+		var basis := Basis(Vector3.UP, facing).scaled(Vector3.ONE * stroller.look.size)
+		var place := Transform3D(basis, Vector3(spot.x, _ground.terrain_height(spot) + 0.12, spot.y))
+		for batch in _batches:
+			batch.set_instance_transform(i, place)

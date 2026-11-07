@@ -14,6 +14,20 @@ const HAND_SPREAD := deg_to_rad(50.0)
 const HAND_FOLLOW := deg_to_rad(70.0)
 const RIM_RADIUS := 0.22
 const MIRROR_FACE_SCALE := 0.42
+const MIRROR_GLASS := Vector2(0.41, 0.17)
+## Where the face sits from the middle of the glass's front: a little towards the
+## driver's side, a little low and just in front, turned to look back at the driver.
+## x is for a bus with its doors on the right, and flips with door_side.
+const MIRROR_FACE_OFFSET := Vector3(-0.08, -0.02, 0.004)
+## A reflection is flat, so the face is squashed to this share of its depth. Then
+## it stays inside the glass seen from any seat, in any bus and on either side.
+const MIRROR_FLAT := 0.08
+## Keeps the little depth that is left from peeping past the frame at a steep angle.
+const MIRROR_MARGIN := 0.008
+## The front of the glass, from the middle of the mirror.
+const MIRROR_GLASS_FRONT := 0.0245
+## A reflection is a little dimmer than the face itself.
+const MIRROR_TINT := Color(0.88, 0.88, 0.9)
 
 const DARK := Color(0.1, 0.1, 0.12)
 const TRIM := Color(0.26, 0.27, 0.3)
@@ -50,7 +64,9 @@ var _right_lamps: MeshInstance3D
 var _wheel_spin: float = 0.0
 var _seat_points: Array[Vector3] = []
 var _seat_order: Array[Vector3] = []
+var _seat_looks: Array[PassengerLook] = [] ## Who sits in each seat, in filling order.
 var _held_seats: Dictionary = {}
+var _onboard := 0 ## Everyone aboard, seated or standing.
 var _riders: MultiMesh
 var _rider_heads: MultiMesh
 var _rider_hair: MultiMesh
@@ -101,6 +117,15 @@ func visible_riders() -> int:
 	return _riders.visible_instance_count
 
 
+func seat_count() -> int:
+	return _riders.instance_count
+
+
+## How many people are aboard beyond the seats. They stand, so they are not drawn.
+func riders_standing() -> int:
+	return maxi(0, _onboard - seat_count())
+
+
 func driver_visible() -> bool:
 	return _driver.visible
 
@@ -134,13 +159,29 @@ func seat_is_held(index: int) -> bool:
 	return _held_seats.has(index)
 
 
-func fill_seat(index: int) -> void:
+## The passenger who walked to this seat sits down in it, looking as they walked.
+func fill_seat(index: int, look: PassengerLook = null) -> void:
 	if index < 0:
 		return
 	_held_seats.erase(index)
-	var place := Transform3D(Basis.IDENTITY, _seat_order[index])
+	if look != null:
+		_seat_looks[index] = look
+	_seat_rider(index)
+
+
+## Who sits in a seat, or null if there is no such seat.
+func rider_look(index: int) -> PassengerLook:
+	return _seat_looks[index] if index >= 0 and index < _seat_looks.size() else null
+
+
+func _seat_rider(index: int) -> void:
+	var look := _seat_looks[index]
+	var place := Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * look.size), _seat_order[index])
 	for batch: MultiMesh in [_riders, _rider_heads, _rider_hair]:
 		batch.set_instance_transform(index, place)
+	_riders.set_instance_color(index, look.top)
+	_rider_heads.set_instance_color(index, look.skin)
+	_rider_hair.set_instance_color(index, look.crown_colour())
 
 
 ## Where a seat is, or the back of the bus if there is no seat to be had.
@@ -149,6 +190,7 @@ func seat_position(index: int) -> Vector3:
 
 
 func _on_onboard_changed(count: int) -> void:
+	_onboard = count
 	var shown := mini(count, _riders.instance_count)
 	_riders.visible_instance_count = shown
 	_rider_heads.visible_instance_count = shown
@@ -639,8 +681,9 @@ func _door_leaf(hinge: Vector3, length: float) -> Node3D:
 	return pivot
 
 
-## Seated passengers are one instanced batch, filled in a shuffled order so the
-## bus does not fill front to back. Only the shirt takes the instance colour.
+## Seated passengers are instanced batches for clothes, skin and hair, filled in a
+## shuffled order so the bus does not fill front to back. Each seat starts with one
+## of the pack's passenger looks, and takes on the look of whoever sits in it.
 func _build_riders() -> void:
 	_seat_order = _seat_points.duplicate()
 	var order := _seat_order
@@ -651,34 +694,26 @@ func _build_riders() -> void:
 		var held: Vector3 = order[i]
 		order[i] = order[swap]
 		order[swap] = held
+	# Arms rest in front, on the lap, as a window seat on a narrow buseta leaves no
+	# room beside the body before the wall.
 	var torso := LowPolyBuilder.new()
 	torso.box(Vector3(0.0, 0.3, 0.0), Vector3(0.38, 0.6, 0.22), Color.WHITE)
-	torso.box(Vector3(0.0, 0.58, 0.0), Vector3(0.43, 0.09, 0.24), Color.WHITE)
-	for side: float in [-0.25, 0.25]:
-		torso.box(Vector3(side, 0.32, -0.08), Vector3(0.1, 0.46, 0.12), Color(0.82, 0.82, 0.82))
+	torso.box(Vector3(0.0, 0.58, 0.0), Vector3(0.4, 0.09, 0.24), Color.WHITE)
+	for side: float in [-0.15, 0.15]:
+		torso.box(Vector3(side, 0.3, -0.135), Vector3(0.075, 0.44, 0.05), Color(0.82, 0.82, 0.82))
 	var head := LowPolyBuilder.new()
 	head.box(Vector3(0.0, 0.66, 0.0), Vector3(0.1, 0.1, 0.1), Color.WHITE)
 	head.box(Vector3(0.0, 0.82, 0.0), Vector3(0.21, 0.24, 0.22), Color.WHITE)
 	var hair := LowPolyBuilder.new()
 	hair.box(Vector3(0.0, 0.96, 0.01), Vector3(0.23, 0.07, 0.24), Color.WHITE)
 	hair.box(Vector3(0.0, 0.85, 0.1), Vector3(0.23, 0.2, 0.05), Color.WHITE)
-	var designs := Country.pack.passengers()
+	var looks := Country.pack.passenger_looks().looks
 	_riders = _rider_batch(torso, order.size())
 	_rider_heads = _rider_batch(head, order.size())
 	_rider_hair = _rider_batch(hair, order.size())
 	for i in order.size():
-		var place := Transform3D(Basis.IDENTITY, order[i])
-		_riders.set_instance_transform(i, place)
-		_rider_heads.set_instance_transform(i, place)
-		_rider_hair.set_instance_transform(i, place)
-		_riders.set_instance_color(i, _design_colour(designs["tops"], i))
-		_rider_heads.set_instance_color(i, _design_colour(designs["skins"], i))
-		_rider_hair.set_instance_color(i, _design_colour(designs["hairs"], i * 3))
-
-
-func _design_colour(colours: Array, index: int) -> Color:
-	var value: Array = colours[index % colours.size()]
-	return Color(value[0], value[1], value[2])
+		_seat_looks.append(looks[random.randi_range(0, looks.size() - 1)])
+		_seat_rider(i)
 
 
 func _rider_batch(builder: LowPolyBuilder, count: int) -> MultiMesh:
@@ -743,18 +778,42 @@ func _build_interior_mirror() -> void:
 	var z := _cab_z + 0.4
 	var x := 0.1 * float(spec.door_side)
 	var b := LowPolyBuilder.new()
-	b.box(Vector3(x, y + 0.2, z), Vector3(0.05, 0.3, 0.05), DARK)
+	b.box(Vector3(x, y + 0.2275, z), Vector3(0.05, 0.245, 0.05), DARK)
 	b.box(Vector3(x, y, z), Vector3(0.46, 0.21, 0.04), DARK)
-	b.box(Vector3(x, y, z + 0.022), Vector3(0.41, 0.17, 0.005), Color(0.42, 0.5, 0.56))
+	b.box(Vector3(x, y, z + 0.022), Vector3(MIRROR_GLASS.x, MIRROR_GLASS.y, 0.005), Color(0.42, 0.5, 0.56))
 	var mirror := MeshInstance3D.new()
 	mirror.mesh = b.build(LowPolyBuilder.vertex_colour_material())
 	_body.add_child(mirror)
 	_mirror_face = MeshInstance3D.new()
-	_mirror_face.mesh = DriverFigure.build_head(driver_look)
-	_mirror_face.scale = Vector3.ONE * MIRROR_FACE_SCALE
-	_mirror_face.position = Vector3(x - 0.08, y - 0.015, z + 0.06)
-	_mirror_face.rotation.y = PI
+	_mirror_face.mesh = DriverFigure.build_head(driver_look, mirror_window(spec.door_side))
+	# The mirror shows the face as the windscreen lights it, not the cab's shade, so
+	# every skin tone stays readable.
+	var reflection := LowPolyBuilder.vertex_colour_material()
+	reflection.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	reflection.albedo_color = MIRROR_TINT
+	_mirror_face.material_override = reflection
+	_mirror_face.transform = Transform3D(Basis.IDENTITY, Vector3(x, y, z)) * mirror_face_transform(spec.door_side)
 	_body.add_child(_mirror_face)
+
+
+## The face from the middle of the mirror: scaled down, squashed flat and turned
+## to look back at the driver.
+static func mirror_face_transform(door_side: int) -> Transform3D:
+	var turned := Basis(Vector3.UP, PI) * Basis.from_scale(Vector3(1.0, 1.0, MIRROR_FLAT) * MIRROR_FACE_SCALE)
+	var offset := Vector3(MIRROR_FACE_OFFSET.x * float(door_side), MIRROR_FACE_OFFSET.y, MIRROR_GLASS_FRONT + MIRROR_FACE_OFFSET.z)
+	return Transform3D(turned, offset)
+
+
+## The part of the head that the glass can show, measured on the head itself, so
+## a tall hat or long braids stop at the frame. The head is turned to face the
+## driver, so its sides and its back are the other way round in the bus.
+static func mirror_window(door_side: int) -> AABB:
+	var place := mirror_face_transform(door_side).origin
+	var half := MIRROR_GLASS / 2.0 - Vector2.ONE * MIRROR_MARGIN
+	var depth := MIRROR_FLAT * MIRROR_FACE_SCALE
+	var low := Vector3((place.x - half.x) / MIRROR_FACE_SCALE, (-half.y - place.y) / MIRROR_FACE_SCALE, -1.0)
+	var high := Vector3((place.x + half.x) / MIRROR_FACE_SCALE, (half.y - place.y) / MIRROR_FACE_SCALE, (place.z - MIRROR_GLASS_FRONT) / depth)
+	return AABB(low, high - low)
 
 
 func _build_lamps() -> void:

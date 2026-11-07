@@ -128,24 +128,59 @@ func test_drivers_tab_lists_everyone() -> void:
 
 func test_home_shows_the_chosen_driver() -> void:
 	Profile.data.coins = 5000
-	Profile.buy(Catalog.DRIVERS, "priya_nair")
-	Profile.select(Catalog.DRIVERS, "priya_nair")
+	Profile.buy(Catalog.DRIVERS, "yolima_uriana")
+	Profile.select(Catalog.DRIVERS, "yolima_uriana")
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)
 	await wait_frames(2)
 	var labels := menu.find_children("*", "Label", true, false)
-	assert_true(labels.any(func(label: Label) -> bool: return label.text == "Priya Nair"))
+	assert_true(labels.any(func(label: Label) -> bool: return label.text == "Yolima Uriana"))
 
 
 func test_chosen_driver_sits_in_the_bus() -> void:
 	Profile.data.coins = 5000
-	Profile.buy(Catalog.DRIVERS, "fatima_haddad")
-	Profile.select(Catalog.DRIVERS, "fatima_haddad")
+	Profile.buy(Catalog.DRIVERS, "fanny_mosquera")
+	Profile.select(Catalog.DRIVERS, "fanny_mosquera")
 	var city: CityShift = CITY.instantiate()
 	add_child_autofree(city)
 	var visual: BusVisual = city.get_node("Bus/Visual")
-	assert_eq(visual.driver_look.driver_name, "Fatima Haddad")
-	assert_eq(visual.driver_look.hair_style, "hijab")
+	assert_eq(visual.driver_look.driver_name, "Fanny Mosquera")
+	assert_eq(visual.driver_look.hat, "headwrap")
+
+
+## Draws a portrait and counts how often it was drawn.
+class CountedBadge:
+	extends DriverBadge
+	var draws: int = 0
+
+	func _draw() -> void:
+		super()
+		draws += 1
+
+
+func test_every_driver_option_draws_a_portrait() -> void:
+	var looks: Array[DriverLook] = []
+	for style: String in DriverLook.HAIR_STYLES:
+		var look := DriverLook.new()
+		look.hair_style = style
+		looks.append(look)
+	for i in maxi(DriverLook.HATS.size(), DriverLook.BEARDS.size()):
+		var look := DriverLook.new()
+		look.hat = DriverLook.HATS[i % DriverLook.HATS.size()]
+		look.beard = DriverLook.BEARDS[i % DriverLook.BEARDS.size()]
+		look.outfit = DriverLook.OUTFITS[i % DriverLook.OUTFITS.size()]
+		look.glasses = i % 2 == 0
+		look.greying = i % 2 == 1
+		look.earrings = true
+		looks.append(look)
+	var badges: Array[CountedBadge] = []
+	for look in looks:
+		var badge := CountedBadge.new(look)
+		add_child_autofree(badge)
+		badges.append(badge)
+	await wait_frames(3)
+	for badge in badges:
+		assert_gt(badge.draws, 0, "%s %s" % [badge.look.hair_style, badge.look.hat])
 
 
 func test_cockpit_shows_the_hands_and_mirror_with_the_body_hidden() -> void:

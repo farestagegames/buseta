@@ -12,6 +12,9 @@ var _has_geometry := false
 var _chunks: Dictionary = {} ## Cell to SurfaceTool.
 ## Height where wall textures start, so storeys line up with the ground.
 var uv_base_height: float = 0.0
+## When set, everything is trimmed to it and anything wholly outside is left out,
+## as for a face seen in a small mirror.
+var clip := AABB()
 
 
 func _init() -> void:
@@ -19,6 +22,12 @@ func _init() -> void:
 
 
 func box(centre: Vector3, size: Vector3, colour: Color) -> void:
+	if clip.has_volume():
+		var inside := AABB(centre - size / 2.0, size).intersection(clip)
+		if not inside.has_volume():
+			return
+		centre = inside.get_center()
+		size = inside.size
 	var half := size / 2.0
 	for normal: Vector3 in [Vector3.RIGHT, Vector3.LEFT, Vector3.UP, Vector3.DOWN, Vector3.BACK, Vector3.FORWARD]:
 		var u := Vector3(normal.y, normal.z, normal.x)
@@ -199,6 +208,37 @@ static func vertex_colour_material() -> StandardMaterial3D:
 
 
 func _triangle(a: Vector3, b: Vector3, c: Vector3, normal: Vector3, colour: Color) -> void:
+	if not clip.has_volume():
+		_emit(a, b, c, normal, colour)
+		return
+	var inside := clipped(PackedVector3Array([a, b, c]), clip)
+	for i in range(1, inside.size() - 1):
+		_emit(inside[0], inside[i], inside[i + 1], normal, colour)
+
+
+## The part of a flat convex polygon inside a box, with its corners in the same
+## order, or nothing if it lies wholly outside.
+static func clipped(polygon: PackedVector3Array, window: AABB) -> PackedVector3Array:
+	for axis in 3:
+		for below: bool in [false, true]:
+			var limit: float = window.end[axis] if below else window.position[axis]
+			var kept := PackedVector3Array()
+			for i in polygon.size():
+				var p := polygon[i]
+				var q := polygon[(i + 1) % polygon.size()]
+				var p_in := p[axis] <= limit if below else p[axis] >= limit
+				var q_in := q[axis] <= limit if below else q[axis] >= limit
+				if p_in:
+					kept.append(p)
+				if p_in != q_in:
+					kept.append(p.lerp(q, (limit - p[axis]) / (q[axis] - p[axis])))
+			polygon = kept
+			if polygon.is_empty():
+				return polygon
+	return polygon
+
+
+func _emit(a: Vector3, b: Vector3, c: Vector3, normal: Vector3, colour: Color) -> void:
 	_has_geometry = true
 	var surface := _surface_for((a + b + c) / 3.0)
 	for point: Vector3 in [a, b, c]:

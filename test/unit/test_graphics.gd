@@ -52,6 +52,53 @@ func test_chunked_builder_splits_by_location_and_keeps_every_triangle() -> void:
 	assert_eq(split_vertices, whole_vertices)
 
 
+## Every vertex of a mesh, so a test can see where its geometry ended up.
+func _points(mesh: ArrayMesh) -> PackedVector3Array:
+	return PackedVector3Array() if mesh.get_surface_count() == 0 else mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+
+
+func test_clip_trims_a_box_that_is_partly_outside() -> void:
+	var b := LowPolyBuilder.new()
+	b.clip = AABB(Vector3(-1.0, -1.0, -1.0), Vector3(2.0, 2.0, 2.0))
+	b.box(Vector3(1.0, 0.0, 0.0), Vector3(2.0, 1.0, 1.0), Color.WHITE)
+	var points := _points(b.build(StandardMaterial3D.new()))
+	assert_gt(points.size(), 0)
+	var grown := b.clip.grow(0.0001)
+	for point in points:
+		assert_true(grown.has_point(point), str(point))
+	assert_almost_eq(Array(points).map(func(p: Vector3) -> float: return p.x).max(), 1.0, 0.0001, "Cut at the edge")
+
+
+func test_clip_leaves_out_a_box_wholly_outside() -> void:
+	var b := LowPolyBuilder.new()
+	b.clip = AABB(Vector3(-1.0, -1.0, -1.0), Vector3(2.0, 2.0, 2.0))
+	b.box(Vector3(5.0, 0.0, 0.0), Vector3.ONE, Color.WHITE)
+	assert_eq(b.build(StandardMaterial3D.new()).get_surface_count(), 0)
+
+
+func test_clip_trims_turned_and_flat_shapes_too() -> void:
+	var b := LowPolyBuilder.new()
+	b.clip = AABB(Vector3(-0.5, -1.0, -0.5), Vector3(1.0, 2.0, 1.0))
+	b.turned_box(Vector3.ZERO, Vector3(2.0, 0.1, 2.0), PI / 4.0, Color.WHITE)
+	b.quad(Vector3(-2, 0, -2), Vector3(-2, 0, 2), Vector3(2, 0, 2), Vector3(2, 0, -2), Color.WHITE)
+	var points := _points(b.build(StandardMaterial3D.new()))
+	assert_gt(points.size(), 0)
+	var grown := b.clip.grow(0.0001)
+	for point in points:
+		assert_true(grown.has_point(point), str(point))
+	assert_eq(points.size() % 3, 0, "Still whole triangles")
+
+
+func test_a_polygon_keeps_its_area_inside_the_window() -> void:
+	var square := PackedVector3Array([Vector3(0, 0, 0), Vector3(2, 0, 0), Vector3(2, 2, 0), Vector3(0, 2, 0)])
+	var inside := LowPolyBuilder.clipped(square, AABB(Vector3(1, 1, -1), Vector3(5, 5, 2)))
+	assert_eq(inside.size(), 4)
+	for point in inside:
+		assert_between(point.x, 1.0, 2.0)
+		assert_between(point.y, 1.0, 2.0)
+	assert_eq(LowPolyBuilder.clipped(square, AABB(Vector3(5, 5, -1), Vector3(1, 1, 2))).size(), 0)
+
+
 func test_game_style_reaches_every_button() -> void:
 	var box: StyleBoxFlat = ThemeDB.get_default_theme().get_stylebox("normal", "Button")
 	assert_eq(box.bg_color, UiStyle.RAISED)

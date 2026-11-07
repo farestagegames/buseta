@@ -110,6 +110,41 @@ func test_seat_stays_empty_until_its_passenger_reaches_it() -> void:
 	assert_true(await _wait_until(func() -> bool: return not visual.seat_is_held(seat), 12.0))
 
 
+func test_a_passenger_sits_down_looking_as_they_walked() -> void:
+	await _open_doors_at_first_stop()
+	await _wait_until(func() -> bool: return not crowd.boarding.is_empty(), 12.0)
+	var walker: PassengerCrowd.Walker = crowd.boarding[0]
+	var seat := walker.seat
+	var look := walker.look
+	assert_not_null(look)
+	assert_true(await _wait_until(func() -> bool: return not visual.seat_is_held(seat), 12.0))
+	assert_eq(visual.rider_look(seat), look)
+
+
+func test_whoever_gets_off_looks_like_the_rider_who_stood_up() -> void:
+	GameEvents.onboard_changed.emit(3)
+	var rider := visual.rider_look(2)
+	GameEvents.passenger_alighted.emit(0)
+	assert_eq(crowd.getting_off[0].look, rider)
+
+
+func test_people_standing_get_off_without_copying_the_last_rider() -> void:
+	var seats := visual.seat_count()
+	GameEvents.onboard_changed.emit(seats + 4)
+	var seated := visual.rider_look(seats - 1)
+	crowd.getting_off.clear()
+	for i in 4:
+		GameEvents.passenger_alighted.emit(0)
+		GameEvents.onboard_changed.emit(seats + 3 - i)
+	var looks := {}
+	for walker in crowd.getting_off:
+		looks[walker.look] = true
+	assert_eq(crowd.getting_off.size(), 4)
+	assert_gte(looks.size(), 2, "Dressed from the deck, not all as one rider")
+	assert_eq(visual.visible_riders(), seats, "Every seat is still taken")
+	assert_eq(visual.rider_look(seats - 1), seated, "The last rider stays in their seat")
+
+
 func test_shutting_the_doors_early_never_leaves_someone_chasing_the_bus() -> void:
 	await _open_doors_at_first_stop()
 	await _wait_until(func() -> bool: return not crowd.boarding.is_empty(), 12.0)

@@ -1,0 +1,9 @@
+{
+  "looks": [
+    1,
+    {"id": "wrong_types", "skin": "brown", "top": [1, 0, 0], "hat": "crown", "size": 9},
+    {"id": "twin", "skin": [0.5, 0.4, 0.3], "top": [0, 0, 1]},
+    {"id": "twin", "skin": [0.5, 0.4, 0.3], "top": [0, 0, 1]}
+  ],
+  "vendors": "nobody"
+}

@@ -65,6 +65,35 @@ func test_a_pack_needs_a_horn() -> void:
 	assert_true(_broken_pack({"horns": []}).validate().has("A pack needs at least one horn"))
 
 
+func _with_passengers(path: String) -> CountryPack:
+	var content: Dictionary = (CountryPack.read(COLOMBIA).data["content"] as Dictionary).duplicate()
+	content["passengers"] = path
+	return _broken_pack({"content": content})
+
+
+func test_a_pack_with_a_broken_passengers_file_fails_validation() -> void:
+	for file: String in ["not_json.json", "no_looks.json", "bad_looks.json"]:
+		var problems := _with_passengers("res://test/fixtures/passengers/" + file).validate()
+		assert_false(problems.is_empty(), file)
+		assert_true(problems.all(func(problem: String) -> bool: return problem.contains("assenger")), "%s: %s" % [file, problems])
+
+
+func test_a_missing_passengers_file_is_reported() -> void:
+	var problems := _with_passengers("nobody.json").validate()
+	assert_eq(problems.size(), 1)
+	assert_string_contains(problems[0], "nobody.json")
+
+
+func test_a_pack_with_a_broken_passengers_file_still_has_people() -> void:
+	var pack := _with_passengers("res://test/fixtures/passengers/not_json.json")
+	assert_gt(pack.passenger_looks().looks.size(), 0)
+
+
+func test_the_test_pack_shares_colombias_passengers() -> void:
+	var colombia := CountryPack.read(COLOMBIA).passenger_looks()
+	assert_eq(CountryPack.read(TESTLAND).passenger_looks().looks.size(), colombia.looks.size())
+
+
 func test_money_uses_the_countrys_format() -> void:
 	assert_eq(CountryPack.read(COLOMBIA).money(29), "$2.900")
 	assert_eq(CountryPack.read(COLOMBIA).money(500), "$50.000")
