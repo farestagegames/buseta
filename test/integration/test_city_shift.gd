@@ -503,7 +503,7 @@ func test_no_ad_button_without_a_provider() -> void:
 	route_system.runner.stop_index = route_system.runner.stops.size() - 1
 	_park_at(route_system.runner.current_stop())
 	await wait_physics_frames(3)
-	assert_false(hud.shift_panel._double_coins.visible)
+	assert_false(hud.shift_panel.double_coins_button.visible)
 
 
 func test_right_to_left_language_keeps_the_driving_controls_in_place() -> void:

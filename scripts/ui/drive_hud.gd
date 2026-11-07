@@ -83,12 +83,14 @@ func _ready() -> void:
 	settings_panel.in_shift = true
 	settings_panel.visible = false
 	settings_panel.closed.connect(_close_settings)
+	settings_panel.layout_direction = Control.LAYOUT_DIRECTION_APPLICATION_LOCALE
 	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-340.0, -340.0), Vector2(680.0, 680.0))
 	root.add_child(settings_panel)
 
 	shift_panel = ShiftEndPanel.new()
 	shift_panel.visible = false
-	_place(shift_panel, Vector2(0.5, 0.5), Vector2(-340.0, -345.0), Vector2(680.0, 690.0))
+	shift_panel.layout_direction = Control.LAYOUT_DIRECTION_APPLICATION_LOCALE
+	_place(shift_panel, Vector2(0.5, 0.5), Vector2(-600.0, -340.0), Vector2(1200.0, 680.0))
 	root.add_child(shift_panel)
 	GameEvents.shift_rewards_ready.connect(_on_shift_report)
 
