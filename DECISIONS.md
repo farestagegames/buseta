@@ -8,3 +8,6 @@ One line each, with the reason. Newest at the bottom.
 - In the cockpit the driver is shown by their hands on the wheel and their face in a new interior mirror: the body has to stay hidden or it blocks the view.
 - Added a sixth menu tab, Drivers, and renamed Driver to Career: selection and career stats are different jobs.
 - Added tools/gate.sh so every item is checked the same way before it is committed.
+- Pivot to Colombia received mid-night. Stopped before starting liveries, tagged `milestone-pre-colombia-pivot`, and replaced the remaining backlog as you asked.
+- Boost/arcade level is off tonight's plan: your revised backlog replaces the remaining items and does not list it. It is not rejected, so ask if you want it back.
+- Old map expansion is off the plan: the Colombian city rework replaces it.

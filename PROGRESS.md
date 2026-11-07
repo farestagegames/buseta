@@ -1,15 +1,29 @@
 # Overnight progress
 
-Restore point: tag `milestone-pre-overnight` on `main`. All work is on `overnight`.
+Restore points: tag `milestone-pre-overnight` on `main`, and `milestone-pre-colombia-pivot`
+on `overnight`, taken just before the game was refocused on Colombia. All work is on
+`overnight`.
+
+## Done before the pivot
+
+| Item | State | Tag | Notes |
+| --- | --- | --- | --- |
+| Driver selection | Done | `milestone-drivers` | 8 drivers, cockpit hands and mirror. Reworked for Colombia in item 5 below |
+
+## Revised backlog after the pivot
 
 | # | Item | State | Tag | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | Driver selection | Done | `milestone-drivers` | 8 drivers, cockpit hands and mirror, menu tab |
-| 2 | Bus customisation | In progress | | |
-| 3 | Passenger variety | Not started | | |
-| 4 | Map expansion | Not started | | |
-| 5 | Day/night and rain | Not started | | |
-| 6 | Engagement systems | Not started | | |
-| 7 | iOS readiness | Not started | | |
-| + | Boost/arcade level | Not started | | Added by message during the night |
-| 8 | Multiplayer exploration | Not started | | |
+| 1 | Country packs | In progress | | |
+| 2 | Colombian city | Not started | | |
+| 3 | Colombian buses and liveries | Not started | | Includes the old bus customisation item |
+| 4 | Colombian gameplay | Not started | | Includes the old passenger behaviours item |
+| 5 | Drivers and passengers | Not started | | |
+| 6 | Language | Not started | | |
+| 7 | Audio | Not started | | |
+| 8a | Day/night and rain | Not started | | |
+| 8b | Daily challenges and achievements | Not started | | |
+| 8c | iOS readiness | Not started | | |
+| 8d | Multiplayer research | Not started | | |
+
+Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.
