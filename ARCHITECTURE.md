@@ -128,8 +128,12 @@ phone only draws what the camera can see. This halved triangles per frame. The c
 is more draw calls, which is the number to watch on low-end GPUs.
 
 **Languages.** Anything drawn by hand calls `tr()`, and the driving controls are
-locked left to right, so Arabic mirrors the menus, the pause panel and the shift
-report but never moves the wheel or pedals.
+locked left to right, so a right-to-left language would mirror the menus, the pause
+panel and the shift report but never move the wheel or pedals. Colombian Spanish is
+the main language and English the second. Text drawn on a button or gauge shrinks
+to fit with `UiStyle.fit_font_size`, so a longer word in Spanish never spills out.
+`test_languages` scans the code for text a player could see and fails if it has no
+Spanish entry.
 
 **People on the bus.** `StopSession` still decides who boards and when, one person
 at a time, and knows nothing of walking. `PassengerCrowd` then shows it: a boarder

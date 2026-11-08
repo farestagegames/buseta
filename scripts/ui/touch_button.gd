@@ -34,9 +34,11 @@ func _draw() -> void:
 	_style.bg_color = lit_colour if lit or is_touched() else base_colour
 	draw_style_box(_style, Rect2(Vector2.ZERO, size))
 	var font := ThemeDB.fallback_font
-	var line_height := font.get_height(font_size)
-	var baseline := (size.y - line_height) / 2.0 + font.get_ascent(font_size)
-	draw_string(font, Vector2(0.0, baseline), tr(text), HORIZONTAL_ALIGNMENT_CENTER, size.x, font_size, TEXT)
+	var shown := tr(text)
+	var fitted := UiStyle.fit_font_size(font, shown, font_size, size.x - 20.0)
+	var line_height := font.get_height(fitted)
+	var baseline := (size.y - line_height) / 2.0 + font.get_ascent(fitted)
+	draw_string(font, Vector2(0.0, baseline), shown, HORIZONTAL_ALIGNMENT_CENTER, size.x, fitted, TEXT)
 
 
 func _notification(what: int) -> void:

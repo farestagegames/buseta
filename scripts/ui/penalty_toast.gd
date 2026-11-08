@@ -4,6 +4,7 @@ extends Label
 ## at the end of the shift. Also shows tips, in yellow rather than red.
 
 const SHOW_SECONDS := 2.6
+const FONT_SIZE := 24
 const PENALTY_COLOUR := Color(1.0, 0.5, 0.4)
 const HINT_COLOUR := Color(1.0, 0.86, 0.35)
 
@@ -12,7 +13,7 @@ var _timer: float = 0.0
 
 func _ready() -> void:
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	add_theme_font_size_override("font_size", 24)
+	add_theme_font_size_override("font_size", FONT_SIZE)
 	add_theme_color_override("font_color", PENALTY_COLOUR)
 	add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.06))
 	add_theme_constant_override("outline_size", 6)
@@ -24,6 +25,9 @@ func _ready() -> void:
 func _show(message: String, colour: Color) -> void:
 	add_theme_color_override("font_color", colour)
 	text = tr(message)
+	# A long stop name must not push the note past its box, so the text shrinks.
+	add_theme_font_size_override("font_size",
+		UiStyle.fit_font_size(get_theme_font("font"), text, FONT_SIZE, size.x - 12.0))
 	_timer = SHOW_SECONDS
 	visible = true
 	modulate.a = 1.0

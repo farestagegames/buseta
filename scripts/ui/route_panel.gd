@@ -52,13 +52,18 @@ func _draw() -> void:
 		return
 	draw_style_box(_style, Rect2(Vector2.ZERO, size))
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(0.0, 24.0), _line_one, HORIZONTAL_ALIGNMENT_CENTER, size.x, 22, Color.WHITE)
+	draw_string(font, Vector2(0.0, 24.0), _line_one, HORIZONTAL_ALIGNMENT_CENTER, size.x,
+		UiStyle.fit_font_size(font, _line_one, 22, size.x - 28.0), Color.WHITE)
 	var time_colour := Color(1.0, 0.45, 0.35) if _late else Color(0.5, 0.95, 0.6)
-	draw_string(font, Vector2(14.0, 46.0), _line_two, HORIZONTAL_ALIGNMENT_LEFT, size.x, 17, Color(1, 1, 1, 0.75))
+	var time_width := font.get_string_size(_time_status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+	var room := size.x - 28.0 - time_width - 16.0
+	draw_string(font, Vector2(14.0, 46.0), _line_two, HORIZONTAL_ALIGNMENT_LEFT, room,
+		UiStyle.fit_font_size(font, _line_two, 17, room), Color(1, 1, 1, 0.75))
 	draw_string(font, Vector2(0.0, 46.0), _time_status, HORIZONTAL_ALIGNMENT_RIGHT, size.x - 14.0, 18, time_colour)
 	if _signal >= 0:
 		_draw_signal(Vector2(size.x + 8.0, 4.0))
-	draw_string(font, Vector2(0.0, 74.0), _prompt, HORIZONTAL_ALIGNMENT_CENTER, size.x, 24, Color(0.98, 0.72, 0.15))
+	draw_string(font, Vector2(0.0, 74.0), _prompt, HORIZONTAL_ALIGNMENT_CENTER, size.x,
+		UiStyle.fit_font_size(font, _prompt, 24, size.x - 28.0), Color(0.98, 0.72, 0.15))
 
 
 ## A small signal head beside the panel, because the real one can be hidden by

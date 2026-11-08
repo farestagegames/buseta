@@ -13,6 +13,8 @@ var _panel: PanelContainer
 var _ring_rect: Rect2 = Rect2()
 var _ring_style := StyleBoxFlat.new()
 var _time: float = 0.0
+var _left_clear: float = 0.0
+var _right_clear: float = 0.0
 
 
 func _ready() -> void:
@@ -30,10 +32,6 @@ func _ready() -> void:
 	backing.border_color = UiStyle.ACCENT
 	backing.set_content_margin_all(12)
 	_panel.add_theme_stylebox_override("panel", backing)
-	_panel.anchor_left = 0.5
-	_panel.anchor_right = 0.5
-	_panel.offset_left = -PANEL_SIZE.x / 2.0
-	_panel.offset_right = PANEL_SIZE.x / 2.0
 	_panel.offset_top = PANEL_TOP
 	_panel.offset_bottom = PANEL_TOP + PANEL_SIZE.y
 	add_child(_panel)
@@ -53,10 +51,37 @@ func _ready() -> void:
 	skip.add_theme_font_size_override("font_size", 18)
 	skip.pressed.connect(func() -> void: skip_requested.emit())
 	row.add_child(skip)
+	_layout()
+
+
+## Keeps the message between the buttons at each side of the screen, so on a
+## narrow phone it gets narrower and taller instead of covering them.
+func keep_clear_of(left: float, right: float) -> void:
+	_left_clear = left
+	_right_clear = right
+	_layout()
+
+
+func _layout() -> void:
+	if _panel == null:
+		return
+	var room := maxf(size.x - _left_clear - _right_clear, 0.0)
+	var width := minf(PANEL_SIZE.x, room) if room > 0.0 else PANEL_SIZE.x
+	var left := clampf((size.x - width) / 2.0, _left_clear, maxf(size.x - _right_clear - width, _left_clear))
+	_panel.offset_left = left
+	_panel.offset_right = left + width
+	# Back to the base height, so it grows only as far as the current message needs.
+	_panel.offset_bottom = PANEL_TOP + PANEL_SIZE.y
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_layout()
 
 
 func show_step(text: String, ring: Rect2) -> void:
 	_message.text = text
+	_panel.offset_bottom = PANEL_TOP + PANEL_SIZE.y
 	_ring_rect = ring
 	visible = true
 	queue_redraw()

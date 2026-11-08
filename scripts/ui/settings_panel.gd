@@ -206,7 +206,7 @@ func _refresh() -> void:
 			language_picker.select(i)
 	for level: int in _quality_buttons:
 		(_quality_buttons[level] as Button).set_pressed_no_signal(level == GameSettings.graphics_quality)
-	_sensitivity_label.text = tr("Steering sensitivity: %.2f") % GameSettings.sensitivity
+	_sensitivity_label.text = tr("Steering sensitivity: %d%%") % roundi(GameSettings.sensitivity * 100.0)
 	_volume_label.text = tr("Sound volume: %d%%") % roundi(GameSettings.sound_volume * 100.0)
 
 

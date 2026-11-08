@@ -98,7 +98,9 @@ func _notification(what: int) -> void:
 func _header() -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 22)
-	var title := _text("City Bus Shift", 36, Color.WHITE)
+	# The game's name stays the same in every language, as it does on the phone.
+	var title := _text(ProjectSettings.get_setting("application/config/name"), 36, Color.WHITE)
+	title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if Cheats.available():
 		title.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -246,7 +248,7 @@ func _garage_tab() -> Control:
 	_garage_preview = BusPreview.new()
 	_garage_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side.add_child(_garage_preview)
-	_preview_note = _text("Tap a bus or paint to try it", 20, MUTED)
+	_preview_note = _wrapped("Tap a bus or paint to try it", 20, MUTED)
 	_preview_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	side.add_child(_preview_note)
 	_preview_bus = Profile.selected_item(Catalog.BUSES)

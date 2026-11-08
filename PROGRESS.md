@@ -19,7 +19,7 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | 3 | Colombian buses and liveries | Done | `milestone-colombian-buses` | Buseta starter, B10, busetón, chiva, articulated with real joint physics, 11 patterned liveries, garage try-on. The articulated drives in item 4 |
 | 4 | Colombian gameplay | Done | `milestone-colombian-gameplay` | Hail-anywhere routes, La Ola rapid-transit line, vendors, peso fares, stop requests |
 | 5 | Drivers and passengers | Done | `milestone-colombian-people` | 10 Colombian drivers (coastal, Afro-Colombian, Andean, Wayuu), 20 passenger looks plus 2 vendors, all in data. Reviewed for respect; fixes made: a driver renamed after a name clash with a real crime figure, one portrait redrawn |
-| 6 | Language | Partly done | | Text moved to per-language files early, Colombian wording still to review |
+| 6 | Language | Done | `milestone-colombian-language` | Colombian Spanish is the default (English phones get English), every string reworded in coastal Colombian Spanish and reviewed, all visible text checked by a test, text fits at 1280, 1560 and 1600 wide |
 | 7 | Audio | Not started | | |
 | 8a | Day/night and rain | Not started | | |
 | 8b | Daily challenges and achievements | Not started | | |

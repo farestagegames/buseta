@@ -67,7 +67,9 @@ func _draw() -> void:
 	draw_string(font, Vector2(0.0, 62.0), str(speed), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 58, Color.WHITE)
 	draw_string(font, Vector2(0.0, 88.0), unit, HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 20, Color(1, 1, 1, 0.7))
 	draw_string(font, Vector2(size.x * 0.6, 50.0), _gear_text, HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 40, Color(0.98, 0.72, 0.15))
-	draw_string(font, Vector2(size.x * 0.6, 84.0), tr(status_text()), HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4, 18, Color(1, 1, 1, 0.8))
+	var status := tr(status_text())
+	var status_size := UiStyle.fit_font_size(font, status, 18, size.x * 0.4 - 12.0)
+	draw_string(font, Vector2(size.x * 0.6, 84.0), status, HORIZONTAL_ALIGNMENT_CENTER, size.x * 0.4 - 6.0, status_size, Color(1, 1, 1, 0.8))
 	if _speed_limit > 0.0:
 		var sign_centre := Vector2(size.x * 0.5 - 8.0, 48.0)
 		var over := float(_speed_kmh) > _speed_limit + DrivingMonitor.SPEED_GRACE_KMH

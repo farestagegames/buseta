@@ -536,7 +536,7 @@ func test_changing_language_updates_prompts_live() -> void:
 	GameSettings.language = "es_CO"
 	await wait_physics_frames(20)
 	var hud: DriveHud = scene.get_node("Hud")
-	assert_string_contains(hud.route_panel._line_one, "Próxima")
+	assert_string_contains(hud.route_panel._line_one, "Próximo")
 	GameSettings.language = "en"
 
 

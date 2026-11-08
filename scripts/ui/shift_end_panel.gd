@@ -54,7 +54,7 @@ func _result_column() -> Control:
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(gap)
 
-	double_coins_button = _action("Watch an ad: double coins")
+	double_coins_button = _action("Watch an ad: double your earnings")
 	double_coins_button.pressed.connect(_on_double_coins)
 	double_coins_button.visible = false
 	column.add_child(double_coins_button)

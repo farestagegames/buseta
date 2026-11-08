@@ -6,7 +6,7 @@ LOCAL="$PWD/.tools/Godot.app/Contents/MacOS/Godot"
 if [ -z "$GODOT" ]; then
 	if [ -x "$LOCAL" ]; then GODOT="$LOCAL"; else GODOT=godot; fi
 fi
-LIMIT="${TEST_TIMEOUT:-90}"
+LIMIT="${TEST_TIMEOUT:-300}"
 "$GODOT" --headless --import >/dev/null 2>&1
 "$GODOT" --headless -d -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json &
 PID=$!

@@ -43,7 +43,7 @@
  ],
  "stops": [
   {
-   "name": "Cruce Almendros",
+   "name": "Cruce de Los Almendros",
    "due": 52,
    "road": "mill_lane",
    "along": 125,
@@ -75,7 +75,7 @@
    "waiting": 3
   },
   {
-   "name": "Mercado Oriente",
+   "name": "Mercado de Oriente",
    "due": 288,
    "road": "market_street",
    "along": 110,
@@ -83,7 +83,7 @@
    "waiting": 5
   },
   {
-   "name": "Puente Almendros",
+   "name": "Puente de Los Almendros",
    "due": 360,
    "road": "mill_lane",
    "along": 120,

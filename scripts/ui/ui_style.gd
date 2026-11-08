@@ -64,6 +64,15 @@ static func build() -> Theme:
 	return theme
 
 
+## The largest font size up to wanted at which text fits in width, so a longer
+## word in another language shrinks a little rather than spilling out.
+static func fit_font_size(font: Font, text: String, wanted: int, width: float, smallest: int = 12) -> int:
+	var font_size := wanted
+	while font_size > smallest and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width:
+		font_size -= 1
+	return font_size
+
+
 static func _box(colour: Color, radius: int = 14, margin: int = 12) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = colour

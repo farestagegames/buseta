@@ -70,3 +70,34 @@ One line each, with the reason. Newest at the bottom.
 - The GO pedal stays analogue (press higher for more power): only the brake was asked about.
 - Drive and reverse is a two-half switch, D and R, with the gear in use lit green or amber. Tapping a half picks that gear, which is easier to read than a toggle.
 - Changing gear still needs the bus stopped, but a yellow tip now says "Stop the bus to change gear". Before, the button silently did nothing, which is what confused new players.
+- First launch is Colombian Spanish unless the phone is in English, then English. Any other phone language gets Spanish, because the game is made for Colombia. A saved choice always wins.
+- The game's name stays "City Bus Shift" on the menu in both languages. It is the app's name on the phone and the store, and a second Spanish name would make one game look like two. It is still a working title.
+- Stop and street names have no translation entries. They are Spanish proper names, like any place in Colombia, so English players see "Malecón Norte" too. A test fails if one looks English, so the two languages never mix.
+- Bus model names (Caimán B8, La Chiva) and driver names are names, so they are not translated. Livery names are Spanish words already and keep identity entries.
+- Spanish words chosen for the coast: bus and buseta, paradero for a stop, "Toca" for taps, manejar, sardinel for the kerb, andén for the pavement, resalto for a speed bump, sacudón for a hard jolt, pito for the horn, direccional (DIR on the buttons), glorieta, pasaje, choque, frenazo, caneca for a bin, guacal for a crate, celular, timón for the steering wheel and "pilas" in tips.
+- "Configuración" over "Ajustes", as Colombian phones say it. It fits the side menu button at 1280 wide.
+- The Career tab is "Progreso" in Spanish. "Carrera" is also the word for a street in Colombian addresses, and the city has a Carrera Central.
+- "Parada" stays only in "hacer la parada" and "pedir la parada", the everyday phrases for flagging a bus and asking to get off. Everywhere else a stop is a paradero.
+- The GO pedal is ACELERAR. "ACEL" was not a word anyone uses, and "DALE" would read oddly in the tutorial.
+- "Select" and "Selected" are "Usar" and "En uso", which need no gender for a bus, a paint or a driver. The welcome line avoids "Bienvenido" for the same reason.
+- "Left %d waiting" is "Dejaste %d esperando", which is right for one person or many. The old wording said "se quedaron" even for one.
+- Steering sensitivity shows as a percentage. "1.00" is wrong in Colombia, where the decimal mark is a comma, and a percentage needs no decimal mark in either language.
+- Money keeps the dot for thousands in both languages, because it is Colombian pesos. "Carry 1,000 passengers" is "1.000" in Spanish.
+- Removed five unused "coins" strings from the Spanish file. Money is shown in pesos now, so they would never appear.
+- Text drawn on HUD buttons, pedals and the gauge shrinks to fit its box. "PUERTAS ABIERTAS" was cut off, and this keeps any future longer word inside its button too.
+- The route panel and the penalty toast are 560 px wide instead of 480 and 400. The stop line in Spanish ran into the lateness, and there is room between the top buttons and the map even on a 16:9 phone.
+- The tutorial message keeps clear of the indicator and horn buttons. On a 16:9 phone it covered part of both, so it now gets narrower and taller there.
+- The garage's "Tap a bus or paint" note wraps. In Spanish it was wide enough to push the whole menu past the right edge at 1280 wide.
+- The performance readout now goes through tr() like everything else, since players can turn it on in settings.
+- tools/test.sh waits up to 300 s by default instead of 90 s, close to the 280 s gate.sh already passes. The suite takes about 170 s on this Mac, and the old limit killed a passing run.
+- The gear is always "el cambio" ("meter el cambio"), never Spain's "marcha". The tests now ban "marcha", "recto", "retraso", "aparca", "maletero" and the "usted" and "vosotros" forms, since the game speaks as "tú".
+- Tutorial and settings text about steering names no control ("Mantén el bus en el carril", "Sensibilidad de la dirección"), because tilt and button steering have no wheel on screen.
+- "Pedido de parada" in the shift report counts as "pedir la parada", so it keeps "parada". A stop the driver passes is "saltado", since "perdido" first reads as "lost".
+- Penalty toasts have no exclamation marks in either language ("Choque", "Frenazo"), matching the English and the other toasts.
+- Lateness is a noun ("de atraso", "de adelanto") and the opening line ends "Y tú al timón", so no text gives the player a gender. The "Old Hand" achievement is "Pura experiencia" for the same reason.
+- A street stall is a "puesto de venta", because "puestos" already means bus seats.
+- The ad offer's English is "Watch an ad: double your earnings", since money is shown in pesos, not coins.
+- The livery is "Fiesta Tricolor", in Spanish word order. Its id stays tricolor_fiesta, so saves still work.
+- Stop names keep the "de" of Colombian place names: "Mercado de Oriente", "Cruce de Los Almendros", "Puente de Los Almendros". "Los Almendros" is the barrio, so it keeps its capital.
+- The visible-text scan skips a line only when it starts with print, push_error and the like, and drops just the node path from a get_node call, so text on the same line is still checked.
+- The penalty toast now shrinks its text to fit, like the HUD buttons. "Te saltaste el paradero Puente de Los Almendros" was a little wider than the 560 px box.

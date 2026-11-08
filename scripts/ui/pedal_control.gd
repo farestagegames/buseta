@@ -38,7 +38,9 @@ func _draw() -> void:
 		_fill_style.bg_color = Color(colour, 0.85)
 		draw_style_box(_fill_style, Rect2(0.0, size.y - fill_height, size.x, fill_height))
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(0.0, size.y / 2.0 + 10.0), tr(label), HORIZONTAL_ALIGNMENT_CENTER, size.x, 26, Color.WHITE)
+	var text := tr(label)
+	var font_size := UiStyle.fit_font_size(font, text, 26, size.x - 20.0)
+	draw_string(font, Vector2(0.0, size.y / 2.0 + 10.0), text, HORIZONTAL_ALIGNMENT_CENTER, size.x, font_size, Color.WHITE)
 
 
 func _notification(what: int) -> void:

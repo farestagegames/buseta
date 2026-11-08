@@ -65,11 +65,11 @@ func _ready() -> void:
 	root.add_child(_frame_rate)
 
 	route_panel = RoutePanel.new()
-	_place(route_panel, Vector2(0.5, 0.0), Vector2(-240.0, 124.0), Vector2(480.0, 84.0))
+	_place(route_panel, Vector2(0.5, 0.0), Vector2(-280.0, 124.0), Vector2(560.0, 84.0))
 	root.add_child(route_panel)
 
 	penalty_toast = PenaltyToast.new()
-	_place(penalty_toast, Vector2(0.5, 0.0), Vector2(-200.0, 214.0), Vector2(400.0, 40.0))
+	_place(penalty_toast, Vector2(0.5, 0.0), Vector2(-280.0, 214.0), Vector2(560.0, 40.0))
 	root.add_child(penalty_toast)
 
 	minimap = Minimap.new()
@@ -78,6 +78,8 @@ func _ready() -> void:
 
 	tutorial_panel = TutorialPanel.new()
 	root.add_child(tutorial_panel)
+	# Clear of the indicators on the left and the horn on the right.
+	tutorial_panel.keep_clear_of(EDGE + 166.0 + 150.0 + GAP, EDGE + 150.0 + GAP + 200.0 + GAP)
 
 	settings_panel = SettingsPanel.new()
 	settings_panel.in_shift = true
@@ -107,7 +109,7 @@ func _process(dt: float) -> void:
 	_frame_timer -= dt
 	if _frame_timer <= 0.0:
 		_frame_timer = PERFORMANCE_WINDOW
-		_frame_rate.text = "%d fps  low %d  %dk tris  %d draws" % [
+		_frame_rate.text = tr("%d fps  low %d  %dk tris  %d draws") % [
 			Engine.get_frames_per_second(), roundi(1.0 / maxf(_worst_frame, 0.001)),
 			roundi(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000.0),
 			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)]

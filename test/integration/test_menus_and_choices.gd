@@ -97,6 +97,7 @@ func test_language_is_a_dropdown_listing_every_language() -> void:
 	var settings: SettingsPanel = await _settings_tab()
 	assert_eq(settings.language_picker.item_count, Country.pack.languages().size())
 	assert_eq(settings.language_picker.get_item_text(0), "Español (Colombia)", "Names stay in their own language")
+	assert_eq(settings.language_picker.get_item_text(1), "English", "English comes second")
 
 
 func test_choosing_from_the_dropdown_changes_the_language() -> void:

@@ -47,8 +47,12 @@ func _draw() -> void:
 		_fill_style.bg_color = Color(colour, 0.85)
 		draw_style_box(_fill_style, Rect2(0.0, size.y - fill_height, size.x, fill_height))
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(0.0, size.y / 2.0 + 10.0), tr(label), HORIZONTAL_ALIGNMENT_CENTER, size.x, 28, Color.WHITE)
-	draw_string(font, Vector2(0.0, size.y / 2.0 + 40.0), tr("HOLD"), HORIZONTAL_ALIGNMENT_CENTER, size.x, 16, Color(1.0, 1.0, 1.0, 0.6))
+	var text := tr(label)
+	var hold := tr("HOLD")
+	draw_string(font, Vector2(0.0, size.y / 2.0 + 10.0), text, HORIZONTAL_ALIGNMENT_CENTER, size.x,
+		UiStyle.fit_font_size(font, text, 28, size.x - 20.0), Color.WHITE)
+	draw_string(font, Vector2(0.0, size.y / 2.0 + 40.0), hold, HORIZONTAL_ALIGNMENT_CENTER, size.x,
+		UiStyle.fit_font_size(font, hold, 16, size.x - 20.0), Color(1.0, 1.0, 1.0, 0.6))
 
 
 func _notification(what: int) -> void:
