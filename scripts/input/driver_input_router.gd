@@ -64,6 +64,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			GameEvents.indicator_toggle_requested.emit(BusIndicators.TurnSide.LEFT)
 		KEY_E:
 			GameEvents.indicator_toggle_requested.emit(BusIndicators.TurnSide.RIGHT)
+		KEY_N:
+			GameEvents.radio_cycle_requested.emit()
 		KEY_BACKSPACE:
 			GameEvents.reset_requested.emit()
 

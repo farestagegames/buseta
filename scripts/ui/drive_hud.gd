@@ -7,6 +7,8 @@ extends CanvasLayer
 const EDGE := 24.0
 const GAP := 16.0
 const PERFORMANCE_WINDOW := 1.0
+## How long the station name stays up after tuning.
+const STATION_SECONDS := 2.5
 
 var wheel: SteeringWheelControl
 var throttle_pedal: PedalControl
@@ -28,6 +30,10 @@ var _indicator_left: TouchButton
 var _indicator_right: TouchButton
 var _door_button: TouchButton
 var gear_switch: GearSwitch
+## Hidden when the country has no radio stations.
+var radio_button: TouchButton
+var station_label: Label
+var _station_timer: float = 0.0
 var _frame_rate: Label
 var _worst_frame: float = 0.0
 var _frame_timer: float = 0.0
@@ -97,11 +103,16 @@ func _ready() -> void:
 	GameEvents.shift_rewards_ready.connect(_on_shift_report)
 
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
+	GameEvents.radio_tuned.connect(_on_radio_tuned)
 	GameSettings.changed.connect(_apply_mode)
 	_apply_mode()
 
 
 func _process(dt: float) -> void:
+	if _station_timer > 0.0:
+		_station_timer -= dt
+		station_label.modulate.a = clampf(_station_timer / 0.5, 0.0, 1.0)
+		station_label.visible = _station_timer > 0.0
 	_frame_rate.visible = GameSettings.show_performance and not shift_panel.visible
 	if not _frame_rate.visible:
 		return
@@ -167,6 +178,19 @@ func _build_buttons() -> void:
 	_view_button.pressed_down.connect(GameEvents.camera_cycle_requested.emit)
 	var menu := _action_button("MENU", Vector2(0.0, 0.0), Vector2(EDGE + 146.0, EDGE), Vector2(130.0, 96.0))
 	menu.pressed_down.connect(_open_settings)
+	radio_button = _action_button("RADIO", Vector2(0.0, 0.0), Vector2(EDGE + 292.0, EDGE), Vector2(130.0, 96.0))
+	radio_button.pressed_down.connect(GameEvents.radio_cycle_requested.emit)
+	radio_button.visible = not Country.pack.radio_stations().is_empty()
+	station_label = Label.new()
+	# Station names are names, the same in every language.
+	station_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	station_label.add_theme_font_size_override("font_size", 22)
+	station_label.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.06))
+	station_label.add_theme_constant_override("outline_size", 6)
+	station_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	station_label.visible = false
+	_place(station_label, Vector2(0.0, 0.0), Vector2(EDGE, EDGE + 104.0), Vector2(320.0, 34.0))
+	_controls.add_child(station_label)
 
 	_indicator_left = _action_button("◀ IND", Vector2(0.0, 1.0), Vector2(EDGE, -EDGE - 320.0 - GAP - 96.0), Vector2(150.0, 96.0))
 	_indicator_right = _action_button("IND ▶", Vector2(0.0, 1.0), Vector2(EDGE + 166.0, -EDGE - 320.0 - GAP - 96.0), Vector2(150.0, 96.0))
@@ -185,6 +209,18 @@ func _build_buttons() -> void:
 	_place(gear_switch, Vector2(1.0, 1.0), Vector2(-EDGE - 150.0 - GAP - 200.0, -EDGE - 230.0 - GAP - 94.0), Vector2(200.0, 94.0))
 	gear_switch.gear_toggled.connect(GameEvents.gear_toggle_requested.emit)
 	_controls.add_child(gear_switch)
+
+
+## Shows the station for a moment after tuning, or that the radio is off. The
+## button stays lit while the radio plays.
+func _on_radio_tuned(station_name: String, frequency: String) -> void:
+	radio_button.lit = station_name != ""
+	station_label.text = "%s  %s" % [station_name, frequency] if station_name != "" else tr("RADIO OFF")
+	station_label.add_theme_font_size_override("font_size",
+		UiStyle.fit_font_size(station_label.get_theme_font("font"), station_label.text, 22, 320.0))
+	station_label.modulate.a = 1.0
+	station_label.visible = true
+	_station_timer = STATION_SECONDS
 
 
 func _action_button(text: String, anchor: Vector2, offset: Vector2, button_size: Vector2) -> TouchButton:

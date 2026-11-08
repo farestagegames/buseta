@@ -12,6 +12,7 @@ const LIVE_LABELS: Array[String] = [
 	"Buses", "Liveries", "Selected", "Select", "Achievements",
 	"Roundabout: go straight on", "Roundabout: exit right", "Roundabout: exit left",
 	"Turn right", "Turn left", "Straight on at the junction", "%d:%02d late", "%d:%02d early", "On time",
+	"RADIO", "RADIO OFF", "Horn",
 ]
 
 const SPANISH := "res://data/packs/colombia/lang/es_CO.json"
@@ -29,7 +30,7 @@ const NOT_COLOMBIAN: Array[String] = [
 ## Text in the code that stays English on purpose: checks only developers read,
 ## the hidden test cheats, and a default the catalog always replaces.
 const ENGLISH_ONLY: Array[String] = [
-	"The pack file could not be read", "language file %s", "sound %s", "horn %s", "radio track",
+	"The pack file could not be read", "language file %s", "sound %s", "horn %s", "radio track", "ambience %s",
 	"content file %s", "bus %s", "Driver %s", "The passengers file could not be read",
 	"Passenger %s %s", "Skip to next stop", "Finish shift", "City 12",
 ]
@@ -246,6 +247,13 @@ func test_every_catalog_and_challenge_text_has_a_translation() -> void:
 		assert_true(strings.has(entry["description"]), entry["description"])
 	for entry: Dictionary in DailyChallenge.load_list():
 		assert_true(strings.has(entry["text"]), entry["text"])
+
+
+## Horn names show in the garage. Station names are names, the same in every
+## language, so they need none.
+func test_every_horn_name_has_a_translation() -> void:
+	for item: Dictionary in Country.pack.horns():
+		assert_true(strings.has(item["name"]), item["name"])
 
 
 func test_every_score_keeper_message_has_a_translation() -> void:

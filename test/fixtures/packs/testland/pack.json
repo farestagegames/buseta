@@ -38,7 +38,7 @@
   "horns": [
     {
       "id": "standard",
-      "name": "Standard",
+      "name": "City horn",
       "file": "res://assets/audio/horn_loop.wav"
     }
   ],

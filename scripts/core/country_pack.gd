@@ -63,6 +63,44 @@ func sound(key: String, fallback: String) -> String:
 	return str((data["sounds"] as Dictionary).get(key, fallback))
 
 
+## Every horn a player can fit: id, name, file, and optionally cost, level,
+## volume_db and "finish" for a tune that plays to its end. Broken entries are
+## left out here, so nothing that lists horns can trip on them; validate() names them.
+func horns() -> Array:
+	return _horn_entries().filter(func(item: Variant) -> bool:
+		return item is Dictionary and (item as Dictionary).has("id") and item.has("file"))
+
+
+func _horn_entries() -> Array:
+	var list: Variant = data.get("horns", [])
+	return list if list is Array else []
+
+
+## The horn with this id, or the pack's first horn if there is none.
+func horn(horn_id: String) -> Dictionary:
+	for item: Dictionary in horns():
+		if item["id"] == horn_id:
+			return item
+	return horns()[0] if not horns().is_empty() else {}
+
+
+## The horn a bus comes with: its catalog entry's "horn", or the pack's first.
+func bus_horn(bus_item: Dictionary) -> Dictionary:
+	return horn(str(bus_item.get("horn", "")))
+
+
+## Radio stations: id, name, frequency, genre and tracks. Empty hides the radio.
+func radio_stations() -> Array:
+	var list: Variant = data.get("radio", [])
+	return list if list is Array else []
+
+
+## Street sound layers, see AmbienceMixer. Optional: a pack without them is quiet.
+func ambience_layers() -> Array:
+	var list: Variant = data.get("ambience", [])
+	return list if list is Array else []
+
+
 func colour(section: String, key: String, fallback: Color) -> Color:
 	var value: Variant = (data.get(section, {}) as Dictionary).get(key)
 	if value is Array and (value as Array).size() >= 3:
@@ -129,13 +167,47 @@ func _check_languages(problems: Array[String]) -> void:
 func _check_sounds(problems: Array[String]) -> void:
 	for key: String in data["sounds"]:
 		_check_file(problems, data["sounds"][key], "sound %s" % key)
-	if (data["horns"] as Array).is_empty():
+	_check_horns(problems)
+	problems.append_array(RadioTuner.check(radio_stations()))
+	for station: Variant in radio_stations():
+		if station is Dictionary:
+			for track: Variant in (station as Dictionary).get("tracks", []):
+				if track is Dictionary and (track as Dictionary).has("file"):
+					_check_file(problems, track["file"], "radio track")
+	problems.append_array(AmbienceMixer.check(ambience_layers()))
+	for layer: Variant in ambience_layers():
+		if layer is Dictionary and (layer as Dictionary).has("file"):
+			_check_file(problems, layer["file"], "ambience %s" % layer.get("id", ""))
+
+
+func _check_horns(problems: Array[String]) -> void:
+	if _horn_entries().is_empty():
 		problems.append("A pack needs at least one horn")
-	for horn: Dictionary in data["horns"]:
-		_check_file(problems, horn["file"], "horn %s" % horn["id"])
-	for station: Dictionary in data["radio"]:
-		for track: Dictionary in station.get("tracks", []):
-			_check_file(problems, track["file"], "radio track")
+		return
+	var ids := {}
+	var free := 0
+	for item: Variant in _horn_entries():
+		if not item is Dictionary or not ((item as Dictionary).has("id") and item.has("name") and item.has("file")):
+			problems.append("Horns need an id, a name and a file")
+			continue
+		if ids.has(item["id"]):
+			problems.append("Horns have %s twice" % item["id"])
+		ids[item["id"]] = true
+		for key: String in ["cost", "level", "volume_db"]:
+			if item.has(key) and not (item[key] is int or item[key] is float):
+				problems.append("Horn %s needs %s as a number" % [item["id"], key])
+		if item.has("finish") and not item["finish"] is bool:
+			problems.append("Horn %s needs finish as true or false" % item["id"])
+		if not (item.get("cost", 0) is int or item.get("cost", 0) is float) \
+				or not (item.get("level", 1) is int or item.get("level", 1) is float):
+			continue
+		if int(item.get("cost", 0)) < 0:
+			problems.append("Horn %s costs less than nothing" % item["id"])
+		if int(item.get("cost", 0)) == 0 and int(item.get("level", 1)) <= 1:
+			free += 1
+		_check_file(problems, item["file"], "horn %s" % item["id"])
+	if free == 0:
+		problems.append("A pack needs at least one free horn")
 
 
 func _check_file(problems: Array[String], path: String, label: String) -> void:
@@ -162,8 +234,11 @@ func _check_content(problems: Array[String]) -> void:
 			if ids.has(item["id"]):
 				problems.append("%s has %s twice" % [kind, item["id"]])
 			ids[item["id"]] = true
+	var horn_ids := horns().map(func(item: Variant) -> String: return str(item.get("id", "")) if item is Dictionary else "")
 	for bus: Dictionary in catalog.get(Catalog.BUSES, []):
 		_check_file(problems, bus["file"], "bus %s" % bus["id"])
+		if bus.has("horn") and not horn_ids.has(bus["horn"]):
+			problems.append("Bus %s has an unknown horn %s" % [bus["id"], bus["horn"]])
 	problems.append_array(PassengerLooks.check(PassengerLooks.parse_file(content_path("passengers"))))
 	for driver: Dictionary in catalog.get(Catalog.DRIVERS, []):
 		problems.append_array(DriverLook.check(driver))

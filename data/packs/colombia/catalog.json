@@ -43,21 +43,24 @@
    "name": "Caimán B8",
    "file": "buses/buseta.tres",
    "cost": 0,
-   "description": "The little buseta every driver starts on. Quick, tight and always in a hurry."
+   "description": "The little buseta every driver starts on. Quick, tight and always in a hurry.",
+   "horn": "two_tone"
   },
   {
    "id": "midi_10",
    "name": "Caimán B10",
    "file": "buses/midi_bus.tres",
    "cost": 1500,
-   "description": "A longer buseta with more seats and a steadier ride."
+   "description": "A longer buseta with more seats and a steadier ride.",
+   "horn": "two_tone"
   },
   {
    "id": "city_12",
    "name": "Caimán Busetón 12",
    "file": "buses/city_bus.tres",
    "cost": 3000,
-   "description": "The big 12 metre busetón. Heavy, slow to turn and full of passengers."
+   "description": "The big 12 metre busetón. Heavy, slow to turn and full of passengers.",
+   "horn": "standard"
   },
   {
    "id": "chiva",
@@ -65,7 +68,8 @@
    "file": "buses/chiva.tres",
    "cost": 4000,
    "level": 5,
-   "description": "Painted wood, open sides and a loaded roof. The soul of the coast, on a truck chassis."
+   "description": "Painted wood, open sides and a loaded roof. The soul of the coast, on a truck chassis.",
+   "horn": "chiva"
   },
   {
    "id": "articulado_18",
@@ -73,7 +77,8 @@
    "file": "buses/articulado.tres",
    "cost": 0,
    "route_only": true,
-   "description": "An 18 metre articulated bus for the La Ola rapid-transit line."
+   "description": "An 18 metre articulated bus for the La Ola rapid-transit line.",
+   "horn": "air"
   }
  ],
  "drivers": [

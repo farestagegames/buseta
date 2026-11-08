@@ -242,3 +242,71 @@ func test_route_only_bus_is_not_on_sale_in_the_garage() -> void:
 	await wait_frames(2)
 	var labels := menu.find_children("*", "Label", true, false)
 	assert_false(labels.any(func(label: Label) -> bool: return label.text == "Alcatraz A18"))
+
+
+func test_garage_lists_the_horns_and_plays_one_to_listen() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(2)
+	await wait_frames(2)
+	var labels := menu.find_children("*", "Label", true, false).map(func(label: Label) -> String: return label.text)
+	for item: Dictionary in Country.pack.horns():
+		assert_true(labels.has(item["name"]), item["name"])
+	assert_true(labels.has("The bus's own horn"))
+	menu.preview_horn(Country.pack.horn("chiva"))
+	assert_true(menu.horn_preview_playing())
+	await wait_seconds(2.2)
+	assert_false(menu.horn_preview_playing(), "Plays once through")
+	menu.preview_horn({})
+	assert_true(menu.horn_preview_playing(), "The bus's own horn plays too")
+
+
+func test_garage_buys_and_fits_a_horn() -> void:
+	Profile.data.coins = 1000
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(2)
+	await wait_frames(2)
+	menu._on_buy_horn("double_tap")
+	assert_eq(Profile.data.horn, "double_tap")
+	assert_eq(Profile.data.coins, 1000 - int(Country.pack.horn("double_tap")["cost"]))
+	menu._on_choose_horn("")
+	assert_eq(Profile.data.horn, "")
+
+
+func test_garage_horn_buttons_sit_in_a_touch_list() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(2)
+	await wait_frames(2)
+	var listen := menu.find_children("*", "Button", true, false).filter(func(button: Button) -> bool: return button.text == "▶")
+	assert_eq(listen.size(), Country.pack.horns().size() + 1)
+	for button: Button in listen:
+		assert_not_null(TouchScroll.find_list(button))
+
+
+func test_settings_have_a_radio_volume_slider() -> void:
+	var panel := SettingsPanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	assert_true(panel.radio_slider is TouchSlider)
+	panel.radio_slider.value = 0.4
+	assert_almost_eq(GameSettings.radio_volume, 0.4, 0.001)
+	assert_almost_eq(db_to_linear(AudioServer.get_bus_volume_db(AudioServer.get_bus_index(SoundBuses.RADIO))), 0.4, 0.01)
+	panel.radio_slider.value = 0.8
+
+
+func test_a_country_without_radio_hides_the_button_and_slider() -> void:
+	Country.use_pack("res://test/fixtures/packs/testland/pack.json")
+	var hud := DriveHud.new()
+	add_child_autofree(hud)
+	var panel := SettingsPanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	assert_false(hud.radio_button.visible)
+	assert_null(panel.radio_slider)
+	Country.use_pack("res://data/packs/colombia/pack.json")
+	var colombian := DriveHud.new()
+	add_child_autofree(colombian)
+	await wait_frames(1)
+	assert_true(colombian.radio_button.visible)

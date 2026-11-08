@@ -2,6 +2,9 @@ extends Node
 ## Player-adjustable settings. Profile saves them through to_dict.
 
 signal changed
+## Only the radio dial. Kept apart from changed, so a tap on RADIO mid-drive does
+## not write the save file or wake every settings listener.
+signal radio_station_changed
 
 var steering_mode: SteeringMapper.Mode = SteeringMapper.Mode.WHEEL:
 	set(value):
@@ -23,6 +26,18 @@ var sound_volume: float = 0.7:
 	set(value):
 		sound_volume = clampf(value, 0.0, 1.0)
 		changed.emit()
+
+## The radio's own volume, under the sound volume. 0 is silent, 1 is full.
+var radio_volume: float = 0.8:
+	set(value):
+		radio_volume = clampf(value, 0.0, 1.0)
+		changed.emit()
+
+## The station the radio was left on, kept between shifts. "" is off.
+var radio_station: String = "":
+	set(value):
+		radio_station = value
+		radio_station_changed.emit()
 
 ## GraphicsQuality.Level, or AUTO to match the phone.
 var graphics_quality: int = GraphicsQuality.AUTO:
@@ -47,7 +62,7 @@ func to_dict() -> Dictionary:
 	return {
 		"steering_mode": int(steering_mode), "sensitivity": sensitivity, "invert_tilt": invert_tilt,
 		"sound_volume": sound_volume, "graphics_level": graphics_quality, "language": language,
-		"show_performance": show_performance,
+		"show_performance": show_performance, "radio_volume": radio_volume, "radio_station": radio_station,
 	}
 
 
@@ -63,5 +78,7 @@ func apply_saved(saved: Dictionary) -> void:
 	graphics_quality = int(saved.get("graphics_level", graphics_quality))
 	show_performance = bool(saved.get("show_performance", show_performance))
 	language = str(saved.get("language", language))
+	radio_volume = float(saved.get("radio_volume", radio_volume))
+	radio_station = str(saved.get("radio_station", radio_station))
 	set_block_signals(false)
 	changed.emit()

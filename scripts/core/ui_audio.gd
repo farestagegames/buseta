@@ -1,5 +1,5 @@
 extends Node
-## Sets the master volume and plays a soft tap for every button in the game,
+## Sets the master and radio volumes and plays a soft tap for every button in the game,
 ## without any button needing to know about it.
 
 const TAP := "res://assets/audio/tap.wav"
@@ -13,6 +13,7 @@ func _ready() -> void:
 	_player.stream = load(TAP)
 	_player.volume_db = -14.0
 	add_child(_player)
+	SoundBuses.ensure()
 	get_tree().node_added.connect(_on_node_added)
 	GameSettings.changed.connect(_apply_volume)
 	_apply_volume()
@@ -21,6 +22,7 @@ func _ready() -> void:
 func _apply_volume() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(GameSettings.sound_volume))
 	AudioServer.set_bus_mute(0, GameSettings.sound_volume <= 0.0)
+	SoundBuses.set_radio_volume(GameSettings.radio_volume)
 
 
 func _on_node_added(node: Node) -> void:

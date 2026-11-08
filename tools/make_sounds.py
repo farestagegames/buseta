@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Generates the game's sound effects as WAV files in assets/audio.
+"""Generates the game's sound effects, horns, street ambience and radio music as
+WAV files in assets/audio.
 
-All sounds are synthesised here, so there are no third-party licences.
+All sounds are synthesised here, so there are no third-party licences. Every
+melody is composed by the code below from a seed, so none is a known tune. The
+horns, ambience and music need numpy.
 """
 import math
 import random
@@ -153,29 +156,6 @@ def pay():
     return first + second
 
 
-def ambience_loop():
-    """A quiet town in the distance: a low wash with slow swells and a few birds."""
-    random.seed(30)
-    total = RATE * 6
-    wash = lowpass_loop([random.uniform(-1, 1) for _ in range(total)], 420)
-    peak = max(abs(s) for s in wash) or 1.0
-    out = []
-    for i, sample in enumerate(wash):
-        swell = 0.75 + 0.25 * math.sin(2 * math.pi * 2 * i / total)
-        out.append(0.3 * swell * sample / peak)
-    for _ in range(5):
-        start = random.randint(0, total - RATE)
-        pitch = random.uniform(2200, 3400)
-        for chirp in range(random.randint(2, 4)):
-            length = int(0.07 * RATE)
-            for i in range(length):
-                t = i / RATE
-                at = (start + chirp * int(0.12 * RATE) + i) % total
-                bend = pitch * (1.0 + 0.3 * math.sin(math.pi * i / length))
-                out[at] += 0.03 * math.sin(2 * math.pi * bend * t) * math.sin(math.pi * i / length)
-    return out
-
-
 def click(frequency, seconds, level):
     total = int(seconds * RATE)
     return [level * math.exp(-i / RATE * 90) * math.sin(2 * math.pi * frequency * i / RATE) for i in range(total)]
@@ -193,10 +173,12 @@ def soft_bump():
     return [0.55 * math.exp(-i / RATE * 16) * (0.6 * math.sin(2 * math.pi * 58 * i / RATE) + 0.5 * noise[i] / peak) for i in range(total)]
 
 
+from sound_kit import ambience, horns, music  # noqa: E402  (needs numpy)
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     save("engine_loop.wav", engine_loop())
-    save("horn_loop.wav", horn_loop())
     save_quiet("door_open.wav", door_open())
     save_quiet("door_close.wav", door_close())
     save("crash.wav", thump(0.45, 120, 7, 8))
@@ -205,12 +187,14 @@ def main():
     save("pay.wav", pay())
     save("bell.wav", bell())
     save_quiet("air_brake.wav", hiss(0.5, 10, 1000, 0.13))
-    save_quiet("ambience_loop.wav", ambience_loop())
     save_quiet("indicator_tick.wav", click(1500, 0.05, 0.5))
     save_quiet("indicator_tock.wav", click(1150, 0.05, 0.4))
     save_quiet("reverse_beep.wav", reverse_beep())
     save_quiet("bump.wav", soft_bump())
     save_quiet("tap.wav", click(900, 0.04, 0.35))
+    horns.make_all(OUT, horn_loop())
+    ambience.make_all(OUT / "ambience")
+    music.make_all(OUT / "radio", OUT / "ambience")
 
 
 if __name__ == "__main__":

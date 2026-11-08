@@ -52,6 +52,13 @@ signal indicator_missed
 signal red_light_run
 signal signal_ahead(state: int, distance: float) ## TrafficLightPlan.Light, or -1.
 signal traffic_horn ## A car kept waiting behind the bus gives a short toot.
+
+# --- Radio and weather ---
+signal radio_cycle_requested ## Off, the next station, and back to off.
+## The radio was tuned. Empty name and frequency mean it was switched off.
+signal radio_tuned(station_name: String, frequency: String)
+## 0 is dry, 1 is a downpour. The street ambience fades rain in and birds out.
+signal rain_changed(amount: float)
 signal penalty_shown(text: String)
 ## A tip rather than a fault, such as why a control did nothing.
 signal hint_shown(text: String)

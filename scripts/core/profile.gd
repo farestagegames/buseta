@@ -15,6 +15,7 @@ var _path: String = SAVE_PATH
 func _ready() -> void:
 	load_from(_path)
 	GameSettings.changed.connect(_on_settings_changed)
+	GameSettings.radio_station_changed.connect(_on_radio_station_changed)
 	Country.pack_changed.connect(_on_pack_changed)
 
 
@@ -24,6 +25,7 @@ func load_from(path: String) -> void:
 	data = PlayerProfile.from_dict(SaveStore.read(path))
 	data.grant_free_items(catalog)
 	data.repair_choices(catalog)
+	data.settle_horns(Country.pack.horns())
 	_apply_settings()
 
 
@@ -42,6 +44,26 @@ func buy(kind: String, id: String) -> bool:
 		return false
 	save()
 	return true
+
+
+func buy_horn(horn_id: String) -> bool:
+	var item := Country.pack.horn(horn_id)
+	if item.get("id") != horn_id or not data.buy_horn(item):
+		return false
+	save()
+	return true
+
+
+func choose_horn(horn_id: String) -> bool:
+	if not data.choose_horn(horn_id):
+		return false
+	save()
+	return true
+
+
+## The horn the player hears on this bus: their chosen one, or the bus's own.
+func horn_for(bus_item: Dictionary) -> Dictionary:
+	return Country.pack.horn(data.horn_for(str(Country.pack.bus_horn(bus_item).get("id", ""))))
 
 
 func select(kind: String, id: String) -> bool:
@@ -70,6 +92,7 @@ func _notification(what: int) -> void:
 
 func _on_pack_changed() -> void:
 	catalog = Catalog.new()
+	data.settle_horns(Country.pack.horns())
 
 
 func _apply_settings() -> void:
@@ -80,3 +103,9 @@ func _apply_settings() -> void:
 func _on_settings_changed() -> void:
 	data.settings = GameSettings.to_dict()
 	save()
+
+
+## Kept in memory only: the next save (end of shift, quitting, or the app going to
+## the background) writes it, so tuning the radio never waits on the disk.
+func _on_radio_station_changed() -> void:
+	data.settings = GameSettings.to_dict()

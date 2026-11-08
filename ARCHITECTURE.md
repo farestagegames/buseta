@@ -57,7 +57,7 @@ AUTOPILOT_PACK=res://test/fixtures/packs/testland/pack.json AUTOPILOT_ROUTE=test
 | `scripts/route` | `RouteRunner` progress and turn hints, `RouteStop` alignment, `RouteSystem` shift flow |
 | `scripts/passengers` | `PassengerLedger`, `StopSession`, `PassengerCrowd` visuals, `CabinLayout` walking paths inside the bus, `PassengerLooks` and `PassengerLook` data read from the pack, `PassengerFigure` meshes |
 | `scripts/drivers` | `DriverLook` data read from the catalog, `DriverFigure` box models |
-| `scripts/audio` | `AudioDirector`, driven only by events |
+| `scripts/audio` | `AudioDirector`, driven only by events; `HornVoice`, `AmbienceMixer` and `RadioTuner` logic; `SoundBuses` |
 
 | `scripts/scoring` | `ShiftScore` category points, stars and coins, `DrivingMonitor`, `ScoreKeeper` |
 | `scripts/traffic` | `TrafficLightPlan`, `LaneGraph`, `TrafficLane`, `TrafficAgent`, `TrafficFlow` driving logic, `TrafficSense` geometry and choices, `TrafficBox`, `TrafficSystem` drawing |
@@ -199,6 +199,21 @@ route's `service`. On an informal route `HailPlan` adds people flagging the bus 
 between the named stops, seeded per shift, and only the final stop is really timed:
 each hail gets a share of it. `RouteRunner.update_position` also takes the bus's
 facing, because a line that runs out and back on one road passes each point twice.
+
+**Sound is data.** The pack lists its horns, its street sound layers and its radio
+stations, and `CountryPack.validate()` checks them. `AudioDirector` only plays what
+three pure classes decide. `HornVoice` loops a held horn, fades a steady one out on
+release and lets a tune horn finish its pass. `AmbienceMixer` sets each street
+layer's level from the distance to the sea, the nearest stall or stop, the bus's
+speed, the radio and a rain input (`GameEvents.rain_changed`, for the weather to
+come), and times the one-off sounds such as a passing motorbike. `RadioTuner` steps
+off, through each station and back to off, and moves to the next track when one
+ends. Each bus names its horn in the catalog, and the player can fit another in
+the Garage, saved in the profile. The station is a setting, so it carries over to
+the next shift. The radio has its own bus and volume, made by `SoundBuses`, and is
+quieter and muffled from the follow cameras. It keeps playing in the pause menu, so
+its volume slider can be heard. Loops carry their loop points inside
+the WAV file, which Godot reads on import, and every file is compressed with QOA.
 
 **Cheats in test builds only.** `Cheats.available()` is `OS.is_debug_build()`, so
 the gesture and panels do not exist in a release export. The panels are English

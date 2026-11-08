@@ -29,6 +29,10 @@ var best_scores: Dictionary = {} ## Route id to best score.
 var last_daily: String = "" ## Date key of the last daily challenge completed.
 var intro_done: bool = false ## The opening scene and tutorial have been seen.
 var settings: Dictionary = {}
+## Horns bought or given free. Horns are pack data, not catalog items.
+var horns_owned: Array[String] = []
+## The horn fitted to every bus, or "" for each bus's own horn.
+var horn: String = ""
 
 
 func owns(kind: String, id: String) -> bool:
@@ -74,6 +78,45 @@ func repair_choices(catalog: Catalog) -> void:
 			selected[kind] = fallback
 
 
+func owns_horn(horn_id: String) -> bool:
+	return horns_owned.has(horn_id)
+
+
+func buy_horn(item: Dictionary) -> bool:
+	var id: String = item["id"]
+	var cost := int(item.get("cost", 0))
+	if owns_horn(id) or coins < cost or DriverLevel.level_for(xp) < int(item.get("level", 1)):
+		return false
+	coins -= cost
+	horns_owned.append(id)
+	return true
+
+
+## "" goes back to each bus's own horn.
+func choose_horn(horn_id: String) -> bool:
+	if horn_id != "" and not owns_horn(horn_id):
+		return false
+	horn = horn_id
+	return true
+
+
+## The pack's free horns are owned from the start, and a choice the pack no longer
+## has goes back to the bus's own horn.
+func settle_horns(pack_horns: Array) -> void:
+	var ids: Array[String] = []
+	for item: Dictionary in pack_horns:
+		ids.append(item["id"])
+		if int(item.get("cost", 0)) == 0 and int(item.get("level", 1)) <= 1 and not owns_horn(item["id"]):
+			horns_owned.append(item["id"])
+	if not ids.has(horn):
+		horn = ""
+
+
+## The horn to play on a bus whose own horn is bus_horn_id.
+func horn_for(bus_horn_id: String) -> String:
+	return horn if horn != "" and owns_horn(horn) else bus_horn_id
+
+
 func record_best(route_id: String, score: int) -> bool:
 	if score <= int(best_scores.get(route_id, -1)):
 		return false
@@ -86,6 +129,7 @@ func to_dict() -> Dictionary:
 		"version": VERSION, "coins": coins, "xp": xp, "owned": owned, "selected": selected,
 		"stats": stats, "achievements": achievements, "best_scores": best_scores,
 		"last_daily": last_daily, "settings": settings, "intro_done": intro_done,
+		"horns_owned": horns_owned, "horn": horn,
 	}
 
 
@@ -125,6 +169,16 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	profile.intro_done = saved.get("intro_done") == true
 	var saved_settings: Variant = saved.get("settings")
 	profile.settings = saved_settings if saved_settings is Dictionary else {}
+	# Saves from before horns could be chosen have neither field: every bus keeps
+	# its own horn.
+	var saved_horns: Variant = saved.get("horns_owned")
+	if saved_horns is Array:
+		for id: Variant in saved_horns:
+			if id is String and not profile.horns_owned.has(id):
+				profile.horns_owned.append(id)
+	var saved_horn: Variant = saved.get("horn")
+	if saved_horn is String:
+		profile.choose_horn(saved_horn)
 	return profile
 
 

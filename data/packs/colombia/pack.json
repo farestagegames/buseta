@@ -50,17 +50,166 @@
     "daily_challenges": "daily_challenges.json",
     "passengers": "passengers.json"
   },
-  "sounds": {
-    "ambience": "res://assets/audio/ambience_loop.wav"
-  },
+  "sounds": {},
   "horns": [
     {
+      "id": "two_tone",
+      "name": "Two-tone",
+      "file": "res://assets/audio/horn_two_tone.wav",
+      "cost": 0
+    },
+    {
       "id": "standard",
-      "name": "Standard",
-      "file": "res://assets/audio/horn_loop.wav"
+      "name": "City horn",
+      "file": "res://assets/audio/horn_loop.wav",
+      "cost": 0
+    },
+    {
+      "id": "double_tap",
+      "name": "Friendly double tap",
+      "file": "res://assets/audio/horn_double_tap.wav",
+      "cost": 600,
+      "finish": true
+    },
+    {
+      "id": "air",
+      "name": "Air horn",
+      "file": "res://assets/audio/horn_air.wav",
+      "cost": 1500,
+      "level": 3
+    },
+    {
+      "id": "chiva",
+      "name": "Chiva tune",
+      "file": "res://assets/audio/horn_chiva.wav",
+      "cost": 2500,
+      "level": 5,
+      "finish": true
     }
   ],
-  "radio": [],
+  "radio": [
+    {
+      "id": "onda_marisol",
+      "name": "Onda Marisol",
+      "frequency": "95.3 FM",
+      "genre": "cumbia",
+      "tracks": [
+        {
+          "title": "Brisa de las cinco",
+          "file": "res://assets/audio/radio/onda_marisol_1.wav"
+        },
+        {
+          "title": "Ventana al mar",
+          "file": "res://assets/audio/radio/onda_marisol_2.wav"
+        }
+      ]
+    },
+    {
+      "id": "acordeon_del_puerto",
+      "name": "Acordeón del Puerto",
+      "frequency": "93.3 FM",
+      "genre": "vallenato",
+      "tracks": [
+        {
+          "title": "Paseo de la ciénaga",
+          "file": "res://assets/audio/radio/acordeon_puerto_1.wav"
+        },
+        {
+          "title": "Camino a Los Almendros",
+          "file": "res://assets/audio/radio/acordeon_puerto_2.wav"
+        }
+      ]
+    },
+    {
+      "id": "pico_marisol",
+      "name": "Picó Marisol",
+      "frequency": "106.1 FM",
+      "genre": "champeta",
+      "tracks": [
+        {
+          "title": "Terraza Caliente",
+          "file": "res://assets/audio/radio/pico_marisol_1.wav"
+        },
+        {
+          "title": "Baile en el Barrio",
+          "file": "res://assets/audio/radio/pico_marisol_2.wav"
+        }
+      ]
+    }
+  ],
+  "ambience": [
+    {
+      "id": "city",
+      "file": "res://assets/audio/ambience/city_bed.wav",
+      "rule": "always",
+      "volume_db": -8,
+      "radio_ducks_db": -6
+    },
+    {
+      "id": "sea",
+      "file": "res://assets/audio/ambience/sea_waves.wav",
+      "rule": "sea",
+      "near": 25,
+      "far": 230,
+      "volume_db": -5,
+      "radio_ducks_db": -6
+    },
+    {
+      "id": "birds",
+      "file": "res://assets/audio/ambience/birds.wav",
+      "rule": "calm",
+      "dry": true,
+      "volume_db": -10
+    },
+    {
+      "id": "shop_music",
+      "file": "res://assets/audio/ambience/shop_music.wav",
+      "rule": "stalls",
+      "near": 8,
+      "far": 40,
+      "muffled": true,
+      "radio_ducks": true,
+      "volume_db": -14
+    },
+    {
+      "id": "rain",
+      "file": "res://assets/audio/ambience/rain.wav",
+      "rule": "rain",
+      "volume_db": -6
+    },
+    {
+      "id": "motorbike",
+      "file": "res://assets/audio/ambience/motorbike_pass.wav",
+      "rule": "always",
+      "every": [
+        6,
+        16
+      ],
+      "volume_db": -9
+    },
+    {
+      "id": "vendor_bell",
+      "file": "res://assets/audio/ambience/vendor_bell.wav",
+      "rule": "vendors",
+      "near": 10,
+      "far": 50,
+      "every": [
+        8,
+        20
+      ],
+      "volume_db": -10
+    },
+    {
+      "id": "sharpener",
+      "file": "res://assets/audio/ambience/sharpener_whistle.wav",
+      "rule": "always",
+      "every": [
+        45,
+        90
+      ],
+      "volume_db": -14
+    }
+  ],
   "city_name": "Puerto Marisol",
   "fonts": []
 }

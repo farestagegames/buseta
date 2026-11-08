@@ -14,6 +14,9 @@ var cheat_row: Control
 var _quality_buttons: Dictionary = {}
 var _sensitivity_label: Label
 var _volume_label: Label
+## Only there when the country has radio stations.
+var radio_label: Label
+var radio_slider: HSlider
 var _cheat_taps := Cheats.new()
 
 
@@ -84,6 +87,12 @@ func _add_controls(box: Container) -> void:
 	box.add_child(_volume_label)
 	box.add_child(_slider(0.0, 1.0, GameSettings.sound_volume,
 		func(value: float) -> void: GameSettings.sound_volume = value))
+	if not Country.pack.radio_stations().is_empty():
+		radio_label = _label("", 22)
+		box.add_child(radio_label)
+		radio_slider = _slider(0.0, 1.0, GameSettings.radio_volume,
+			func(value: float) -> void: GameSettings.radio_volume = value)
+		box.add_child(radio_slider)
 
 
 func _add_language(box: Container) -> void:
@@ -205,6 +214,8 @@ func _refresh() -> void:
 		(_quality_buttons[level] as Button).set_pressed_no_signal(level == GameSettings.graphics_quality)
 	_sensitivity_label.text = tr("Steering sensitivity: %d%%") % roundi(GameSettings.sensitivity * 100.0)
 	_volume_label.text = tr("Sound volume: %d%%") % roundi(GameSettings.sound_volume * 100.0)
+	if radio_label != null:
+		radio_label.text = tr("Radio volume: %d%%") % roundi(GameSettings.radio_volume * 100.0)
 
 
 func _label(text: String, font_size: int) -> Label:

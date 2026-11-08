@@ -41,11 +41,15 @@ func _enter_tree() -> void:
 
 ## The player's bus in their livery. A copy, so the shared data stays untouched.
 static func chosen_spec() -> BusSpec:
+	return spec_for(chosen_bus_item(), Profile.selected_item(Catalog.LIVERIES))
+
+
+## The bus for this shift: the player's, unless the route has a bus of its own.
+static func chosen_bus_item() -> Dictionary:
 	var route := Profile.selected_item(Catalog.ROUTES)
-	var bus_item := Profile.selected_item(Catalog.BUSES)
 	if route.has("only_bus"):
-		bus_item = Profile.catalog.find(Catalog.BUSES, route["only_bus"])
-	return spec_for(bus_item, Profile.selected_item(Catalog.LIVERIES))
+		return Profile.catalog.find(Catalog.BUSES, route["only_bus"])
+	return Profile.selected_item(Catalog.BUSES)
 
 
 ## A copy, so the shared data stays untouched.
@@ -93,11 +97,26 @@ func _ready() -> void:
 	_score.setup(network, _bus.spec)
 	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)
+	_setup_audio()
 	GameEvents.map_ready.emit(network, route)
 	_tutorial.setup(_hud, _route_system, _bus.spec)
 	_intro.setup(network, ground, _bus, _camera)
 	if not Profile.data.intro_done:
 		_begin_first_shift.call_deferred()
+
+
+## The player's horn, and where the sea, stalls and stops are for the street sounds.
+func _setup_audio() -> void:
+	var audio: AudioDirector = $AudioDirector
+	audio.use_horn(Profile.horn_for(chosen_bus_item()))
+	var stalls := PackedVector2Array()
+	for prop in _obstacles.props:
+		if prop.kind == "stall":
+			stalls.append(Vector2(prop.position.x, prop.position.z))
+	var stops := PackedVector2Array()
+	for stop in route.stops:
+		stops.append(stop.position)
+	audio.setup_street(ground.coast_x, stalls, stops)
 
 
 ## Sets the sky and light of the city.

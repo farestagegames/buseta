@@ -27,6 +27,9 @@ var _preview_note: Label
 var _preview_bus: Dictionary = {}
 var _preview_livery: Dictionary = {}
 var _frame: MarginContainer
+var _horn_preview: AudioStreamPlayer
+var _horn_preview_left: float = 0.0
+var _horn_preview_db: float = AudioDirector.BUS_HORN_DB
 
 
 func _ready() -> void:
@@ -52,7 +55,21 @@ func _ready() -> void:
 	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(_content)
 	GameSettings.changed.connect(_on_settings_changed)
+	_horn_preview = AudioStreamPlayer.new()
+	_horn_preview.volume_db = AudioDirector.BUS_HORN_DB
+	add_child(_horn_preview)
 	show_tab(0)
+
+
+## The horn preview fades over its last moment, so a looping horn ends without a
+## click.
+func _process(dt: float) -> void:
+	if _horn_preview_left > 0.0:
+		_horn_preview_left -= dt
+		var fade := clampf(_horn_preview_left / HornVoice.FADE_SECONDS, 0.001, 1.0)
+		_horn_preview.volume_db = _horn_preview_db + linear_to_db(fade)
+		if _horn_preview_left <= 0.0:
+			_horn_preview.stop()
 
 
 ## Keeps the tabs and the ends of every list clear of notches and rounded
@@ -269,7 +286,7 @@ func _garage_tab() -> Control:
 	_garage_preview = BusPreview.new()
 	_garage_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side.add_child(_garage_preview)
-	_preview_note = _wrapped("Tap a bus or paint to try it", 20, MUTED)
+	_preview_note = _wrapped("Tap a bus, paint or horn to try it", 20, MUTED)
 	_preview_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	side.add_child(_preview_note)
 	_preview_bus = Profile.selected_item(Catalog.BUSES)
@@ -282,7 +299,88 @@ func _garage_tab() -> Control:
 	rows.add_child(_text("Liveries", 26, ACCENT))
 	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
 		rows.add_child(_garage_row(Catalog.LIVERIES, item, ""))
+	rows.add_child(_text("Horn", 26, ACCENT))
+	Profile.data.settle_horns(Country.pack.horns())
+	rows.add_child(_horn_row({}))
+	for item: Dictionary in Country.pack.horns():
+		rows.add_child(_horn_row(item))
 	return page
+
+
+## A horn to listen to and fit. An empty item is "each bus's own horn".
+func _horn_row(item: Dictionary) -> Control:
+	var id: String = item.get("id", "")
+	var card := _card()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	var listen := _button("▶")
+	listen.custom_minimum_size = Vector2(90.0, 72.0)
+	listen.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	listen.pressed.connect(func() -> void: preview_horn(item))
+	row.add_child(listen)
+	var lines := VBoxContainer.new()
+	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if id == "":
+		lines.add_child(_text("The bus's own horn", 26, Color.WHITE))
+		lines.add_child(_wrapped("Each bus sounds the horn it came with", 19, MUTED))
+	else:
+		lines.add_child(_text(item["name"], 26, Color.WHITE))
+	row.add_child(lines)
+	row.add_child(_horn_button(item))
+	card.add_child(row)
+	# Like the bus and paint rows, a tap anywhere on the row tries it: here, a listen.
+	# A tap on the button may reach the row too, which only starts the horn again.
+	TouchScroll.on_tap(card, preview_horn.bind(item))
+	return card
+
+
+func _horn_button(item: Dictionary) -> Button:
+	var id: String = item.get("id", "")
+	var button := _button("")
+	button.custom_minimum_size = Vector2(170.0, 72.0)
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if Profile.data.horn == id:
+		button.text = "Selected"
+		button.disabled = true
+	elif id == "" or Profile.data.owns_horn(id):
+		button.text = "Select"
+		button.pressed.connect(_on_choose_horn.bind(id))
+	elif int(item.get("level", 1)) > DriverLevel.level_for(Profile.data.xp):
+		button.text = tr("Level %d") % int(item["level"])
+		button.disabled = true
+	else:
+		button.text = tr("Buy %s") % Country.pack.money(int(item.get("cost", 0)))
+		button.disabled = Profile.data.coins < int(item.get("cost", 0))
+		button.pressed.connect(_on_buy_horn.bind(id))
+	return button
+
+
+## Plays a horn once through and names it. Empty is the horn of the bus on the
+## preview.
+func preview_horn(item: Dictionary) -> void:
+	if item.is_empty():
+		item = Country.pack.bus_horn(_preview_bus)
+	_preview_note.text = tr(item["name"])
+	_horn_preview.stream = load(Country.pack.resolve(item["file"]))
+	_horn_preview_db = AudioDirector.BUS_HORN_DB + float(item.get("volume_db", 0.0))
+	_horn_preview.volume_db = _horn_preview_db
+	_horn_preview.play()
+	_horn_preview_left = _horn_preview.stream.get_length()
+
+
+func horn_preview_playing() -> bool:
+	return _horn_preview.playing
+
+
+func _on_choose_horn(id: String) -> void:
+	Profile.choose_horn(id)
+	show_tab(_current_tab)
+
+
+func _on_buy_horn(id: String) -> void:
+	if Profile.buy_horn(id):
+		Profile.choose_horn(id)
+	show_tab(_current_tab)
 
 
 ## Tapping a row tries it on the preview bus, owned or not.

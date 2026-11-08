@@ -151,8 +151,160 @@ func test_recover_returns_a_lost_bus_to_the_route() -> void:
 func test_horn_sound_follows_the_button() -> void:
 	GameEvents.horn_changed.emit(true)
 	assert_true(audio.horn_playing)
+	await wait_seconds(0.3)
+	assert_true(audio.horn_playing, "It keeps sounding while held")
 	GameEvents.horn_changed.emit(false)
+	await wait_seconds(HornVoice.FADE_SECONDS + 0.1)
+	assert_false(audio.horn_playing, "A short fade, then quiet")
+
+
+func test_the_bus_sounds_its_own_horn_or_the_one_chosen() -> void:
+	assert_eq(audio.horn["id"], Country.pack.bus_horn(CityShift.chosen_bus_item())["id"])
+	Profile.data.coins = 1000
+	Profile.buy_horn("double_tap")
+	Profile.choose_horn("double_tap")
+	var second: CityShift = SCENE.instantiate()
+	add_child_autofree(second)
+	assert_eq((second.get_node("AudioDirector") as AudioDirector).horn["id"], "double_tap")
+	Profile.choose_horn("")
+
+
+func test_the_radio_button_cycles_through_the_stations_and_off() -> void:
+	while audio.tuner.is_on():
+		audio.cycle_radio()
+	var hud: DriveHud = scene.get_node("Hud")
+	assert_true(hud.radio_button.visible)
+	var stations := Country.pack.radio_stations()
+	var names: Array[String] = []
+	var listen := func(station_name: String, _frequency: String) -> void: names.append(station_name)
+	GameEvents.radio_tuned.connect(listen)
+	for i in stations.size() + 1:
+		hud.radio_button.pressed_down.emit()
+		if i < stations.size():
+			assert_true(audio.radio_playing(), "Station %d plays" % i)
+			assert_eq(GameSettings.radio_station, stations[i]["id"], "Remembered for the next shift")
+			assert_true(hud.station_label.visible)
+			assert_string_contains(hud.station_label.text, stations[i]["frequency"])
+	GameEvents.radio_tuned.disconnect(listen)
+	assert_false(audio.radio_playing(), "Off again after the last station")
+	assert_eq(GameSettings.radio_station, "")
+	assert_eq(names.size(), stations.size() + 1)
+	assert_eq(names[0], stations[0]["name"])
+	assert_eq(names[names.size() - 1], "")
+	assert_eq(hud.station_label.text, tr("RADIO OFF"))
+
+
+func test_the_radio_picks_up_where_the_last_shift_left_it() -> void:
+	GameSettings.radio_station = Country.pack.radio_stations()[1]["id"]
+	var second: CityShift = SCENE.instantiate()
+	add_child_autofree(second)
+	var second_audio: AudioDirector = second.get_node("AudioDirector")
+	assert_eq(second_audio.tuner.station_id(), GameSettings.radio_station)
+	assert_true(second_audio.radio_playing())
+	GameSettings.radio_station = ""
+
+
+func test_the_radio_moves_on_when_a_track_ends() -> void:
+	GameSettings.radio_station = ""
+	audio.cycle_radio()
+	var first := audio.radio_stream()
+	audio._on_track_finished()
+	assert_ne(audio.radio_stream(), first)
+	assert_true(audio.radio_playing())
+	GameSettings.radio_station = ""
+
+
+func test_the_radio_is_muffled_from_outside_the_bus() -> void:
+	GameEvents.camera_view_changed.emit("Cockpit")
+	assert_false(SoundBuses.radio_muffled())
+	GameEvents.camera_view_changed.emit("Far")
+	assert_true(SoundBuses.radio_muffled())
+
+
+func test_the_radio_plays_on_while_the_settings_are_open() -> void:
+	GameSettings.radio_station = ""
+	audio.cycle_radio()
+	var hud: DriveHud = scene.get_node("Hud")
+	assert_true(hud.radio_button.lit, "Lit while a station plays")
+	hud._open_settings()
+	assert_true(get_tree().paused)
+	assert_true(audio._radio.can_process(), "The radio is not paused with the game")
+	assert_true(audio.radio_playing())
+	hud._close_settings()
+	while audio.tuner.is_on():
+		audio.cycle_radio()
+	assert_false(hud.radio_button.lit)
+	GameSettings.radio_station = ""
+
+
+func test_tuning_the_radio_does_not_write_the_save_at_once() -> void:
+	GameSettings.radio_station = ""
+	Profile.save()
+	var before := FileAccess.get_file_as_string("user://test_save_scene.json")
+	audio.cycle_radio()
+	assert_eq(FileAccess.get_file_as_string("user://test_save_scene.json"), before, "No disk write per tap")
+	assert_eq(Profile.data.settings["radio_station"], GameSettings.radio_station, "Saved with the next save")
+	while audio.tuner.is_on():
+		audio.cycle_radio()
+	GameSettings.radio_station = ""
+
+
+func test_a_horn_let_go_as_the_game_pauses_does_not_blip_on_resume() -> void:
+	GameEvents.horn_changed.emit(true)
+	await wait_frames(3)
+	GameEvents.horn_changed.emit(false)
+	var hud: DriveHud = scene.get_node("Hud")
+	hud._open_settings()
+	assert_false(audio.horn_playing, "Stopped as the game paused")
+	hud._close_settings()
+	await wait_frames(3)
 	assert_false(audio.horn_playing)
+
+
+func test_a_held_horn_survives_a_pause() -> void:
+	GameEvents.horn_changed.emit(true)
+	var hud: DriveHud = scene.get_node("Hud")
+	hud._open_settings()
+	hud._close_settings()
+	assert_true(audio.horn_playing, "Still held, so still sounding")
+	GameEvents.horn_changed.emit(false)
+	await wait_seconds(HornVoice.FADE_SECONDS + 0.1)
+
+
+func test_a_settled_street_layer_is_left_alone() -> void:
+	await wait_seconds(1.0)
+	var city: AudioStreamPlayer = audio._street["city"]
+	city.volume_db = 3.0
+	await wait_frames(10)
+	assert_eq(city.volume_db, 3.0, "Its volume is not written every frame")
+
+
+func test_stalls_and_stops_reach_the_street_sounds_apart() -> void:
+	assert_gt(audio._stops.size(), 0)
+	var stop: RouteStop = route_system.runner.current_stop()
+	_park_at(stop)
+	await wait_physics_frames(3)
+	assert_lt(audio.mixer.stop_distance, 25.0, "Parked at a stop")
+
+
+func test_the_sea_is_heard_on_the_malecon_and_not_in_town() -> void:
+	var town := scene.network.sample("mill_lane", 100.0, 1.9, 1)
+	GameEvents.bus_relocate_requested.emit(town["position"], town["heading"])
+	await wait_seconds(1.0)
+	assert_lt(audio.street_level("sea"), 0.05, "Inland")
+	assert_gt(audio.street_level("city"), 0.9, "The city is always there")
+	var malecon := scene.network.sample("river_road", 200.0, 1.9, 1)
+	GameEvents.bus_relocate_requested.emit(malecon["position"], malecon["heading"])
+	await wait_seconds(1.0)
+	assert_gt(audio.street_level("sea"), 0.5, "On the Malecón")
+
+
+func test_rain_has_a_hook_for_the_weather() -> void:
+	GameEvents.rain_changed.emit(1.0)
+	await wait_seconds(0.8)
+	assert_gt(audio.street_level("rain"), 0.9)
+	assert_lt(audio.street_level("birds"), 0.05)
+	GameEvents.rain_changed.emit(0.0)
 
 
 func test_door_sound_plays_when_doors_open() -> void:
