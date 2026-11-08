@@ -28,8 +28,7 @@ func _ready() -> void:
 
 	var title := _label("Paused" if in_shift else "Settings", 32)
 	outer.add_child(title)
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var scroll := TouchScroll.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	outer.add_child(scroll)
 	var box := VBoxContainer.new()
@@ -95,8 +94,6 @@ func _add_language(box: Container) -> void:
 	language_picker.get_popup().auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	language_picker.custom_minimum_size.y = 70.0
 	language_picker.add_theme_font_size_override("font_size", 24)
-	# Opens when the finger lifts, so scrolling past it does not open it by mistake.
-	language_picker.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	for language: Dictionary in Country.pack.languages():
 		language_picker.add_item(language["name"])
 	language_picker.item_selected.connect(_on_language_chosen)
@@ -133,7 +130,7 @@ func _add_graphics(box: Container) -> void:
 
 
 func _slider(low: float, high: float, value: float, on_change: Callable) -> HSlider:
-	var slider := HSlider.new()
+	var slider := TouchSlider.new()
 	slider.min_value = low
 	slider.max_value = high
 	slider.step = 0.05

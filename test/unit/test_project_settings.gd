@@ -24,6 +24,15 @@ func test_mouse_can_stand_in_for_touch_on_desktop() -> void:
 	assert_true(ProjectSettings.get_setting("input_devices/pointing/emulate_touch_from_mouse"))
 
 
+func test_touch_also_drives_buttons_and_lists() -> void:
+	assert_true(ProjectSettings.get_setting("input_devices/pointing/emulate_mouse_from_touch"),
+		"Buttons and lists listen to the mouse events Godot makes from a touch")
+
+
+func test_a_shaky_tap_is_not_a_scroll() -> void:
+	assert_gte(ProjectSettings.get_setting("gui/common/default_scroll_deadzone"), 10)
+
+
 func test_texture_compression_for_android_is_on() -> void:
 	assert_true(ProjectSettings.get_setting("rendering/textures/vram_compression/import_etc2_astc"))
 

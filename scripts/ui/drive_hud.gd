@@ -294,12 +294,9 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		gear_switch.is_reverse = data.is_reverse
 
 
-## Keeps controls clear of notches and rounded corners.
+## Keeps controls clear of notches and rounded corners on both sides, so
+## turning the phone round keeps them clear.
 func _apply_safe_area(root: Control) -> void:
-	var screen := DisplayServer.screen_get_size()
-	var safe := DisplayServer.get_display_safe_area()
-	if screen.x <= 0 or safe.size.x <= 0:
-		return
-	var scale_x := root.get_viewport_rect().size.x / float(screen.x)
-	root.offset_left = float(safe.position.x) * scale_x
-	root.offset_right = -float(screen.x - safe.end.x) * scale_x
+	var insets := UiStyle.screen_insets(root.get_viewport_rect().size)
+	root.offset_left = insets.x
+	root.offset_right = -insets.z

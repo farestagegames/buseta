@@ -9,6 +9,10 @@ const COLLISION_COOLDOWN := 0.35
 ## A bus only vents its brakes now and then, not on every pedal lift.
 const AIR_BRAKE_COOLDOWN := 8.0
 const REVERSE_BEEP_SECONDS := 1.0
+## A car's toot is the bus horn, higher and short, so no extra sound is needed.
+const CAR_HORN_PITCH := 1.45
+const CAR_HORN_SECONDS := 0.28
+const CAR_HORN_COOLDOWN := 4.0
 
 const SOUNDS := {
 	"engine": "res://assets/audio/engine_loop.wav",
@@ -44,6 +48,9 @@ var _air_cooldown: float = 0.0
 var _ambience: AudioStreamPlayer
 var _lamp_was_on: bool = false
 var _reverse_timer: float = 0.0
+var _car_horn: AudioStreamPlayer
+var _car_horn_left: float = 0.0
+var _car_horn_cooldown: float = 0.0
 
 
 func _ready() -> void:
@@ -51,6 +58,11 @@ func _ready() -> void:
 		_streams[key] = load(Country.pack.sound(key, SOUNDS[key]))
 	_engine = _make_loop("engine", -22.0)
 	_horn = _make_loop("horn", -13.0)
+	_car_horn = AudioStreamPlayer.new()
+	_car_horn.stream = _streams["horn"]
+	_car_horn.volume_db = -19.0
+	_car_horn.pitch_scale = CAR_HORN_PITCH
+	add_child(_car_horn)
 	_engine.play()
 	_ambience = _make_loop("ambience", -24.0)
 	_ambience.play()
@@ -66,6 +78,7 @@ func _ready() -> void:
 	GameEvents.passenger_paid.connect(func() -> void: play_effect("pay", -18.0))
 	GameEvents.stop_requested.connect(func() -> void: play_effect("bell", -16.0))
 	GameEvents.stop_session_started.connect(func(_stop: int, _off: int, _on: int) -> void: play_effect("bell", -14.0))
+	GameEvents.traffic_horn.connect(_on_traffic_horn)
 
 
 func play_effect(key: String, volume_db: float) -> void:
@@ -91,6 +104,19 @@ func _make_loop(key: String, volume_db: float) -> AudioStreamPlayer:
 func _process(dt: float) -> void:
 	_cooldown = maxf(_cooldown - dt, 0.0)
 	_air_cooldown = maxf(_air_cooldown - dt, 0.0)
+	_car_horn_cooldown = maxf(_car_horn_cooldown - dt, 0.0)
+	if _car_horn_left > 0.0:
+		_car_horn_left -= dt
+		if _car_horn_left <= 0.0:
+			_car_horn.stop()
+
+
+func _on_traffic_horn() -> void:
+	if _car_horn_cooldown > 0.0:
+		return
+	_car_horn_cooldown = CAR_HORN_COOLDOWN
+	_car_horn_left = CAR_HORN_SECONDS
+	_car_horn.play()
 
 
 func _on_horn(is_pressed: bool) -> void:

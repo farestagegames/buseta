@@ -101,3 +101,40 @@ One line each, with the reason. Newest at the bottom.
 - Stop names keep the "de" of Colombian place names: "Mercado de Oriente", "Cruce de Los Almendros", "Puente de Los Almendros". "Los Almendros" is the barrio, so it keeps its capital.
 - The visible-text scan skips a line only when it starts with print, push_error and the like, and drops just the node path from a get_node call, so text on the same line is still checked.
 - The penalty toast now shrinks its text to fit, like the HUD buttons. "Te saltaste el paradero Puente de Los Almendros" was a little wider than the 560 px box.
+- Every scrolling list is a `TouchScroll`. It lets a drag that starts on a card, button, switch or slider reach the list, because those stopped the touch and the menus only scrolled from the gaps between rows.
+- Buttons in a list fire when the finger lifts, and a scroll cancels them, so a drag that ends over "Comprar" buys nothing.
+- The scroll deadzone is 14 UI pixels, in project settings and on each list. Godot's default of 0 would turn a slightly shaky tap into a scroll and press nothing.
+- A tap on a list still coasting from a flick only stops it, as on any phone. Godot reports the scroll ended when the finger lifts, so the list watches its own offset to know when the flick is over.
+- Settings sliders are `TouchSlider`s that move only once the finger goes sideways, and a tap still sets the value. Godot's slider jumped to the first touch, so scrolling past it changed the volume. It keeps Godot's own dragging off with `editable = false`, so the theme draws the disabled grabber like the normal one.
+- Garage rows try a bus on only on a tap (`TouchScroll.on_tap`), not at the end of every scroll that started on them.
+- A tab redrawn after buying or selecting goes back to where it was scrolled, instead of jumping to the top.
+- The main menu stays inside the phone's safe area, so the tabs and the ends of the lists clear a notch. On a computer the insets are zero, because the desktop's safe area is not the game window's.
+- `emulate_mouse_from_touch` is written out in project.godot and tested, because buttons and lists only listen to the mouse events Godot makes from a touch.
+- The touch tests push each touch and its emulated mouse event into a SubViewport. Headless Godot has no display to carry `Input.parse_input_event` to the menu.
+- Traffic logic moved out of the `TrafficSystem` node into `TrafficFlow`, a plain class, so every reaction to the bus can be tested on a small made-up map for both driving sides. The node now only draws, checks crashes and runs the lamps.
+- Cars and motos check the strip along their own path, at their own width, against the bus body and the articulated trailer. The old check looked in a straight line from the car's nose and ignored the trailer, so cars drove into a trailer swinging across their lane.
+- A moving bus counts as already where it will be in 1.5 s, and a reversing one as where it will be in 3 s plus 3 m. Traffic then brakes for a bus pulling out or cutting in before it is in the way, and stops well short of a bus backing up.
+- A bus is only waited for at a junction if it is in the part the car is about to cross. One driving away ahead is followed, but one coming round a roundabout towards the entry is given way to.
+- Cars pull round a bus only when its doors are open or it has stood for 10 s, after waiting 2.5 s, with no oncoming traffic and free lane past it. A bus stopped in a queue or at a light is never overtaken.
+- A pass ends only when nothing is beside the vehicle or within 20 m ahead in its usual line, so it never cuts back in on the bus and never swings in between two cones.
+- Motos keep filtering past cars, but only where they do not overlap them, and at most 4 m/s faster than the car beside them. A car in their line, such as one going round the bus, is followed like any other.
+- Motos squeeze past a stopped bus or a prop without waiting when they stay within half a metre of the centre line, at 4 m/s beside the bus. Further out they wait for a gap like a car.
+- Props in the road (cones, barriers, bins, stalls, parked or shoved cars) are filed under the lanes they are beside as spans along and across the lane. Checking them is then a few sums per vehicle, and the list is rebuilt only when a prop moves.
+- A knocked-over cone is driven over. A bin, crate or barrier lying in the road is still gone round.
+- Lanes now move to 0.25 m from the centre line beside parked cars and cone lines, instead of 0.7 m. That clears the cones by 0.25 m, which the 0.7 m lane did not.
+- A car kept waiting 7 to 9 s behind the bus gives one short toot. It is the bus horn played higher and for a quarter of a second, so no new sound was added.
+- Vehicles read the ground height every fourth tick and follow the slope in between. That cut the drawing cost by about a third, and nobody can see the difference.
+- Motos pass a stopped bus with 0.5 m to spare, not 0.25 m. The game counts a moto as a 0.55 m circle, so with less room a bus pulling out clipped them.
+- A vehicle going round the bus that is still beside its back half stops once the doors shut, and lets the bus pull away, instead of racing it.
+- Where the lane moves over for parked cars or cones, the moto's kerb line moves over by half as much. Motos then ease round them; before, they stopped dead at a parked car just past a junction and a turning bus clipped them.
+- Traffic cost per physics tick in the busy city at high quality (34 vehicles, desktop, tight loop): about 860 µs before, about 460 µs now, because per-lane lists replaced the loop over every pair of vehicles.
+- Being over the free speed only ever brakes at the comfortable 2.6 m/s². Only something in the way brakes harder, up to 7 m/s². Before, a speed cap such as the moto filtering limit braked at over 100 m/s².
+- Speed limits ahead (a turn, the filtering limit beside a car, the slow stretch beside a bus at a stop) pass through `TrafficAgent.approach_speed`, so traffic starts slowing early enough to meet them gently.
+- A car beside a bus that is pulling away is still told to stop, but now brakes at the comfortable rate. Its look-ahead at the bus still brakes harder if it must.
+- Before pulling out to pass, a car also checks traffic on the junction link ahead and on the roads feeding it that will come into the oncoming lane. A car stopped behind a bus near a junction got stuck nose to nose with one that came out of it.
+- A car about to come out of a junction waits at its line while a vehicle within 50 m of it is over the centre line coming towards it, so a pass that has started is never met head on.
+- Maps keep parked cars and cone lines on opposite sides of a road at least 16 m apart (`LaneGraph.BLOCK_SPACING`), and a test checks every shipped map. If both lanes move in at once, two cars meeting there overlap. Leaving both lanes in place does not fix it: each car would pass its own parked car 0.3 m over the line without waiting for a gap, and they would still overlap.
+- A fallen lamp post is driven over, like a flattened cone. One lying across the road would otherwise block traffic for the rest of the shift.
+- Safe-area insets are padded on both opposite edges. The game turns with the phone, which moves the notch to the other side without changing the view size, so nothing would re-fit. The driving HUD now uses the same `UiStyle.screen_insets` and so has no insets on a computer.
+- A flick counts as over only once the list has held still for 4 physics ticks. Its last stretch moves less than a pixel a tick, so one still tick was not enough.
+- `TouchScroll` leaves windows inside it alone, such as the language dropdown's popup, which has its own input.

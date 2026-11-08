@@ -89,6 +89,7 @@ func _ready() -> void:
 	_bus.start_at(ground, route.start_position, route.start_heading)
 	_route_system.setup(route, _bus.spec, network, int(route_data.get("fare", Country.pack.data["currency"]["fare"])))
 	_traffic.setup(map_data, network, ground, _bus.spec)
+	_traffic.watch_props(_obstacles.props)
 	_score.setup(network, _bus.spec)
 	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)

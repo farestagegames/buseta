@@ -20,7 +20,7 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | 4 | Colombian gameplay | Done | `milestone-colombian-gameplay` | Hail-anywhere routes, La Ola rapid-transit line, vendors, peso fares, stop requests |
 | 5 | Drivers and passengers | Done | `milestone-colombian-people` | 10 Colombian drivers (coastal, Afro-Colombian, Andean, Wayuu), 20 passenger looks plus 2 vendors, all in data. Reviewed for respect; fixes made: a driver renamed after a name clash with a real crime figure, one portrait redrawn |
 | 6 | Language | Done | `milestone-colombian-language` | Colombian Spanish is the default (English phones get English), every string reworded in coastal Colombian Spanish and reviewed, all visible text checked by a test, text fits at 1280, 1560 and 1600 wide |
-| 7 | Audio | Not started | | |
+| 7 | Audio | In progress | | First attempt stopped by the usage limit; restarted |
 | 8a | Day/night and rain | Not started | | |
 | 8b | Daily challenges and achievements | Not started | | |
 | 8c | iOS readiness | Not started | | |
@@ -32,5 +32,7 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | --- | --- | --- |
 | Brake as a button | Done | Hold to brake: gentle at first, firmer the longer it is held |
 | Clearer drive/reverse | Done | D and R switch with the gear in use lit, plus a tip when you try to change gear while moving |
+| Menu scrolling | Done | Lists scroll from a drag anywhere, a drag never presses or buys, sliders only move sideways, scroll position kept after buying, notch-safe menu |
+| Traffic awareness | Done | Cars and motos see the bus and its trailer, brake smoothly for obstacles, wait or pass a stopped bus only when the other side is clear, yield at junctions, stop for a reversing bus |
 
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.

@@ -51,6 +51,7 @@ signal stop_arrived(stop_index: int, accuracy: float, seconds_late: float)
 signal indicator_missed
 signal red_light_run
 signal signal_ahead(state: int, distance: float) ## TrafficLightPlan.Light, or -1.
+signal traffic_horn ## A car kept waiting behind the bus gives a short toot.
 signal penalty_shown(text: String)
 ## A tip rather than a fault, such as why a control did nothing.
 signal hint_shown(text: String)

@@ -1,16 +1,10 @@
 class_name TrafficSystem
 extends Node3D
-## Moves all traffic and runs the signals. Sees the bus only through telemetry.
+## Draws the traffic, runs the signals' lamps and checks the bus for crashes.
+## TrafficFlow does the driving. Sees the bus only through telemetry.
 
-const CAR_HALF_LENGTH := 2.2
-const CAR_HALF_WIDTH := 0.9
-const CRUISE_LOW := 9.5
-const CRUISE_HIGH := 12.5
-const LOOK_AHEAD := 60.0
-const AMBER_BRAKE := 3.2 ## Cars go through amber when they could not stop at this rate.
-const YIELD_DISTANCE := 12.0
-const RING_CLEARANCE := 24.0
-const ONCOMING_CLEARANCE := 32.0
+const CAR_HALF_LENGTH := TrafficAgent.CAR_HALF_LENGTH
+const CAR_HALF_WIDTH := TrafficAgent.CAR_HALF_WIDTH
 const SIGNAL_RANGE := 75.0
 const CROSSING_REACH := 5.0 ## Sideways reach of a stop line, in metres.
 const LAMP_HEIGHT := 4.3
@@ -18,56 +12,91 @@ const CONTACT_CHECK_RADIUS := 14.0
 const BUS_FAULT_SPEED := 0.3 ## Slower than this, the bus is not to blame.
 const HIT_REPEAT_SECONDS := 1.0
 const SEPARATION_PER_TICK := 0.06
+## Ticks between ground height checks for each vehicle. In between, the height
+## follows the last slope, which is smooth and saves most of the cost.
+const GROUND_REFRESH_TICKS := 4
 
-const MOTO_CRUISE_LOW := 10.0
-const MOTO_CRUISE_HIGH := 14.0
-const MOTO_HALF_LENGTH := 1.0
-const MOTO_HALF_WIDTH := 0.4
+const MOTO_HALF_LENGTH := TrafficAgent.MOTO_HALF_LENGTH
+const MOTO_HALF_WIDTH := TrafficAgent.MOTO_HALF_WIDTH
 const MOTO_RADIUS := 0.55
 const MOTO_COLLISION := 2.0 ## How hard a moto counts as a knock, in m/s lost.
 const MOTO_COLOURS: Array[Color] = [
 	Color(0.85, 0.15, 0.12), Color(0.12, 0.2, 0.55), Color(0.12, 0.12, 0.14), Color(0.9, 0.9, 0.92), Color(0.15, 0.55, 0.3),
 ]
 
-var graph: LaneGraph
-var agents: Array[TrafficAgent] = []
-var plans: Dictionary = {} ## Node id to TrafficLightPlan.
-var time: float = 0.0
+var flow: TrafficFlow
+var graph: LaneGraph:
+	get:
+		return flow.graph
+var agents: Array[TrafficAgent]:
+	get:
+		return flow.agents
+var plans: Dictionary:
+	get:
+		return flow.plans
+var time: float:
+	get:
+		return flow.time
+	set(value):
+		flow.time = value
 
 var _ground: GroundSurface
-var _spec: BusSpec
-var _bus_position: Vector2 = Vector2.ZERO
-var _bus_heading: float = 0.0
-var _bus_speed: float = 0.0
-var _bus_active: bool = false
-var _trailer_axle: Vector2 = Vector2.ZERO
-var _trailer_heading: float = 0.0
+var _spec: BusSpec:
+	get:
+		return flow.spec
+	set(value):
+		flow.spec = value
+var _bus_position: Vector2:
+	get:
+		return flow.bus_rear
+	set(value):
+		flow.bus_rear = value
+var _bus_heading: float:
+	get:
+		return flow.bus_heading
+	set(value):
+		flow.bus_heading = value
+var _bus_speed: float:
+	get:
+		return flow.bus_speed
+	set(value):
+		flow.bus_speed = value
+var _bus_active: bool:
+	get:
+		return flow.bus_active
+var _trailer_axle: Vector2:
+	get:
+		return flow.trailer_axle
+var _trailer_heading: float:
+	get:
+		return flow.trailer_heading
 var _batch: MultiMesh
 var _moto_batch: MultiMesh
 var _car_colours: Array[Color] = []
 var _lamps: MultiMesh
-var _heads: Array[Dictionary] = [] ## lane, node, group, first lamp instance.
 var _approaches: Array[Dictionary] = [] ## lane, node, group, line, forward.
 var _previous_side: Dictionary = {} ## Approach index to sign of bus nose position.
-var _cruise_limit: float = 13.0
-var _random := RandomNumberGenerator.new()
+var _tick: int = 0
 
 
 func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec) -> void:
 	_ground = ground
-	_spec = spec
-	_random.seed = 4242
 	_car_colours = CityTheme.from_data(map_data).car_colours
-	graph = LaneGraph.build(network, map_data)
+	flow = TrafficFlow.new(LaneGraph.build(network, map_data), spec)
+	flow.horn_sounded.connect(func(_spot: Vector2) -> void: GameEvents.traffic_horn.emit())
 	_build_signals()
-	_spawn_cars()
+	flow.spawn(GraphicsQuality.current_profile()["traffic_cars"], GraphicsQuality.current_profile()["traffic_motos"])
 	_build_car_batch()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 
 
+## Lets traffic see cones, bins, stalls and parked cars standing in the road.
+func watch_props(props: Array[KnockableProp]) -> void:
+	flow.watch_props(props)
+
+
 func light_at(node_id: String, group: int) -> TrafficLightPlan.Light:
-	var plan: TrafficLightPlan = plans[node_id]
-	return plan.state(group, time)
+	return flow.light_at(node_id, group)
 
 
 ## The signal the bus is approaching, for the HUD and the autopilot.
@@ -94,23 +123,24 @@ func bus_gap_ahead() -> Dictionary:
 	var nose := _bus_position + forward * (_spec.wheelbase + _spec.front_overhang)
 	var right := Vector2(-forward.y, forward.x)
 	var best := {"gap": INF, "speed": 0.0}
-	for agent in agents:
-		var lane: TrafficLane = graph.lanes[agent.lane]
-		var facing := lane.forward_at(agent.distance).dot(forward)
+	for i in agents.size():
+		var agent := agents[i]
+		var facing := flow.forwards[i].dot(forward)
 		if facing < -0.5:
 			continue
-		var offset := _position_of(agent) - nose
+		var offset := flow.positions[i] - nose
 		var ahead := offset.dot(forward)
 		if ahead > 0.0 and ahead < float(best["gap"]) and absf(offset.dot(right)) < 2.3:
 			# A car crossing in front is not going our way, so treat it as stopped.
-			best = {"gap": ahead - CAR_HALF_LENGTH, "speed": agent.speed if facing > 0.7 else 0.0}
+			best = {"gap": ahead - agent.half_length(), "speed": agent.speed if facing > 0.7 else 0.0}
 	return best
 
 
 func _physics_process(dt: float) -> void:
-	time += dt
+	flow.step(dt)
+	_tick += 1
 	for i in agents.size():
-		_update_agent(i, dt)
+		_write_car(i, agents[i])
 	_check_bus_hits()
 	_update_lamps()
 	if _bus_active:
@@ -120,128 +150,11 @@ func _physics_process(dt: float) -> void:
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
-	_bus_position = Vector2(data.position.x, data.position.z)
-	_bus_heading = data.heading
-	_bus_speed = data.speed
-	_bus_active = true
-	_trailer_axle = data.trailer_axle
-	_trailer_heading = data.trailer_heading
+	flow.set_bus(Vector2(data.position.x, data.position.z), data.heading, data.speed, data.trailer_axle, data.trailer_heading, data.door_open_amount > 0.9)
 
 
 func _position_of(agent: TrafficAgent) -> Vector2:
-	var lane: TrafficLane = graph.lanes[agent.lane]
-	var spot := lane.point_at(agent.distance) + agent.nudge
-	if agent.is_moto:
-		var forward := lane.forward_at(agent.distance)
-		spot += Vector2(-forward.y, forward.x) * TrafficAgent.MOTO_KERB_SHIFT * float(graph.network.traffic_side)
-	return spot
-
-
-func _update_agent(index: int, dt: float) -> void:
-	var agent: TrafficAgent = agents[index]
-	var lane: TrafficLane = graph.lanes[agent.lane]
-	if agent.next_lane == -1:
-		agent.next_lane = lane.next[_random.randi_range(0, lane.next.size() - 1)]
-	var hold := _gap_to_traffic(index, agent, lane)
-	var line := _gap_to_stop(agent, lane)
-	if line < float(hold["gap"]):
-		hold = {"gap": line, "speed": 0.0}
-	var bus_gap := _gap_to_bus(agent, lane)
-	if bus_gap < float(hold["gap"]):
-		hold = {"gap": bus_gap, "speed": maxf(_bus_speed, 0.0)}
-	agent.drive(lane.speed_limit(agent.cruise), hold["gap"], hold["speed"], dt)
-	if agent.distance >= lane.length:
-		agent.distance -= lane.length
-		agent.lane = agent.next_lane
-		agent.next_lane = -1
-		var entered: TrafficLane = graph.lanes[agent.lane]
-		agent.distance = minf(agent.distance, entered.length - 0.01)
-	_write_car(index, agent)
-
-
-func _gap_to_traffic(index: int, agent: TrafficAgent, lane: TrafficLane) -> Dictionary:
-	var best := {"gap": INF, "speed": 0.0}
-	var remaining := lane.length - agent.distance
-	for i in agents.size():
-		if i == index:
-			continue
-		var other: TrafficAgent = agents[i]
-		if other.is_moto != agent.is_moto:
-			continue # Motorbikes pass on the kerb side, so neither waits for the other.
-		var gap := INF
-		if other.lane == agent.lane and other.distance > agent.distance:
-			gap = other.distance - agent.distance
-		elif other.lane == agent.next_lane:
-			gap = remaining + other.distance
-		elif other.lane != agent.lane and agent.next_lane >= 0:
-			var following: TrafficLane = graph.lanes[agent.next_lane]
-			if not following.next.is_empty() and other.lane == following.next[0]:
-				gap = remaining + following.length + other.distance
-		gap -= TrafficAgent.MOTO_LENGTH if agent.is_moto else TrafficAgent.CAR_LENGTH
-		if gap < float(best["gap"]):
-			best = {"gap": maxf(gap, 0.1), "speed": other.speed}
-	return best
-
-
-func _gap_to_stop(agent: TrafficAgent, lane: TrafficLane) -> float:
-	if lane.is_link:
-		return INF
-	var remaining := lane.length - agent.distance
-	if remaining > LOOK_AHEAD:
-		return INF
-	var node: Dictionary = graph.network.nodes[lane.end_node]
-	if plans.has(lane.end_node):
-		var light := light_at(lane.end_node, lane.group)
-		if light == TrafficLightPlan.Light.RED:
-			return remaining
-		if light == TrafficLightPlan.Light.AMBER and remaining > agent.speed * agent.speed / (2.0 * AMBER_BRAKE):
-			return remaining
-		if _must_yield_turning(agent, lane, remaining):
-			return remaining
-	elif node["kind"] == "roundabout" and remaining < YIELD_DISTANCE and _ring_is_busy(agent, lane):
-		return remaining
-	return INF
-
-
-## Turns across the oncoming lane give way to traffic going straight on.
-func _must_yield_turning(agent: TrafficAgent, lane: TrafficLane, remaining: float) -> bool:
-	var across_traffic := -graph.network.traffic_side
-	if agent.next_lane < 0 or (graph.lanes[agent.next_lane] as TrafficLane).turn != across_traffic or remaining > YIELD_DISTANCE:
-		return false
-	var heading := lane.forward_at(lane.length - 0.1)
-	for other in agents:
-		if other == agent:
-			continue
-		var other_lane: TrafficLane = graph.lanes[other.lane]
-		if other_lane.is_link or other_lane.end_node != lane.end_node:
-			continue
-		var other_heading := other_lane.forward_at(other_lane.length - 0.1)
-		if heading.dot(other_heading) > -0.7:
-			continue
-		if other_lane.length - other.distance < ONCOMING_CLEARANCE and other.speed > 1.0:
-			return true
-	return false
-
-
-func _ring_is_busy(agent: TrafficAgent, lane: TrafficLane) -> bool:
-	var entry := lane.points[lane.points.size() - 1]
-	for other in agents:
-		if other == agent:
-			continue
-		var other_lane: TrafficLane = graph.lanes[other.lane]
-		if other_lane.is_link and other_lane.node == lane.end_node:
-			if _position_of(other).distance_to(entry) < RING_CLEARANCE:
-				return true
-	var ring_centre: Vector2 = graph.network.nodes[lane.end_node]["position"]
-	var body := BusFootprint.body_centre(_bus_position, _bus_heading, _spec)
-	return body.distance_to(ring_centre) < 24.0 and body.distance_to(entry) < RING_CLEARANCE
-
-
-func _gap_to_bus(agent: TrafficAgent, lane: TrafficLane) -> float:
-	var forward := lane.forward_at(agent.distance)
-	var half_length := MOTO_HALF_LENGTH if agent.is_moto else CAR_HALF_LENGTH
-	var half_width := MOTO_HALF_WIDTH if agent.is_moto else CAR_HALF_WIDTH
-	return BusFootprint.gap_ahead(_bus_position, _bus_heading, _spec, _position_of(agent), forward, half_length, half_width)
+	return flow.position_of(agent)
 
 
 ## Any contact between the bus and a car counts, whoever is moving. Only a bus
@@ -250,11 +163,13 @@ func _check_bus_hits() -> void:
 	var forward := Vector2(-sin(_bus_heading), -cos(_bus_heading))
 	var bus_velocity := forward * _bus_speed
 	var centre := BusFootprint.body_centre(_bus_position, _bus_heading, _spec)
-	for agent in agents:
-		var spot := _position_of(agent)
-		if spot.distance_squared_to(centre) > CONTACT_CHECK_RADIUS * CONTACT_CHECK_RADIUS:
+	var reach := CONTACT_CHECK_RADIUS + _spec.full_length() - _spec.overall_length()
+	for i in agents.size():
+		var agent := agents[i]
+		var spot := flow.positions[i]
+		if spot.distance_squared_to(centre) > reach * reach:
 			continue
-		var car_forward := (graph.lanes[agent.lane] as TrafficLane).forward_at(agent.distance)
+		var car_forward := flow.forwards[i]
 		if agent.is_moto:
 			_check_moto_hit(agent, spot, bus_velocity)
 			continue
@@ -303,40 +218,18 @@ func _check_red_lights() -> void:
 				GameEvents.red_light_run.emit()
 
 
-func _spawn_cars() -> void:
-	var road_lanes: Array[int] = []
-	for i in graph.lanes.size():
-		if not (graph.lanes[i] as TrafficLane).is_link:
-			road_lanes.append(i)
-	var car_count: int = GraphicsQuality.current_profile()["traffic_cars"]
-	for i in car_count:
-		var lane_index: int = road_lanes[i * road_lanes.size() / car_count]
-		var lane: TrafficLane = graph.lanes[lane_index]
-		var start := lane.length * (0.25 + 0.5 * _random.randf())
-		var car := TrafficAgent.new(lane_index, start, _random.randf_range(CRUISE_LOW, CRUISE_HIGH))
-		car.batch_index = i
-		agents.append(car)
-	var moto_count: int = GraphicsQuality.current_profile()["traffic_motos"]
-	for i in moto_count:
-		var lane_index: int = road_lanes[(i * road_lanes.size() / moto_count + 3) % road_lanes.size()]
-		var lane: TrafficLane = graph.lanes[lane_index]
-		var moto := TrafficAgent.new(lane_index, lane.length * _random.randf_range(0.1, 0.8), _random.randf_range(MOTO_CRUISE_LOW, MOTO_CRUISE_HIGH))
-		moto.is_moto = true
-		moto.batch_index = i
-		agents.append(moto)
-
-
 func _build_car_batch() -> void:
 	var field := ObstacleField.new()
 	var moto_total := agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto).size()
 	_batch = _vehicle_batch(field._mesh_for("car"), agents.size() - moto_total)
 	_moto_batch = _vehicle_batch(field._mesh_for("moto"), moto_total)
 	field.free()
-	for agent in agents:
+	for i in agents.size():
+		var agent := agents[i]
 		var colours := MOTO_COLOURS if agent.is_moto else _car_colours
 		var batch := _moto_batch if agent.is_moto else _batch
 		batch.set_instance_color(agent.batch_index, colours[agent.batch_index % colours.size()])
-		_write_car(0, agent)
+		_write_car(i, agent)
 
 
 func _vehicle_batch(builder: LowPolyBuilder, count: int) -> MultiMesh:
@@ -353,14 +246,19 @@ func _vehicle_batch(builder: LowPolyBuilder, count: int) -> MultiMesh:
 	return batch
 
 
-func _write_car(_index: int, agent: TrafficAgent) -> void:
-	var lane: TrafficLane = graph.lanes[agent.lane]
-	var spot := _position_of(agent)
-	var forward := lane.forward_at(agent.distance)
-	var height := _ground.terrain_height(spot) + 0.12
-	var ahead := _ground.terrain_height(spot + forward * 2.0)
-	var pitch := atan2(ahead + 0.12 - height, 2.0)
-	var basis := Basis(Vector3.UP, RoadNetwork.heading_of(forward)) * Basis(Vector3.RIGHT, pitch)
+func _write_car(index: int, agent: TrafficAgent) -> void:
+	var spot := flow.positions[index]
+	var forward := flow.forwards[index]
+	if (index + _tick) % GROUND_REFRESH_TICKS == 0 or agent.ground_spot.distance_squared_to(spot) > 9.0:
+		agent.ground_spot = spot
+		agent.ground_height = _ground.terrain_height(spot)
+		agent.ground_slope = (_ground.terrain_height(spot + forward * 2.0) - agent.ground_height) / 2.0
+	var height := agent.ground_height + (spot - agent.ground_spot).dot(forward) * agent.ground_slope + 0.12
+	var pitch := atan(agent.ground_slope)
+	# Turned a little while moving sideways, so a pass looks steered.
+	var kerb := Vector2(-forward.y, forward.x) * float(graph.network.traffic_side)
+	var facing := (forward * maxf(agent.speed, 1.5) + kerb * agent.shift_rate).normalized()
+	var basis := Basis(Vector3.UP, RoadNetwork.heading_of(facing)) * Basis(Vector3.RIGHT, pitch)
 	var batch := _moto_batch if agent.is_moto else _batch
 	batch.set_instance_transform(agent.batch_index, Transform3D(basis, Vector3(spot.x, height, spot.y)))
 
@@ -369,7 +267,6 @@ func _build_signals() -> void:
 	var nodes := graph.signal_nodes()
 	for i in nodes.size():
 		var node_id: String = nodes[i]
-		plans[node_id] = TrafficLightPlan.new(float(i) * 7.0)
 		for lane_index: int in graph.into_node[node_id]:
 			var lane: TrafficLane = graph.lanes[lane_index]
 			var line := lane.points[lane.points.size() - 1]

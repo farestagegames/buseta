@@ -85,8 +85,7 @@ func _breakdown_column() -> Control:
 		_add_category(grid, key)
 	column.add_child(grid)
 
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var scroll := TouchScroll.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var lines := VBoxContainer.new()
 	lines.add_theme_constant_override("separation", 10)

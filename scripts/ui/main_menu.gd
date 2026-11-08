@@ -11,6 +11,8 @@ const CARD := UiStyle.CARD
 const ACCENT := UiStyle.ACCENT
 const GOOD := UiStyle.GOOD
 const MUTED := UiStyle.MUTED
+## Space between the screen edge and the menu, in view pixels.
+const EDGE := 22
 
 var _content: Control
 var _coins_label: Label
@@ -24,6 +26,7 @@ var _garage_preview: BusPreview
 var _preview_note: Label
 var _preview_bus: Dictionary = {}
 var _preview_livery: Dictionary = {}
+var _frame: MarginContainer
 
 
 func _ready() -> void:
@@ -32,14 +35,13 @@ func _ready() -> void:
 	backing.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(backing)
 
-	var frame := MarginContainer.new()
-	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side: String in ["left", "right", "top", "bottom"]:
-		frame.add_theme_constant_override("margin_" + side, 22)
-	add_child(frame)
+	_frame = MarginContainer.new()
+	_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_frame)
+	fit_to_screen(UiStyle.screen_insets(get_viewport_rect().size))
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 14)
-	frame.add_child(column)
+	_frame.add_child(column)
 	column.add_child(_header())
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -53,6 +55,16 @@ func _ready() -> void:
 	show_tab(0)
 
 
+## Keeps the tabs and the ends of every list clear of notches and rounded
+## corners. Insets are left, top, right and bottom, in view pixels. Each is
+## padded on both opposite edges, so turning the phone round keeps it clear.
+func fit_to_screen(insets: Vector4) -> void:
+	insets = UiStyle.both_ways(insets)
+	var sides := {"left": insets.x, "top": insets.y, "right": insets.z, "bottom": insets.w}
+	for side: String in sides:
+		_frame.add_theme_constant_override("margin_" + side, EDGE + roundi(sides[side]))
+
+
 ## A language change re-reads every formatted line.
 func _on_settings_changed() -> void:
 	if TranslationServer.get_locale() != _shown_locale:
@@ -63,10 +75,16 @@ func _on_settings_changed() -> void:
 
 
 func show_tab(index: int) -> void:
+	# Redrawing the same tab, after buying or selecting, keeps the list where it was.
+	var offset := 0
+	var old_list := TouchScroll.first_in(_content)
+	if index == _current_tab and old_list != null:
+		offset = old_list.scroll_vertical
 	_current_tab = index
 	for i in _tabs.size():
 		_tabs[i].button_pressed = i == index
 	for child in _content.get_children():
+		_content.remove_child(child)
 		child.queue_free()
 	match index:
 		0:
@@ -83,6 +101,9 @@ func show_tab(index: int) -> void:
 			var settings := SettingsPanel.new()
 			settings.tutorial_requested.connect(func() -> void: show_tab(0))
 			_content.add_child(settings)
+	var list := TouchScroll.first_in(_content)
+	if list != null:
+		list.restore_offset(offset)
 	_refresh_header()
 
 
@@ -267,10 +288,7 @@ func _garage_tab() -> Control:
 ## Tapping a row tries it on the preview bus, owned or not.
 func _garage_row(kind: String, item: Dictionary, description: String) -> Control:
 	var row := _shop_row(kind, item, description)
-	row.gui_input.connect(func(event: InputEvent) -> void:
-		var mouse := event as InputEventMouseButton
-		if mouse != null and not mouse.pressed and mouse.button_index == MOUSE_BUTTON_LEFT:
-			try_on(kind, item))
+	TouchScroll.on_tap(row, try_on.bind(kind, item))
 	return row
 
 
@@ -393,9 +411,8 @@ func _career_tab() -> Control:
 	return list
 
 
-func _list() -> ScrollContainer:
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+func _list() -> TouchScroll:
+	var scroll := TouchScroll.new()
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 10)
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL

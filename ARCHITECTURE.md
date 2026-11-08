@@ -60,7 +60,7 @@ AUTOPILOT_PACK=res://test/fixtures/packs/testland/pack.json AUTOPILOT_ROUTE=test
 | `scripts/audio` | `AudioDirector`, driven only by events |
 
 | `scripts/scoring` | `ShiftScore` category points, stars and coins, `DrivingMonitor`, `ScoreKeeper` |
-| `scripts/traffic` | `TrafficLightPlan`, `LaneGraph`, `TrafficLane`, `TrafficAgent`, `TrafficSystem` |
+| `scripts/traffic` | `TrafficLightPlan`, `LaneGraph`, `TrafficLane`, `TrafficAgent`, `TrafficFlow` driving logic, `TrafficSense` geometry and choices, `TrafficBox`, `TrafficSystem` drawing |
 
 | `scripts/progression` | `PlayerProfile`, `SaveStore`, `Catalog`, `ShiftRewards`, `DriverLevel`, `DailyChallenge`, `AchievementList`, `AdProvider`, `ProgressionSystem`, `Cheats` |
 | `scripts/core/profile.gd` | Autoload holding the live profile and saving it |
@@ -109,6 +109,18 @@ game's balance can be tuned in one file. A shift ends with `shift_report_ready`.
 **Traffic without physics bodies.** Cars follow lanes built from the road data and
 use the Intelligent Driver Model for smooth queues. It is cheap, and cars are drawn
 as one instanced batch. They react to the bus through its telemetry.
+
+**Traffic that sees the bus.** `TrafficFlow` is plain logic, and `TrafficSystem` only
+feeds it the bus and draws the result. Each tick a vehicle traces the strip it is
+about to drive, at its own width, and checks it against the bus body and trailer,
+each stretched to where the bus will be in a moment. Props in the road are kept as
+spans along and across each lane, so checking them is a few sums. Other vehicles
+come from per-lane lists, never a loop over everyone. A vehicle waits at a junction
+while the bus is in the part it would cross. It goes round a bus at a stop, or
+something standing in the lane, by moving sideways (`TrafficAgent.shift`), and only
+moves back once its usual line is clear. Speed limits ahead are met by easing off
+in time, and only something in the way brakes hard. The rules themselves are pure
+functions in `TrafficSense`.
 
 **Safe saves.** `SaveStore` writes to a temporary file and swaps it in only when
 complete, keeping the last good save as a backup. `PlayerProfile.from_dict`
@@ -172,8 +184,9 @@ passengers share `HeadParts`, so a vueltiao or braids look the same on both.
 **Cities are themed by data.** The `theme` block of a map sets the colours, building
 mix, palms and sky, read by `CityTheme`, and the `coast` block adds a beach and sea.
 `StreetLife` walks people along the pavements as one instanced batch. Motorbikes are
-`TrafficAgent`s that keep to the kerb side of a lane and ignore cars, so they filter
-past queues without any lane-changing logic.
+`TrafficAgent`s that keep to the kerb side of a lane and pass cars that do not
+overlap them, a little faster than the car, so they filter past queues without any
+lane-changing logic.
 
 **Bus bodies and paint are data.** `BusSpec.body_style` picks the shell, and a livery
 sets colours and a pattern drawn by `BusVisual._paint_livery` as flat shapes in the
@@ -194,6 +207,11 @@ only, and each cheat is a small function on `PlayerProfile` or `RouteSystem`.
 **Autopilot check.** `tools/autopilot.sh` drives a whole shift through the real
 controls. Run it after changing a map, because a route that passes its data tests
 can still be impossible for a 12 m bus.
+
+**Touch lists.** Every scrolling list is a `TouchScroll`, which lets a drag start
+on anything inside it, cancels a button press once the finger scrolls, and treats
+a tap on a coasting list as a stop. Sliders inside are `TouchSlider`s, which move
+only for a sideways drag. Rows that react to a tap use `TouchScroll.on_tap`.
 
 **Custom multi-touch controls.** Standard Godot buttons follow one pointer. Each
 `TouchZone` tracks its own finger, so pedals and steering work at the same time,

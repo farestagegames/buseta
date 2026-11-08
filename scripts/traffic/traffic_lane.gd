@@ -13,6 +13,11 @@ var turn: int = 0 ## For links: -1 left, 0 straight, 1 right.
 var from_lane: int = -1 ## For links: the lane entering it.
 var group: int = 0 ## Signal group of a road lane, by its compass axis.
 var road: String = ""
+## For road lanes: how far each point sits from the road's centre line.
+var laterals: PackedFloat32Array = PackedFloat32Array()
+var opposite: int = -1 ## The road lane going the other way, or -1.
+var min_lateral: float = INF ## Least of laterals, for quick checks.
+var bounds: Rect2 = Rect2() ## Covers the lane with a few metres to spare.
 
 
 func finish() -> void:
@@ -20,6 +25,13 @@ func finish() -> void:
 	for i in range(1, points.size()):
 		lengths.append(lengths[i - 1] + points[i].distance_to(points[i - 1]))
 	length = lengths[lengths.size() - 1]
+	bounds = Rect2(points[0], Vector2.ZERO)
+	for point in points:
+		bounds = bounds.expand(point)
+	bounds = bounds.grow(4.0)
+	min_lateral = INF
+	for lateral in laterals:
+		min_lateral = minf(min_lateral, lateral)
 
 
 func point_at(distance: float) -> Vector2:
@@ -32,6 +44,34 @@ func point_at(distance: float) -> Vector2:
 func forward_at(distance: float) -> Vector2:
 	var index := _segment(distance)
 	return (points[index + 1] - points[index]).normalized()
+
+
+## Point and direction at once, as (x, y, forward x, forward y), which saves a
+## second search when both are needed.
+func pose_at(distance: float) -> Vector4:
+	var index := _segment(distance)
+	var a := points[index]
+	var b := points[index + 1]
+	var span := lengths[index + 1] - lengths[index]
+	var share := clampf((distance - lengths[index]) / span, 0.0, 1.0) if span > 0.0 else 0.0
+	var at := a.lerp(b, share)
+	var forward := (b - a).normalized()
+	return Vector4(at.x, at.y, forward.x, forward.y)
+
+
+## Index of the segment holding this distance.
+func segment_at(distance: float) -> int:
+	return _segment(distance)
+
+
+## Metres from the road's centre line here. Links report the normal offset.
+func lateral_at(distance: float) -> float:
+	if laterals.size() != points.size():
+		return LaneGraph.LANE_OFFSET
+	var index := _segment(distance)
+	var span := lengths[index + 1] - lengths[index]
+	var share := (distance - lengths[index]) / span if span > 0.0 else 0.0
+	return lerpf(laterals[index], laterals[index + 1], clampf(share, 0.0, 1.0))
 
 
 ## Tightest speed for a car on this lane, in m/s.

@@ -60,6 +60,8 @@ static func build() -> Theme:
 	theme.set_stylebox("grabber_area_highlight", "HSlider", _box(ACCENT, 6, 6))
 	theme.set_icon("grabber", "HSlider", _dot(34, ACCENT))
 	theme.set_icon("grabber_highlight", "HSlider", _dot(38, ACCENT.lightened(0.2)))
+	# TouchSlider moves its own value with editable off, so it must not look disabled.
+	theme.set_icon("grabber_disabled", "HSlider", _dot(34, ACCENT))
 	theme.set_stylebox("panel", "ScrollContainer", StyleBoxEmpty.new())
 	return theme
 
@@ -71,6 +73,33 @@ static func fit_font_size(font: Font, text: String, wanted: int, width: float, s
 	while font_size > smallest and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width:
 		font_size -= 1
 	return font_size
+
+
+## How far in each edge of a full-screen view must stay to clear notches and
+## rounded corners, in view pixels, as left, top, right and bottom.
+static func safe_insets(view: Vector2, screen: Vector2i, safe: Rect2i) -> Vector4:
+	if screen.x <= 0 or screen.y <= 0 or safe.size.x <= 0 or safe.size.y <= 0:
+		return Vector4.ZERO
+	var scale := view / Vector2(screen)
+	return Vector4(maxf(safe.position.x * scale.x, 0.0), maxf(safe.position.y * scale.y, 0.0),
+		maxf((screen.x - safe.end.x) * scale.x, 0.0), maxf((screen.y - safe.end.y) * scale.y, 0.0))
+
+
+## The phone's insets for this view, the same on opposite edges. Zero on a
+## computer, where the safe area belongs to the desktop rather than the game window.
+static func screen_insets(view: Vector2) -> Vector4:
+	if not OS.has_feature("mobile"):
+		return Vector4.ZERO
+	return both_ways(safe_insets(view, DisplayServer.screen_get_size(), DisplayServer.get_display_safe_area()))
+
+
+## The larger inset on both opposite edges. The game turns with the phone, so a
+## notch on the left moves to the right without the view changing size, and
+## nothing would fit the screen again. Padding both sides needs no tracking.
+static func both_ways(insets: Vector4) -> Vector4:
+	var across := maxf(insets.x, insets.z)
+	var down := maxf(insets.y, insets.w)
+	return Vector4(across, down, across, down)
 
 
 static func _box(colour: Color, radius: int = 14, margin: int = 12) -> StyleBoxFlat:

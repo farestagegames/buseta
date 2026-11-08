@@ -6,9 +6,16 @@ extends RefCounted
 const LANE_OFFSET := 1.9
 ## Cars wait well back, or a bus turning right would sweep across them.
 const STOP_LINE_GAP := 5.4
-## Traffic moves towards the centre to pass things parked in its lane.
-const PASSING_OFFSET := 0.7
+## Traffic moves towards the centre to pass things parked in its lane. This is
+## enough for a car to clear a cone line at 1.7 m.
+const PASSING_OFFSET := 0.25
+## The lane starts moving over this far before a block and is fully over from
+## PASSING_FULL before it.
 const PASSING_REACH := 13.0
+const PASSING_FULL := 3.0
+## Blocks on the two sides of a road must be at least this far apart. Closer,
+## both lanes move in at once and two cars meeting there overlap.
+const BLOCK_SPACING := PASSING_REACH + PASSING_FULL
 const RING_RADIUS := 15.0
 const LINK_SAMPLES := 9
 const TURN_ANGLE := deg_to_rad(35.0)
@@ -23,11 +30,12 @@ var links_at: Dictionary = {} ## Node id to links crossing it.
 static func build(road_network: RoadNetwork, map_data: Dictionary) -> LaneGraph:
 	var graph := LaneGraph.new()
 	graph.network = road_network
-	var blocks := graph._parked_blocks(map_data)
+	var blocks := _parked_blocks(map_data)
 	for road: Dictionary in road_network.roads.values():
 		if road.get("traffic", true):
 			graph._add_road_lane(road, 1, blocks)
 			graph._add_road_lane(road, -1, blocks)
+	graph._pair_opposites()
 	for node_id: String in road_network.nodes:
 		graph._link_node(node_id)
 	return graph
@@ -42,7 +50,22 @@ func signal_nodes() -> Array[String]:
 	return found
 
 
-func _parked_blocks(map_data: Dictionary) -> Array[Dictionary]:
+## Each pair of parked cars or cone lines on opposite sides of a road that are
+## closer than BLOCK_SPACING, as road, from and to of each. Empty for a good map.
+static func clashing_blocks(map_data: Dictionary) -> Array[String]:
+	var found: Array[String] = []
+	var blocks := _parked_blocks(map_data)
+	for a in blocks:
+		for b in blocks:
+			if a["road"] != b["road"] or int(a["dir"]) != 1 or int(b["dir"]) != -1:
+				continue
+			var apart := maxf(float(b["from"]) - float(a["to"]), float(a["from"]) - float(b["to"]))
+			if apart < BLOCK_SPACING:
+				found.append(str([a["road"], a["from"], a["to"], b["from"], b["to"]]))
+	return found
+
+
+static func _parked_blocks(map_data: Dictionary) -> Array[Dictionary]:
 	var blocks: Array[Dictionary] = []
 	for car: Dictionary in map_data.get("parked_cars", []):
 		blocks.append({"road": car["road"], "dir": int(car["dir"]), "from": float(car["along"]) - 3.0, "to": float(car["along"]) + 3.0})
@@ -58,7 +81,7 @@ func _lateral_at(road_id: String, dir: int, along: float, blocks: Array[Dictiona
 			continue
 		var outside := maxf(float(block["from"]) - along, along - float(block["to"]))
 		if outside < PASSING_REACH:
-			var share := smoothstep(PASSING_REACH, 3.0, outside)
+			var share := smoothstep(PASSING_REACH, PASSING_FULL, outside)
 			lateral = minf(lateral, lerpf(LANE_OFFSET, PASSING_OFFSET, share))
 	return lateral
 
@@ -77,9 +100,11 @@ func _add_road_lane(road: Dictionary, dir: int, blocks: Array[Dictionary]) -> vo
 		var along := distance if dir > 0 else length - distance
 		var lateral := _lateral_at(road["id"], dir, along, blocks)
 		lane.points.append(network.sample(road["id"], along, lateral, dir)["position"])
+		lane.laterals.append(lateral)
 		distance += RoadNetwork.SAMPLE_SPACING
 	var last := length - end_gap if dir > 0 else end_gap
 	lane.points.append(network.sample(road["id"], last, LANE_OFFSET, dir)["position"])
+	lane.laterals.append(LANE_OFFSET)
 	lane.finish()
 	var direction := lane.points[lane.points.size() - 1] - lane.points[lane.points.size() - 2]
 	lane.group = 0 if absf(direction.x) >= absf(direction.y) else 1
@@ -91,6 +116,19 @@ func _add_road_lane(road: Dictionary, dir: int, blocks: Array[Dictionary]) -> vo
 		out_of_node[from_id] = []
 	(into_node[to_id] as Array).append(index)
 	(out_of_node[from_id] as Array).append(index)
+
+
+## Each road lane learns which lane runs the other way beside it.
+func _pair_opposites() -> void:
+	var by_road: Dictionary = {}
+	for i in lanes.size():
+		if not by_road.has(lanes[i].road):
+			by_road[lanes[i].road] = []
+		(by_road[lanes[i].road] as Array).append(i)
+	for pair: Array in by_road.values():
+		if pair.size() == 2:
+			lanes[pair[0]].opposite = pair[1]
+			lanes[pair[1]].opposite = pair[0]
 
 
 func _link_node(node_id: String) -> void:
