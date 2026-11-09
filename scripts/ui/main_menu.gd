@@ -276,6 +276,8 @@ func _start_shift() -> void:
 func _routes_tab() -> Control:
 	var list := _list()
 	list.get_child(0).add_child(_time_card())
+	if Profile.difficulties().size() > 1:
+		list.get_child(0).add_child(_difficulty_card())
 	for item: Dictionary in Profile.catalog.items(Catalog.ROUTES):
 		list.get_child(0).add_child(_shop_row(Catalog.ROUTES, item, item.get("description", "")))
 	return list
@@ -306,6 +308,39 @@ func _time_card() -> Control:
 		lines.add_child(_wrapped("Downpours are most likely in the afternoon", 19, MUTED))
 	card.add_child(lines)
 	return card
+
+
+func _difficulty_card() -> Control:
+	var card := _card()
+	var lines := VBoxContainer.new()
+	lines.add_theme_constant_override("separation", 10)
+	lines.add_child(_text("Difficulty", 24, ACCENT))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var chosen := Profile.chosen_difficulty()
+	for difficulty in Profile.difficulties():
+		var button := _button(tr(difficulty.name))
+		button.custom_minimum_size = Vector2(0.0, 76.0)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.toggle_mode = true
+		button.button_pressed = difficulty.id == chosen.id
+		button.pressed.connect(func() -> void:
+			Profile.choose_difficulty(difficulty)
+			show_tab(_current_tab))
+		row.add_child(button)
+	lines.add_child(row)
+	lines.add_child(_wrapped(_difficulty_note(chosen), 19, MUTED))
+	card.add_child(lines)
+	return card
+
+
+## One line on what the chosen difficulty means.
+func _difficulty_note(difficulty: Difficulty) -> String:
+	if not difficulty.has_police():
+		return tr("Mistakes cost less. Pays %d%%.") % roundi(difficulty.coin_scale * 100.0)
+	if difficulty.police_ends_run:
+		return tr("Transit police about: a third fine ends the run. Pays %d%%.") % roundi(difficulty.coin_scale * 100.0)
+	return tr("Transit police give fines but never end the run. Pays %d%%.") % roundi(difficulty.coin_scale * 100.0)
 
 
 func _on_choose_time(time: TimeOfDay) -> void:

@@ -120,6 +120,8 @@ func show_report(report: Dictionary) -> void:
 	var minutes := int(report["time"]) / 60
 	var seconds := int(report["time"]) % 60
 	_headline.text = tr("Shift complete: %d points in %d:%02d") % [report["score"], minutes, seconds]
+	if str(report.get("police_stopped", "")) != "":
+		_headline.text = tr("Stopped by the transit police: %d points in %d:%02d") % [report["score"], minutes, seconds]
 	_coins.text = tr("%s earned") % Country.pack.money(report["coins"])
 	var categories: Dictionary = report["categories"]
 	for key: String in _bars:

@@ -79,6 +79,11 @@ var _lamps: MultiMesh
 var _approaches: Array[Dictionary] = [] ## lane, node, group, line, forward.
 var _previous_side: Dictionary = {} ## Approach index to sign of bus nose position.
 var _tick: int = 0
+## The car standing in for a transit police patrol, or -1. PoliceSystem picks it.
+var police_index: int = -1
+var _police_mesh: MeshInstance3D
+var _police_lamps: Array[MeshInstance3D] = []
+var _police_flash: float = 0.0
 
 
 ## density is the time of day's share of the usual traffic.
@@ -91,6 +96,7 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 	var profile := GraphicsQuality.current_profile()
 	flow.spawn(scaled_count(profile["traffic_cars"], density), scaled_count(profile["traffic_motos"], density))
 	_build_car_batch()
+	_build_police_car()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.weather_updated.connect(_on_weather)
 	GameEvents.lighting_changed.connect(_on_lighting)
@@ -163,6 +169,7 @@ func _physics_process(dt: float) -> void:
 		_write_car(i, agents[i])
 	_check_bus_hits()
 	_update_lamps()
+	_flash_police(dt)
 	if _bus_active:
 		_check_red_lights()
 		var ahead := bus_signal()
@@ -299,7 +306,100 @@ func _write_car(index: int, agent: TrafficAgent) -> void:
 	var facing := (forward * maxf(agent.speed, 1.5) + kerb * agent.shift_rate).normalized()
 	var basis := Basis(Vector3.UP, RoadNetwork.heading_of(facing)) * Basis(Vector3.RIGHT, pitch)
 	var batch := _moto_batch if agent.is_moto else _batch
-	batch.set_instance_transform(agent.batch_index, Transform3D(basis, Vector3(spot.x, height, spot.y)))
+	var placed := Transform3D(basis, Vector3(spot.x, height, spot.y))
+	if index == police_index:
+		# The patrol car is drawn on its own, and its plain copy is hidden.
+		_police_mesh.global_transform = placed
+		batch.set_instance_transform(agent.batch_index, Transform3D(Basis().scaled(Vector3.ZERO), placed.origin))
+		return
+	batch.set_instance_transform(agent.batch_index, placed)
+
+
+const POLICE_WHITE := Color(0.95, 0.96, 0.97)
+const POLICE_GREEN := Color(0.08, 0.5, 0.26)
+const POLICE_FLASH_SECONDS := 0.3
+## A patrol is picked from cars this far from the bus, in metres, nearest to
+## POLICE_PICK_IDEAL first, so it is close enough to notice but not on top of it.
+const POLICE_PICK_NEAR := 25.0
+const POLICE_PICK_FAR := 140.0
+const POLICE_PICK_IDEAL := 60.0
+
+
+## A white car with a green band and a light bar, shown in place of one traffic car.
+func _build_police_car() -> void:
+	var field := ObstacleField.new()
+	var body := field._mesh_for("car")
+	field.free()
+	for side: float in [-1.0, 1.0]:
+		body.box(Vector3(side * 0.91, 0.62, 0.0), Vector3(0.03, 0.2, 4.1), POLICE_GREEN)
+	body.box(Vector3(0.0, 1.4, 0.25), Vector3(1.1, 0.08, 0.32), Color(0.15, 0.15, 0.17))
+	var material := LowPolyBuilder.vertex_colour_material()
+	material.albedo_color = POLICE_WHITE
+	_police_mesh = MeshInstance3D.new()
+	_police_mesh.mesh = body.build(material)
+	_police_mesh.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	_police_mesh.visible = false
+	add_child(_police_mesh)
+	for entry: Array in [[-0.3, Color(0.95, 0.15, 0.15)], [0.3, Color(0.2, 0.4, 1.0)]]:
+		var lamp := LowPolyBuilder.new()
+		lamp.box(Vector3(entry[0], 1.49, 0.25), Vector3(0.42, 0.1, 0.26), Color.WHITE)
+		var glow := StandardMaterial3D.new()
+		glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		glow.albedo_color = entry[1]
+		var instance := MeshInstance3D.new()
+		instance.mesh = lamp.build(glow)
+		_police_mesh.add_child(instance)
+		_police_lamps.append(instance)
+
+
+## Turns the car nearest a good distance from the bus into the patrol: one
+## between POLICE_PICK_NEAR and POLICE_PICK_FAR if there is one, else the nearest
+## beyond POLICE_PICK_NEAR. False only if there are no cars at all.
+func assign_police(near: Vector2) -> bool:
+	var best := -1
+	var best_score := INF
+	for i in agents.size():
+		var agent := agents[i]
+		if agent.is_moto or agent.stunned > 0.0:
+			continue
+		var distance := flow.positions[i].distance_to(near)
+		if distance < POLICE_PICK_NEAR:
+			continue
+		var score := absf(distance - POLICE_PICK_IDEAL) if distance <= POLICE_PICK_FAR else distance * 10.0
+		if score < best_score:
+			best_score = score
+			best = i
+	if best < 0:
+		return false
+	clear_police()
+	police_index = best
+	_police_mesh.visible = true
+	return true
+
+
+func clear_police() -> void:
+	if police_index >= 0:
+		var agent := agents[police_index]
+		police_index = -1
+		_write_car(agents.find(agent), agent)
+	_police_mesh.visible = false
+
+
+func police_distance(to: Vector2) -> float:
+	return flow.positions[police_index].distance_to(to) if police_index >= 0 else INF
+
+
+func police_position() -> Vector2:
+	return flow.positions[police_index] if police_index >= 0 else Vector2(INF, INF)
+
+
+func _flash_police(dt: float) -> void:
+	if police_index < 0:
+		return
+	_police_flash += dt
+	var red_on := int(_police_flash / POLICE_FLASH_SECONDS) % 2 == 0
+	_police_lamps[0].visible = red_on
+	_police_lamps[1].visible = not red_on
 
 
 func _build_signals() -> void:

@@ -8,6 +8,9 @@ const STATUS_INTERVAL := 0.2
 const PASSENGER_SEED := 2024
 const INDICATOR_WINDOW := 70.0
 const HAIL_NOTICE_DISTANCE := 90.0
+## After the police stop the bus, the shift ends this long later so the message is seen.
+const POLICE_STOP_SECONDS := 2.5
+const DODGER_SEED := 3131
 ## Stopped this close short of a hail marker, the prompt says to pull forward.
 ## Further back, as at a red light, it just says how far the marker is.
 const PULL_FORWARD_NOTICE := 30
@@ -43,6 +46,9 @@ var _vendor_stop: int = -1
 ## Seconds the timetable has allowed for driving on a wet road, and how fast that
 ## grows now. Everyone slows in a downpour, so the bus is not blamed for it.
 var rain_slack: float = 0.0
+## Chance each boarding passenger slips on without paying, from the difficulty.
+var dodger_chance: float = 0.0
+var _dodgers := RandomNumberGenerator.new()
 var _slack_rate: float = 0.0
 
 
@@ -61,6 +67,9 @@ func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork, fare: int = 
 	GameEvents.reset_requested.connect(_on_recover_requested)
 	GameEvents.skip_stop_requested.connect(skip_to_next_stop)
 	GameEvents.finish_shift_requested.connect(finish_now)
+	GameEvents.police_ended_run.connect(func(_reason: String) -> void:
+		get_tree().create_timer(POLICE_STOP_SECONDS).timeout.connect(finish_now))
+	_dodgers.seed = DODGER_SEED
 	GameEvents.shift_held_changed.connect(func(value: bool) -> void: held = value)
 	GameEvents.weather_updated.connect(func(weather: WeatherClock) -> void: _slack_rate = weather.slack_rate())
 
@@ -168,7 +177,10 @@ func _on_alighted() -> void:
 
 func _on_boarded() -> void:
 	ledger.board_one(_session_stop)
-	_fares += _fare
+	if _fare > 0 and dodger_chance > 0.0 and _dodgers.randf() < dodger_chance:
+		GameEvents.fare_dodged.emit()
+	else:
+		_fares += _fare
 	GameEvents.passenger_boarded.emit(_session_stop)
 	GameEvents.onboard_changed.emit(ledger.count())
 

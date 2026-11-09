@@ -150,6 +150,7 @@ func validate() -> Array[String]:
 	_check_languages(problems)
 	_check_sounds(problems)
 	_check_weather(problems)
+	problems.append_array(Difficulty.check(data.get("difficulties"), data.get("default_difficulty", "")))
 	_check_content(problems)
 	return problems
 

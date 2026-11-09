@@ -500,5 +500,60 @@
     }
   },
   "city_name": "Puerto Marisol",
-  "fonts": []
+  "fonts": [],
+  "default_difficulty": "medium",
+  "difficulties": [
+    {
+      "id": "easy",
+      "name": "Easy",
+      "penalty_scale": 0.6,
+      "coin_scale": 0.8,
+      "police_every": [
+        300,
+        480
+      ],
+      "police_watch_seconds": 75,
+      "police_ends_run": false,
+      "fines": [
+        100,
+        150,
+        200
+      ],
+      "dodger_chance": 0.0
+    },
+    {
+      "id": "medium",
+      "name": "Normal",
+      "penalty_scale": 1.0,
+      "coin_scale": 1.0,
+      "police_every": [
+        180,
+        360
+      ],
+      "police_watch_seconds": 90,
+      "police_ends_run": true,
+      "fines": [
+        250,
+        500
+      ],
+      "dodger_chance": 0.03
+    },
+    {
+      "id": "hard",
+      "name": "Hard",
+      "penalty_scale": 1.4,
+      "coin_scale": 1.3,
+      "police_every": [
+        120,
+        240
+      ],
+      "police_watch_seconds": 110,
+      "police_ends_run": true,
+      "fines": [
+        400,
+        800
+      ],
+      "dodger_chance": 0.06
+    }
+  ]
 }

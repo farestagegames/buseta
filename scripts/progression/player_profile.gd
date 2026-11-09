@@ -39,6 +39,8 @@ var horns_owned: Array[String] = []
 var horn: String = ""
 ## The time of day picked for the next shift, by its pack id, or "" for the default.
 var time_of_day: String = ""
+## The difficulty picked for the next shift, by its pack id, or "" for the default.
+var difficulty: String = ""
 
 
 func owns(kind: String, id: String) -> bool:
@@ -144,7 +146,7 @@ func to_dict() -> Dictionary:
 		"version": VERSION, "coins": coins, "xp": xp, "owned": owned, "selected": selected,
 		"stats": stats, "achievements": achievements, "best_scores": best_scores,
 		"last_daily": last_daily, "daily_streak": daily_streak, "settings": settings, "intro_done": intro_done,
-		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day,
+		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day, "difficulty": difficulty,
 	}
 
 
@@ -202,6 +204,8 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	# Checked against the pack when a shift starts, so an unknown id is harmless.
 	var saved_time: Variant = saved.get("time_of_day")
 	profile.time_of_day = saved_time if saved_time is String else ""
+	var saved_difficulty: Variant = saved.get("difficulty")
+	profile.difficulty = saved_difficulty if saved_difficulty is String else ""
 	return profile
 
 

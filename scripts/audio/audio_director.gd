@@ -62,6 +62,7 @@ const SOUNDS := {
 	"tock": "res://assets/audio/indicator_tock.wav",
 	"reverse": "res://assets/audio/reverse_beep.wav",
 	"bump": "res://assets/audio/bump.wav",
+	"siren": "res://assets/audio/siren_whoop.wav",
 }
 
 ## True from pressing the horn until it has faded out or finished its tune.
@@ -128,6 +129,8 @@ func _ready() -> void:
 	GameEvents.stop_requested.connect(func() -> void: play_effect("bell", -16.0))
 	GameEvents.stop_session_started.connect(func(_stop: int, _off: int, _on: int) -> void: play_effect("bell", -14.0))
 	GameEvents.traffic_horn.connect(_on_traffic_horn)
+	GameEvents.police_fined.connect(func(_coins: int, _reason: String) -> void: play_effect("siren", -12.0))
+	GameEvents.police_ended_run.connect(func(_reason: String) -> void: play_effect("siren", -9.0))
 	GameEvents.radio_cycle_requested.connect(cycle_radio)
 	GameEvents.rain_changed.connect(func(amount: float) -> void: mixer.rain = amount)
 	GameEvents.camera_view_changed.connect(_on_camera_view)

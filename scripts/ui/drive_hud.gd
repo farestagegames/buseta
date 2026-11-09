@@ -19,6 +19,7 @@ var settings_panel: SettingsPanel
 var gauge: HudGauge
 var route_panel: RoutePanel
 var minimap: Minimap
+var police_notice: Label
 var shift_panel: ShiftEndPanel
 var penalty_toast: PenaltyToast
 var tutorial_panel: TutorialPanel
@@ -81,6 +82,18 @@ func _ready() -> void:
 	minimap = Minimap.new()
 	_place(minimap, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 8.0), Vector2(190.0, 190.0))
 	root.add_child(minimap)
+
+	police_notice = Label.new()
+	police_notice.text = "POLICE NEARBY"
+	police_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	police_notice.add_theme_font_size_override("font_size", 18)
+	police_notice.add_theme_color_override("font_color", Color(0.55, 0.75, 1.0))
+	police_notice.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.06))
+	police_notice.add_theme_constant_override("outline_size", 6)
+	police_notice.visible = false
+	_place(police_notice, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 202.0), Vector2(190.0, 26.0))
+	root.add_child(police_notice)
+	GameEvents.police_nearby.connect(func(near: bool) -> void: police_notice.visible = near)
 
 	tutorial_panel = TutorialPanel.new()
 	root.add_child(tutorial_panel)

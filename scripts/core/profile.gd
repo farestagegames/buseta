@@ -73,6 +73,19 @@ func select(kind: String, id: String) -> bool:
 	return true
 
 
+func difficulties() -> Array[Difficulty]:
+	return Difficulty.list_for(Country.pack.data)
+
+
+func chosen_difficulty() -> Difficulty:
+	return Difficulty.pick(difficulties(), data.difficulty, str(Country.pack.data.get("default_difficulty", "")))
+
+
+func choose_difficulty(difficulty: Difficulty) -> void:
+	data.difficulty = difficulty.id
+	save()
+
+
 func choose_time(time: TimeOfDay) -> bool:
 	if not data.choose_time(time):
 		return false

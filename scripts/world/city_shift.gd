@@ -24,6 +24,7 @@ static var forced_rain: int = WeatherPlan.PLANNED
 @onready var _score: ScoreKeeper = $ScoreKeeper
 @onready var _intro: IntroCutscene = $Intro
 @onready var _tutorial: TutorialDirector = $Tutorial
+var police: PoliceSystem
 @onready var _hud: DriveHud = $Hud
 @onready var _camera: Camera3D = $CameraRig
 @onready var _street_life: StreetLife = $StreetLife
@@ -108,7 +109,12 @@ func _ready() -> void:
 	_route_system.setup(route, _bus.spec, network, int(route_data.get("fare", Country.pack.data["currency"]["fare"])))
 	_traffic.setup(map_data, network, ground, _bus.spec, time_of_day.traffic)
 	_traffic.watch_props(_obstacles.props)
-	_score.setup(network, _bus.spec)
+	var difficulty := Profile.chosen_difficulty()
+	_score.setup(network, _bus.spec, difficulty)
+	_route_system.dodger_chance = difficulty.dodger_chance
+	police = PoliceSystem.new()
+	add_child(police)
+	police.setup(_traffic, difficulty, hail_seed + 17)
 	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)
 	_setup_audio()

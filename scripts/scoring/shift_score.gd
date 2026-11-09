@@ -23,6 +23,8 @@ const COLLISION_POINTS := 6.0
 const COLLISION_POINTS_PER_SPEED := 0.6 ## Extra per m/s of impact.
 const COLLISION_MAX_POINTS := 12.0
 const KNOCKED_POINTS := 1.0
+const FINE_POINTS := 2.0
+const SATISFACTION_DODGER := 0.5
 const RED_LIGHT_POINTS := 8.0
 const SPEEDING_POINTS_PER_SECOND := 0.25
 const OFF_ROAD_POINTS_PER_SECOND := 0.6
@@ -52,8 +54,14 @@ var counts: Dictionary = {
 	"harsh_brakes": 0, "jolts": 0, "collisions": 0, "knocked": 0,
 	"red_lights": 0, "kerbs": 0, "indicators": 0, "missed_stops": 0, "left_behind": 0,
 	"ignored_hails": 0, "ignored_requests": 0, "vendors": 0,
-	"downpours": 0, "clean_downpours": 0,
+	"downpours": 0, "clean_downpours": 0, "fines": 0, "dodgers": 0,
 }
+## From the difficulty: every fault's points are multiplied by penalty_scale and
+## the coins by coin_scale.
+var penalty_scale: float = 1.0
+var coin_scale: float = 1.0
+## Coins the police took, paid out of the shift's earnings.
+var fined_coins: int = 0
 var speeding_seconds: float = 0.0
 var off_road_seconds: float = 0.0
 
@@ -143,6 +151,19 @@ func add_knocked() -> void:
 	_rules_lost += KNOCKED_POINTS
 
 
+## A police fine costs coins and a little on traffic rules.
+func add_fine(coins_lost: int) -> void:
+	counts["fines"] += 1
+	fined_coins += maxi(coins_lost, 0)
+	_rules_lost += FINE_POINTS
+
+
+## A passenger slipped on without paying: passengers notice, a little.
+func add_dodger() -> void:
+	counts["dodgers"] += 1
+	_add_satisfaction_loss(SATISFACTION_DODGER)
+
+
 func add_red_light() -> void:
 	counts["red_lights"] += 1
 	_rules_lost += RED_LIGHT_POINTS
@@ -195,8 +216,9 @@ func stars() -> int:
 
 
 func coins(passengers_carried: int) -> int:
-	return BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER + stars() * COINS_PER_STAR \
+	var earned := BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER + stars() * COINS_PER_STAR \
 		+ int(counts["clean_downpours"]) * DOWNPOUR_COINS
+	return maxi(roundi(earned * coin_scale) - fined_coins, 0)
 
 
 ## The category that cost the most points, for the report's advice.
@@ -218,7 +240,7 @@ func _time_losses() -> float:
 
 
 func _after_losses(lost: float) -> float:
-	return 100.0 * exp(-lost / CATEGORY_SOFTNESS)
+	return 100.0 * exp(-lost * penalty_scale / CATEGORY_SOFTNESS)
 
 
 func _average(values: Array[float]) -> float:

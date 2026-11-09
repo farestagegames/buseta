@@ -166,6 +166,22 @@ def reverse_beep():
     return [0.3 * envelope(i, total, 0.01, 0.03) * math.sin(2 * math.pi * 980 * i / RATE) for i in range(total)]
 
 
+def siren_whoop():
+    """Two quick rising whoops, the way a patrol car calls a driver over."""
+    out = []
+    phase = 0.0
+    for sweep in range(2):
+        total = int(0.32 * RATE)
+        for i in range(total):
+            t = i / total
+            freq = 520 + 900 * t * t
+            phase += 2 * math.pi * freq / RATE
+            tone = math.sin(phase) + 0.35 * math.sin(2 * phase) + 0.15 * math.sin(3 * phase)
+            out.append(0.45 * envelope(i, total, 0.01, 0.06) * tone)
+        out.extend([0.0] * int(0.06 * RATE))
+    return out
+
+
 def soft_bump():
     total = int(0.26 * RATE)
     noise = noise_filtered(0.26, 240, 12)
@@ -191,6 +207,7 @@ def main():
     save_quiet("indicator_tock.wav", click(1150, 0.05, 0.4))
     save_quiet("reverse_beep.wav", reverse_beep())
     save_quiet("bump.wav", soft_bump())
+    save("siren_whoop.wav", siren_whoop())
     save_quiet("tap.wav", click(900, 0.04, 0.35))
     horns.make_all(OUT, horn_loop())
     ambience.make_all(OUT / "ambience")

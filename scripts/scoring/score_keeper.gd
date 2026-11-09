@@ -31,11 +31,21 @@ var _held: bool = false ## Nothing counts against a driver in the tutorial.
 var _time_of_day: String = ""
 var _in_downpour: bool = false
 var _faults_before_downpour: int = 0
+var _speeding_for: float = 0.0
+var _police_stopped: String = "" ## Why the police ended the run, or "".
+var _difficulty_id: String = ""
 
 
-func setup(network: RoadNetwork, spec: BusSpec) -> void:
+func setup(network: RoadNetwork, spec: BusSpec, difficulty: Difficulty = null) -> void:
 	_network = network
 	_spec = spec
+	if difficulty != null:
+		score.penalty_scale = difficulty.penalty_scale
+		score.coin_scale = difficulty.coin_scale
+		_difficulty_id = difficulty.id
+	GameEvents.police_fined.connect(_on_police_fined)
+	GameEvents.police_ended_run.connect(_on_police_ended_run)
+	GameEvents.fare_dodged.connect(_on_fare_dodged)
 	monitor.harsh_brake.connect(_on_harsh_brake)
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.bus_collided.connect(_on_collided)
@@ -85,7 +95,13 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	var centre := BusFootprint.body_centre(rear, data.heading, _spec)
 	var limit := _network.speed_limit_at(centre)
 	var off_road := _network.edge_distance(centre) > OFF_ROAD_MARGIN
-	score.add_time(dt, DrivingMonitor.is_speeding(data.speed, limit), off_road)
+	var speeding := DrivingMonitor.is_speeding(data.speed, limit)
+	score.add_time(dt, speeding, off_road)
+	# Sustained speeding is a fault the police can see, once each time.
+	var was := _speeding_for
+	_speeding_for = _speeding_for + dt if speeding else 0.0
+	if was < PoliceSystem.SPEEDING_SECONDS and _speeding_for >= PoliceSystem.SPEEDING_SECONDS:
+		GameEvents.speeding_started.emit()
 	_check_kerb(rear, data.heading, absf(data.speed))
 	GameEvents.score_updated.emit(score.total())
 
@@ -184,6 +200,21 @@ func _on_request_ignored(people: int) -> void:
 	GameEvents.penalty_shown.emit("Missed a stop request")
 
 
+func _on_police_fined(coins_lost: int, reason: String) -> void:
+	score.add_fine(coins_lost)
+	GameEvents.penalty_shown.emit(tr("Police fine %s: %s") % [Country.pack.money(coins_lost), tr(reason)])
+
+
+func _on_police_ended_run(reason: String) -> void:
+	_police_stopped = reason
+	GameEvents.penalty_shown.emit(tr("Stopped by the transit police: %s") % tr(reason))
+
+
+func _on_fare_dodged() -> void:
+	score.add_dodger()
+	GameEvents.penalty_shown.emit("A fare dodger slipped on without paying")
+
+
 func _on_vendor_boarded() -> void:
 	score.add_vendor()
 
@@ -193,6 +224,8 @@ func _on_shift_completed(summary: Dictionary) -> void:
 		_end_downpour()
 	var report := summary.duplicate()
 	report["time_of_day"] = _time_of_day
+	report["difficulty"] = _difficulty_id
+	report["police_stopped"] = _police_stopped
 	report["downpour"] = int(score.counts["downpours"]) > 0
 	var carried: int = summary["carried"]
 	report["score"] = score.total()
@@ -221,6 +254,8 @@ func _details(summary: Dictionary) -> String:
 		"ignored_hails": ["%d person left waiting", "%d people left waiting"],
 		"ignored_requests": ["%d stop request missed", "%d stop requests missed"],
 		"vendors": ["%d vendor on board", "%d vendors on board"],
+		"fines": ["%d police fine", "%d police fines"],
+		"dodgers": ["%d fare dodger", "%d fare dodgers"],
 	}
 	for key: String in labels:
 		if int(counts[key]) > 0:
@@ -233,6 +268,8 @@ func _details(summary: Dictionary) -> String:
 		notes.append(tr("%d s speeding") % roundi(score.speeding_seconds))
 	if score.off_road_seconds >= 1.0:
 		notes.append(tr("%d s off road") % roundi(score.off_road_seconds))
+	if score.fined_coins > 0:
+		notes.append(tr("%s in fines") % Country.pack.money(score.fined_coins))
 	return ", ".join(notes)
 
 

@@ -31,6 +31,7 @@ titles are fictional. All of these files are dedicated to the public domain unde
 | `ambience/motorbike_pass.wav` | A small motorbike going past | Buzzing harmonics with a Doppler drop and distance filtering; `ambience.motorbike_pass()` | CC0 |
 | `ambience/vendor_bell.wav` | A paletero's hand bell | Inharmonic bell partials, rung three times; `ambience.vendor_bell()` | CC0 |
 | `ambience/sharpener_whistle.wav` | A knife sharpener's pan pipe | A quick breathy scale up and down; `ambience.sharpener_whistle()` | CC0 |
+| `siren_whoop.wav` | A patrol car's whoop when the police fine the driver | Two rising sine sweeps with two harmonics; `make_sounds.py siren_whoop()` | CC0 |
 | `radio/onda_marisol_1.wav` | "Brisa de las cinco", Onda Marisol 95.3 FM | Cumbia-inspired 2/4: tambora-style drum, scraper, bass, keys, gaita-like lead; `music.cumbia()` | CC0 |
 | `radio/onda_marisol_2.wav` | "Ventana al mar", Onda Marisol 95.3 FM | Cumbia-inspired, minor key, clarinet-like lead | CC0 |
 | `radio/acordeon_puerto_1.wav` | "Paseo de la ciénaga", Acordeón del Puerto 93.3 FM | Vallenato-inspired paseo: caja-like drum, scraper, bass, accordion-like voice in thirds; `music.vallenato()` | CC0 |

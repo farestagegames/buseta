@@ -69,6 +69,16 @@ signal lighting_changed(lights: float, headlights: bool)
 signal time_of_day_set(time_id: String)
 signal downpour_requested ## Hidden test cheat.
 signal penalty_shown(text: String)
+## Speeding has gone on long enough to count, for the police.
+signal speeding_started
+## A transit police patrol is close enough to see faults, or no longer is.
+signal police_nearby(near: bool)
+## The police fined the driver this many coins for reason (an English key).
+signal police_fined(coins: int, reason: String)
+## The police stopped the bus for good, for reason.
+signal police_ended_run(reason: String)
+## A boarding passenger slipped on without paying.
+signal fare_dodged
 ## A tip rather than a fault, such as why a control did nothing.
 signal hint_shown(text: String)
 signal score_updated(total: int)
