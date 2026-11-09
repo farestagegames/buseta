@@ -889,3 +889,83 @@ func test_no_shipped_map_narrows_both_lanes_at_once() -> void:
 			assert_eq(clashes.size(), 0, "%s: %s" % [file, clashes])
 			checked += 1
 	assert_gt(checked, 0)
+
+
+# --- After a hit ---
+
+func test_a_shoved_car_never_ends_up_far_off_its_line() -> void:
+	var agent := TrafficAgent.new(0, 10.0, 11.0)
+	agent.hit_by_bus(Vector2(40.0, 0.0))
+	for i in 600:
+		agent.drive(11.0, INF, 0.0, DT)
+		assert_lte(agent.nudge.length(), TrafficAgent.MAX_NUDGE + 0.001)
+	for i in 30:
+		agent.stop_against_bus(Vector2(0.5, 0.0))
+	assert_lte(agent.nudge.length(), TrafficAgent.MAX_NUDGE + 0.001, "Pushing against the bus is capped too")
+
+
+func test_a_shoved_car_steers_back_onto_its_line_and_drives_on() -> void:
+	var agent := TrafficAgent.new(0, 10.0, 11.0)
+	agent.speed = 8.0
+	agent.hit_by_bus(Vector2(6.0, 0.0))
+	var top_while_off := 0.0
+	for i in int(20.0 / DT):
+		agent.drive(11.0, INF, 0.0, DT)
+		if agent.is_recovering() and agent.stunned <= 0.0:
+			top_while_off = maxf(top_while_off, agent.speed)
+	assert_almost_eq(agent.nudge.length(), 0.0, 0.01, "Back on its line")
+	assert_gt(agent.speed, 8.0, "Driving normally again")
+	assert_lte(top_while_off, TrafficAgent.RECOVERING_SPEED + 0.01, "Eases back in slowly")
+
+
+# --- Horns ---
+
+func test_kept_waiting_long_gives_a_longer_blast() -> void:
+	_straight(1)
+	var lane := _lane("main", "e")
+	var other_way := _lane("main", "w")
+	_bus_in_lane(lane, 300.0, 0.0)
+	_add(lane, 283.0, 0.0)
+	var road: TrafficLane = flow.graph.lanes[other_way]
+	# A car stopped opposite the bus, so there is never room to pass.
+	_add(other_way, road.length - 300.0, 0.0, false, 0.0)
+	var kinds: Array[int] = []
+	flow.horn_sounded.connect(func(_spot: Vector2, kind: int) -> void: kinds.append(kind))
+	for i in int((TrafficFlow.HORN_AFTER + 2.0) * TrafficFlow.SECOND_HORN_SHARE / DT):
+		_tick()
+	assert_eq(kinds, [TrafficFlow.Honk.TOOT, TrafficFlow.Honk.LONG] as Array[int])
+
+
+func test_motorbikes_beep_sooner_than_cars() -> void:
+	_straight(1)
+	var lane := _lane("main", "e")
+	var other_way := _lane("main", "w")
+	_bus_in_lane(lane, 300.0, 0.0)
+	var road: TrafficLane = flow.graph.lanes[other_way]
+	for i in 30:
+		_add(other_way, road.length - 1400.0 + i * 40.0, 11.0)
+	var moto := _add(lane, 286.0, 0.0, true)
+	moto.kerb_shift = 0.0
+	var kinds: Array[int] = []
+	flow.horn_sounded.connect(func(_spot: Vector2, kind: int) -> void: kinds.append(kind))
+	for i in int((TrafficFlow.HORN_AFTER * TrafficFlow.MOTO_HORN_SHARE + 2.5) / DT):
+		_tick()
+	assert_true(kinds.has(TrafficFlow.Honk.BEEP), "A moto stuck behind the bus beeps before a car would toot")
+
+
+func test_a_hit_driver_leans_on_the_horn() -> void:
+	_straight(1)
+	_add(_lane("main", "e"), 100.0, 5.0)
+	_tick()
+	var kinds: Array[int] = []
+	flow.horn_sounded.connect(func(_spot: Vector2, kind: int) -> void: kinds.append(kind))
+	flow.honk_after_hit(0)
+	flow.honk_after_hit(0)
+	assert_eq(kinds.size(), 2, "A new hit always gets a honk")
+	assert_eq(kinds[0], TrafficFlow.Honk.LONG)
+
+
+func test_honks_fade_with_distance_and_stop_out_of_earshot() -> void:
+	assert_eq(AudioDirector.car_horn_db(5.0), AudioDirector.CAR_HORN_DB)
+	assert_almost_eq(AudioDirector.car_horn_db(20.0), AudioDirector.CAR_HORN_DB - 6.0, 0.01)
+	assert_eq(AudioDirector.car_horn_db(AudioDirector.CAR_HORN_RANGE + 1.0), -INF)

@@ -24,6 +24,14 @@ const DOOR_ORBIT := 2.15
 const DOOR_ORBIT_RATE := 2.2
 const DOOR_ZOOM := 0.58
 const HEIGHT_RATE := 5.0
+## When a wall stands between the camera and the doorway, the camera swings back
+## towards the rear of the bus by this share of its door swing and rises this
+## many metres, to look down past the roofline at the people boarding.
+const BLOCKED_SWING_BACK := 0.7
+const BLOCKED_RISE := 7.0
+const BLOCKED_RATE := 3.0
+## The camera keeps this far in front of any wall it would otherwise sit behind.
+const WALL_CLEARANCE := 0.4
 
 @export var target_path: NodePath
 
@@ -39,6 +47,7 @@ var _door_focus: float = 0.0
 var _door_glance: float = 0.0
 var _door_position: Vector3 = Vector3.ZERO
 var _follow_height: float = 0.0
+var _blocked: float = 0.0 ## 0 clear, 1 fully moved for a wall, eased.
 
 
 func _ready() -> void:
@@ -107,12 +116,40 @@ func _update_follow(view: Dictionary, dt: float) -> void:
 	centre.y = _follow_height
 	if _door_focus > 0.001:
 		centre = centre.lerp(Vector3(_door_position.x, _follow_height, _door_position.z), _door_focus)
-	var orbit_heading := _follow_heading + _door_orbit
-	var behind := Vector3(sin(orbit_heading), 0.0, cos(orbit_heading))
 	var ahead := Vector3(sin(_follow_heading), 0.0, cos(_follow_heading)) * -float(view["look_ahead"]) * (1.0 - _door_focus)
 	var zoom := lerpf(_size_zoom(), DOOR_ZOOM, _door_focus)
-	global_position = centre + behind * float(view["distance"]) * zoom + Vector3.UP * float(view["height"]) * zoom
-	look_at(centre + ahead + Vector3.UP * float(view["look_height"]), Vector3.UP)
+	var target := centre + ahead + Vector3.UP * float(view["look_height"])
+	var wanted := _follow_spot(view, centre, zoom, 0.0)
+	var blocked_now := _door_focus > 0.3 and _wall_between(target, wanted) < 1.0
+	_blocked = lerpf(_blocked, 1.0 if blocked_now else 0.0, 1.0 - exp(-BLOCKED_RATE * dt))
+	var spot := _follow_spot(view, centre, zoom, _blocked)
+	# Never behind a wall, whatever the easing is doing.
+	var clear := _wall_between(target, spot)
+	if clear < 1.0:
+		spot = target.lerp(spot, clear) + (target - spot).normalized() * WALL_CLEARANCE
+	global_position = spot
+	look_at(target, Vector3.UP)
+
+
+## Where the follow camera sits, moved back and up by the given share for a wall.
+func _follow_spot(view: Dictionary, centre: Vector3, zoom: float, blocked: float) -> Vector3:
+	var orbit_heading := _follow_heading + _door_orbit * (1.0 - BLOCKED_SWING_BACK * blocked)
+	var behind := Vector3(sin(orbit_heading), 0.0, cos(orbit_heading))
+	return centre + behind * float(view["distance"]) * zoom + Vector3.UP * (float(view["height"]) * zoom + BLOCKED_RISE * blocked)
+
+
+## The share of the way from a to b that is clear of walls: 1 when nothing is
+## in between.
+func _wall_between(from: Vector3, to: Vector3) -> float:
+	var space := get_world_3d().direct_space_state if is_inside_tree() else null
+	if space == null:
+		return 1.0
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	query.exclude = [_bus.get_rid()]
+	var hit := space.intersect_ray(query)
+	if hit.is_empty():
+		return 1.0
+	return from.distance_to(hit["position"]) / maxf(from.distance_to(to), 0.001)
 
 
 ## Longer buses need the camera further back to fit in the frame.

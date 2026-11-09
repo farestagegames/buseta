@@ -86,7 +86,7 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 	_ground = ground
 	_car_colours = CityTheme.from_data(map_data).car_colours
 	flow = TrafficFlow.new(LaneGraph.build(network, map_data), spec)
-	flow.horn_sounded.connect(func(_spot: Vector2) -> void: GameEvents.traffic_horn.emit())
+	flow.horn_sounded.connect(func(spot: Vector2, kind: int) -> void: GameEvents.traffic_horn.emit(spot, kind))
 	_build_signals()
 	var profile := GraphicsQuality.current_profile()
 	flow.spawn(scaled_count(profile["traffic_cars"], density), scaled_count(profile["traffic_motos"], density))
@@ -199,6 +199,7 @@ func _check_bus_hits() -> void:
 		var closing := (bus_velocity - car_forward * agent.speed).length()
 		if absf(_bus_speed) >= BUS_FAULT_SPEED and agent.stunned <= TrafficAgent.STUN_SECONDS - HIT_REPEAT_SECONDS:
 			agent.hit_by_bus(bus_velocity)
+			flow.honk_after_hit(i)
 			var loss := absf(_bus_speed) * ObstacleField.CAR_LOSS_HEAD_ON * 0.7
 			GameEvents.obstacle_hit.emit("car", loss)
 			if loss > 0.5:
@@ -213,6 +214,7 @@ func _check_moto_hit(agent: TrafficAgent, spot: Vector2, bus_velocity: Vector2) 
 		return
 	if absf(_bus_speed) >= BUS_FAULT_SPEED and agent.stunned <= TrafficAgent.STUN_SECONDS - HIT_REPEAT_SECONDS:
 		agent.hit_by_bus(bus_velocity * 0.3)
+		flow.honk_after_hit(agents.find(agent))
 		GameEvents.obstacle_hit.emit("moto", 0.0)
 		GameEvents.bus_collided.emit(MOTO_COLLISION)
 	else:

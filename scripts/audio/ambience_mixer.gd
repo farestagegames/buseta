@@ -41,6 +41,8 @@ var speed: float = 0.0
 ## 0 is dry, 1 is a downpour. The hook for the weather.
 var rain: float = 0.0
 var radio_on: bool = false
+## Share of a layer's radio dip that still applies from outside the bus.
+const OUTSIDE_DUCK_SHARE := 0.5
 ## False from the follow cameras, where the radio is quieter and nothing dips.
 var in_cockpit: bool = true
 
@@ -97,8 +99,10 @@ func gain(layer: Dictionary) -> float:
 		level *= 1.0 - clampf(rain, 0.0, 1.0)
 	if radio_on and layer.get("radio_ducks", false):
 		level = 0.0
-	if radio_on and in_cockpit:
-		level *= db_to_linear(float(layer.get("radio_ducks_db", 0.0)))
+	# The street dips under the radio from every view; from outside the bus the
+	# radio is a little quieter, so the street dips half as far.
+	if radio_on:
+		level *= db_to_linear(float(layer.get("radio_ducks_db", 0.0)) * (1.0 if in_cockpit else OUTSIDE_DUCK_SHARE))
 	return level
 
 

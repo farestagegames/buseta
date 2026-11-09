@@ -14,22 +14,33 @@ const COLLISION_COOLDOWN := 0.35
 const AIR_BRAKE_COOLDOWN := 8.0
 const REVERSE_BEEP_SECONDS := 1.0
 const BUS_HORN_DB := -13.0
-## A car's toot is the city bus horn, higher and short, so no extra sound is needed.
-const CAR_HORN_PITCH := 1.45
-const CAR_HORN_SECONDS := 0.28
-const CAR_HORN_COOLDOWN := 4.0
-## The toot fades over its last moment instead of stopping dead.
+## Traffic horns reuse the city bus horn at other pitches, so no extra sound is
+## needed. Each kind (TrafficFlow.Honk) is a pitch and a pattern of sounding and
+## silent spells, in seconds.
+const HONKS := {
+	TrafficFlow.Honk.TOOT: {"pitch": 1.45, "steps": [0.28]},
+	TrafficFlow.Honk.LONG: {"pitch": 1.3, "steps": [0.9]},
+	TrafficFlow.Honk.BEEP: {"pitch": 1.9, "steps": [0.12, 0.09, 0.12]},
+}
+const CAR_HORN_VOICES := 3
+## Two honks never start closer together than this.
+const CAR_HORN_COOLDOWN := 0.6
+## A honk fades over its last moment instead of stopping dead.
 const CAR_HORN_FADE := 0.05
-const CAR_HORN_DB := -19.0
+const CAR_HORN_DB := -15.0
+## Full volume up to this far from the bus, then 6 dB quieter each time the
+## distance doubles, and not heard past CAR_HORN_RANGE.
+const CAR_HORN_NEAR := 10.0
+const CAR_HORN_RANGE := 90.0
 ## Street layers ease to a new level over this long, so nothing jumps.
 const STREET_FADE := 0.6
 ## Players shared by the street's one-off sounds, such as a motorbike passing.
 const STREET_SHOT_PLAYERS := 2
 ## The radio sits a few dB over the street bed in the cockpit, where the city and
 ## sea layers also dip while it plays (their "radio_ducks_db").
-const RADIO_DB := -4.0
+const RADIO_DB := 0.0
 ## From outside the bus the radio is quieter and muffled.
-const RADIO_OUTSIDE_DB := -6.0
+const RADIO_OUTSIDE_DB := -3.0
 ## Tuning in joins a song part-way through, as a real radio does.
 const RADIO_JOIN_SHARE := 0.7
 ## A street layer's volume is only written again once its level has moved this
@@ -74,9 +85,10 @@ var _cooldown: float = 0.0
 var _air_cooldown: float = 0.0
 var _lamp_was_on: bool = false
 var _reverse_timer: float = 0.0
-var _car_horn: AudioStreamPlayer
-var _car_horn_left: float = 0.0
+## Each voice: player, steps, step, left and db.
+var _car_horns: Array[Dictionary] = []
 var _car_horn_cooldown: float = 0.0
+var _bus_spot: Vector2 = Vector2.ZERO
 var _street: Dictionary = {} ## Loop layer id to its player.
 var _street_levels: Dictionary = {} ## Loop layer id to its eased gain.
 var _street_applied: Dictionary = {} ## Loop layer id to the gain its player has now.
@@ -100,8 +112,8 @@ func _ready() -> void:
 	_engine.play()
 	_horn = _player(null, BUS_HORN_DB)
 	use_horn(Country.pack.horn(""))
-	_car_horn = _player(_streams["car_horn"], CAR_HORN_DB)
-	_car_horn.pitch_scale = CAR_HORN_PITCH
+	for i in CAR_HORN_VOICES:
+		_car_horns.append({"player": _player(_streams["car_horn"], CAR_HORN_DB), "steps": [], "step": 0, "left": 0.0, "db": CAR_HORN_DB})
 	for i in 4:
 		_effects.append(_player(null, 0.0))
 	_build_street()
@@ -177,11 +189,8 @@ func _process(dt: float) -> void:
 	_cooldown = maxf(_cooldown - dt, 0.0)
 	_air_cooldown = maxf(_air_cooldown - dt, 0.0)
 	_car_horn_cooldown = maxf(_car_horn_cooldown - dt, 0.0)
-	if _car_horn_left > 0.0:
-		_car_horn_left -= dt
-		_car_horn.volume_db = CAR_HORN_DB + linear_to_db(clampf(_car_horn_left / CAR_HORN_FADE, 0.001, 1.0))
-		if _car_horn_left <= 0.0:
-			_car_horn.stop()
+	for voice: Dictionary in _car_horns:
+		_step_car_horn(voice, dt)
 	_update_horn(dt)
 	_update_street(dt)
 
@@ -207,13 +216,56 @@ func _notification(what: int) -> void:
 		_horn.stop()
 
 
-func _on_traffic_horn() -> void:
-	if _car_horn_cooldown > 0.0:
+## How loud a honk this far from the bus is, or -INF when out of earshot.
+static func car_horn_db(distance: float) -> float:
+	if distance > CAR_HORN_RANGE:
+		return -INF
+	return CAR_HORN_DB - 6.0 * log(maxf(distance, CAR_HORN_NEAR) / CAR_HORN_NEAR) / log(2.0)
+
+
+func _on_traffic_horn(spot: Vector2, kind: int) -> void:
+	var db := car_horn_db(spot.distance_to(_bus_spot))
+	if _car_horn_cooldown > 0.0 or db == -INF:
+		return
+	var free := _car_horns.filter(func(voice: Dictionary) -> bool: return (voice["steps"] as Array).is_empty())
+	if free.is_empty():
 		return
 	_car_horn_cooldown = CAR_HORN_COOLDOWN
-	_car_horn_left = CAR_HORN_SECONDS
-	_car_horn.volume_db = CAR_HORN_DB
-	_car_horn.play()
+	var honk: Dictionary = HONKS.get(kind, HONKS[TrafficFlow.Honk.TOOT])
+	var voice: Dictionary = free[0]
+	voice["steps"] = (honk["steps"] as Array).duplicate()
+	voice["step"] = 0
+	voice["left"] = voice["steps"][0]
+	voice["db"] = db
+	var player: AudioStreamPlayer = voice["player"]
+	player.pitch_scale = honk["pitch"]
+	player.volume_db = db
+	player.play()
+
+
+## Even steps sound and odd steps are silent; a voice is free once its steps run out.
+func _step_car_horn(voice: Dictionary, dt: float) -> void:
+	var steps: Array = voice["steps"]
+	if steps.is_empty():
+		return
+	var player: AudioStreamPlayer = voice["player"]
+	voice["left"] = float(voice["left"]) - dt
+	var sounding := int(voice["step"]) % 2 == 0
+	if sounding:
+		player.volume_db = float(voice["db"]) + linear_to_db(clampf(float(voice["left"]) / CAR_HORN_FADE, 0.001, 1.0))
+	if float(voice["left"]) > 0.0:
+		return
+	voice["step"] = int(voice["step"]) + 1
+	if int(voice["step"]) >= steps.size():
+		player.stop()
+		steps.clear()
+		return
+	voice["left"] = steps[voice["step"]]
+	if int(voice["step"]) % 2 == 0:
+		player.volume_db = voice["db"]
+		player.play()
+	else:
+		player.stop()
 
 
 func _on_horn(is_pressed: bool) -> void:
@@ -379,6 +431,7 @@ func _on_telemetry(data: BusTelemetry) -> void:
 
 
 func _update_surroundings(at: Vector2, speed: float) -> void:
+	_bus_spot = at
 	mixer.speed = speed
 	mixer.sea_distance = AmbienceMixer.distance_to_sea(at.x, _coast_x)
 	mixer.stall_distance = _nearest(at, _stalls)

@@ -9,7 +9,10 @@ extends RefCounted
 ## standing in the road. Other vehicles come from per-lane lists, so the cost
 ## grows with the number of vehicles, not its square.
 
-signal horn_sounded(spot: Vector2)
+signal horn_sounded(spot: Vector2, kind: int)
+
+## A short toot, a long angry blast, or a motorbike's double beep.
+enum Honk { TOOT, LONG, BEEP }
 
 const CRUISE_LOW := 9.5
 const CRUISE_HIGH := 12.5
@@ -54,6 +57,13 @@ const RETURN_CLEAR := 8.0
 ## Free lane needed past what is being passed, so a pass never ends in a queue.
 const ROOM_AHEAD := 12.0
 const HORN_AFTER := 7.0
+## A second, longer blast comes at this multiple of the first wait.
+const SECOND_HORN_SHARE := 2.2
+const MOTO_HORN_SHARE := 0.5
+## Closer than this to the bus while still moving faster than CUT_IN_SPEED
+## means the bus pulled out in front.
+const CUT_IN_GAP := 6.0
+const CUT_IN_SPEED := 4.0
 const PROP_REFRESH := 0.25
 ## Over the centre line by more than this, a vehicle is checked by oncoming traffic.
 const INTRUDE_REACH := 0.3
@@ -622,6 +632,28 @@ func _look_ahead(agent: TrafficAgent, reach: float) -> void:
 			_blocker = box
 
 
+## Kept waiting behind the bus: a toot, then a longer blast if it goes on.
+## Motorbikes are less patient and beep sooner.
+func _honk_while_waiting(index: int, agent: TrafficAgent) -> void:
+	var first := HORN_AFTER * (MOTO_HORN_SHARE if agent.is_moto else 1.0) + float(agent.batch_index % 3)
+	if not agent.honked and agent.waiting > first:
+		agent.honked = true
+		agent.honk_cooldown = TrafficAgent.HONK_COOLDOWN
+		horn_sounded.emit(positions[index], Honk.BEEP if agent.is_moto else Honk.TOOT)
+	elif agent.honked and not agent.honked_twice and not agent.is_moto and agent.waiting > first * SECOND_HORN_SHARE:
+		agent.honked_twice = true
+		agent.honk_cooldown = TrafficAgent.HONK_COOLDOWN
+		horn_sounded.emit(positions[index], Honk.LONG)
+
+
+## A driver the bus has just hit leans on the horn.
+func honk_after_hit(index: int) -> void:
+	var agent := agents[index]
+	agent.honk_cooldown = 0.0
+	if agent.try_honk():
+		horn_sounded.emit(positions[index], Honk.BEEP if agent.is_moto else Honk.LONG)
+
+
 ## Plans a way round something standing in the lane, or a way back after it.
 func _consider_passing(index: int, agent: TrafficAgent, lane: TrafficLane, dt: float) -> void:
 	if lane.is_link:
@@ -638,9 +670,12 @@ func _consider_passing(index: int, agent: TrafficAgent, lane: TrafficLane, dt: f
 	agent.waiting = agent.waiting + dt if blocked else 0.0
 	if not blocked:
 		agent.honked = false
-	elif not agent.honked and not agent.is_moto and _is_bus(_blocker) and agent.waiting > HORN_AFTER + float(agent.batch_index % 3):
-		agent.honked = true
-		horn_sounded.emit(positions[index])
+		agent.honked_twice = false
+	elif _is_bus(_blocker):
+		_honk_while_waiting(index, agent)
+	# The bus pulled in close in front of a moving car.
+	if _blocker != null and _is_bus(_blocker) and _gap < CUT_IN_GAP and agent.speed > CUT_IN_SPEED and agent.try_honk():
+		horn_sounded.emit(positions[index], Honk.BEEP if agent.is_moto else Honk.TOOT)
 	if _blocker == null or _gap > DECIDE_GAP or not _blocker.is_still() or not _is_parked(_blocker):
 		return
 	var hit := agent.distance + agent.half_length() + _gap

@@ -333,8 +333,12 @@ func test_open_doors_bring_the_camera_round_to_the_door_side() -> void:
 	GameEvents.door_toggle_requested.emit()
 	await wait_seconds(2.5)
 	var during: Vector3 = bus.global_transform.affine_inverse() * camera.global_position
-	assert_gt(during.x, 4.0, "Should be out to the door side")
-	assert_lt(during.z, -3.0, "Should be toward the front of the bus")
+	assert_gt(during.x, 3.0, "Should be out to the door side")
+	# At the depot a building stands where the front corner view would be, so
+	# the camera may swing back and up; what matters is seeing the doorway.
+	var query := PhysicsRayQueryParameters3D.create(camera.global_position, camera._door_position + Vector3.UP * 1.2)
+	query.exclude = [bus.get_rid()]
+	assert_true(camera.get_world_3d().direct_space_state.intersect_ray(query).is_empty(), "Nothing between the camera and the doorway")
 
 
 func _first_car() -> KnockableProp:

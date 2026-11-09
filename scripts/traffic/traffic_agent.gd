@@ -28,6 +28,18 @@ const MOTO_HALF_WIDTH := 0.4
 const SHIFT_RATE := 0.6
 const SHIFT_RATE_PER_SPEED := 0.12
 const SHIFT_RATE_MAX := 1.5
+## A shove never moves a car more than this far off its line, so it can never
+## end up in a building.
+const MAX_NUDGE := 2.5
+## Once it can drive again, a shoved car steers back onto its line this fast, in
+## m/s, a little quicker when moving.
+const NUDGE_RETURN := 0.8
+const NUDGE_RETURN_PER_SPEED := 0.15
+## Top speed while it is still well off its line, so it eases back in.
+const RECOVERING_SPEED := 3.0
+const RECOVERED_NUDGE := 0.4
+## A driver honks at most this often.
+const HONK_COOLDOWN := 6.0
 
 var lane: int
 var distance: float = 0.0
@@ -46,6 +58,8 @@ var shift_target: float = 0.0
 var shift_rate: float = 0.0 ## Sideways speed this tick, for drawing it turned.
 var waiting: float = 0.0 ## Seconds stopped behind something it could pass.
 var honked: bool = false
+var honked_twice: bool = false
+var honk_cooldown: float = 0.0
 var passing_bus: bool = false ## True while going round the bus.
 ## For a moto, how far towards the kerb it rides here. TrafficFlow sets it.
 var kerb_shift: float = MOTO_KERB_SHIFT
@@ -89,6 +103,9 @@ static func approach_speed(target: float, distance: float) -> float:
 
 
 func drive(free_speed: float, gap: float, lead_speed: float, dt: float, gap_scale: float = 1.0) -> void:
+	honk_cooldown = maxf(honk_cooldown - dt, 0.0)
+	if is_recovering():
+		free_speed = minf(free_speed, RECOVERING_SPEED)
 	if stunned > 0.0:
 		stunned -= dt
 		speed = move_toward(speed, 0.0, MAX_BRAKE * dt)
@@ -127,6 +144,19 @@ func half_width() -> float:
 	return MOTO_HALF_WIDTH if is_moto else CAR_HALF_WIDTH
 
 
+## Still well off its line after a shove.
+func is_recovering() -> bool:
+	return nudge.length() > RECOVERED_NUDGE
+
+
+## True, and starts the cooldown, if this driver may honk now.
+func try_honk() -> bool:
+	if honk_cooldown > 0.0:
+		return false
+	honk_cooldown = HONK_COOLDOWN
+	return true
+
+
 func is_passing() -> bool:
 	return shift_target != 0.0 or absf(shift) > 0.05
 
@@ -141,10 +171,14 @@ func hit_by_bus(bus_velocity: Vector2) -> void:
 func stop_against_bus(push: Vector2) -> void:
 	stunned = maxf(stunned, 1.5)
 	speed = 0.0
-	nudge += push
+	nudge = (nudge + push).limit_length(MAX_NUDGE)
 
 
+## Slides with a shove, then, once it can drive again, steers back onto its line.
+## Before, a shoved car kept its offset for good and could drive through walls.
 func _settle_nudge(dt: float) -> void:
-	nudge += nudge_velocity * dt
+	nudge = (nudge + nudge_velocity * dt).limit_length(MAX_NUDGE)
 	var remaining := maxf(nudge_velocity.length() - KnockableProp.SKID_DECEL * dt, 0.0)
 	nudge_velocity = nudge_velocity.normalized() * remaining if remaining > 0.0 else Vector2.ZERO
+	if nudge_velocity == Vector2.ZERO and stunned <= 0.0 and nudge != Vector2.ZERO:
+		nudge = nudge.move_toward(Vector2.ZERO, (NUDGE_RETURN + speed * NUDGE_RETURN_PER_SPEED) * dt)

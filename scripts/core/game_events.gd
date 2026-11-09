@@ -51,7 +51,8 @@ signal stop_arrived(stop_index: int, accuracy: float, seconds_late: float)
 signal indicator_missed
 signal red_light_run
 signal signal_ahead(state: int, distance: float) ## TrafficLightPlan.Light, or -1.
-signal traffic_horn ## A car kept waiting behind the bus gives a short toot.
+## A car or motorbike honks at spot. kind is a TrafficFlow.Honk value.
+signal traffic_horn(spot: Vector2, kind: int)
 
 # --- Radio and weather ---
 signal radio_cycle_requested ## Off, the next station, and back to off.

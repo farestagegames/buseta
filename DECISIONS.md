@@ -215,3 +215,8 @@ One line each, with the reason. Newest at the bottom.
 - The iOS preset exports an Xcode project only, so signing happens in Xcode with your own team; no account details are in the repository.
 - iOS minimum is 14.0 and the target is iPhone and iPad, which covers phones from about 2018 on and matches the 60 fps target on A12 chips.
 - The iOS audio session stays on Godot's default (Ambient, follows the silent switch); IOS_PORT.md says how to change it if the radio should play on silent.
+- A shoved car steers back onto its line once it can drive again, at walking pace, and can never be pushed more than 2.5 m off it. Before, a shove stayed for good, which is how cars ended up driving through buildings.
+- Traffic honks more, as on a Colombian street: a toot, then a long blast if kept waiting behind the bus; motorbikes beep sooner; a car the bus pulls out in front of toots; a driver who is hit leans on the horn. Honks fade with distance and up to three can sound at once.
+- With the doors open, if a wall stands where the follow camera would go, the camera swings back towards the rear and rises to look down at the doorway, and never sits inside a wall.
+- The hail prompt says where and how far ("Getting off at the green marker: 85 m") instead of "Someone wants to get off", and only says to pull forward when stopped within 30 m of the marker.
+- The radio is 4 dB louder and the street layers 3 to 4 dB quieter; the street now dips under the radio from every camera view (half as much from outside), because the player said the ambience drowned the radio.

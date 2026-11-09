@@ -166,14 +166,14 @@ func test_shop_music_goes_quiet_while_the_radio_plays() -> void:
 	assert_eq(mixer.gain(music), 0.0)
 
 
-func test_the_street_dips_under_the_radio_in_the_cockpit_only() -> void:
+func test_the_street_dips_under_the_radio_in_every_view() -> void:
 	var city := _layer("always", {"radio_ducks_db": -6.0})
 	var mixer := AmbienceMixer.new([city])
 	assert_eq(mixer.gain(city), 1.0, "Radio off")
 	mixer.radio_on = true
 	assert_almost_eq(mixer.gain(city), db_to_linear(-6.0), 0.001)
 	mixer.in_cockpit = false
-	assert_eq(mixer.gain(city), 1.0, "From outside the radio is quiet, so nothing dips")
+	assert_almost_eq(mixer.gain(city), db_to_linear(-6.0 * AmbienceMixer.OUTSIDE_DUCK_SHARE), 0.001, "Half the dip from outside")
 
 
 func test_the_colombian_city_and_sea_dip_under_the_radio() -> void:

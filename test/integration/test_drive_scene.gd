@@ -108,6 +108,27 @@ func test_cockpit_camera_sits_inside_the_bus() -> void:
 	assert_between(local.y, 1.0, bus.spec.body_height)
 
 
+func test_door_camera_stays_clear_of_a_wall_beside_the_bus() -> void:
+	var side := float(bus.spec.door_side)
+	var wall := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(1.0, 12.0, 60.0)
+	shape.shape = box
+	wall.add_child(shape)
+	var wall_x := side * (bus.spec.body_width / 2.0 + 2.5)
+	wall.position = Vector3(wall_x, 6.0, 0.0)
+	add_child_autofree(wall)
+	GameEvents.door_toggle_requested.emit()
+	await wait_seconds(2.5)
+	var inner_face := absf(wall_x) - 0.5
+	assert_lt(camera.global_position.x * side, inner_face, "Camera on the bus side of the wall")
+	var door := Vector3(bus.global_position.x + side * bus.spec.body_width / 2.0, 1.2, bus.global_position.z)
+	var query := PhysicsRayQueryParameters3D.create(camera.global_position, door)
+	query.exclude = [bus.get_rid()]
+	assert_true(camera.get_world_3d().direct_space_state.intersect_ray(query).is_empty(), "Nothing between the camera and the doorway")
+
+
 func test_gauge_shows_the_current_camera_view() -> void:
 	GameEvents.camera_cycle_requested.emit()
 	assert_eq(hud.gauge.status_text(), "Far")

@@ -8,6 +8,9 @@ const STATUS_INTERVAL := 0.2
 const PASSENGER_SEED := 2024
 const INDICATOR_WINDOW := 70.0
 const HAIL_NOTICE_DISTANCE := 90.0
+## Stopped this close short of a hail marker, the prompt says to pull forward.
+## Further back, as at a red light, it just says how far the marker is.
+const PULL_FORWARD_NOTICE := 30
 ## A vendor works the bus for this many stops, then gets off.
 const VENDOR_STOPS := 2
 
@@ -264,7 +267,12 @@ func _prompt(stop: RouteStop, data: BusTelemetry, centre: Vector2) -> String:
 		return tr("Passengers getting off") if session.stage == StopSession.Stage.ALIGHTING else tr("Passengers boarding")
 	var offset := stop.offset_of(centre)
 	if stop.kind == RouteStop.Kind.HAIL and not stop.is_final and offset.x < -stop.along_tolerance() and -offset.x < HAIL_NOTICE_DISTANCE:
-		return tr("Someone wants to get off") if ledger.wanting_off(runner.stop_index) > 0 else tr("Passenger flagging you down")
+		# Say where, so nobody stops short and waits for people who are not
+		# getting off yet.
+		var metres := ceili(-offset.x - stop.along_tolerance())
+		if absf(data.speed) < BusPhysicsModel.STOPPED_SPEED and metres <= PULL_FORWARD_NOTICE:
+			return tr("Pull forward %d m") % metres
+		return tr("Getting off at the green marker: %d m") % metres if ledger.wanting_off(runner.stop_index) > 0 else tr("Flagging you down at the green marker: %d m") % metres
 	if absf(offset.x) > 30.0:
 		return ""
 	if _aligned:

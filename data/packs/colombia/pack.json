@@ -142,8 +142,8 @@
       "id": "city",
       "file": "res://assets/audio/ambience/city_bed.wav",
       "rule": "always",
-      "volume_db": -8,
-      "radio_ducks_db": -6
+      "volume_db": -12,
+      "radio_ducks_db": -9
     },
     {
       "id": "sea",
@@ -151,15 +151,15 @@
       "rule": "sea",
       "near": 25,
       "far": 230,
-      "volume_db": -5,
-      "radio_ducks_db": -6
+      "volume_db": -9,
+      "radio_ducks_db": -9
     },
     {
       "id": "birds",
       "file": "res://assets/audio/ambience/birds.wav",
       "rule": "calm",
       "dry": true,
-      "volume_db": -10
+      "volume_db": -13
     },
     {
       "id": "shop_music",
@@ -169,13 +169,13 @@
       "far": 40,
       "muffled": true,
       "radio_ducks": true,
-      "volume_db": -14
+      "volume_db": -16
     },
     {
       "id": "rain",
       "file": "res://assets/audio/ambience/rain.wav",
       "rule": "rain",
-      "volume_db": -6
+      "volume_db": -7
     },
     {
       "id": "motorbike",
@@ -185,7 +185,7 @@
         6,
         16
       ],
-      "volume_db": -9
+      "volume_db": -12
     },
     {
       "id": "vendor_bell",
@@ -197,7 +197,7 @@
         8,
         20
       ],
-      "volume_db": -10
+      "volume_db": -13
     },
     {
       "id": "sharpener",
@@ -207,7 +207,7 @@
         45,
         90
       ],
-      "volume_db": -14
+      "volume_db": -16
     }
   ],
   "times_of_day": [
