@@ -24,7 +24,7 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | 8a | Day/night and rain | Done | `milestone-day-night-rain` | Five times of day (unlock by level, picked on the Routes tab), seeded aguaceros with wet road, grip, wipers, traffic gaps, umbrellas, bonus and achievements. Night lit without real city lights. Arroyos not done. Independent review skipped (usage limit); checked by the gate and screenshots only |
 | 8b | Daily challenges and achievements | Done | `milestone-challenges` | 17 daily challenges (route, bus, time-of-day and count conditions, only offered once unlocked), daily streak bonus, 18 achievements with coin rewards and progress in Career, per-route and per-bus stats. Menu not checked by screenshot (display asleep); covered by the menu tests |
 | 8c | iOS readiness | Done | `milestone-ios-ready` | iOS export preset (Xcode project, team id left blank), no Android-only calls (tested), safe area for notch and home indicator (tested), IOS_PORT.md with what is left and how to build and sign. Never built for or run on an iPhone |
-| 8d | Multiplayer research | Not started | | |
+| 8d | Multiplayer research | Done | `milestone-multiplayer-research` | MULTIPLAYER.md compares Wi-Fi play, pass-and-play and share-code leaderboards; recommends pass-and-play then share codes. Prototype on branch `multiplayer-spike`, not merged |
 
 ## Requested during the day (7 Nov)
 
