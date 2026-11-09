@@ -10,10 +10,10 @@ within those limits, and recommends one.
 - **Seeded shifts.** A shift's hail stops and its weather (downpour or not, and
   when) come from one number, `CityShift.shift_seed`. Two players given the
   same seed, route, bus and time of day face the same stops and the same rain.
-- **What is not seeded yet.** Traffic (`TrafficFlow._random`), passenger counts
-  (`PassengerLedger._random`) and street walkers each use their own unseeded
-  random generator. For a fair contest they need to be seeded from the shift
-  seed too. That is a small change: pass the seed in and set `random.seed`.
+- **Traffic and passengers are already fixed.** Traffic (`TrafficFlow`, seed
+  4242) and passenger destinations (`PassengerLedger`, `PASSENGER_SEED`) use
+  fixed seeds, so they repeat too. Only street walkers and some sounds vary,
+  which changes the look, not the shift.
 - **A full score.** Every shift ends in a report: score out of 100, stars,
   punctuality, stopping accuracy, smoothness, traffic rules, passenger
   satisfaction and time. That is a fair thing to compare.
@@ -59,10 +59,9 @@ the phone is passed on; at the end there is a ranking with each player's score,
 stars and best category, and a "rematch" button with a new seed. Optional
 handicaps: a younger player gets the buseta and automatic recovery.
 
-**Effort.** Small, about 3 to 5 days.
+**Effort.** Small, about 2 to 4 days.
 - A pure `PassAndPlay` session class: player names, the shared shift settings
   and seed, each player's result, whose turn it is, the ranking with tie breaks.
-- Seed traffic, passengers and walkers from the shift seed (see above).
 - A setup screen (names, route, bus, time), a "pass the phone to Ana" screen
   between turns, and a results screen.
 - Rewards: give coins and XP to the phone's owner only, or none in this mode, so
