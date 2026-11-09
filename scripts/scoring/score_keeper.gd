@@ -243,6 +243,13 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	report["score"] = score.total()
 	report["stars"] = score.stars()
 	report["coins"] = score.coins(carried)
+	if summary.has("arcade"):
+		# The arcade is scored on checkpoints, which is also its best to beat.
+		var arcade: Dictionary = summary["arcade"]
+		report["arcade"] = arcade
+		report["score"] = int(arcade["checkpoints"])
+		report["stars"] = ArcadeRun.stars_for(int(arcade["checkpoints"]))
+		report["coins"] = ArcadeRun.coins_for(int(arcade["checkpoints"]), float(arcade["distance"]))
 	report["categories"] = score.categories()
 	report["details"] = _details(summary)
 	report["counts"] = score.counts.duplicate()

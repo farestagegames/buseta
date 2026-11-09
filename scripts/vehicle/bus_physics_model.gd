@@ -17,6 +17,11 @@ const GRAVITY := 9.81
 ## How far a joint can fold before the rear section is dragged round with it.
 const MAX_ARTICULATION := deg_to_rad(52.0)
 
+## Arcade boost, 0 to 1: a higher top speed and more pull while it lasts.
+var boost: float = 0.0
+const BOOST_TOP_SPEED := 0.35
+const BOOST_PUSH := 0.9
+const BOOST_THRUST_FLOOR := 0.6
 var position: Vector2 = Vector2.ZERO ## X and Z on the ground plane.
 var heading: float = 0.0
 var speed: float = 0.0
@@ -180,9 +185,15 @@ func _drive_accel() -> float:
 		return 0.0
 	# Going against the selected direction, drive still pushes the bus back.
 	var limit := _spec.top_speed if direction == Direction.FORWARD else _spec.top_speed_reverse
+	var push := 1.0
+	if direction == Direction.FORWARD and boost > 0.0:
+		limit *= 1.0 + BOOST_TOP_SPEED * boost
+		push += BOOST_PUSH * boost
 	var along_direction := speed * float(direction)
 	var governor := clampf((limit - along_direction) / (limit * 0.08), 0.0, 1.0)
-	return _spec.max_drive_accel * gearbox.thrust_share() * throttle * governor
+	# A boost keeps pulling past the top gear, where thrust would fade.
+	var thrust := maxf(gearbox.thrust_share(), BOOST_THRUST_FLOOR * boost)
+	return _spec.max_drive_accel * thrust * throttle * governor * push
 
 
 func _update_body(dt: float) -> void:

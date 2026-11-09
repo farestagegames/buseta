@@ -42,6 +42,13 @@
    "file": "routes/libre.json",
    "cost": 0,
    "description": "No end and no depot: wander the whole city picking up whoever flags you down, for as long as your passengers stay happy."
+  },
+  {
+   "id": "arcade",
+   "name": "Arcade: Carrera Express",
+   "file": "routes/arcade.json",
+   "cost": 0,
+   "description": "Race the clock through the city: drive through checkpoint arches for more time and hit the orange pads for a boost."
   }
  ],
  "buses": [

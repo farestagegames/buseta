@@ -20,6 +20,8 @@ var gauge: HudGauge
 var route_panel: RoutePanel
 var minimap: Minimap
 var police_notice: Label
+## The arcade's clock and next checkpoint, in place of the route panel.
+var arcade_clock: Label
 var shift_panel: ShiftEndPanel
 var penalty_toast: PenaltyToast
 var tutorial_panel: TutorialPanel
@@ -82,6 +84,16 @@ func _ready() -> void:
 	minimap = Minimap.new()
 	_place(minimap, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 8.0), Vector2(190.0, 190.0))
 	root.add_child(minimap)
+
+	arcade_clock = Label.new()
+	arcade_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	arcade_clock.add_theme_font_size_override("font_size", 30)
+	arcade_clock.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.06))
+	arcade_clock.add_theme_constant_override("outline_size", 8)
+	arcade_clock.visible = false
+	_place(arcade_clock, Vector2(0.5, 0.0), Vector2(-280.0, 124.0), Vector2(560.0, 84.0))
+	root.add_child(arcade_clock)
+	GameEvents.arcade_status.connect(_on_arcade_status)
 
 	police_notice = Label.new()
 	police_notice.text = "POLICE NEARBY"
@@ -344,6 +356,17 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		_door_button.lit = door_lit
 	if gear_switch.is_reverse != data.is_reverse:
 		gear_switch.is_reverse = data.is_reverse
+
+
+func _on_arcade_status(seconds_left: float, checkpoint: int, distance: float, _position: Vector2, boosting: bool) -> void:
+	route_panel.visible = false
+	arcade_clock.visible = not shift_panel.visible
+	var low := seconds_left < 10.0
+	arcade_clock.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4) if low else (Color(1.0, 0.6, 0.2) if boosting else Color.WHITE))
+	var line := tr("TIME %d") % ceili(seconds_left)
+	if boosting:
+		line += "   " + tr("BOOST!")
+	arcade_clock.text = "%s\n%s" % [line, tr("Checkpoint %d: %d m") % [checkpoint, roundi(distance)]]
 
 
 ## Keeps controls clear of notches and rounded corners on both sides, so

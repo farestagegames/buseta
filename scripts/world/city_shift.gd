@@ -25,6 +25,10 @@ static var forced_rain: int = WeatherPlan.PLANNED
 @onready var _intro: IntroCutscene = $Intro
 @onready var _tutorial: TutorialDirector = $Tutorial
 var police: PoliceSystem
+## How long the weather plans for in the arcade, which has no timetable.
+const ARCADE_WEATHER_SECONDS := 300.0
+## The arcade mode, when the chosen route is the arcade course; null otherwise.
+var arcade: ArcadeSystem
 @onready var _hud: DriveHud = $Hud
 @onready var _camera: Camera3D = $CameraRig
 @onready var _street_life: StreetLife = $StreetLife
@@ -106,21 +110,31 @@ func _ready() -> void:
 	_street_life.setup(network, ground, route, time_of_day.pedestrians)
 	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)
 	_bus.start_at(ground, route.start_position, route.start_heading)
-	_route_system.setup(route, _bus.spec, network, int(route_data.get("fare", Country.pack.data["currency"]["fare"])))
+	var is_arcade: bool = route_data.get("service", "") == "arcade"
+	if not is_arcade:
+		_route_system.setup(route, _bus.spec, network, int(route_data.get("fare", Country.pack.data["currency"]["fare"])))
 	_traffic.setup(map_data, network, ground, _bus.spec, time_of_day.traffic)
 	_traffic.watch_props(_obstacles.props)
 	var difficulty := Profile.chosen_difficulty()
 	_score.setup(network, _bus.spec, difficulty)
 	_route_system.dodger_chance = difficulty.dodger_chance
-	if route.endless:
+	if route.endless and not is_arcade:
 		_route_system.endless_plan = route_data["hail"]
 		_route_system.endless_map = map_data
 		_score.give_up_below = RouteSystem.GIVE_UP_SATISFACTION
 	police = PoliceSystem.new()
 	add_child(police)
-	police.setup(_traffic, difficulty, hail_seed + 17)
+	# No police in the arcade: it is a race against the clock.
+	police.setup(_traffic, difficulty if not is_arcade else Difficulty.new(), hail_seed + 17)
+	if is_arcade:
+		arcade = ArcadeSystem.new()
+		add_child(arcade)
+		arcade.setup(route, network, ground, hail_seed)
 	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)
+	if arcade != null:
+		_beacon.visible = false
+		_beacon.process_mode = Node.PROCESS_MODE_DISABLED
 	_setup_audio()
 	_setup_weather(hail_seed)
 	GameEvents.map_ready.emit(network, route)
@@ -148,7 +162,7 @@ func _setup_audio() -> void:
 ## seed brings the same downpour.
 func _setup_weather(weather_seed: int) -> void:
 	var settings := RainSettings.from_pack(Country.pack.data)
-	var shift_seconds: float = route.stops[route.stops.size() - 1].due
+	var shift_seconds: float = route.stops[route.stops.size() - 1].due if not route.stops.is_empty() else ARCADE_WEATHER_SECONDS
 	_weather.setup(time_of_day, WeatherPlan.make(weather_seed, time_of_day, settings, shift_seconds, forced_rain), settings)
 
 

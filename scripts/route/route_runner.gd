@@ -44,7 +44,7 @@ static func build(data: Dictionary, network: RoadNetwork, shift_seed: int = 0, m
 	runner.route_name = data["name"]
 	runner.traffic_side = network.traffic_side
 	var service: String = data.get("service", "bays")
-	runner.endless = service == "endless"
+	runner.endless = service == "endless" or service == "arcade"
 	var legs: Array = data["legs"].duplicate()
 	if runner.endless:
 		var random := RandomNumberGenerator.new()
@@ -60,7 +60,9 @@ static func build(data: Dictionary, network: RoadNetwork, shift_seed: int = 0, m
 	runner._apply_progress(runner.start_position)
 	runner.kind = {"informal": RouteStop.Kind.HAIL, "rapid": RouteStop.Kind.STATION, "endless": RouteStop.Kind.HAIL}.get(service, RouteStop.Kind.BAY)
 	var entries: Array
-	if runner.endless:
+	if service == "arcade":
+		entries = []
+	elif runner.endless:
 		entries = EndlessPlanner.hails(legs, data["hail"], network, shift_seed, map_data)
 	else:
 		entries = HailPlan.fill(data, network, shift_seed, map_data) if service == "informal" else data["stops"]
@@ -68,7 +70,7 @@ static func build(data: Dictionary, network: RoadNetwork, shift_seed: int = 0, m
 		runner._add_stop(entry, network)
 	if service == "informal":
 		runner._share_out_the_timetable()
-	if runner.endless:
+	if runner.endless and not runner.stops.is_empty():
 		runner._pace_timetable(0)
 	return runner
 
@@ -91,6 +93,24 @@ func _pace_timetable(from_index: int) -> void:
 		var previous_due := stops[i - 1].due if i > 0 else 0.0
 		var previous_distance := stops[i - 1].route_distance if i > 0 else 0.0
 		stops[i].due = previous_due + (stops[i].route_distance - previous_distance) / ENDLESS_PACE + ENDLESS_DWELL
+
+
+## Where along the route a distance falls, and which way it runs there.
+func point_at(distance: float) -> Dictionary:
+	var i := clampi(distances.bsearch(distance) - 1, 0, polyline.size() - 2)
+	var span := maxf(distances[i + 1] - distances[i], 0.001)
+	var forward := (polyline[i + 1] - polyline[i]).normalized()
+	return {"position": polyline[i].lerp(polyline[i + 1], clampf((distance - distances[i]) / span, 0.0, 1.0)), "forward": forward}
+
+
+func length() -> float:
+	return distances[distances.size() - 1]
+
+
+## How far a point is from the route's line near the bus, for the arcade pads.
+func distance_from_line(point: Vector2) -> float:
+	var i := clampi(_cursor, 0, polyline.size() - 2)
+	return Geometry2D.get_closest_point_to_segment(point, polyline[i], polyline[mini(i + 1, polyline.size() - 1)]).distance_to(point)
 
 
 ## The route from here to this far ahead, for the map on the endless route.

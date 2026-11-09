@@ -79,6 +79,10 @@ signal police_fined(coins: int, reason: String)
 signal police_ended_run(reason: String)
 ## A boarding passenger slipped on without paying.
 signal fare_dodged
+## Arcade: the bus hit a boost pad and is boosted for this many seconds.
+signal boost_started(seconds: float)
+## Arcade: the clock, the next checkpoint and where it is, for the HUD and map.
+signal arcade_status(seconds_left: float, checkpoint: int, distance: float, position: Vector2, boosting: bool)
 ## More road and stops were added to the endless route.
 signal route_extended(route: RouteRunner)
 ## On the endless route, passengers lost patience and the run ends.

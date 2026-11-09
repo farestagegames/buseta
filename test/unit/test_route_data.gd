@@ -18,11 +18,11 @@ func _build(item: Dictionary) -> RouteRunner:
 ## Routes with a depot at the end. The endless route has none.
 func _timed_routes() -> Array:
 	return catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool:
-		return MapLoader.read_json(item["file"]).get("service", "") != "endless")
+		return not ["endless", "arcade"].has(MapLoader.read_json(item["file"]).get("service", "")))
 
 
 func test_game_launches_with_five_routes_that_cost_more_as_they_go() -> void:
-	var routes: Array = catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool: return item["id"] != "troncal" and item["id"] != "libre")
+	var routes: Array = catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool: return not ["troncal", "libre", "arcade"].has(item["id"]))
 	assert_eq(routes.size(), 4)
 	assert_eq(int(routes[0]["cost"]), 0, "The first route is free")
 	assert_eq(int(routes[1]["cost"]), 500)

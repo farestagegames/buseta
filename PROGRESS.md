@@ -34,5 +34,6 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | Clearer drive/reverse | Done | D and R switch with the gear in use lit, plus a tip when you try to change gear while moving |
 | Menu scrolling | Done | Lists scroll from a drag anywhere, a drag never presses or buys, sliders only move sideways, scroll position kept after buying, notch-safe menu |
 | Traffic awareness | Done | Cars and motos see the bus and its trailer, brake smoothly for obstacles, wait or pass a stopped bus only when the other side is clear, yield at junctions, stop for a reversing bus |
+| Batch of 9 Nov | Done | Cars recover after hits and honk; door camera clear of walls; hail prompt says how far; radio louder than the street; salsa station plus more vallenato and champeta; Easy/Normal/Hard with transit police and fare dodgers; Ruta Libre endless route; rear exit door; arcade mode Carrera Express |
 
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.

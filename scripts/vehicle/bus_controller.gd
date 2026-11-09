@@ -9,6 +9,8 @@ const COLLISION_CLEARANCE := 0.45
 
 @export var spec: BusSpec
 
+var _boost_left: float = 0.0
+var _boost_length: float = 0.0
 var model: BusPhysicsModel
 var doors: BusDoors
 var indicators: BusIndicators
@@ -43,6 +45,9 @@ func _ready() -> void:
 	GameEvents.reset_requested.connect(reset_to_start)
 	GameEvents.bus_relocate_requested.connect(_place)
 	GameEvents.obstacle_hit.connect(_on_obstacle_hit)
+	GameEvents.boost_started.connect(func(seconds: float) -> void:
+		_boost_left = seconds
+		_boost_length = seconds)
 	GameEvents.weather_updated.connect(func(weather: WeatherClock) -> void: model.grip = weather.grip())
 
 
@@ -59,6 +64,12 @@ func wheel_track() -> float:
 
 
 func _physics_process(dt: float) -> void:
+	if _boost_left > 0.0:
+		_boost_left = maxf(_boost_left - dt, 0.0)
+		# Full while it lasts, easing off over the last second.
+		model.boost = clampf(_boost_left, 0.0, 1.0)
+	elif model.boost > 0.0:
+		model.boost = 0.0
 	var previous_heading := model.heading
 	_sample_ground()
 	model.road_slope = _slope_along_heading()

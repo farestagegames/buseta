@@ -279,8 +279,8 @@ func _check_route(problems: Array[String], item: Dictionary) -> void:
 		if not roads.has(leg["road"]):
 			problems.append("Route %s uses unknown road %s" % [item["id"], leg["road"]])
 	var stops: Array = route["stops"]
-	if route.get("service", "") == "endless":
-		if not (route.get("hail") is Dictionary):
+	if route.get("service", "") == "endless" or route.get("service", "") == "arcade":
+		if route["service"] == "endless" and not (route.get("hail") is Dictionary):
 			problems.append("Endless route %s needs hail settings" % item["id"])
 		return
 	if stops.is_empty() or not (stops[stops.size() - 1] as Dictionary).get("final", false):

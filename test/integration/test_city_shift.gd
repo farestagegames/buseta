@@ -414,9 +414,11 @@ func test_lamp_post_falls_and_the_bus_keeps_going() -> void:
 	assert_not_null(lamp, "City should have lamp posts")
 	var spot := Vector2(lamp.position.x, lamp.position.z)
 	var forward := Vector2(0.0, -1.0)
-	GameEvents.bus_relocate_requested.emit(spot - forward * 11.0, 0.0)
+	# The nose starts 4 m short, whatever bus is chosen.
+	var nose := bus.spec.wheelbase + bus.spec.front_overhang
+	GameEvents.bus_relocate_requested.emit(spot - forward * (nose + 4.0), 0.0)
 	bus.model.speed = 8.0
-	await wait_physics_frames(45)
+	await wait_physics_frames(60)
 	assert_gt(lamp.tip_angle, 0.5, "Lamp should be falling")
 	assert_gt(bus.model.speed, 3.0, "A lamp post should not stop the bus")
 
@@ -779,5 +781,31 @@ func test_the_endless_route_keeps_going_and_passengers_can_give_up() -> void:
 	for i in 40:
 		score.score.add_missed_stop()
 	await wait_seconds(1.5)
-	assert_signal_emitted(GameEvents, "passengers_gave_up")
 	Profile.data.select(Catalog.ROUTES, was)
+	Profile.save()
+	assert_signal_emitted(GameEvents, "passengers_gave_up")
+
+
+func test_the_arcade_runs_against_the_clock_and_reports_checkpoints() -> void:
+	var was: String = Profile.data.selected[Catalog.ROUTES]
+	Profile.data.owned[Catalog.ROUTES].append("arcade")
+	Profile.data.select(Catalog.ROUTES, "arcade")
+	var race: CityShift = SCENE.instantiate()
+	add_child_autofree(race)
+	assert_not_null(race.arcade, "The arcade course runs the arcade")
+	assert_null(race.get_node("RouteSystem").runner, "No timetable or passengers")
+	watch_signals(GameEvents)
+	await wait_physics_frames(10)
+	assert_signal_emitted(GameEvents, "arcade_status")
+	race.arcade.run.checkpoints_passed = 3
+	race.arcade.run.seconds_left = 0.05
+	var reports: Array[Dictionary] = []
+	GameEvents.shift_report_ready.connect(func(report: Dictionary) -> void: reports.append(report))
+	await wait_physics_frames(10)
+	Profile.data.select(Catalog.ROUTES, was)
+	Profile.save() # Finishing saved the arcade as the chosen route.
+	# The test's own default scene hears the finish too, so look at every report.
+	var arcade_reports := reports.filter(func(report: Dictionary) -> bool: return report.has("arcade"))
+	assert_gt(arcade_reports.size(), 0)
+	for report: Dictionary in arcade_reports:
+		assert_eq(int(report["score"]), 3, "Scored on checkpoints")

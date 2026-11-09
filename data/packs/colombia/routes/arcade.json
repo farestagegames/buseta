@@ -1,0 +1,18 @@
+{
+ "name": "Carrera Express",
+ "map": "maps/puerto_marisol.json",
+ "service": "arcade",
+ "start": {
+  "road": "depot_road",
+  "along": 35,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {
+   "road": "depot_road",
+   "dir": 1
+  }
+ ],
+ "stops": []
+}

@@ -31,6 +31,9 @@ func _ready() -> void:
 	GameEvents.map_ready.connect(_on_map_ready)
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.route_status_updated.connect(_on_status)
+	GameEvents.arcade_status.connect(func(_left: float, _number: int, _distance: float, spot: Vector2, _boost: bool) -> void:
+		_stop = spot
+		_has_stop = true)
 
 
 func _on_map_ready(network: RoadNetwork, route: RouteRunner) -> void:

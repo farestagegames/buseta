@@ -120,6 +120,8 @@ func show_report(report: Dictionary) -> void:
 	var minutes := int(report["time"]) / 60
 	var seconds := int(report["time"]) % 60
 	_headline.text = tr("Shift complete: %d points in %d:%02d") % [report["score"], minutes, seconds]
+	if report.has("arcade"):
+		_headline.text = tr("Arcade: %d checkpoints, %d m") % [int(report["arcade"]["checkpoints"]), roundi(float(report["arcade"]["distance"]))]
 	if report.get("gave_up", false):
 		_headline.text = tr("Your passengers have had enough: %d points in %d:%02d") % [report["score"], minutes, seconds]
 	if str(report.get("police_stopped", "")) != "":
