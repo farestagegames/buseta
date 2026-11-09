@@ -212,3 +212,6 @@ One line each, with the reason. Newest at the bottom.
 - Achievements can pay coins once, from 100 to 1000, so long goals feel worth chasing. Achievements already earned in old saves are not paid back.
 - Per-route and per-bus shift counts are open-ended stats ("route:troncal", "bus:chiva"), so a new route or bus can have an achievement by data alone.
 - The Testland pack has its own small challenge and achievement lists, because Colombia's name routes and buses Testland does not have.
+- The iOS preset exports an Xcode project only, so signing happens in Xcode with your own team; no account details are in the repository.
+- iOS minimum is 14.0 and the target is iPhone and iPad, which covers phones from about 2018 on and matches the 60 fps target on A12 chips.
+- The iOS audio session stays on Godot's default (Ambient, follows the silent switch); IOS_PORT.md says how to change it if the radio should play on silent.
