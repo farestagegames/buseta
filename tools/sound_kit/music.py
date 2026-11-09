@@ -128,6 +128,49 @@ def guitar(freq, length):
     return dsp.harmonics(freq, n, partials) * dsp.envelope(n, 0.002, 0.03)
 
 
+def cowbell(seed=0):
+    """A hand-held bongo bell: two clanging partials and a stick tick."""
+    n = int(0.18 * RATE)
+    t = dsp.seconds(n)
+    clang = np.sin(2 * np.pi * 587.0 * t) + 0.7 * np.sin(2 * np.pi * 845.0 * t)
+    tick = dsp.shape(dsp.noise(n, seed), low=2000, high=8000, wrap=False) * np.exp(-t * 300.0)
+    return (0.5 * clang * np.exp(-t * 28.0) + 0.3 * tick) * dsp.envelope(n, 0.001, 0.01)
+
+
+def clave(seed=0):
+    """Two hardwood sticks struck together: a short high knock."""
+    return wood(seed, 2500.0)
+
+
+def conga(kind, seed=0):
+    """Conga strokes: an open tone, a slap, or a soft heel or tip in between."""
+    if kind == "open":
+        return membrane(196, 0.35, 11, drop=0.15, click=0.3, seed=seed)
+    if kind == "slap":
+        return membrane(330, 0.15, 35, drop=0.1, click=1.4, seed=seed)
+    return membrane(180, 0.08, 45, drop=0.05, click=0.4, seed=seed) * 0.4
+
+
+def piano(freqs, length):
+    """A bright piano chord, upper strings fading first, with a felt hammer."""
+    n = int(length * RATE)
+    out = np.zeros(n)
+    for freq in freqs:
+        out += dsp.harmonics(freq, n, [(k, 1.0 / k ** 1.1, 2.0 + 1.6 * k) for k in range(1, 9)])
+    hammer = dsp.shape(dsp.noise(n, int(freqs[0])), low=1500, high=5000, wrap=False) * np.exp(-dsp.seconds(n) * 150.0) * 0.15
+    return (out / max(1, len(freqs)) + hammer) * dsp.envelope(n, 0.002, 0.04)
+
+
+def trumpet(freq, length):
+    """A brass voice: bright partials that open up as the note swells."""
+    n = int(length * RATE)
+    t = dsp.seconds(n)
+    bright = np.clip(t / 0.06, 0.25, 1.0)
+    low = dsp.harmonics(freq, n, [(k, 1.0 / k, 0) for k in range(1, 4)], vibrato=0.004, vibrato_rate=5.5, vibrato_delay=0.2)
+    high = dsp.harmonics(freq, n, [(k, 0.8 / k ** 0.8, 0) for k in range(4, 12)], vibrato=0.004, vibrato_rate=5.5, vibrato_delay=0.2)
+    return dsp.shape(low + high * bright, high=4200, wrap=False) * dsp.envelope(n, 0.025, 0.05)
+
+
 def synth_lead(freq, length):
     n = int(length * RATE)
     partials = [(k, 1.0 / k, 0) for k in range(1, 10)]
@@ -398,7 +441,44 @@ def champeta(bpm, key, sections, progressions, rhythms, riff_seed, seed):
     return track.render()
 
 
-# --- The six tracks ----------------------------------------------------------
+def salsa(bpm, key, sections, progressions, rhythms, seed, clave_first=True):
+    """4/4 salsa: son clave over two bars, cowbell on the beat, conga tumbao,
+    a piano montuno, an anticipated tumbao bass, and a brass section playing the
+    melody in harmony."""
+    track = Track(bpm, 4, sum(len(progressions[s]) for s in sections), seed)
+    chords = song_chords(sections, progressions)
+    rng = np.random.default_rng(seed + 7)
+    # The montuno figure: steps in a bar and which chord tone, made once per song.
+    montuno = [(0, 0), (3, 1), (4, 2), (6, 1), (8, 0), (10, 2), (11, 1), (14, 2)]
+    if rng.uniform() < 0.5:
+        montuno = [(0, 2), (2, 1), (4, 0), (7, 1), (8, 2), (10, 0), (12, 1), (14, 2)]
+    for bar, root in enumerate(chords):
+        three_side = (bar % 2 == 0) == clave_first
+        for step in ((0, 6, 12) if three_side else (4, 8)):
+            track.put(clave(bar * 16 + step), bar, step, 0.38)
+        for step in (0, 4, 8, 12):
+            track.put(cowbell(bar * 16 + step), bar, step, 0.3 if step % 8 == 0 else 0.22)
+        for step, kind in ((0, "soft"), (2, "soft"), (4, "slap"), (6, "soft"), (8, "soft"), (10, "soft"), (12, "open"), (14, "open")):
+            track.put(conga(kind, bar * 16 + step), bar, step, 0.5)
+        next_root = chords[bar + 1] if bar + 1 < len(chords) else 0
+        root_pitch = key.pitch(root, root) - 12
+        # Tumbao: the bass lands on "two-and" and anticipates the next chord on four.
+        track.put(bass(dsp.midi(root_pitch), track.steps(5)), bar, 6, 0.5)
+        track.put(bass(dsp.midi(key.pitch(next_root, next_root) - 12), track.steps(4)), bar, 12, 0.5)
+        tones = [key.pitch(d, root) + 12 for d in key.chord(root)]
+        for step, index in montuno:
+            low_tone = tones[index]
+            track.put(piano([dsp.midi(low_tone), dsp.midi(low_tone + 12)], track.steps(2)), bar, step, 0.2)
+        if bar == track.bars - 1:
+            for step in (8, 10, 12, 13, 14, 15):
+                track.put(membrane(420 if step % 2 else 300, 0.12, 30, drop=0.1, click=0.9, seed=step), bar, step, 0.45)
+    melody_for(track, key, sections, progressions, rhythms, 5, 12, trumpet, 0.32, seed + 1, harmony=0.6)
+    track.finale([(cowbell(3), 0.4), (conga("open", 5), 0.6), (home_bass(key, ENDING), 0.5),
+                  (piano(chord_freqs(key, 0, 1), ENDING), 0.4), (home_chord(key, trumpet, ENDING), 0.4)])
+    return track.render()
+
+
+# --- The tracks -------------------------------------------------------------
 
 ## Melody rhythms: (step, length) across two bars.
 EIGHT = [(0, 2), (2, 1), (3, 1), (4, 3), (8, 2), (10, 2), (12, 1), (13, 3)]
@@ -417,6 +497,15 @@ def track_list():
     champ_a = {"intro": [0, 3], "a": [0, 3, 4, 3], "b": [5, 3, 0, 4], "break": [0, 3]}
     champ_b = {"intro": [0, 5], "a": [0, 5, 3, 4], "b": [3, 4, 0, 0], "break": [5, 4]}
     sixteen = [(0, 2), (3, 1), (4, 2), (6, 2), (8, 4), (16, 2), (18, 2), (20, 1), (21, 3), (24, 6)]
+    # Salsa coros and mambos: phrases that start off the beat and answer each other.
+    coro = [(2, 2), (4, 2), (6, 4), (12, 2), (14, 2), (18, 2), (20, 2), (22, 6)]
+    mambo = [(0, 1), (2, 1), (3, 2), (6, 2), (8, 1), (10, 1), (11, 3), (16, 1), (18, 1), (19, 2), (22, 2), (24, 6)]
+    son = {"intro": [0, 3, 4, 3], "a": [0, 3, 4, 3, 0, 3, 4, 4], "b": [0, 3, 4, 3, 0, 3, 4, 3], "break": [4, 4, 0, 0]}
+    son_minor = {"intro": [1, 4, 0, 0], "a": [1, 4, 0, 0, 1, 4, 0, 5], "b": [3, 4, 0, 5, 3, 4, 0, 0], "break": [4, 4, 0, 4]}
+    puya = {"intro": [0, 4], "a": [0, 0, 4, 4, 0, 0, 4, 4], "b": [3, 3, 0, 0, 4, 4, 0, 0], "break": [4, 0]}
+    son_vallenato = {"intro": [0, 0, 4, 4], "a": [0, 0, 3, 3, 4, 4, 0, 0], "b": [5, 5, 1, 1, 4, 4, 0, 0]}
+    champ_c = {"intro": [0, 4], "a": [0, 4, 5, 3], "b": [3, 0, 4, 4], "break": [5, 3]}
+    champ_d = {"intro": [0, 3], "a": [0, 3, 0, 4], "b": [5, 4, 3, 4], "break": [0, 4]}
     return {
         "onda_marisol_1.wav": ("Brisa de las cinco", lambda: cumbia(
             94, Key(55, "major"), ["intro", "a", "b", "break", "a", "b"], cumbia_a,
@@ -436,6 +525,30 @@ def track_list():
         "pico_marisol_2.wav": ("Baile en el Barrio", lambda: champeta(
             108, Key(57, "minor"), ["intro", "a", "b", "a", "break", "b", "a"], champ_b,
             {"b": sixteen, "a": sixteen}, 3250, 3202)),
+        "pico_marisol_3.wav": ("Arena y Picó", lambda: champeta(
+            112, Key(62, "major"), ["intro", "a", "b", "a", "b", "break", "a", "b"], champ_c,
+            {"a": sixteen, "b": mambo}, 3350, 3303)),
+        "pico_marisol_4.wav": ("La Esquina del Parlante", lambda: champeta(
+            100, Key(55, "minor"), ["intro", "a", "a", "b", "break", "b", "a", "b"], champ_d,
+            {"b": coro}, 3450, 3404)),
+        "acordeon_puerto_3.wav": ("Puya del Arroyo", lambda: vallenato(
+            136, Key(53, "major"), ["intro", "a", "b", "a", "break", "b", "a", "b", "break"], puya,
+            {"a": eight, "b": eight}, 2303)),
+        "acordeon_puerto_4.wav": ("Son de la Ciénaga Grande", lambda: vallenato(
+            92, Key(55, "minor"), ["intro", "a", "b", "a", "b"], son_vallenato,
+            {"a": lilt, "b": answer}, 2404)),
+        "son_malecon_1.wav": ("Clave del Malecón", lambda: salsa(
+            184, Key(60, "major"), ["intro", "a", "b", "break", "a", "b", "b"], son,
+            {"a": coro, "b": mambo}, 4101)),
+        "son_malecon_2.wav": ("Noche de Terraza", lambda: salsa(
+            176, Key(57, "minor"), ["intro", "a", "b", "a", "break", "b", "b"], son_minor,
+            {"a": coro, "b": mambo}, 4202, clave_first=False)),
+        "son_malecon_3.wav": ("Pregón del Mercado", lambda: salsa(
+            192, Key(58, "major"), ["intro", "a", "a", "b", "break", "b", "a", "b"], son,
+            {"a": mambo, "b": coro}, 4303)),
+        "son_malecon_4.wav": ("Brisa de Diciembre", lambda: salsa(
+            168, Key(62, "minor"), ["intro", "a", "b", "break", "a", "b", "b"], son_minor,
+            {"a": coro, "b": coro}, 4404, clave_first=False)),
     }
 
 

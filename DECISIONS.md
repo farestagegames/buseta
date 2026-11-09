@@ -220,3 +220,4 @@ One line each, with the reason. Newest at the bottom.
 - With the doors open, if a wall stands where the follow camera would go, the camera swings back towards the rear and rises to look down at the doorway, and never sits inside a wall.
 - The hail prompt says where and how far ("Getting off at the green marker: 85 m") instead of "Someone wants to get off", and only says to pull forward when stopped within 30 m of the marker.
 - The radio is 4 dB louder and the street layers 3 to 4 dB quieter; the street now dips under the radio from every camera view (half as much from outside), because the player said the ambience drowned the radio.
+- A fourth station, Son del Malecón 102.9 FM, plays salsa (89.7 FM was avoided: real stations use it). Vallenato and champeta each get two more songs, so the three styles the player asked for have four songs each. All are composed in code and dedicated CC0.

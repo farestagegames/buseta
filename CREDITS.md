@@ -37,6 +37,14 @@ titles are fictional. All of these files are dedicated to the public domain unde
 | `radio/acordeon_puerto_2.wav` | "Camino a Los Almendros", Acordeón del Puerto 93.3 FM | Vallenato-inspired, faster, major key | CC0 |
 | `radio/pico_marisol_1.wav` | "Terraza Caliente", Picó Marisol 106.1 FM | Champeta-inspired 4/4: syncopated kick and snare, bouncing bass, bright guitar runs, synth answer; `music.champeta()` | CC0 |
 | `radio/pico_marisol_2.wav` | "Baile en el Barrio", Picó Marisol 106.1 FM | Champeta-inspired, minor key | CC0 |
+| `radio/pico_marisol_3.wav` | "Arena y Picó", Picó Marisol 106.1 FM | Champeta-inspired, quicker, answering melody | CC0 |
+| `radio/pico_marisol_4.wav` | "La Esquina del Parlante", Picó Marisol 106.1 FM | Champeta-inspired, slower, minor key | CC0 |
+| `radio/acordeon_puerto_3.wav` | "Puya del Arroyo", Acordeón del Puerto 93.3 FM | Vallenato-inspired, fast puya feel | CC0 |
+| `radio/acordeon_puerto_4.wav` | "Son de la Ciénaga Grande", Acordeón del Puerto 93.3 FM | Vallenato-inspired, slow son feel, minor key | CC0 |
+| `radio/son_malecon_1.wav` | "Clave del Malecón", Son del Malecón 102.9 FM | Salsa-inspired 4/4: son clave, cowbell, conga tumbao, piano montuno, tumbao bass, brass in harmony; `music.salsa()` | CC0 |
+| `radio/son_malecon_2.wav` | "Noche de Terraza", Son del Malecón 102.9 FM | Salsa-inspired, minor key, 3-2 clave | CC0 |
+| `radio/son_malecon_3.wav` | "Pregón del Mercado", Son del Malecón 102.9 FM | Salsa-inspired, quick | CC0 |
+| `radio/son_malecon_4.wav` | "Brisa de Diciembre", Son del Malecón 102.9 FM | Salsa-inspired, slower, minor key | CC0 |
 
 The radio tracks are songs: each starts from silence, ends on a held closing chord
 that fades out, and has no loop points. `python3 tools/check_sounds.py` checks their

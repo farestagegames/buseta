@@ -117,6 +117,14 @@
         {
           "title": "Camino a Los Almendros",
           "file": "res://assets/audio/radio/acordeon_puerto_2.wav"
+        },
+        {
+          "title": "Puya del Arroyo",
+          "file": "res://assets/audio/radio/acordeon_puerto_3.wav"
+        },
+        {
+          "title": "Son de la Ciénaga Grande",
+          "file": "res://assets/audio/radio/acordeon_puerto_4.wav"
         }
       ]
     },
@@ -133,6 +141,38 @@
         {
           "title": "Baile en el Barrio",
           "file": "res://assets/audio/radio/pico_marisol_2.wav"
+        },
+        {
+          "title": "Arena y Picó",
+          "file": "res://assets/audio/radio/pico_marisol_3.wav"
+        },
+        {
+          "title": "La Esquina del Parlante",
+          "file": "res://assets/audio/radio/pico_marisol_4.wav"
+        }
+      ]
+    },
+    {
+      "id": "son_del_malecon",
+      "name": "Son del Malecón",
+      "frequency": "102.9 FM",
+      "genre": "salsa",
+      "tracks": [
+        {
+          "title": "Clave del Malecón",
+          "file": "res://assets/audio/radio/son_malecon_1.wav"
+        },
+        {
+          "title": "Noche de Terraza",
+          "file": "res://assets/audio/radio/son_malecon_2.wav"
+        },
+        {
+          "title": "Pregón del Mercado",
+          "file": "res://assets/audio/radio/son_malecon_3.wav"
+        },
+        {
+          "title": "Brisa de Diciembre",
+          "file": "res://assets/audio/radio/son_malecon_4.wav"
         }
       ]
     }
