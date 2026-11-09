@@ -30,8 +30,8 @@
   "default_language": "en",
   "content": {
     "catalog": "catalog.json",
-    "achievements": "res://data/packs/colombia/achievements.json",
-    "daily_challenges": "res://data/packs/colombia/daily_challenges.json",
+    "achievements": "achievements.json",
+    "daily_challenges": "daily_challenges.json",
     "passengers": "res://data/packs/colombia/passengers.json"
   },
   "sounds": {},

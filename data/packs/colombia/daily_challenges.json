@@ -6,5 +6,14 @@
   {"id": "red_free", "text": "Complete a shift without running a red light", "counter": "red_lights", "max": 0},
   {"id": "nothing_knocked", "text": "Complete a shift without hitting an object", "counter": "knocked", "max": 0},
   {"id": "four_stars", "text": "Earn at least 4 stars on a shift", "min_stars": 4},
-  {"id": "smooth_ride", "text": "Complete a shift with no hard bumps", "counter": "jolts", "max": 0}
+  {"id": "smooth_ride", "text": "Complete a shift with no hard bumps", "counter": "jolts", "max": 0},
+  {"id": "every_hail", "text": "Pick up everyone who flags you down", "counter": "ignored_hails", "max": 0},
+  {"id": "every_request", "text": "Stop for everyone who asks to get off", "counter": "ignored_requests", "max": 0},
+  {"id": "no_stop_missed", "text": "Finish a shift without skipping a stop", "counter": "missed_stops", "max": 0},
+  {"id": "busy_shift", "text": "Carry 30 passengers in one shift", "counter": "carried", "min": 30},
+  {"id": "two_vendors", "text": "Carry 2 street vendors in one shift", "counter": "vendors", "min": 2},
+  {"id": "la_ola_four_stars", "text": "Earn 4 stars on the La Ola line", "route": "troncal", "min_stars": 4},
+  {"id": "chiva_clean", "text": "Drive La Chiva with no collisions", "bus": "chiva", "counter": "collisions", "max": 0},
+  {"id": "sunset_smooth", "text": "Drive at sunset with no emergency stops", "time": "atardecer", "level": 2, "counter": "harsh_brakes", "max": 0},
+  {"id": "night_clean", "text": "Finish a night shift with no collisions", "time": "noche", "level": 4, "counter": "collisions", "max": 0}
 ]

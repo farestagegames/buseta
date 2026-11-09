@@ -140,9 +140,15 @@ func _reward_lines(rewards: Dictionary) -> String:
 	if rewards["new_best"]:
 		lines.append(tr("New best score!"))
 	if int(rewards["daily_coins"]) > 0:
-		lines.append(tr("Daily challenge done: +%s") % Country.pack.money(rewards["daily_coins"]))
+		var streak := int(rewards.get("daily_streak", 1))
+		if streak > 1:
+			lines.append(tr("Daily challenge done: +%s (%d-day streak)") % [Country.pack.money(rewards["daily_coins"]), streak])
+		else:
+			lines.append(tr("Daily challenge done: +%s") % Country.pack.money(rewards["daily_coins"]))
 	for entry: Dictionary in rewards["achievements"]:
 		lines.append(tr("Achievement: %s") % tr(entry["name"]))
+	if int(rewards.get("achievement_coins", 0)) > 0:
+		lines.append(tr("Achievements: +%s") % Country.pack.money(rewards["achievement_coins"]))
 	return "   ".join(lines)
 
 

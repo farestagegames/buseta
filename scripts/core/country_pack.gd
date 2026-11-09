@@ -256,6 +256,11 @@ func _check_content(problems: Array[String]) -> void:
 		problems.append_array(DriverLook.check(driver))
 	for route: Dictionary in catalog.get(Catalog.ROUTES, []):
 		_check_route(problems, route)
+	var route_ids := (catalog.get(Catalog.ROUTES, []) as Array).map(func(item: Dictionary) -> String: return item["id"])
+	var bus_ids := (catalog.get(Catalog.BUSES, []) as Array).map(func(item: Dictionary) -> String: return item["id"])
+	var time_ids := TimeOfDay.list_for(data).map(func(time: TimeOfDay) -> String: return time.id)
+	problems.append_array(DailyChallenge.check(JSON.parse_string(FileAccess.get_file_as_string(content_path("daily_challenges"))), route_ids, bus_ids, time_ids))
+	problems.append_array(AchievementList.check(JSON.parse_string(FileAccess.get_file_as_string(content_path("achievements"))), route_ids, bus_ids))
 
 
 func _check_route(problems: Array[String], item: Dictionary) -> void:

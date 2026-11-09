@@ -234,11 +234,17 @@ func _home_tab() -> Control:
 	var daily_card := _card()
 	var daily_lines := VBoxContainer.new()
 	var today := DailyChallenge.today_key()
-	var challenge := DailyChallenge.for_date(today, DailyChallenge.load_list())
+	var challenge := DailyChallenge.for_date(today, DailyChallenge.load_list(), Profile.data)
 	var done := Profile.data.last_daily == today
+	# A run carries on if yesterday's challenge was done.
+	var alive := done or Profile.data.last_daily == DailyChallenge.day_before(today)
+	var streak := Profile.data.daily_streak if alive else 0
 	daily_lines.add_child(_text("Daily challenge", 22, ACCENT))
 	daily_lines.add_child(_wrapped(challenge["text"], 24, Color.WHITE))
-	daily_lines.add_child(_text(tr("Done today") if done else tr("Reward: %s") % Country.pack.money(DailyChallenge.REWARD_COINS), 20, GOOD if done else MUTED))
+	var next_reward := DailyChallenge.reward_for(streak + 1)
+	daily_lines.add_child(_text(tr("Done today") if done else tr("Reward: %s") % Country.pack.money(next_reward), 20, GOOD if done else MUTED))
+	if streak > 0:
+		daily_lines.add_child(_text(tr("%d-day streak") % streak, 20, ACCENT))
 	daily_card.add_child(daily_lines)
 	column.add_child(daily_card)
 
@@ -537,9 +543,23 @@ func _career_tab() -> Control:
 		var earned := Profile.data.achievements.has(entry["id"])
 		var row := _card()
 		var text := VBoxContainer.new()
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.add_child(_text(entry["name"], 24, GOOD if earned else Color.WHITE))
-		text.add_child(_text(entry["description"], 19, MUTED))
-		row.add_child(text)
+		text.add_child(_wrapped(entry["description"], 19, MUTED))
+		var line := HBoxContainer.new()
+		line.add_theme_constant_override("separation", 12)
+		line.add_child(text)
+		var side := VBoxContainer.new()
+		side.alignment = BoxContainer.ALIGNMENT_CENTER
+		if earned:
+			side.add_child(_text("Earned", 20, GOOD))
+		else:
+			var target := int(entry["target"])
+			side.add_child(_text(tr("%d / %d") % [mini(AchievementList.progress(Profile.data, entry), target), target], 20, MUTED))
+			if AchievementList.reward_of(entry) > 0:
+				side.add_child(_text(Country.pack.money(AchievementList.reward_of(entry)), 20, ACCENT))
+		line.add_child(side)
+		row.add_child(line)
 		rows.add_child(row)
 	return list
 

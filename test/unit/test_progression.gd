@@ -147,7 +147,7 @@ func test_daily_challenge_pays_once_a_day() -> void:
 	var next_day := ShiftRewards.apply(profile, _report(), "route_01", "2026-11-07", challenges, [])
 	assert_eq(int(first["daily_coins"]), DailyChallenge.REWARD_COINS)
 	assert_eq(int(second["daily_coins"]), 0)
-	assert_eq(int(next_day["daily_coins"]), DailyChallenge.REWARD_COINS)
+	assert_eq(int(next_day["daily_coins"]), DailyChallenge.reward_for(2), "The next day carries a streak")
 
 
 func test_failed_daily_pays_nothing_and_can_be_retried() -> void:
@@ -183,8 +183,10 @@ func test_achievement_is_awarded_once() -> void:
 
 
 func test_every_achievement_uses_a_real_stat() -> void:
+	var route_ids := catalog.items(Catalog.ROUTES).map(func(item: Dictionary) -> String: return item["id"])
+	var bus_ids := catalog.items(Catalog.BUSES).map(func(item: Dictionary) -> String: return item["id"])
 	for entry: Dictionary in AchievementList.load_list():
-		assert_true(profile.stats.has(entry["stat"]), entry["id"])
+		assert_true(AchievementList.is_known_stat(entry["stat"], route_ids, bus_ids), entry["id"])
 
 
 func test_best_score_only_rises() -> void:

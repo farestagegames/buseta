@@ -207,3 +207,8 @@ One line each, with the reason. Newest at the bottom.
 - Forcing for testing: `CityShift.forced_time` and `forced_rain`, `AUTOPILOT_TIME` and `AUTOPILOT_RAIN` for the autopilot, and an English-only "Downpour now" on the hidden pause-menu cheat row.
 - Arroyos left out for now: a flowing street needs its own water mesh, a marked low road on the map and a crawl rule in the bus and traffic, which is a feature of its own rather than a part of this one.
 - Passengers waiting under shelters in the rain left out: the stop crowd's positions are tied to the boarding paths, and moving them risks the boarding flow for a small gain.
+- Daily challenges are a set of conditions (route, bus, time of day, stars, count at most or at least), so new ones need no code. One that needs a route, bus or level the player lacks is not offered, so the challenge of the day is always playable.
+- A daily streak adds 50 coins a day, capped after 5 days (200 up to 400), so missing a day stings a little but never much.
+- Achievements can pay coins once, from 100 to 1000, so long goals feel worth chasing. Achievements already earned in old saves are not paid back.
+- Per-route and per-bus shift counts are open-ended stats ("route:troncal", "bus:chiva"), so a new route or bus can have an achievement by data alone.
+- The Testland pack has its own small challenge and achievement lists, because Colombia's name routes and buses Testland does not have.

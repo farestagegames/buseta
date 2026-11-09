@@ -22,7 +22,7 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | 6 | Language | Done | `milestone-colombian-language` | Colombian Spanish is the default (English phones get English), every string reworded in coastal Colombian Spanish and reviewed, all visible text checked by a test, text fits at 1280, 1560 and 1600 wide |
 | 7 | Audio | Done | `milestone-colombian-audio` | 5 original horns (choose in the Garage), 8 street-sound layers mixed by place, RADIO with 3 fictional stations of original generated music, radio volume slider, rain hook. Not yet listened to on a phone |
 | 8a | Day/night and rain | Done | `milestone-day-night-rain` | Five times of day (unlock by level, picked on the Routes tab), seeded aguaceros with wet road, grip, wipers, traffic gaps, umbrellas, bonus and achievements. Night lit without real city lights. Arroyos not done. Independent review skipped (usage limit); checked by the gate and screenshots only |
-| 8b | Daily challenges and achievements | Not started | | |
+| 8b | Daily challenges and achievements | Done | `milestone-challenges` | 17 daily challenges (route, bus, time-of-day and count conditions, only offered once unlocked), daily streak bonus, 18 achievements with coin rewards and progress in Career, per-route and per-bus stats. Menu not checked by screenshot (display asleep); covered by the menu tests |
 | 8c | iOS readiness | Not started | | |
 | 8d | Multiplayer research | Not started | | |
 

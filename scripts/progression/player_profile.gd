@@ -24,10 +24,13 @@ var selected: Dictionary = DEFAULTS.duplicate()
 var stats: Dictionary = {
 	"shifts": 0, "passengers": 0, "best_stars": 0, "clean_shifts": 0, "smooth_shifts": 0,
 	"rain_shifts": 0, "clean_downpours": 0, "night_shifts": 0,
+	"vendors": 0, "fares": 0, "dailies": 0, "best_daily_streak": 0, "routes_driven": 0,
 }
 var achievements: Array[String] = []
 var best_scores: Dictionary = {} ## Route id to best score.
 var last_daily: String = "" ## Date key of the last daily challenge completed.
+## Daily challenges completed on days in a row, ending on last_daily.
+var daily_streak: int = 0
 var intro_done: bool = false ## The opening scene and tutorial have been seen.
 var settings: Dictionary = {}
 ## Horns bought or given free. Horns are pack data, not catalog items.
@@ -140,7 +143,7 @@ func to_dict() -> Dictionary:
 	return {
 		"version": VERSION, "coins": coins, "xp": xp, "owned": owned, "selected": selected,
 		"stats": stats, "achievements": achievements, "best_scores": best_scores,
-		"last_daily": last_daily, "settings": settings, "intro_done": intro_done,
+		"last_daily": last_daily, "daily_streak": daily_streak, "settings": settings, "intro_done": intro_done,
 		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day,
 	}
 
@@ -167,6 +170,10 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	if saved_stats is Dictionary:
 		for key: String in profile.stats:
 			profile.stats[key] = maxi(int(_number((saved_stats as Dictionary).get(key), 0.0)), 0)
+		# Per-route and per-bus shift counts have open-ended names.
+		for key: Variant in saved_stats:
+			if key is String and ((key as String).begins_with(AchievementList.ROUTE_PREFIX) or (key as String).begins_with(AchievementList.BUS_PREFIX)):
+				profile.stats[key] = maxi(int(_number((saved_stats as Dictionary)[key], 0.0)), 0)
 	var saved_achievements: Variant = saved.get("achievements")
 	if saved_achievements is Array:
 		for id: Variant in saved_achievements:
@@ -178,6 +185,7 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 			profile.best_scores[str(key)] = int(_number((saved_best as Dictionary)[key], 0.0))
 	var daily: Variant = saved.get("last_daily")
 	profile.last_daily = daily if daily is String else ""
+	profile.daily_streak = maxi(int(_number(saved.get("daily_streak"), 0.0)), 0)
 	profile.intro_done = saved.get("intro_done") == true
 	var saved_settings: Variant = saved.get("settings")
 	profile.settings = saved_settings if saved_settings is Dictionary else {}
