@@ -5,3 +5,4 @@
 [resource]
 script = ExtResource("1")
 display_name = "Caimán Busetón 12"
+rear_door = true

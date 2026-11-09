@@ -17,3 +17,4 @@ steer_rate_degrees = 62.0
 max_drive_accel = 1.85
 max_brake_decel = 4.3
 door_offset = 0.25
+rear_door = true

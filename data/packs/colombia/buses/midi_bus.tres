@@ -15,3 +15,4 @@ steer_rate_degrees = 56.0
 max_drive_accel = 1.75
 max_brake_decel = 4.2
 capacity = 30
+rear_door = true

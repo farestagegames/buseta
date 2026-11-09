@@ -376,12 +376,20 @@ func _on_alighted(_stop_index: int) -> void:
 
 
 ## Queue is behind the door, so people getting off walk forward and clear of it.
+## With a rear door they step down there and walk back along the pavement, away
+## from the queue at the front.
 func _walk_away(walker: Walker) -> void:
+	var spot := _door
+	var along := _random.randf_range(3.0, 10.0)
+	if _cabin.has_rear_door:
+		spot = walker.global_position
+		spot.y = _door.y
+		along = -_random.randf_range(2.0, 8.0)
 	walker.reparent(self, false)
-	walker.position = _door
+	walker.position = spot
 	var right := Vector2(-_bus_forward.y, _bus_forward.x) * _kerb_side
-	var goal := Vector2(_door.x, _door.z) + right * _random.randf_range(2.6, 4.0) + _bus_forward * _random.randf_range(3.0, 10.0)
-	walker.target = Vector3(goal.x, _door.y, goal.y)
+	var goal := Vector2(spot.x, spot.z) + right * _random.randf_range(2.6, 4.0) + _bus_forward * along
+	walker.target = Vector3(goal.x, spot.y, goal.y)
 	leaving.append(walker)
 
 

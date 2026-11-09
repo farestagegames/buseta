@@ -59,6 +59,10 @@ extends Resource
 @export var door_open_time: float = 1.2
 ## Where the doorway starts, measured back from the nose.
 @export var door_offset: float = 0.3
+## A second door just ahead of the rear wheels, for getting off. People board and
+## pay at the front door and leave by this one.
+@export var rear_door: bool = false
+const REAR_DOOR_WIDTH := 1.25
 ## Extra length ahead of the cab, for a bus with a bonnet.
 @export var cab_offset: float = 0.0
 @export_enum("city", "buseta", "chiva", "articulated") var body_style: String = "city"
@@ -104,3 +108,17 @@ func body_centre_z() -> float:
 func keep_to_side(side: int) -> void:
 	door_side = side
 	driver_seat_x = -absf(driver_seat_x) * float(side)
+
+
+## Where the rear doorway starts and ends along the bus, in bus coordinates (the
+## rear axle is at 0 and the nose is negative). Just ahead of the rear wheel arch.
+func rear_door_far_z() -> float:
+	return -0.8
+
+
+func rear_door_near_z() -> float:
+	return rear_door_far_z() - REAR_DOOR_WIDTH
+
+
+func has_rear_door() -> bool:
+	return rear_door and body_style != "chiva"

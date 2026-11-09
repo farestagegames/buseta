@@ -16,6 +16,13 @@ var machine: Vector3 ## The ticket machine itself.
 var aisle_front: Vector3
 var exit_start: Vector3 ## Where people getting off come into view from the aisle.
 var vendor_spot: Vector3 ## Where a vendor stands to sell, part way down the aisle.
+## With a rear door, people get off there: the aisle beside it, just inside, the
+## step and the kerb. Without one these are the front door's.
+var exit_aisle: Vector3
+var exit_inside: Vector3
+var exit_step: Vector3
+var exit_kerb: Vector3
+var has_rear_door: bool = false
 
 
 func _init(spec: BusSpec) -> void:
@@ -32,6 +39,18 @@ func _init(spec: BusSpec) -> void:
 	aisle_front = Vector3(0.12 * side, FLOOR_HEIGHT, behind_door + 0.6)
 	exit_start = Vector3(0.0, FLOOR_HEIGHT, behind_door + 1.3)
 	vendor_spot = Vector3(0.0, 0.0, behind_door + 2.6)
+	exit_aisle = aisle_front
+	exit_inside = inside_door
+	exit_step = step
+	exit_kerb = kerb
+	has_rear_door = spec.has_rear_door()
+	if has_rear_door:
+		var rear_z := (spec.rear_door_near_z() + spec.rear_door_far_z()) / 2.0
+		exit_aisle = Vector3(0.0, FLOOR_HEIGHT, rear_z - 0.2)
+		exit_inside = Vector3((half - 0.6) * side, FLOOR_HEIGHT, rear_z)
+		exit_step = Vector3((half - 0.1) * side, STEP_HEIGHT, rear_z)
+		exit_kerb = Vector3((half + 0.3) * side, 0.0, rear_z)
+		exit_start = Vector3(0.0, FLOOR_HEIGHT, rear_z - 1.2)
 
 
 ## From the kerb, past the machine and along the aisle to a seat's row.
@@ -39,6 +58,6 @@ func boarding_path(seat: Vector3) -> Array[Vector3]:
 	return [step, inside_door, pay_point, aisle_front, Vector3(0.0, FLOOR_HEIGHT, seat.z)]
 
 
-## From the aisle to the kerb.
+## From the aisle to the kerb, by the rear door if there is one.
 func alighting_path() -> Array[Vector3]:
-	return [aisle_front, inside_door, step, kerb]
+	return [exit_aisle, exit_inside, exit_step, exit_kerb]

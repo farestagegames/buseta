@@ -109,6 +109,10 @@ var _half_width: float
 var _top_y: float
 var _door_near_z: float
 var _door_far_z: float
+var _rear_near_z: float = INF ## The rear doorway, or INF when there is none.
+var _rear_far_z: float = INF
+var _rear_door_front: Node3D
+var _rear_door_rear: Node3D
 
 
 func _ready() -> void:
@@ -119,6 +123,9 @@ func _ready() -> void:
 	_cab_z = _front_z + spec.cab_offset
 	_door_near_z = _front_z + spec.door_offset
 	_door_far_z = _door_near_z + DOOR_WIDTH
+	if spec.has_rear_door():
+		_rear_near_z = spec.rear_door_near_z()
+		_rear_far_z = spec.rear_door_far_z()
 	cabin = CabinLayout.new(spec)
 	if driver_look == null:
 		driver_look = DriverLook.new()
@@ -254,6 +261,9 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		var swing := data.door_open_amount * DOOR_SWING * float(spec.door_side)
 		_door_front.rotation.y = swing
 		_door_rear.rotation.y = -swing
+		if _rear_door_front != null:
+			_rear_door_front.rotation.y = swing
+			_rear_door_rear.rotation.y = -swing
 	_brake_lamps.visible = data.brake > 0.05
 	_left_lamps.visible = data.indicator_lamp_on and data.indicator_side < 0
 	_right_lamps.visible = data.indicator_lamp_on and data.indicator_side > 0
@@ -286,16 +296,21 @@ func _build_shell() -> void:
 	# Lower side panels, with the door gap left open on the door side.
 	_side_band(b, -door_x, wall_x, SKIRT_BOTTOM, BELT_Y, _front_z, _rear_z, paint)
 	_side_band(b, door_x, wall_x, SKIRT_BOTTOM, BELT_Y, _front_z, _door_near_z, paint)
-	_side_band(b, door_x, wall_x, SKIRT_BOTTOM, BELT_Y, _door_far_z, _rear_z, paint)
+	_door_side_band(b, door_x, wall_x, SKIRT_BOTTOM, BELT_Y, _door_far_z, _rear_z, paint)
 	_side_band(b, -door_x, _half_width, 1.16, 1.3, _front_z, _rear_z, stripe)
-	_side_band(b, door_x, _half_width, 1.16, 1.3, _door_far_z, _rear_z, stripe)
+	_door_side_band(b, door_x, _half_width, 1.16, 1.3, _door_far_z, _rear_z, stripe)
 
 	# Window pillars.
 	var z := _door_far_z
 	while z < _rear_z:
 		for side: float in [-1.0, 1.0]:
+			if side * spec.door_side > 0.0 and _in_rear_door(z, 0.1):
+				continue
 			b.box(Vector3(side * wall_x, (BELT_Y + _top_y) / 2.0, z), Vector3(0.09, _top_y - BELT_Y, 0.14), paint)
 		z += 1.9
+	if _rear_near_z != INF:
+		for edge: float in [_rear_near_z, _rear_far_z]:
+			b.box(Vector3(signf(door_x) * wall_x, (BELT_Y + _top_y) / 2.0, edge), Vector3(0.09, _top_y - BELT_Y, 0.14), paint)
 	for side: float in [-1.0, 1.0]:
 		b.box(Vector3(side * wall_x, (BELT_Y + _top_y) / 2.0, _front_z + 0.05), Vector3(0.09, _top_y - BELT_Y, 0.1), paint)
 	b.box(Vector3(signf(door_x) * wall_x, (BELT_Y + _top_y) / 2.0, _door_near_z), Vector3(0.09, _top_y - BELT_Y, 0.14), paint)
@@ -333,6 +348,9 @@ func _add_seats(b: LowPolyBuilder, from_z: float, to_z: float, colour: Color, fo
 	var row_z := from_z
 	while row_z < to_z:
 		for x: float in [-0.95, -0.5, 0.5, 0.95]:
+			# The way out to the rear door is kept clear.
+			if x * spec.door_side > 0.0 and _in_rear_door(row_z, 0.35):
+				continue
 			b.box(Vector3(x, 0.72, row_z), Vector3(0.4, 0.5, 0.42), colour)
 			b.box(Vector3(x, 1.12, row_z + 0.18), Vector3(0.4, 0.55, 0.08), colour)
 			if for_riders:
@@ -354,6 +372,9 @@ func _add_style_details(b: LowPolyBuilder) -> void:
 			# Painted panels mark the doors along the side of a rapid-transit bus.
 			var z := _door_far_z + 3.0
 			while z < _rear_z - 1.0:
+				if _in_rear_door(z, DOOR_WIDTH):
+					z += 5.0
+					continue
 				b.box(Vector3(door_x * 1.004, (SKIRT_BOTTOM + _top_y) / 2.0, z), Vector3(0.03, _top_y - SKIRT_BOTTOM, DOOR_WIDTH), DARK)
 				z += 5.0
 
@@ -363,6 +384,9 @@ func _paint_livery(b: LowPolyBuilder, low: float, high: float) -> void:
 	for side: float in [-1.0, 1.0]:
 		var from_z := _door_far_z if side * spec.door_side > 0.0 else _front_z + 0.2
 		var to_z := _rear_z - 0.1
+		if side * spec.door_side > 0.0 and _rear_near_z != INF:
+			_pattern_on_side(b, side * (_half_width + 0.015), from_z, _rear_near_z, low, high)
+			from_z = _rear_far_z
 		_pattern_on_side(b, side * (_half_width + 0.015), from_z, to_z, low, high)
 
 
@@ -566,6 +590,19 @@ func _build_trailer() -> void:
 	_trailer_right = _lit_lamp(right, Color(1.0, 0.65, 0.1), _trailer)
 
 
+## A side band on the door side, with a gap for the rear door if there is one.
+func _door_side_band(b: LowPolyBuilder, side: float, x: float, y0: float, y1: float, z0: float, z1: float, colour: Color) -> void:
+	if _rear_near_z == INF or _rear_far_z <= z0 or _rear_near_z >= z1:
+		_side_band(b, side, x, y0, y1, z0, z1, colour)
+		return
+	_side_band(b, side, x, y0, y1, z0, _rear_near_z, colour)
+	_side_band(b, side, x, y0, y1, _rear_far_z, z1, colour)
+
+
+func _in_rear_door(z: float, margin: float) -> bool:
+	return _rear_near_z != INF and z > _rear_near_z - margin and z < _rear_far_z + margin
+
+
 func _side_band(b: LowPolyBuilder, side: float, x: float, y0: float, y1: float, z0: float, z1: float, colour: Color) -> void:
 	var size := Vector3(0.09, y1 - y0, z1 - z0)
 	b.box(Vector3(signf(side) * x, (y0 + y1) / 2.0, (z0 + z1) / 2.0), size, colour)
@@ -584,7 +621,11 @@ func _build_glass() -> void:
 	var pane_x := _half_width - 0.05
 	var full_length := _rear_z - _front_z
 	b.box(Vector3(-signf(door_x) * pane_x, band_y, (_front_z + _rear_z) / 2.0), Vector3(0.03, band_height, full_length), tint)
-	b.box(Vector3(signf(door_x) * pane_x, band_y, (_door_far_z + _rear_z) / 2.0), Vector3(0.03, band_height, _rear_z - _door_far_z), tint)
+	if _rear_near_z == INF:
+		b.box(Vector3(signf(door_x) * pane_x, band_y, (_door_far_z + _rear_z) / 2.0), Vector3(0.03, band_height, _rear_z - _door_far_z), tint)
+	else:
+		b.box(Vector3(signf(door_x) * pane_x, band_y, (_door_far_z + _rear_near_z) / 2.0), Vector3(0.03, band_height, _rear_near_z - _door_far_z), tint)
+		b.box(Vector3(signf(door_x) * pane_x, band_y, (_rear_far_z + _rear_z) / 2.0), Vector3(0.03, band_height, _rear_z - _rear_far_z), tint)
 	b.box(Vector3(signf(door_x) * pane_x, band_y, (_front_z + _door_near_z) / 2.0), Vector3(0.03, band_height, _door_near_z - _front_z), tint)
 	b.box(Vector3(0.0, (1.15 + _top_y) / 2.0, _front_z + 0.05), Vector3(spec.body_width - 0.1, _top_y - 1.15, 0.03), tint)
 
@@ -682,6 +723,9 @@ func _build_doors() -> void:
 	var x := (_half_width - 0.03) * spec.door_side
 	_door_front = _door_leaf(Vector3(x, 0.0, _door_near_z), leaf_length)
 	_door_rear = _door_leaf(Vector3(x, 0.0, _door_far_z), -leaf_length)
+	if _rear_near_z != INF:
+		_rear_door_front = _door_leaf(Vector3(x, 0.0, _rear_near_z), leaf_length)
+		_rear_door_rear = _door_leaf(Vector3(x, 0.0, _rear_far_z), -leaf_length)
 
 
 ## length is signed along Z, from the hinge to the door's free edge.
