@@ -38,6 +38,10 @@ const SATISFACTION_MISSED_STOP := 5.0
 const SATISFACTION_IGNORED_HAIL := 0.5
 const SATISFACTION_IGNORED_REQUEST := 2.0
 const SATISFACTION_VENDOR_BONUS := 1.5
+## Getting everyone through an aguacero without a knock or a hard stop. Small, so
+## a downpour is a chance to shine rather than a must.
+const SATISFACTION_DOWNPOUR_BONUS := 2.0
+const DOWNPOUR_COINS := 60
 
 const BASE_COINS := 50
 const COINS_PER_POINT := 2
@@ -48,6 +52,7 @@ var counts: Dictionary = {
 	"harsh_brakes": 0, "jolts": 0, "collisions": 0, "knocked": 0,
 	"red_lights": 0, "kerbs": 0, "indicators": 0, "missed_stops": 0, "left_behind": 0,
 	"ignored_hails": 0, "ignored_requests": 0, "vendors": 0,
+	"downpours": 0, "clean_downpours": 0,
 }
 var speeding_seconds: float = 0.0
 var off_road_seconds: float = 0.0
@@ -99,6 +104,15 @@ func add_ignored_request(people: int) -> void:
 func add_vendor() -> void:
 	counts["vendors"] = int(counts["vendors"]) + 1
 	_add_satisfaction_loss(-SATISFACTION_VENDOR_BONUS)
+
+
+## Drove through a downpour. Clean means no collision, knock or emergency stop
+## while it poured, which earns a small bonus.
+func add_downpour(clean: bool) -> void:
+	counts["downpours"] = int(counts["downpours"]) + 1
+	if clean:
+		counts["clean_downpours"] = int(counts["clean_downpours"]) + 1
+		_add_satisfaction_loss(-SATISFACTION_DOWNPOUR_BONUS)
 
 
 func add_harsh_brake() -> void:
@@ -181,7 +195,8 @@ func stars() -> int:
 
 
 func coins(passengers_carried: int) -> int:
-	return BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER + stars() * COINS_PER_STAR
+	return BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER + stars() * COINS_PER_STAR \
+		+ int(counts["clean_downpours"]) * DOWNPOUR_COINS
 
 
 ## The category that cost the most points, for the report's advice.

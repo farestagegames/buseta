@@ -9,11 +9,20 @@ const SIDE_DISTANCE := RoadNetwork.ROAD_HALF_WIDTH + 1.7
 const AROUND_A_BAY := 2.8
 const WALK_LOW := 0.9
 const WALK_HIGH := 1.5
+## People hurry in the rain, by up to this share faster.
+const RAIN_HURRY := 0.5
+const UMBRELLA_COLOURS: Array[Color] = [
+	Color(0.12, 0.12, 0.14), Color(0.85, 0.15, 0.2), Color(0.15, 0.35, 0.75), Color(0.98, 0.78, 0.1), Color(0.2, 0.6, 0.35),
+]
 
 var strollers: Array[Stroller] = []
 
 var _ground: GroundSurface
 var _batches: Array[MultiMesh] = [] ## Clothes, skin, then hair.
+var _umbrellas: MultiMesh
+var _out_share: float = 1.0 ## Share of walkers still out, lower in a downpour.
+var _umbrella_share: float = 0.0
+var _hurry: float = 1.0
 
 
 class Stroller:
@@ -46,12 +55,13 @@ class Stroller:
 		return (path[segment + heading] - path[segment]).normalized()
 
 
-func setup(network: RoadNetwork, ground: GroundSurface, route: RouteRunner) -> void:
+## density is the time of day's share of the usual number of people about.
+func setup(network: RoadNetwork, ground: GroundSurface, route: RouteRunner, density: float = 1.0) -> void:
 	_ground = ground
 	var random := RandomNumberGenerator.new()
 	random.seed = 909
 	var roads: Array = network.roads.values().filter(func(road: Dictionary) -> bool: return road["length"] > 80.0)
-	var count: int = GraphicsQuality.current_profile()["pedestrians"]
+	var count := TrafficSystem.scaled_count(GraphicsQuality.current_profile()["pedestrians"], density)
 	for i in count:
 		var road: Dictionary = roads[i % roads.size()]
 		var side := 1.0 if i % 2 == 0 else -1.0
@@ -103,6 +113,36 @@ func _build_batch(random: RandomNumberGenerator) -> void:
 		_batches[0].set_instance_color(i, look.top)
 		_batches[1].set_instance_color(i, look.skin)
 		_batches[2].set_instance_color(i, look.crown_colour())
+	_umbrellas = _batch_of(_umbrella_shape(), material)
+	for i in strollers.size():
+		_umbrellas.set_instance_color(i, UMBRELLA_COLOURS[i % UMBRELLA_COLOURS.size()])
+	_umbrellas.visible_instance_count = 0
+	GameEvents.weather_updated.connect(_on_weather)
+
+
+## A canopy over the head on a short stick, held in one hand.
+func _umbrella_shape() -> LowPolyBuilder:
+	var b := LowPolyBuilder.new()
+	b.box(Vector3(0.25, 1.55, 0.0), Vector3(0.03, 0.7, 0.03), Color(0.2, 0.2, 0.2))
+	b.box(Vector3(0.12, 2.08, 0.0), Vector3(1.0, 0.06, 1.0), Color.WHITE)
+	b.box(Vector3(0.12, 2.15, 0.0), Vector3(0.62, 0.08, 0.62), Color.WHITE)
+	return b
+
+
+## In a downpour most people shelter, and those still out hurry, some under umbrellas.
+func _on_weather(weather: WeatherClock) -> void:
+	_out_share = weather.pedestrians()
+	_umbrella_share = weather.umbrellas()
+	_hurry = 1.0 + RAIN_HURRY * clampf(weather.rain * 1.5, 0.0, 1.0)
+	var shown := walkers_out(strollers.size(), _out_share)
+	for batch in _batches:
+		batch.visible_instance_count = shown
+	_umbrellas.visible_instance_count = shown if _umbrella_share > 0.0 else 0
+
+
+## How many of count walkers are out when share of them are. Never all gone.
+static func walkers_out(count: int, share: float) -> int:
+	return clampi(ceili(float(count) * share), mini(count, 2), count)
 
 
 func _batch_of(builder: LowPolyBuilder, material: Material) -> MultiMesh:
@@ -121,12 +161,22 @@ func _batch_of(builder: LowPolyBuilder, material: Material) -> MultiMesh:
 
 
 func _process(dt: float) -> void:
+	var shown := _batches[0].visible_instance_count if not _batches.is_empty() else strollers.size()
+	if shown < 0:
+		shown = strollers.size()
+	var umbrellas := _umbrellas != null and _umbrellas.visible_instance_count > 0
 	for i in strollers.size():
 		var stroller := strollers[i]
-		stroller.walk(dt)
+		stroller.walk(dt * _hurry)
+		if i >= shown:
+			continue
 		var spot := stroller.position()
 		var facing := RoadNetwork.heading_of(stroller.direction())
 		var basis := Basis(Vector3.UP, facing).scaled(Vector3.ONE * stroller.look.size)
 		var place := Transform3D(basis, Vector3(spot.x, _ground.terrain_height(spot) + 0.12, spot.y))
 		for batch in _batches:
 			batch.set_instance_transform(i, place)
+		if umbrellas:
+			# A steady share carry one; the rest walk with their heads down.
+			var carries := float((i * 37) % 100) / 100.0 < _umbrella_share
+			_umbrellas.set_instance_transform(i, place if carries else Transform3D(Basis().scaled(Vector3.ZERO), place.origin))

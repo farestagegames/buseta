@@ -67,6 +67,7 @@ AUTOPILOT_PACK=res://test/fixtures/packs/testland/pack.json AUTOPILOT_ROUTE=test
 | `scripts/core/lang.gd` | Autoload for languages and fonts |
 | `scripts/core/graphics_quality.gd` | Low, medium and high as data, and matching a phone to a level |
 | `scripts/tutorial` | `CameraShots`, `IntroCutscene`, `TutorialScript`, `TutorialDirector`, `TutorialPanel` |
+| `scripts/weather` | `TimeOfDay` and `RainSettings` pack data, `WeatherPlan` seeded downpours, `WeatherClock` rain and road wetness through a shift, `Atmosphere` sky and light, `WeatherDirector` scene wrapper, `RainSheet` |
 `CityShift` is the only script that knows every module. It wires them together
 at load time.
 
@@ -218,6 +219,29 @@ the WAV file, which Godot reads on import, and every file is compressed with QOA
 **Cheats in test builds only.** `Cheats.available()` is `OS.is_debug_build()`, so
 the gesture and panels do not exist in a release export. The panels are English
 only, and each cheat is a small function on `PlayerProfile` or `RouteSystem`.
+
+**Time of day and weather are data.** The pack's `times_of_day` list sets the sun,
+sky, fog, ambient light, lamps, windows, traffic and pedestrians for each time, and
+its unlock level. `weather.rain` sets how an aguacero builds, lasts and clears and
+what a wet road does. `WeatherPlan` decides from the shift seed whether and when it
+rains, and `WeatherClock` follows it, keeping a road wetness that soaks quickly and
+dries slowly. `WeatherDirector` is the only node that runs it: it sets the sky, sun
+and fog itself and sends `rain_changed`, `weather_updated` and `lighting_changed`.
+The bus reads its grip, traffic its speed and gap, `RouteSystem` its timetable
+slack, `StreetLife` its walkers and umbrellas, and `ScoreKeeper` the downpour bonus,
+all from those events.
+
+**Night without real lights.** Lit windows are worked out in the facade shader from
+the window's place and each building's vertex alpha. Lamps, stalls and shelters
+glow through unshaded materials and throw additive discs on the ground. The only
+real lights are on the bus: a headlight beam on MEDIUM and HIGH and a cabin light on
+HIGH that only lights the bus's own render layer. Sun shadows are off at night and
+fade out under storm clouds, so a night or a downpour costs less than a sunny day.
+
+**Rain round the camera.** `RainSheet` draws falling streaks with a shader on one
+or two open cylinders that follow the camera. Raindrops on the windscreen are a
+shader too: it knows when a wiper blade last crossed each spot from the blade's
+sweep, so drops grow back behind the blades without any extra render pass.
 
 **Autopilot check.** `tools/autopilot.sh` drives a whole shift through the real
 controls. Run it after changing a map, because a route that passes its data tests

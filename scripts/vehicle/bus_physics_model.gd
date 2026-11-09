@@ -24,6 +24,9 @@ var steer_angle: float = 0.0 ## Road wheel angle in radians.
 var direction: Direction = Direction.FORWARD
 var drive_enabled: bool = true ## Cleared by the door interlock.
 var road_slope: float = 0.0 ## Rise per metre along the heading. Positive is uphill.
+## Tyre grip as a share of a dry road. A wet road lowers it, which lengthens
+## braking and widens the turns the bus can hold at speed.
+var grip: float = 1.0
 
 var throttle: float = 0.0 ## Pedal after lag.
 var brake: float = 0.0 ## Pedal after lag.
@@ -139,7 +142,7 @@ func steer_limit() -> float:
 	var speed_squared := speed * speed
 	if speed_squared < 0.01:
 		return full_lock
-	return minf(full_lock, atan(_spec.max_lateral_accel * _spec.wheelbase / speed_squared))
+	return minf(full_lock, atan(_spec.max_lateral_accel * grip * _spec.wheelbase / speed_squared))
 
 
 func _update_pedals(throttle_input: float, brake_input: float, dt: float) -> void:
@@ -160,10 +163,10 @@ func _integrate_speed(dt: float) -> float:
 	var signed_thrust := _drive_accel() * float(direction)
 	var new_speed := speed + (signed_thrust - GRAVITY * road_slope) * dt
 	var resistance := _spec.rolling_decel + _spec.drag_coefficient * speed * speed
-	resistance += brake * _spec.max_brake_decel
+	resistance += brake * _spec.max_brake_decel * grip
 	# The door interlock also applies the stop brake, so an open bus holds on a hill.
 	if not drive_enabled:
-		resistance += _spec.max_brake_decel
+		resistance += _spec.max_brake_decel * grip
 	if throttle < 0.01:
 		resistance += _spec.coast_decel
 	var slowdown := resistance * dt

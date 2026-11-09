@@ -1,7 +1,8 @@
 extends Node
 ## Developer tool: drives a whole shift through the real controls and reports
 ## what happened. Proves the route can be completed by a 12 m bus. Run with
-## tools/autopilot.sh. Not included in exported builds.
+## tools/autopilot.sh. Not included in exported builds. AUTOPILOT_TIME picks a time
+## of day by its pack id, and AUTOPILOT_RAIN=1 forces a downpour (0 keeps it dry).
 
 const SCENE := "res://scenes/main/city_shift.tscn"
 const TIME_SCALE := 6.0
@@ -37,6 +38,9 @@ var _next_turn: int = 0
 var _jolt_places: Dictionary = {}
 var _off_road_places: Dictionary = {}
 var _map_data: Dictionary = {}
+var _lowest_grip: float = 1.0
+var _rain_from: float = -1.0
+var _rain_to: float = -1.0
 
 
 func _ready() -> void:
@@ -52,6 +56,12 @@ func _ready() -> void:
 	if OS.get_environment("AUTOPILOT_BUS") != "":
 		(Profile.data.owned[Catalog.BUSES] as Array).append(OS.get_environment("AUTOPILOT_BUS"))
 		Profile.data.select(Catalog.BUSES, OS.get_environment("AUTOPILOT_BUS"))
+	CityShift.forced_time = OS.get_environment("AUTOPILOT_TIME")
+	match OS.get_environment("AUTOPILOT_RAIN"):
+		"1":
+			CityShift.forced_rain = WeatherPlan.FORCE_RAIN
+		"0":
+			CityShift.forced_rain = WeatherPlan.FORCE_DRY
 	Engine.time_scale = TIME_SCALE
 	Engine.max_physics_steps_per_frame = 32
 	_city = (load(SCENE) as PackedScene).instantiate()
@@ -75,6 +85,12 @@ func _ready() -> void:
 	GameEvents.obstacle_hit.connect(func(kind: String, _l: float) -> void: _knocks.append(kind))
 	GameEvents.stop_missed.connect(func(_i: int, stop_name: String) -> void: _missed.append(stop_name))
 	GameEvents.shift_report_ready.connect(_on_finished)
+	GameEvents.weather_updated.connect(func(weather: WeatherClock) -> void:
+		_lowest_grip = minf(_lowest_grip, weather.grip())
+		if weather.is_downpour() and _rain_from < 0.0:
+			_rain_from = _sim_time
+		if _rain_from >= 0.0 and _rain_to < 0.0 and weather.rain < 0.1:
+			_rain_to = _sim_time)
 
 
 func _physics_process(dt: float) -> void:
@@ -378,6 +394,9 @@ func _report(outcome: String) -> void:
 	print("AUTOPILOT arrivals ", _arrivals, " red lights ", _red_lights)
 	print("AUTOPILOT jolt places ", _top(_jolt_places))
 	print("AUTOPILOT off road places ", _top(_off_road_places))
+	var weather := _city.weather_for_tools()
+	print("AUTOPILOT time of day %s, downpour from %d s to %d s, peak rain %.2f, lowest grip %.2f, rain slack %.1f s" % [
+		weather.time.id, _rain_from, _rain_to, weather.clock.peak_rain, _lowest_grip, _system.rain_slack])
 	get_tree().quit.call_deferred()
 
 

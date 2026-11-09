@@ -210,6 +210,255 @@
       "volume_db": -14
     }
   ],
+  "times_of_day": [
+    {
+      "id": "madrugada",
+      "name": "Dawn",
+      "level": 3,
+      "sun_from": 80,
+      "sun_elevation": 5,
+      "sun_colour": [
+        1.0,
+        0.68,
+        0.52
+      ],
+      "sun_energy": 0.5,
+      "sky_top": [
+        0.2,
+        0.26,
+        0.52
+      ],
+      "sky_horizon": [
+        0.98,
+        0.66,
+        0.52
+      ],
+      "fog": [
+        0.74,
+        0.62,
+        0.66
+      ],
+      "fog_scale": 1.6,
+      "ambient": [
+        0.62,
+        0.6,
+        0.74
+      ],
+      "ambient_energy": 0.48,
+      "shadows": true,
+      "lights": 0.8,
+      "windows": 0.25,
+      "traffic": 0.45,
+      "pedestrians": 0.4,
+      "rain_chance": 0.1
+    },
+    {
+      "id": "manana",
+      "name": "Morning",
+      "level": 1,
+      "default": true,
+      "sun_from": 105,
+      "sun_elevation": 32,
+      "sun_colour": [
+        1.0,
+        0.95,
+        0.86
+      ],
+      "sun_energy": 0.86,
+      "sky_top": [
+        0.28,
+        0.57,
+        0.9
+      ],
+      "sky_horizon": [
+        0.78,
+        0.88,
+        0.95
+      ],
+      "fog": [
+        0.82,
+        0.88,
+        0.92
+      ],
+      "fog_scale": 1.0,
+      "ambient": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "ambient_energy": 0.56,
+      "shadows": true,
+      "lights": 0.0,
+      "windows": 0.0,
+      "traffic": 1.0,
+      "pedestrians": 1.0,
+      "rain_chance": 0.15
+    },
+    {
+      "id": "mediodia",
+      "name": "Midday",
+      "level": 1,
+      "sun_from": 190,
+      "sun_elevation": 68,
+      "sun_colour": [
+        1.0,
+        0.96,
+        0.85
+      ],
+      "sun_energy": 0.92,
+      "sky_top": [
+        0.22,
+        0.55,
+        0.92
+      ],
+      "sky_horizon": [
+        0.75,
+        0.88,
+        0.95
+      ],
+      "fog": [
+        0.82,
+        0.88,
+        0.9
+      ],
+      "fog_scale": 1.0,
+      "ambient": [
+        0.8,
+        0.8,
+        0.78
+      ],
+      "ambient_energy": 0.56,
+      "shadows": true,
+      "lights": 0.0,
+      "windows": 0.0,
+      "traffic": 0.9,
+      "pedestrians": 0.8,
+      "rain_chance": 0.3
+    },
+    {
+      "id": "atardecer",
+      "name": "Sunset",
+      "level": 2,
+      "sun_from": 278,
+      "sun_elevation": 9,
+      "sun_colour": [
+        1.0,
+        0.62,
+        0.34
+      ],
+      "sun_energy": 0.9,
+      "sky_top": [
+        0.3,
+        0.36,
+        0.7
+      ],
+      "sky_horizon": [
+        1.0,
+        0.62,
+        0.4
+      ],
+      "fog": [
+        0.94,
+        0.66,
+        0.52
+      ],
+      "fog_scale": 1.2,
+      "ambient": [
+        0.86,
+        0.66,
+        0.6
+      ],
+      "ambient_energy": 0.5,
+      "shadows": true,
+      "lights": 0.5,
+      "windows": 0.25,
+      "traffic": 1.2,
+      "pedestrians": 1.2,
+      "rain_chance": 0.5
+    },
+    {
+      "id": "noche",
+      "name": "Night",
+      "level": 4,
+      "stat": "night_shifts",
+      "sun_from": 140,
+      "sun_elevation": 48,
+      "sun_colour": [
+        0.6,
+        0.7,
+        1.0
+      ],
+      "sun_energy": 0.16,
+      "sky_top": [
+        0.02,
+        0.04,
+        0.12
+      ],
+      "sky_horizon": [
+        0.12,
+        0.15,
+        0.3
+      ],
+      "fog": [
+        0.07,
+        0.09,
+        0.17
+      ],
+      "fog_scale": 1.0,
+      "ambient": [
+        0.38,
+        0.45,
+        0.74
+      ],
+      "ambient_energy": 0.34,
+      "shadows": false,
+      "lights": 1.0,
+      "windows": 0.45,
+      "traffic": 0.6,
+      "pedestrians": 0.5,
+      "rain_chance": 0.25
+    }
+  ],
+  "weather": {
+    "rain": {
+      "build_seconds": [
+        15,
+        25
+      ],
+      "rain_seconds": [
+        110,
+        190
+      ],
+      "clear_seconds": [
+        20,
+        30
+      ],
+      "start_share": [
+        0.2,
+        0.5
+      ],
+      "strength": [
+        0.7,
+        1.0
+      ],
+      "wet_grip": 0.7,
+      "dry_seconds": 90,
+      "traffic_speed": 0.8,
+      "traffic_gap": 1.6,
+      "pedestrians": 0.35,
+      "umbrellas": 0.7,
+      "fog_density": 0.016,
+      "storm_sky": [
+        0.45,
+        0.49,
+        0.55
+      ],
+      "darken": 0.75,
+      "sun_dim": 0.85,
+      "lights": 0.5,
+      "schedule_slack": 0.2
+    }
+  },
   "city_name": "Puerto Marisol",
   "fonts": []
 }

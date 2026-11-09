@@ -40,6 +40,19 @@ const BELLOWS := Color(0.16, 0.16, 0.18)
 const MACHINE_SCREEN := Color(0.35, 0.85, 0.55)
 const LAMP_OFF_RED := Color(0.35, 0.05, 0.05)
 const LAMP_OFF_AMBER := Color(0.45, 0.25, 0.05)
+const HEADLAMP := Color(1.0, 0.97, 0.86)
+const TAIL_LAMP := Color(0.8, 0.07, 0.05)
+const CABIN_LAMP := Color(1.0, 0.95, 0.84)
+const WINDSCREEN_SHADER := preload("res://assets/shaders/windscreen.gdshader")
+## The wipers swing through this angle from lying flat, and take this long for one
+## sweep up and back in light rain and in a downpour.
+const WIPER_SWEEP := 1.8
+const WIPER_SLOW := 2.0
+const WIPER_FAST := 1.1
+const WIPER_START_RAIN := 0.04
+## The bus's own lights are seen only by the bus, so the cabin light costs nothing
+## outside it. Every mesh in the bus is on this render layer as well as the first.
+const BUS_LAYER := 2
 
 @export var spec: BusSpec
 
@@ -76,6 +89,19 @@ var _bellows: Node3D
 var _trailer_brake: MeshInstance3D
 var _trailer_left: MeshInstance3D
 var _trailer_right: MeshInstance3D
+var _night_lamps: Array[Node3D] = [] ## Headlamps, tail lamps and the cabin strip.
+var _headlight: SpotLight3D
+var _cabin_light: OmniLight3D
+var _wipers: Array[Node3D] = []
+var _wiper_phase: float = 0.0 ## Sweeps so far, counted up.
+var _rain: float = 0.0
+var _drops: MeshInstance3D
+var _drops_material: ShaderMaterial
+var _lights_on: bool = false
+var _drops_allowed: bool = true ## The graphics level draws raindrops on the glass.
+## The drops are drawn, unseen, for the first frames, so their shader is built at
+## the start of the shift rather than when the rain comes.
+var _warm_frames: int = 3
 var _front_z: float
 var _cab_z: float ## Where the cab starts. A chiva's bonnet sits ahead of it.
 var _rear_z: float
@@ -108,7 +134,14 @@ func _ready() -> void:
 	_build_trailer()
 	_build_riders()
 	_build_driver()
+	_build_night_lights()
+	_build_wipers()
+	_add_to_bus_layer(self)
+	_apply_lights()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
+	GameEvents.lighting_changed.connect(_on_lighting)
+	GameEvents.weather_updated.connect(func(weather: WeatherClock) -> void: _rain = weather.rain)
+	GameSettings.changed.connect(_apply_lights)
 	GameEvents.onboard_changed.connect(_on_onboard_changed)
 	GameEvents.camera_view_changed.connect(_on_view_changed)
 
@@ -857,3 +890,149 @@ func _flat_material(colour: Color) -> StandardMaterial3D:
 	material.albedo_color = colour
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	return material
+
+
+## Headlamps and tail lamps that glow, a strip light along the cabin roof, and
+## up to two real lights, as the graphics level allows: a headlight beam on the
+## road and a cabin light that only lights the bus itself.
+func _build_night_lights() -> void:
+	var heads := LowPolyBuilder.new()
+	var tails := LowPolyBuilder.new()
+	var cabin := LowPolyBuilder.new()
+	var chiva := spec.body_style == "chiva"
+	for side: float in [-1.0, 1.0]:
+		if chiva:
+			heads.box(Vector3(side * 0.62, 1.08, _front_z - 0.045), Vector3(0.24, 0.2, 0.03), Color.WHITE)
+		else:
+			heads.box(Vector3(side * 0.95, 0.82, _front_z - 0.012), Vector3(0.36, 0.16, 0.03), Color.WHITE)
+		if _trailer == null:
+			tails.box(Vector3(side * (_half_width - 0.24), 1.05, _rear_z + 0.012), Vector3(0.34, 0.16, 0.03), Color.WHITE)
+	var roof := spec.body_height - (0.32 if chiva else 0.26)
+	var from_z := _cab_z + 0.6
+	var to_z := _rear_z - 0.6
+	cabin.box(Vector3(0.0, roof, (from_z + to_z) / 2.0), Vector3(0.18, 0.03, to_z - from_z), Color.WHITE)
+	_night_lamps.append(_lit_lamp(heads, HEADLAMP))
+	_night_lamps.append(_lit_lamp(tails, TAIL_LAMP))
+	_night_lamps.append(_lit_lamp(cabin, CABIN_LAMP))
+	if _trailer != null:
+		var tail := spec.trailer_wheelbase + spec.trailer_overhang
+		var trailer_tails := LowPolyBuilder.new()
+		var trailer_cabin := LowPolyBuilder.new()
+		for side: float in [-1.0, 1.0]:
+			trailer_tails.box(Vector3(side * (_half_width - 0.24), 1.05, tail + 0.02), Vector3(0.34, 0.16, 0.03), Color.WHITE)
+		trailer_cabin.box(Vector3(0.0, roof, (1.2 + tail - 0.6) / 2.0), Vector3(0.18, 0.03, tail - 1.8), Color.WHITE)
+		_night_lamps.append(_lit_lamp(trailer_tails, TAIL_LAMP, _trailer))
+		_night_lamps.append(_lit_lamp(trailer_cabin, CABIN_LAMP, _trailer))
+	_headlight = SpotLight3D.new()
+	_headlight.position = Vector3(0.0, 1.0, _front_z - 0.1)
+	_headlight.rotation.x = deg_to_rad(-3.5)
+	_headlight.spot_range = 45.0
+	_headlight.spot_angle = 30.0
+	_headlight.spot_attenuation = 0.25
+	_headlight.spot_angle_attenuation = 0.6
+	_headlight.light_energy = 5.0
+	_headlight.light_color = HEADLAMP
+	_headlight.shadow_enabled = false
+	_headlight.visible = false
+	_body.add_child(_headlight)
+	_cabin_light = OmniLight3D.new()
+	_cabin_light.position = Vector3(0.0, roof - 0.15, (_cab_z + _rear_z) / 2.0)
+	_cabin_light.omni_range = maxf(spec.overall_length() * 0.6, 5.0)
+	_cabin_light.light_energy = 0.9
+	_cabin_light.light_color = CABIN_LAMP
+	_cabin_light.light_cull_mask = 1 << (BUS_LAYER - 1)
+	_cabin_light.shadow_enabled = false
+	_cabin_light.visible = false
+	_body.add_child(_cabin_light)
+
+
+## Every mesh in the bus is also drawn on BUS_LAYER, so the cabin light reaches it.
+func _add_to_bus_layer(node: Node) -> void:
+	for child in node.get_children():
+		if child is VisualInstance3D:
+			(child as VisualInstance3D).set_layer_mask_value(BUS_LAYER, true)
+		_add_to_bus_layer(child)
+
+
+func _on_lighting(_lights: float, headlights: bool) -> void:
+	_lights_on = headlights
+	_apply_lights()
+
+
+func _apply_lights() -> void:
+	for lamp in _night_lamps:
+		lamp.visible = _lights_on
+	var profile := GraphicsQuality.current_profile()
+	var allowed: int = profile["bus_lights"]
+	_headlight.visible = _lights_on and allowed >= 1
+	_cabin_light.visible = _lights_on and allowed >= 2
+	_drops_allowed = profile["windscreen_drops"]
+
+
+## Two blades on the windscreen, and raindrops on the glass that they wipe away.
+func _build_wipers() -> void:
+	var glass_z := (_cab_z if spec.body_style == "chiva" else _front_z) + 0.05
+	var bottom := 1.15
+	var width := spec.body_width - 0.1
+	var height := _top_y - bottom
+	var blade := spec.body_width * 0.32
+	var pivots: Array[Vector2] = [Vector2(-spec.body_width * 0.1, 0.06), Vector2(spec.body_width * 0.34, 0.06)]
+	var arm := LowPolyBuilder.new()
+	arm.box(Vector3(-blade / 2.0, 0.0, 0.0), Vector3(blade, 0.025, 0.02), DARK)
+	arm.box(Vector3(-blade * 0.55, 0.0, -0.012), Vector3(blade * 0.9, 0.04, 0.015), Color(0.05, 0.05, 0.06))
+	var mesh := arm.build(LowPolyBuilder.vertex_colour_material())
+	for pivot in pivots:
+		var wiper := MeshInstance3D.new()
+		wiper.mesh = mesh
+		wiper.position = Vector3(pivot.x, bottom + pivot.y, glass_z - 0.035)
+		wiper.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_body.add_child(wiper)
+		_wipers.append(wiper)
+	_drops_material = ShaderMaterial.new()
+	_drops_material.shader = WINDSCREEN_SHADER
+	_drops_material.set_shader_parameter("pane_size", Vector2(width, height))
+	_drops_material.set_shader_parameter("pivot_a", pivots[0])
+	_drops_material.set_shader_parameter("pivot_b", pivots[1])
+	_drops_material.set_shader_parameter("blade", blade)
+	_drops_material.set_shader_parameter("sweep", WIPER_SWEEP)
+	var pane := QuadMesh.new()
+	pane.size = Vector2(width, height)
+	_drops = MeshInstance3D.new()
+	_drops.mesh = pane
+	_drops.material_override = _drops_material
+	_drops.position = Vector3(0.0, bottom + height / 2.0, glass_z + 0.025)
+	_drops.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_drops.visible = false
+	_body.add_child(_drops)
+
+
+## Wipers run while it rains, faster as it pours, and finish their sweep to rest
+## when it stops.
+func _process(dt: float) -> void:
+	if _wipers.is_empty():
+		return
+	var running := _rain > WIPER_START_RAIN
+	var resting := is_zero_approx(fmod(_wiper_phase, 1.0))
+	if running or not resting:
+		var period := lerpf(WIPER_SLOW, WIPER_FAST, clampf(_rain, 0.0, 1.0))
+		var before := _wiper_phase
+		_wiper_phase += dt / period
+		if not running and floorf(_wiper_phase) > floorf(before):
+			_wiper_phase = floorf(_wiper_phase)
+		_drops_material.set_shader_parameter("wiper_period", period)
+	var angle := wiper_angle(_wiper_phase)
+	for wiper in _wipers:
+		wiper.rotation.z = angle
+	var show_drops := _rain > 0.0 and _drops_allowed
+	if _warm_frames > 0:
+		_warm_frames -= 1
+		show_drops = true
+	_drops.visible = show_drops
+	if show_drops:
+		_drops_material.set_shader_parameter("wet", _rain)
+		_drops_material.set_shader_parameter("wiper_phase", _wiper_phase)
+
+
+## Blade rotation for a count of sweeps: flat at whole numbers, fully up at halves.
+static func wiper_angle(phase: float) -> float:
+	return -WIPER_SWEEP * (1.0 - cos(TAU * phase)) / 2.0

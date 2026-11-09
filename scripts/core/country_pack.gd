@@ -149,8 +149,20 @@ func validate() -> Array[String]:
 			problems.append("currency.%s is missing" % key)
 	_check_languages(problems)
 	_check_sounds(problems)
+	_check_weather(problems)
 	_check_content(problems)
 	return problems
+
+
+## Times of day and weather are optional. A pack without them gets a plain day
+## from its map and no rain.
+func _check_weather(problems: Array[String]) -> void:
+	problems.append_array(TimeOfDay.check(data.get("times_of_day")))
+	problems.append_array(RainSettings.check(data.get("weather")))
+	var stats := PlayerProfile.new().stats
+	for time in TimeOfDay.list_for(data):
+		if time.stat != "" and not stats.has(time.stat):
+			problems.append("Time %s counts an unknown stat %s" % [time.id, time.stat])
 
 
 func _check_languages(problems: Array[String]) -> void:

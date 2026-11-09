@@ -37,6 +37,10 @@ var _fare: int = 0
 var _fares: int = 0
 var _vendor_stops_left: int = 0
 var _vendor_stop: int = -1
+## Seconds the timetable has allowed for driving on a wet road, and how fast that
+## grows now. Everyone slows in a downpour, so the bus is not blamed for it.
+var rain_slack: float = 0.0
+var _slack_rate: float = 0.0
 
 
 func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork, fare: int = 0) -> void:
@@ -55,6 +59,7 @@ func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork, fare: int = 
 	GameEvents.skip_stop_requested.connect(skip_to_next_stop)
 	GameEvents.finish_shift_requested.connect(finish_now)
 	GameEvents.shift_held_changed.connect(func(value: bool) -> void: held = value)
+	GameEvents.weather_updated.connect(func(weather: WeatherClock) -> void: _slack_rate = weather.slack_rate())
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
@@ -66,6 +71,7 @@ func tick(data: BusTelemetry, dt: float) -> void:
 		return
 	if not held:
 		clock += dt
+		rain_slack += dt * _slack_rate
 	var rear := Vector2(data.position.x, data.position.z)
 	var centre := BusFootprint.body_centre(rear, data.heading, _spec)
 	runner.update_position(centre, Vector2(-sin(data.heading), -cos(data.heading)))
@@ -76,7 +82,7 @@ func tick(data: BusTelemetry, dt: float) -> void:
 
 	if stop.is_final:
 		if _aligned and stopped:
-			GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, clock))
+			GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, timetable_clock()))
 			_finish()
 			return
 	elif session != null:
@@ -128,7 +134,7 @@ func _start_session(stop: RouteStop, centre: Vector2) -> void:
 	if runner.stop_index >= runner.stops.size() - 2:
 		boarding = 0
 	_accuracy_total += stop.accuracy(centre)
-	GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, clock))
+	GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, timetable_clock()))
 	_session_stop = runner.stop_index
 	session = StopSession.new(alighting, boarding)
 	session.passenger_alighted.connect(_on_alighted)
@@ -165,7 +171,7 @@ func _on_boarded() -> void:
 
 
 func _next_stop() -> void:
-	_last_late = maxf(clock - schedule.due_times[runner.stop_index], 0.0)
+	_last_late = maxf(timetable_clock() - schedule.due_times[runner.stop_index], 0.0)
 	runner.advance_stop()
 	_count_down_vendor()
 	if not runner.is_finished() and ledger.wanting_off(runner.stop_index) > 0:
@@ -238,11 +244,16 @@ func _publish_status(data: BusTelemetry, centre: Vector2) -> void:
 	GameEvents.route_status_updated.emit(_status)
 
 
+## The clock the timetable is judged by: the shift's time, less what the rain allowed.
+func timetable_clock() -> float:
+	return clock - rain_slack
+
+
 ## How the bus stands against the timetable. It only shows as late once a stop
 ## is overdue, or when it left the last stop behind time.
 func _running_lateness() -> float:
 	var due := schedule.due_times[runner.stop_index]
-	var overdue := clock - due
+	var overdue := timetable_clock() - due
 	return maxf(overdue, _last_late) if overdue > -ShiftSchedule.ON_TIME_EARLY else _last_late
 
 

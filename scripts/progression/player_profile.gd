@@ -23,6 +23,7 @@ var owned: Dictionary = {
 var selected: Dictionary = DEFAULTS.duplicate()
 var stats: Dictionary = {
 	"shifts": 0, "passengers": 0, "best_stars": 0, "clean_shifts": 0, "smooth_shifts": 0,
+	"rain_shifts": 0, "clean_downpours": 0, "night_shifts": 0,
 }
 var achievements: Array[String] = []
 var best_scores: Dictionary = {} ## Route id to best score.
@@ -33,6 +34,8 @@ var settings: Dictionary = {}
 var horns_owned: Array[String] = []
 ## The horn fitted to every bus, or "" for each bus's own horn.
 var horn: String = ""
+## The time of day picked for the next shift, by its pack id, or "" for the default.
+var time_of_day: String = ""
 
 
 func owns(kind: String, id: String) -> bool:
@@ -117,6 +120,15 @@ func horn_for(bus_horn_id: String) -> String:
 	return horn if horn != "" and owns_horn(horn) else bus_horn_id
 
 
+## Picks the time of day for the next shift. Refused until the driver's level
+## unlocks it.
+func choose_time(time: TimeOfDay) -> bool:
+	if not time.is_unlocked(DriverLevel.level_for(xp)):
+		return false
+	time_of_day = time.id
+	return true
+
+
 func record_best(route_id: String, score: int) -> bool:
 	if score <= int(best_scores.get(route_id, -1)):
 		return false
@@ -129,7 +141,7 @@ func to_dict() -> Dictionary:
 		"version": VERSION, "coins": coins, "xp": xp, "owned": owned, "selected": selected,
 		"stats": stats, "achievements": achievements, "best_scores": best_scores,
 		"last_daily": last_daily, "settings": settings, "intro_done": intro_done,
-		"horns_owned": horns_owned, "horn": horn,
+		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day,
 	}
 
 
@@ -179,6 +191,9 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	var saved_horn: Variant = saved.get("horn")
 	if saved_horn is String:
 		profile.choose_horn(saved_horn)
+	# Checked against the pack when a shift starts, so an unknown id is harmless.
+	var saved_time: Variant = saved.get("time_of_day")
+	profile.time_of_day = saved_time if saved_time is String else ""
 	return profile
 
 

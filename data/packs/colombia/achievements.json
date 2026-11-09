@@ -6,5 +6,8 @@
   {"id": "clean_shift", "name": "Not a Scratch", "description": "Finish a shift with no collisions", "stat": "clean_shifts", "target": 1},
   {"id": "smooth_operator", "name": "Smooth Operator", "description": "Finish a shift with no emergency stops", "stat": "smooth_shifts", "target": 1},
   {"id": "hundred_passengers", "name": "Full House", "description": "Carry 100 passengers", "stat": "passengers", "target": 100},
-  {"id": "thousand_passengers", "name": "Backbone of the City", "description": "Carry 1,000 passengers", "stat": "passengers", "target": 1000}
+  {"id": "thousand_passengers", "name": "Backbone of the City", "description": "Carry 1,000 passengers", "stat": "passengers", "target": 1000},
+  {"id": "first_aguacero", "name": "First Aguacero", "description": "Finish a shift through a downpour", "stat": "rain_shifts", "target": 1},
+  {"id": "steady_in_the_rain", "name": "Steady in the Rain", "description": "Get through 5 downpours with no collisions, knocks or emergency stops", "stat": "clean_downpours", "target": 5},
+  {"id": "night_owl", "name": "Night Owl", "description": "Complete 5 night shifts", "stat": "night_shifts", "target": 5}
 ]

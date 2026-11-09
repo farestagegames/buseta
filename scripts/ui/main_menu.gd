@@ -224,6 +224,7 @@ func _home_tab() -> Control:
 	lines.add_child(_wrapped(route["name"], 28, Color.WHITE))
 	lines.add_child(_text("%s, %s" % [bus["name"], tr(livery["name"])], 22, MUTED))
 	lines.add_child(_text(Profile.selected_item(Catalog.DRIVERS)["name"], 22, MUTED))
+	lines.add_child(_text(tr("Time: %s") % tr(Profile.chosen_time().name), 22, MUTED))
 	var best: int = Profile.data.best_scores.get(route["id"], -1)
 	lines.add_child(_text(tr("Best score: %d") % best if best >= 0 else tr("Not driven yet"), 22, MUTED))
 	crew.add_child(lines)
@@ -268,9 +269,42 @@ func _start_shift() -> void:
 
 func _routes_tab() -> Control:
 	var list := _list()
+	list.get_child(0).add_child(_time_card())
 	for item: Dictionary in Profile.catalog.items(Catalog.ROUTES):
 		list.get_child(0).add_child(_shop_row(Catalog.ROUTES, item, item.get("description", "")))
 	return list
+
+
+## The time of day for the next shift. Later times open as the driver levels up.
+func _time_card() -> Control:
+	var card := _card()
+	var lines := VBoxContainer.new()
+	lines.add_theme_constant_override("separation", 10)
+	lines.add_child(_text("Time of day", 24, ACCENT))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var level := DriverLevel.level_for(Profile.data.xp)
+	var chosen := Profile.chosen_time()
+	for time in Profile.times_of_day():
+		var button := _button(tr(time.name) if time.is_unlocked(level) else "%s\n%s" % [tr(time.name), tr("Level %d") % time.level])
+		button.custom_minimum_size = Vector2(0.0, 76.0)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", 22 if time.is_unlocked(level) else 18)
+		button.toggle_mode = true
+		button.button_pressed = time.id == chosen.id
+		button.disabled = not time.is_unlocked(level)
+		button.pressed.connect(_on_choose_time.bind(time))
+		row.add_child(button)
+	lines.add_child(row)
+	if Country.pack.data.has("weather"):
+		lines.add_child(_wrapped("Downpours are most likely in the afternoon", 19, MUTED))
+	card.add_child(lines)
+	return card
+
+
+func _on_choose_time(time: TimeOfDay) -> void:
+	Profile.choose_time(time)
+	show_tab(_current_tab)
 
 
 func _garage_tab() -> Control:
@@ -495,6 +529,7 @@ func _career_tab() -> Control:
 	lines.add_child(_text(tr("Passengers carried: %d") % stats["passengers"], 22, MUTED))
 	lines.add_child(_text(tr("Best stars: %d") % stats["best_stars"], 22, MUTED))
 	lines.add_child(_text(tr("Shifts with no collisions: %d") % stats["clean_shifts"], 22, MUTED))
+	lines.add_child(_text(tr("Downpours driven through: %d") % stats["rain_shifts"], 22, MUTED))
 	card.add_child(lines)
 	rows.add_child(card)
 	rows.add_child(_text("Achievements", 26, ACCENT))

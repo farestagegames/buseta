@@ -32,7 +32,7 @@ const NOT_COLOMBIAN: Array[String] = [
 const ENGLISH_ONLY: Array[String] = [
 	"The pack file could not be read", "language file %s", "sound %s", "horn %s", "radio track", "ambience %s",
 	"content file %s", "bus %s", "Driver %s", "The passengers file could not be read",
-	"Passenger %s %s", "Skip to next stop", "Finish shift", "City 12",
+	"Passenger %s %s", "Skip to next stop", "Finish shift", "Downpour now", "City 12",
 ]
 
 ## Statements that never hold text a player sees. They are skipped only when the

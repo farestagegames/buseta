@@ -29,6 +29,16 @@ const STALL_COLOURS: Array[Color] = [
 ## Below this the bus nudges past rather than knocking things over.
 const MIN_HIT_SPEED := 0.6
 const CHECK_RADIUS := 15.0
+## After dark, lamps and stalls glow and throw a pool of light on the ground. The
+## pools are flat discs added on top, not real lights, so a night street costs two
+## draws. Each is radius and where it sits from the prop, along its own +X.
+const POOLS := {
+	"lamp": {"radius": 8.0, "reach": 1.6, "colour": Color(0.78, 0.56, 0.3)},
+	"stall": {"radius": 3.8, "reach": 0.0, "colour": Color(0.7, 0.48, 0.22)},
+}
+const POOL_LIFT := 0.17 ## Over the road markings, under anything standing.
+const GLOW_OFF := Color(0.78, 0.78, 0.74)
+const GLOW_ON := Color(1.0, 0.86, 0.58)
 
 var props: Array[KnockableProp] = []
 
@@ -42,6 +52,15 @@ var _bus_heading: float = 0.0
 var _bus_speed: float = 0.0
 var _trailer_axle: Vector2 = Vector2.ZERO
 var _trailer_heading: float = 0.0
+var _glow := StandardMaterial3D.new()
+var _pool_material := StandardMaterial3D.new()
+var _pools: MultiMesh
+var _pools_instance: MultiMeshInstance3D
+var _pool_of: Dictionary = {} ## Prop to its pool's instance, while it stands.
+var _pools_wanted: bool = false
+## The pools are drawn, black, for the first ticks, so their shader is built before
+## the first storm clouds switch the lamps on mid-shift.
+var _warm_ticks: int = 3
 
 
 func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec, lamps: Array[Dictionary] = []) -> void:
@@ -65,7 +84,9 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 		_add_prop("lamp", lamp["position"], lamp["yaw"])
 		props[props.size() - 1].tips_over = true
 	_build_batches()
+	_build_pools()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
+	GameEvents.lighting_changed.connect(_on_lighting)
 
 
 func _add_prop(kind: String, ground_position: Vector2, yaw: float) -> void:
@@ -75,10 +96,25 @@ func _add_prop(kind: String, ground_position: Vector2, yaw: float) -> void:
 
 
 func _physics_process(dt: float) -> void:
+	if _warm_ticks > 0 and _pools_instance != null:
+		_warm_ticks -= 1
+		_pools_instance.visible = _warm_ticks > 0 or _pools_wanted
 	for prop in props:
 		if prop.is_moving() or prop.cooldown > 0.0 or prop.in_contact():
 			prop.update(dt, _ground.height_at(Vector2(prop.position.x, prop.position.z)) + 0.1)
 			_write_transform(prop)
+			if _pool_of.has(prop) and (prop.state != KnockableProp.State.STANDING or prop.tip_angle > 0.0):
+				# A knocked lamp or stall no longer lights the street.
+				_pools.set_instance_transform(_pool_of[prop], Transform3D(Basis().scaled(Vector3.ZERO), prop.position))
+				_pool_of.erase(prop)
+
+
+func _on_lighting(lights: float, _headlights: bool) -> void:
+	_glow.albedo_color = GLOW_OFF.lerp(GLOW_ON, clampf(lights * 1.5, 0.0, 1.0))
+	_pool_material.albedo_color = Color.WHITE * clampf(lights, 0.0, 1.0)
+	_pools_wanted = lights > 0.02
+	if _pools_instance != null:
+		_pools_instance.visible = _pools_wanted or _warm_ticks > 0
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
@@ -151,11 +187,15 @@ func _build_batches() -> void:
 	for prop in props:
 		counts[prop.kind] = int(counts.get(prop.kind, 0)) + 1
 	var material := LowPolyBuilder.vertex_colour_material()
+	_glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_glow.albedo_color = GLOW_OFF
 	for kind: String in counts:
 		var multi := MultiMesh.new()
 		multi.transform_format = MultiMesh.TRANSFORM_3D
 		multi.use_colors = kind == "car" or kind == "stall"
-		multi.mesh = _mesh_for(kind).build(material)
+		var mesh := _mesh_for(kind).build(material)
+		_bulbs_for(kind).build_into(mesh, _glow)
+		multi.mesh = mesh
 		multi.instance_count = counts[kind]
 		_batches[kind] = multi
 		var instance := MultiMeshInstance3D.new()
@@ -173,6 +213,66 @@ func _build_batches() -> void:
 		elif prop.kind == "stall":
 			(_batches["stall"] as MultiMesh).set_instance_color(index, STALL_COLOURS[index % STALL_COLOURS.size()])
 		_write_transform(prop)
+
+
+## The part of a lamp or stall that glows after dark.
+func _bulbs_for(kind: String) -> LowPolyBuilder:
+	var b := LowPolyBuilder.new()
+	match kind:
+		"lamp":
+			b.box(Vector3(1.6, 6.9, 0.0), Vector3(0.44, 0.05, 0.44), Color.WHITE)
+		"stall":
+			b.box(Vector3(0.0, 2.05, 0.0), Vector3(0.16, 0.2, 0.16), Color.WHITE)
+	return b
+
+
+## One flat glow on the ground under each lamp and stall, in a single batch.
+func _build_pools() -> void:
+	var lit := props.filter(func(prop: KnockableProp) -> bool: return POOLS.has(prop.kind))
+	if lit.is_empty():
+		return
+	var disc := LowPolyBuilder.new()
+	disc.glow_disc(Vector3.ZERO, 1.0, Color.WHITE, 18)
+	_pool_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_pool_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	_pool_material.vertex_color_use_as_albedo = true
+	_pool_material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	_pool_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_pool_material.disable_fog = true
+	_pool_material.albedo_color = Color.BLACK
+	_pools = MultiMesh.new()
+	_pools.transform_format = MultiMesh.TRANSFORM_3D
+	_pools.use_colors = true
+	_pools.mesh = disc.build(_pool_material)
+	_pools.instance_count = lit.size()
+	for i in lit.size():
+		var prop: KnockableProp = lit[i]
+		var pool: Dictionary = POOLS[prop.kind]
+		var reach := Vector2(float(pool["reach"]), 0.0).rotated(-prop.rotation.y)
+		var spot := Vector2(prop.position.x, prop.position.z) + reach
+		_pools.set_instance_transform(i, _pool_transform(spot, pool["radius"]))
+		_pools.set_instance_color(i, pool["colour"])
+		_pool_of[prop] = i
+	_pools_instance = MultiMeshInstance3D.new()
+	_pools_instance.multimesh = _pools
+	_pools_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_pools_instance.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	_pools_instance.custom_aabb = AABB(Vector3(-2000.0, -200.0, -2000.0), Vector3(4000.0, 400.0, 4000.0))
+	_pools_instance.visible = true
+	add_child(_pools_instance)
+
+
+## Lies flat on the ground at spot, tilted to its slope.
+func _pool_transform(spot: Vector2, radius: float) -> Transform3D:
+	var step := radius * 0.5
+	var height := _ground.terrain_height(spot)
+	var east := _ground.terrain_height(spot + Vector2(step, 0.0))
+	var south := _ground.terrain_height(spot + Vector2(0.0, step))
+	var up := Vector3(height - east, step, height - south).normalized()
+	var side := Vector3.FORWARD.cross(up).normalized()
+	var ahead := up.cross(side).normalized()
+	var basis := Basis(side, up, -ahead).orthonormalized() * Basis.from_scale(Vector3(radius, 1.0, radius))
+	return Transform3D(basis, Vector3(spot.x, height + POOL_LIFT, spot.y))
 
 
 func _write_transform(prop: KnockableProp) -> void:

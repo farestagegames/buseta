@@ -59,6 +59,14 @@ signal radio_cycle_requested ## Off, the next station, and back to off.
 signal radio_tuned(station_name: String, frequency: String)
 ## 0 is dry, 1 is a downpour. The street ambience fades rain in and birds out.
 signal rain_changed(amount: float)
+## The weather moved on: rain, clouds and how wet the road is. Sent while it changes.
+signal weather_updated(weather: WeatherClock)
+## Street lamps, windows and stalls (0 off, 1 full night), and whether vehicles
+## have their lights on.
+signal lighting_changed(lights: float, headlights: bool)
+## The time of day this shift runs at, by its pack id.
+signal time_of_day_set(time_id: String)
+signal downpour_requested ## Hidden test cheat.
 signal penalty_shown(text: String)
 ## A tip rather than a fault, such as why a control did nothing.
 signal hint_shown(text: String)

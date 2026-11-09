@@ -35,8 +35,27 @@ const YELLOW := Color(0.95, 0.78, 0.18)
 const TANK_BLUE := Color(0.16, 0.28, 0.48)
 const TEXTURE_SEA := preload("res://assets/textures/sea.png")
 const SEA_DRIFT := Vector3(0.006, 0.0, 0.004)
+const FACADE_SHADER := preload("res://assets/shaders/facade.gdshader")
+## Where the glass is in each wall texture (left, top, right, bottom of a pane, as
+## shares of a tile), how many panes a tile holds, and how many windows are lit
+## at full night, as a share of the time of day's own.
+const WINDOWS := {
+	"flats": {"box": Vector4(0.29, 0.16, 0.71, 0.77), "panes": 1.0, "lit": 1.0},
+	"office": {"box": Vector4(0.07, 0.07, 1.0, 0.77), "panes": 2.0, "lit": 0.6},
+	"shops": {"box": Vector4(0.08, 0.23, 0.98, 0.9), "panes": 1.0, "lit": 2.0},
+}
+## A soaked road is darker and shinier. Each is the colour it is tinted to, and
+## its roughness, when fully wet.
+const WET_ROAD := {"tint": Color(0.52, 0.53, 0.57), "roughness": 0.28}
+const WET_PAVEMENT := {"tint": Color(0.7, 0.7, 0.72), "roughness": 0.5}
+const WET_LINES := {"tint": Color(0.8, 0.8, 0.82), "roughness": 0.4}
+const SHELTER_GLOW := Color(0.62, 0.56, 0.42)
+## Share of windows people switch on per unit of lamp light, as under storm clouds.
+const STORM_WINDOWS := 0.35
 
 var building_count: int = 0
+## Share of windows lit at this time of day. The level sets it before the lights come on.
+var window_share: float = 0.0
 var lamp_spots: Array[Dictionary] = [] ## position and yaw, for ObstacleField.
 
 var theme: CityTheme
@@ -58,6 +77,14 @@ var _road_mesh: LowPolyBuilder
 var _scenery_mesh: LowPolyBuilder
 var _stop_spots: Array[Vector2] = []
 var _signs: Array[Dictionary] = []
+var _window_random := RandomNumberGenerator.new() ## Kept apart so the town's layout never changes.
+var _facades: Dictionary = {} ## Kind to its ShaderMaterial.
+var _wet: Array[Array] = [] ## Material, its dry roughness, and how it looks wet.
+var _glow := StandardMaterial3D.new()
+var _pool_material := StandardMaterial3D.new()
+var _lamps_at_stops: LowPolyBuilder ## Strip lights under shelter roofs.
+var _stop_pools: LowPolyBuilder ## Their pools of light on the pavement.
+var _night_meshes: Array[MeshInstance3D] = []
 
 
 func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, route: RouteRunner) -> void:
@@ -67,6 +94,9 @@ func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, ro
 	_ground = ground
 	_height_of = ground.terrain_height
 	_random.seed = 1187
+	_window_random.seed = 2207
+	_lamps_at_stops = LowPolyBuilder.new()
+	_stop_pools = LowPolyBuilder.new()
 	_solid = StaticBody3D.new()
 	add_child(_solid)
 	_flats = LowPolyBuilder.new()
@@ -84,14 +114,85 @@ func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, ro
 	for stop in route.stops:
 		if stop.kind != RouteStop.Kind.HAIL:
 			_stop_spots.append(stop.position)
-	_add_mesh(_build_roads(_road_mesh, map_data, route), _textured(TEXTURE_ASPHALT, Vector2(8.0, 8.0)), false)
-	_add_mesh(_pavements, _textured(TEXTURE_PAVEMENT, Vector2(3.2, 3.2)), false)
-	_add_mesh(_lines, LowPolyBuilder.vertex_colour_material(), false)
+	_add_mesh(_build_roads(_road_mesh, map_data, route), _wettable(_textured(TEXTURE_ASPHALT, Vector2(8.0, 8.0)), WET_ROAD), false)
+	_add_mesh(_pavements, _wettable(_textured(TEXTURE_PAVEMENT, Vector2(3.2, 3.2)), WET_PAVEMENT), false)
+	_add_mesh(_lines, _wettable(LowPolyBuilder.vertex_colour_material(), WET_LINES), false)
 	_add_mesh(_build_scenery(_scenery_mesh, route), LowPolyBuilder.vertex_colour_material())
 	_add_mesh(_woodland, LowPolyBuilder.vertex_colour_material(), false)
-	_add_mesh(_flats, _textured(TEXTURE_FLATS, Vector2(STOREY, STOREY)))
-	_add_mesh(_office, _textured(TEXTURE_OFFICE, Vector2(STOREY, STOREY)))
-	_add_mesh(_shops, _textured(TEXTURE_SHOPS, Vector2(SHOP_WIDTH, STOREY)))
+	_add_mesh(_flats, _facade("flats", TEXTURE_FLATS, Vector2(STOREY, STOREY)))
+	_add_mesh(_office, _facade("office", TEXTURE_OFFICE, Vector2(STOREY, STOREY)))
+	_add_mesh(_shops, _facade("shops", TEXTURE_SHOPS, Vector2(SHOP_WIDTH, STOREY)))
+	_build_stop_lights()
+	GameEvents.lighting_changed.connect(_on_lighting)
+	GameEvents.weather_updated.connect(_on_weather)
+
+
+## Walls with windows that light up after dark. Each building's vertex alpha sets
+## its own share of lit windows.
+func _facade(kind: String, texture: Texture2D, tile_metres: Vector2) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = FACADE_SHADER
+	material.set_shader_parameter("albedo_texture", texture)
+	material.set_shader_parameter("tile_metres", tile_metres)
+	material.set_shader_parameter("panes", WINDOWS[kind]["panes"])
+	material.set_shader_parameter("window_box", WINDOWS[kind]["box"])
+	_facades[kind] = material
+	return material
+
+
+func _wettable(material: StandardMaterial3D, wet_look: Dictionary) -> StandardMaterial3D:
+	_wet.append([material, material.roughness, wet_look])
+	return material
+
+
+func _on_weather(weather: WeatherClock) -> void:
+	for entry: Array in _wet:
+		var material: StandardMaterial3D = entry[0]
+		var wet_look: Dictionary = entry[2]
+		material.albedo_color = Color.WHITE.lerp(wet_look["tint"], weather.wetness)
+		material.roughness = lerpf(entry[1], wet_look["roughness"], weather.wetness)
+
+
+## lights is how dark it is for lamps, 0 to 1. Windows light up with it.
+func _on_lighting(lights: float, _headlights: bool) -> void:
+	var windows := lights_to_windows(lights)
+	for kind: String in _facades:
+		var material: ShaderMaterial = _facades[kind]
+		material.set_shader_parameter("night", clampf(lights * 1.3, 0.0, 1.0))
+		material.set_shader_parameter("lit_share", clampf(windows * float(WINDOWS[kind]["lit"]), 0.0, 1.0))
+	_glow.albedo_color = ObstacleField.GLOW_OFF.lerp(ObstacleField.GLOW_ON, clampf(lights * 1.5, 0.0, 1.0))
+	_pool_material.albedo_color = Color.WHITE * clampf(lights, 0.0, 1.0)
+	for mesh in _night_meshes:
+		mesh.visible = lights > 0.02
+
+
+## Share of windows lit: the time of day's own, or more under dark storm clouds.
+func lights_to_windows(lights: float) -> float:
+	return maxf(window_share, lights * STORM_WINDOWS) if lights > 0.02 else 0.0
+
+
+## Strip lights under each shelter roof and a pool of light on the pavement, so a
+## stop is easy to find at night. Shown only after dark.
+func _build_stop_lights() -> void:
+	_glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_glow.albedo_color = ObstacleField.GLOW_OFF
+	var strips := MeshInstance3D.new()
+	strips.mesh = _lamps_at_stops.build(_glow)
+	strips.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(strips)
+	_pool_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_pool_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	_pool_material.vertex_color_use_as_albedo = true
+	_pool_material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	_pool_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_pool_material.disable_fog = true
+	_pool_material.albedo_color = Color.BLACK
+	var pools := MeshInstance3D.new()
+	pools.mesh = _stop_pools.build(_pool_material)
+	pools.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	pools.visible = false
+	add_child(pools)
+	_night_meshes.append(pools)
 
 
 func _add_mesh(builder: LowPolyBuilder, material: Material, casts_shadow: bool = true) -> void:
@@ -454,6 +555,8 @@ func _shelter(b: LowPolyBuilder, stop: RouteStop) -> void:
 		_station(b, stop, right)
 		return
 	b.turned_box(Vector3(spot.x, y + 2.5, spot.y), Vector3(1.4, 0.12, 5.0), yaw, Color(0.25, 0.3, 0.38))
+	_lamps_at_stops.turned_box(Vector3(spot.x, y + 2.42, spot.y), Vector3(0.3, 0.05, 4.2), yaw, Color.WHITE)
+	_stop_pools.glow_disc(_at(spot, y), 4.5, SHELTER_GLOW, 16, _height_of, LIFT_PAVEMENT + 0.1)
 	b.turned_box(_at(spot + right * 0.6, y + 1.3), Vector3(0.1, 2.4, 5.0), yaw, Color(0.3, 0.42, 0.5))
 	for end: float in [-2.4, 2.4]:
 		b.turned_box(_at(spot + forward * end, y + 1.3), Vector3(1.2, 2.4, 0.1), yaw, Color(0.3, 0.42, 0.5))
@@ -470,6 +573,9 @@ func _station(b: LowPolyBuilder, stop: RouteStop, right: Vector2) -> void:
 	var y := _ground.terrain_height(spot)
 	var teal := Color(0.08, 0.5, 0.62)
 	b.turned_box(_at(spot, y + 3.4), Vector3(4.2, 0.18, 26.0), yaw, teal)
+	_lamps_at_stops.turned_box(_at(spot, y + 3.3), Vector3(0.4, 0.05, 24.0), yaw, Color.WHITE)
+	for along: float in [-8.0, 0.0, 8.0]:
+		_stop_pools.glow_disc(_at(spot + forward * along, y), 5.0, SHELTER_GLOW, 16, _height_of, LIFT_PAVEMENT + 0.1)
 	b.turned_box(_at(spot + right * 1.5, y + 1.45), Vector3(0.08, 2.5, 26.0), yaw, Color(0.6, 0.78, 0.84))
 	var along := -12.5
 	while along <= 12.5:
@@ -574,9 +680,11 @@ func _block(b: LowPolyBuilder, facade: LowPolyBuilder, centre: Vector2, heading:
 
 
 ## Walls run a metre below the lowest corner, so they never float on a slope.
+## The vertex alpha carries the building's own share of lit windows at night.
 func _walls(facade: LowPolyBuilder, centre: Vector2, size: Vector3, heading: float, base: float, colour: Color) -> void:
 	facade.uv_base_height = base + size.y
 	var depth_below := 1.2
+	colour.a = _window_random.randf()
 	facade.turned_box(_at(centre, base + (size.y - depth_below) / 2.0), Vector3(size.x, size.y + depth_below, size.z), heading, colour)
 
 
@@ -596,6 +704,7 @@ func _shopfront(b: LowPolyBuilder, centre: Vector2, heading: float, size: Vector
 	var front := centre + to_road * (size.x / 2.0 + 0.04)
 	_shops.uv_base_height = base + STOREY
 	var tint := Color(1.0, 1.0, 1.0).lerp(_pick(theme.awnings), 0.35)
+	tint.a = _window_random.randf_range(0.5, 1.0)
 	_shops.turned_box(_at(front, base + STOREY / 2.0 - 0.6), Vector3(0.1, STOREY + 1.2, size.z - 0.5), heading, tint)
 	var awning := centre + to_road * (size.x / 2.0 + 0.7)
 	b.turned_box(_at(awning, base + 2.75), Vector3(1.3, 0.14, size.z - 1.0), heading, _pick(theme.awnings))

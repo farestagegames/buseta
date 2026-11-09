@@ -43,6 +43,7 @@ func _ready() -> void:
 	GameEvents.reset_requested.connect(reset_to_start)
 	GameEvents.bus_relocate_requested.connect(_place)
 	GameEvents.obstacle_hit.connect(_on_obstacle_hit)
+	GameEvents.weather_updated.connect(func(weather: WeatherClock) -> void: model.grip = weather.grip())
 
 
 ## Called by the level before play. The bus starts here and resets to here.

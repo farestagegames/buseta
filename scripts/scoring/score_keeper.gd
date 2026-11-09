@@ -16,6 +16,8 @@ const TIPS := {
 }
 ## Contact within this time is the same crash, however long the bus scrapes.
 const COLLISION_COOLDOWN := 2.5
+## The downpour counts as over once the rain is this light.
+const DOWNPOUR_OVER_RAIN := 0.1
 
 var score := ShiftScore.new()
 var monitor := DrivingMonitor.new()
@@ -26,6 +28,9 @@ var _kerb_timer: float = 0.0
 var _collision_timer: float = 0.0
 var _wheels_were_on_road: bool = true
 var _held: bool = false ## Nothing counts against a driver in the tutorial.
+var _time_of_day: String = ""
+var _in_downpour: bool = false
+var _faults_before_downpour: int = 0
 
 
 func setup(network: RoadNetwork, spec: BusSpec) -> void:
@@ -46,6 +51,27 @@ func setup(network: RoadNetwork, spec: BusSpec) -> void:
 	GameEvents.vendor_boarded.connect(_on_vendor_boarded)
 	GameEvents.shift_completed.connect(_on_shift_completed)
 	GameEvents.shift_held_changed.connect(func(held: bool) -> void: _held = held)
+	GameEvents.weather_updated.connect(_on_weather)
+	GameEvents.time_of_day_set.connect(func(time_id: String) -> void: _time_of_day = time_id)
+
+
+## A downpour runs from when it pours hard to when it has nearly stopped. Driving
+## all through it without a fault earns the bonus.
+func _on_weather(weather: WeatherClock) -> void:
+	if weather.is_downpour() and not _in_downpour:
+		_in_downpour = true
+		_faults_before_downpour = _faults()
+	elif _in_downpour and weather.rain < DOWNPOUR_OVER_RAIN:
+		_end_downpour()
+
+
+func _end_downpour() -> void:
+	_in_downpour = false
+	score.add_downpour(_faults() == _faults_before_downpour)
+
+
+func _faults() -> int:
+	return int(score.counts["collisions"]) + int(score.counts["harsh_brakes"]) + int(score.counts["knocked"])
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
@@ -163,7 +189,11 @@ func _on_vendor_boarded() -> void:
 
 
 func _on_shift_completed(summary: Dictionary) -> void:
+	if _in_downpour:
+		_end_downpour()
 	var report := summary.duplicate()
+	report["time_of_day"] = _time_of_day
+	report["downpour"] = int(score.counts["downpours"]) > 0
 	var carried: int = summary["carried"]
 	report["score"] = score.total()
 	report["stars"] = score.stars()
@@ -195,6 +225,10 @@ func _details(summary: Dictionary) -> String:
 	for key: String in labels:
 		if int(counts[key]) > 0:
 			notes.append(_count(counts[key], labels[key][0], labels[key][1]))
+	if int(counts["clean_downpours"]) > 0:
+		notes.append(tr("Downpour survived: +%s") % Country.pack.money(ShiftScore.DOWNPOUR_COINS))
+	elif int(counts["downpours"]) > 0:
+		notes.append(tr("Drove through a downpour"))
 	if score.speeding_seconds >= 1.0:
 		notes.append(tr("%d s speeding") % roundi(score.speeding_seconds))
 	if score.off_road_seconds >= 1.0:

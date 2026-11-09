@@ -65,15 +65,21 @@ func _init(start_lane: int, start_distance: float, cruise_speed: float) -> void:
 ## bumper to bumper in metres, and lead_speed is how fast that thing is moving.
 ## Being over the free speed only ever eases off at the comfortable rate. Only
 ## something in the way brakes harder.
-static func acceleration(speed_now: float, free_speed: float, gap: float, lead_speed: float) -> float:
+## gap_scale stretches the following gap, as drivers leave more room on a wet road.
+static func acceleration(speed_now: float, free_speed: float, gap: float, lead_speed: float, gap_scale: float = 1.0) -> float:
 	var ratio := speed_now / maxf(free_speed, 0.1)
 	var free := maxf(MAX_ACCEL * (1.0 - ratio * ratio * ratio * ratio), -COMFORT_BRAKE)
 	if gap == INF:
 		return free
-	var closing := speed_now - lead_speed
-	var desired := MIN_GAP + maxf(speed_now * TIME_GAP + speed_now * closing / (2.0 * sqrt(MAX_ACCEL * COMFORT_BRAKE)), 0.0)
-	var pressure := desired / maxf(gap, 0.5)
+	var pressure := desired_gap(speed_now, speed_now - lead_speed, gap_scale) / maxf(gap, 0.5)
 	return clampf(free - MAX_ACCEL * pressure * pressure, -MAX_BRAKE, MAX_ACCEL)
+
+
+## The gap a driver wants to what is ahead, in metres, when closing on it at
+## closing m/s. The time gap grows fully with gap_scale and the standing gap by half.
+static func desired_gap(speed_now: float, closing: float, gap_scale: float = 1.0) -> float:
+	var standing := MIN_GAP * (1.0 + (gap_scale - 1.0) * 0.5)
+	return standing + maxf(speed_now * TIME_GAP * gap_scale + speed_now * closing / (2.0 * sqrt(MAX_ACCEL * COMFORT_BRAKE)), 0.0)
 
 
 ## The fastest it can go and still slow to target, gently, within distance
@@ -82,12 +88,12 @@ static func approach_speed(target: float, distance: float) -> float:
 	return sqrt(target * target + 2.0 * APPROACH_BRAKE * maxf(distance, 0.0))
 
 
-func drive(free_speed: float, gap: float, lead_speed: float, dt: float) -> void:
+func drive(free_speed: float, gap: float, lead_speed: float, dt: float, gap_scale: float = 1.0) -> void:
 	if stunned > 0.0:
 		stunned -= dt
 		speed = move_toward(speed, 0.0, MAX_BRAKE * dt)
 	else:
-		var accel := acceleration(speed, free_speed, gap, lead_speed)
+		var accel := acceleration(speed, free_speed, gap, lead_speed, gap_scale)
 		if speed > free_speed and dt > 0.0:
 			# Down to the free speed at the comfortable rate, never harder.
 			accel = minf(accel, maxf((free_speed - speed) / dt, -COMFORT_BRAKE))

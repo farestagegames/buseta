@@ -63,7 +63,14 @@ and missed stops, which checks that a route can be completed:
 tools/autopilot.sh
 ```
 
-Set `AUTOPILOT_ROUTE` and `AUTOPILOT_BUS` to a catalog id to test a specific pair.
+Set `AUTOPILOT_ROUTE` and `AUTOPILOT_BUS` to a catalog id to test a specific pair,
+`AUTOPILOT_TIME` to a time of day such as `noche`, and `AUTOPILOT_RAIN=1` to force a
+downpour (`0` keeps it dry; unset follows the seed and the time's chance):
+
+```bash
+AUTOPILOT_ROUTE=route_01 AUTOPILOT_TIME=noche AUTOPILOT_RAIN=1 tools/autopilot.sh
+```
+
 The autopilot steers by the rear axle and pulls out of bays without looking, so an
 odd car contact in its report is not always a problem with the route.
 
@@ -75,7 +82,7 @@ release export, so a store build never offers them.
 - Main menu: tap the "City Bus Shift" title seven times, each within about a second
   of the last, for coins, driver levels and unlocking everything.
 - During a shift: open MENU and tap the "Paused" title seven times for "Skip to next
-  stop" and "Finish shift". A finished shift pays out like a normal one.
+  stop", "Finish shift" and "Downpour now". A finished shift pays out like a normal one.
 
 ## Adding content
 
@@ -97,6 +104,22 @@ Everything below lives in a country pack, such as `data/packs/colombia`. See
   pavements, and the vendors. Each look sets colours, hair, clothes, a hat and
   anything carried. `size` makes children smaller and `pace` makes older people
   walk more slowly. `CountryPack.validate()` names any style it does not know.
+
+Times of day and weather are in `pack.json`:
+
+- `times_of_day` lists the times a shift can run at, in menu order: an id, a name,
+  `level` to unlock it, `default: true` on one open from level 1, the sun
+  (`sun_from` compass degrees, 90 is east; `sun_elevation`; `sun_colour`;
+  `sun_energy`; `shadows`), `sky_top`, `sky_horizon`, `fog`, `fog_scale`, `ambient`,
+  `ambient_energy`, `lights` (street lamps, 0 to 1), `windows` (share lit), `traffic`
+  and `pedestrians` (times the usual), `rain_chance`, and optionally `stat`, a
+  profile stat counted for each shift at that time. Leave it out and the map's theme
+  gives one plain day.
+- `weather.rain` sets the downpours: `build_seconds`, `rain_seconds`,
+  `clear_seconds`, `start_share` (of the timetable) and `strength` as `[low, high]`;
+  `wet_grip`, `dry_seconds`, `traffic_speed`, `traffic_gap`, `pedestrians`,
+  `umbrellas`, `fog_density`, `storm_sky`, `darken`, `sun_dim`, `lights` and
+  `schedule_slack`. `CountryPack.validate()` checks both.
 
 Sound is in `pack.json` too:
 

@@ -72,6 +72,29 @@ func disc(centre: Vector2, radius: float, lift: float, height_of: Callable, colo
 			Vector3(p1.x, float(height_of.call(p1)) + lift, p1.y), Vector3.UP, colour)
 
 
+## A flat round glow facing up, bright in the middle and fading to black at the
+## rim, for light pools drawn with an additive material. With height_of, each point
+## sits lift above the ground there, so it follows a slope.
+func glow_disc(centre: Vector3, radius: float, colour: Color, sides: int = 16, height_of: Callable = Callable(), lift: float = 0.0) -> void:
+	var rings: Array[float] = [0.0, 0.45, 1.0]
+	var shades: Array[Color] = [colour, colour * 0.5, Color.BLACK]
+	var at := func(offset: Vector2) -> Vector3:
+		var spot := Vector2(centre.x, centre.z) + offset
+		var y := centre.y if not height_of.is_valid() else float(height_of.call(spot)) + lift
+		return Vector3(spot.x, y, spot.y)
+	for i in sides:
+		var a0 := Vector2.RIGHT.rotated(TAU * i / sides) * radius
+		var a1 := Vector2.RIGHT.rotated(TAU * (i + 1) / sides) * radius
+		for ring in 2:
+			var inner0: Vector3 = at.call(a0 * rings[ring])
+			var inner1: Vector3 = at.call(a1 * rings[ring])
+			var outer0: Vector3 = at.call(a0 * rings[ring + 1])
+			var outer1: Vector3 = at.call(a1 * rings[ring + 1])
+			_emit_shaded(inner0, outer1, outer0, shades[ring], shades[ring + 1], shades[ring + 1])
+			if ring > 0:
+				_emit_shaded(inner0, inner1, outer1, shades[ring], shades[ring], shades[ring + 1])
+
+
 ## A rough rounded lump, for tree crowns and hedges. Eight faces per half.
 func blob(centre: Vector3, size: Vector3, colour: Color, random: RandomNumberGenerator) -> void:
 	var sides := 6
@@ -185,6 +208,14 @@ func build(material: Material) -> ArrayMesh:
 	return mesh
 
 
+## Adds this geometry to an existing mesh as one more part with its own material,
+## such as lamps that glow on a car batch. Nothing is added if it is empty.
+func build_into(mesh: ArrayMesh, material: Material) -> void:
+	if _has_geometry:
+		_surface.set_material(material)
+		_surface.commit(mesh)
+
+
 ## One mesh per occupied cell, or a single mesh if chunking is off.
 func build_all(material: Material) -> Array[ArrayMesh]:
 	var meshes: Array[ArrayMesh] = []
@@ -246,6 +277,19 @@ func _emit(a: Vector3, b: Vector3, c: Vector3, normal: Vector3, colour: Color) -
 		surface.set_normal(normal)
 		surface.set_uv(_world_uv(point, normal))
 		surface.add_vertex(point)
+
+
+## A triangle facing up with its own colour at each corner.
+func _emit_shaded(a: Vector3, b: Vector3, c: Vector3, colour_a: Color, colour_b: Color, colour_c: Color) -> void:
+	_has_geometry = true
+	var surface := _surface_for((a + b + c) / 3.0)
+	var colours: Array[Color] = [colour_a, colour_b, colour_c]
+	var points: Array[Vector3] = [a, b, c]
+	for i in 3:
+		surface.set_color(colours[i])
+		surface.set_normal(Vector3.UP)
+		surface.set_uv(Vector2(points[i].x, points[i].z))
+		surface.add_vertex(points[i])
 
 
 func _surface_for(point: Vector3) -> SurfaceTool:

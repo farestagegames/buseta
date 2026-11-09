@@ -17,6 +17,13 @@ static func apply(profile: PlayerProfile, report: Dictionary, route_id: String, 
 		stats["clean_shifts"] = int(stats["clean_shifts"]) + 1
 	if int(counts["harsh_brakes"]) == 0:
 		stats["smooth_shifts"] = int(stats["smooth_shifts"]) + 1
+	if int(counts.get("downpours", 0)) > 0:
+		stats["rain_shifts"] = int(stats.get("rain_shifts", 0)) + 1
+	stats["clean_downpours"] = int(stats.get("clean_downpours", 0)) + int(counts.get("clean_downpours", 0))
+	# A time of day can count its shifts, such as night shifts for an achievement.
+	var time_stat: String = str(report.get("time_stat", ""))
+	if time_stat != "":
+		stats[time_stat] = int(stats.get(time_stat, 0)) + 1
 
 	var daily_coins := 0
 	var daily: Dictionary = DailyChallenge.for_date(date_key, challenges)

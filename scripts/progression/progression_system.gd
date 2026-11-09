@@ -9,6 +9,8 @@ func _ready() -> void:
 
 func _on_report(report: Dictionary) -> void:
 	var route_id: String = Profile.selected_item(Catalog.ROUTES)["id"]
+	var time := TimeOfDay.find(Profile.times_of_day(), str(report.get("time_of_day", "")))
+	report["time_stat"] = time.stat if time != null else ""
 	report["rewards"] = ShiftRewards.apply(Profile.data, report, route_id, DailyChallenge.today_key(),
 		DailyChallenge.load_list(), AchievementList.load_list())
 	Profile.save()

@@ -184,7 +184,11 @@ func _shift_cheats() -> Control:
 	finish.pressed.connect(func() -> void:
 		closed.emit()
 		GameEvents.finish_shift_requested.emit())
-	for button: Button in [skip, finish]:
+	var downpour := _button("Downpour now")
+	downpour.pressed.connect(func() -> void:
+		closed.emit()
+		GameEvents.downpour_requested.emit())
+	for button: Button in [skip, finish, downpour]:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		cheat_row.add_child(button)
 	return cheat_row

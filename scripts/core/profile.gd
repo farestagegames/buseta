@@ -73,6 +73,27 @@ func select(kind: String, id: String) -> bool:
 	return true
 
 
+func choose_time(time: TimeOfDay) -> bool:
+	if not data.choose_time(time):
+		return false
+	save()
+	return true
+
+
+## Every time of day this country offers, and the one the next shift runs at.
+func times_of_day() -> Array[TimeOfDay]:
+	var times := TimeOfDay.list_for(Country.pack.data)
+	if times.size() == 1 and times[0].id == TimeOfDay.FALLBACK_ID:
+		# No list in the pack: the day comes from the map's own theme.
+		var route := MapLoader.read_json(selected_item(Catalog.ROUTES)["file"])
+		times = TimeOfDay.list_for(Country.pack.data, CityTheme.from_data(MapLoader.read_map_of(route)))
+	return times
+
+
+func chosen_time() -> TimeOfDay:
+	return TimeOfDay.pick(times_of_day(), data.time_of_day, DriverLevel.level_for(data.xp))
+
+
 ## The next shift plays the opening scene and tutorial again.
 func reset_tutorial() -> void:
 	data.intro_done = false

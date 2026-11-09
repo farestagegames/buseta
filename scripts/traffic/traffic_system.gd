@@ -20,6 +20,7 @@ const MOTO_HALF_LENGTH := TrafficAgent.MOTO_HALF_LENGTH
 const MOTO_HALF_WIDTH := TrafficAgent.MOTO_HALF_WIDTH
 const MOTO_RADIUS := 0.55
 const MOTO_COLLISION := 2.0 ## How hard a moto counts as a knock, in m/s lost.
+const LAMP_SHADER := preload("res://assets/shaders/vehicle_lamps.gdshader")
 const MOTO_COLOURS: Array[Color] = [
 	Color(0.85, 0.15, 0.12), Color(0.12, 0.2, 0.55), Color(0.12, 0.12, 0.14), Color(0.9, 0.9, 0.92), Color(0.15, 0.55, 0.3),
 ]
@@ -71,6 +72,7 @@ var _trailer_heading: float:
 	get:
 		return flow.trailer_heading
 var _batch: MultiMesh
+var _lamp_material := ShaderMaterial.new()
 var _moto_batch: MultiMesh
 var _car_colours: Array[Color] = []
 var _lamps: MultiMesh
@@ -79,15 +81,33 @@ var _previous_side: Dictionary = {} ## Approach index to sign of bus nose positi
 var _tick: int = 0
 
 
-func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec) -> void:
+## density is the time of day's share of the usual traffic.
+func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec, density: float = 1.0) -> void:
 	_ground = ground
 	_car_colours = CityTheme.from_data(map_data).car_colours
 	flow = TrafficFlow.new(LaneGraph.build(network, map_data), spec)
 	flow.horn_sounded.connect(func(_spot: Vector2) -> void: GameEvents.traffic_horn.emit())
 	_build_signals()
-	flow.spawn(GraphicsQuality.current_profile()["traffic_cars"], GraphicsQuality.current_profile()["traffic_motos"])
+	var profile := GraphicsQuality.current_profile()
+	flow.spawn(scaled_count(profile["traffic_cars"], density), scaled_count(profile["traffic_motos"], density))
 	_build_car_batch()
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
+	GameEvents.weather_updated.connect(_on_weather)
+	GameEvents.lighting_changed.connect(_on_lighting)
+
+
+## A share of a vehicle count, never fewer than two so a quiet night still has some.
+static func scaled_count(count: int, density: float) -> int:
+	return maxi(roundi(float(count) * density), mini(count, 2))
+
+
+func _on_weather(weather: WeatherClock) -> void:
+	flow.speed_share = weather.traffic_speed()
+	flow.gap_scale = weather.traffic_gap()
+
+
+func _on_lighting(_lights: float, headlights: bool) -> void:
+	_lamp_material.set_shader_parameter("on", 1.0 if headlights else 0.0)
 
 
 ## Lets traffic see cones, bins, stalls and parked cars standing in the road.
@@ -221,8 +241,9 @@ func _check_red_lights() -> void:
 func _build_car_batch() -> void:
 	var field := ObstacleField.new()
 	var moto_total := agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto).size()
-	_batch = _vehicle_batch(field._mesh_for("car"), agents.size() - moto_total)
-	_moto_batch = _vehicle_batch(field._mesh_for("moto"), moto_total)
+	_lamp_material.shader = LAMP_SHADER
+	_batch = _vehicle_batch(field._mesh_for("car"), agents.size() - moto_total, _lamps_for(false))
+	_moto_batch = _vehicle_batch(field._mesh_for("moto"), moto_total, _lamps_for(true))
 	field.free()
 	for i in agents.size():
 		var agent := agents[i]
@@ -232,11 +253,27 @@ func _build_car_batch() -> void:
 		_write_car(i, agent)
 
 
-func _vehicle_batch(builder: LowPolyBuilder, count: int) -> MultiMesh:
+## Head and tail lamps, as a second part of the vehicle's mesh. One extra draw for
+## the whole batch, and they glow after dark through the shader's "on".
+func _lamps_for(moto: bool) -> LowPolyBuilder:
+	var b := LowPolyBuilder.new()
+	if moto:
+		b.box(Vector3(0.0, 0.98, -0.62), Vector3(0.16, 0.12, 0.06), Color.WHITE)
+		b.box(Vector3(0.0, 0.82, 0.63), Vector3(0.14, 0.08, 0.04), Color.WHITE)
+		return b
+	for x: float in [-0.62, 0.62]:
+		b.box(Vector3(x, 0.66, -2.16), Vector3(0.34, 0.14, 0.04), Color.WHITE)
+		b.box(Vector3(x, 0.7, 2.16), Vector3(0.3, 0.12, 0.04), Color.WHITE)
+	return b
+
+
+func _vehicle_batch(builder: LowPolyBuilder, count: int, lamps: LowPolyBuilder) -> MultiMesh:
 	var batch := MultiMesh.new()
 	batch.transform_format = MultiMesh.TRANSFORM_3D
 	batch.use_colors = true
-	batch.mesh = builder.build(LowPolyBuilder.vertex_colour_material())
+	var mesh := builder.build(LowPolyBuilder.vertex_colour_material())
+	lamps.build_into(mesh, _lamp_material)
+	batch.mesh = mesh
 	batch.instance_count = count
 	var instance := MultiMeshInstance3D.new()
 	instance.multimesh = batch

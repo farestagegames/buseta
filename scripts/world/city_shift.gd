@@ -6,9 +6,13 @@ extends Node3D
 const MENU_SCENE := "res://scenes/main/main_menu.tscn"
 const SKY_HAZE := 0.15 ## Keeps the sky blue however thick the distance haze is.
 
-## Sets where people flag the bus down. Tests and tools fix it, and play leaves it
-## at -1 so each shift is different.
+## Sets where people flag the bus down and the weather. Tests and tools fix it, and
+## play leaves it at -1 so each shift is different.
 static var shift_seed: int = -1
+## Tests and tools can choose the time of day by its pack id, and force the rain
+## with WeatherPlan.FORCE_RAIN or FORCE_DRY. Play leaves both alone.
+static var forced_time: String = ""
+static var forced_rain: int = WeatherPlan.PLANNED
 
 @onready var _bus: BusController = $Bus
 @onready var _city: CityBuilder = $City
@@ -23,10 +27,12 @@ static var shift_seed: int = -1
 @onready var _hud: DriveHud = $Hud
 @onready var _camera: Camera3D = $CameraRig
 @onready var _street_life: StreetLife = $StreetLife
+@onready var _weather: WeatherDirector = $Weather
 
 var network: RoadNetwork
 var ground: GroundSurface
 var route: RouteRunner
+var time_of_day: TimeOfDay
 
 
 ## Runs before the bus readies, so it builds with the player's choices.
@@ -68,6 +74,13 @@ static func chosen_look() -> DriverLook:
 	return DriverLook.from_item(Profile.selected_item(Catalog.DRIVERS))
 
 
+## The time of day the player picked, if their level has unlocked it.
+static func chosen_time(times: Array[TimeOfDay]) -> TimeOfDay:
+	if forced_time != "" and TimeOfDay.find(times, forced_time) != null:
+		return TimeOfDay.find(times, forced_time)
+	return TimeOfDay.pick(times, Profile.data.time_of_day, DriverLevel.level_for(Profile.data.xp))
+
+
 static func _colour(values: Array) -> Color:
 	return Color(values[0], values[1], values[2])
 
@@ -77,6 +90,7 @@ func _ready() -> void:
 	var map_data := MapLoader.read_map_of(route_data)
 	network = RoadNetwork.from_data(map_data, Country.pack.traffic_side, Country.pack.default_speed_limit())
 	var hail_seed := shift_seed if shift_seed >= 0 else randi()
+	time_of_day = chosen_time(TimeOfDay.list_for(Country.pack.data, CityTheme.from_data(map_data)))
 	route = RouteRunner.build(route_data, network, hail_seed, map_data)
 	for stop in route.stops:
 		if stop.kind == RouteStop.Kind.BAY:
@@ -86,18 +100,19 @@ func _ready() -> void:
 		if feature["kind"] == "bump":
 			route.add_hazard(feature["position"])
 
+	_city.window_share = time_of_day.windows
 	_city.build(map_data, network, ground, route)
-	_apply_weather_of(_city.theme)
-	_street_life.setup(network, ground, route)
+	_street_life.setup(network, ground, route, time_of_day.pedestrians)
 	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)
 	_bus.start_at(ground, route.start_position, route.start_heading)
 	_route_system.setup(route, _bus.spec, network, int(route_data.get("fare", Country.pack.data["currency"]["fare"])))
-	_traffic.setup(map_data, network, ground, _bus.spec)
+	_traffic.setup(map_data, network, ground, _bus.spec, time_of_day.traffic)
 	_traffic.watch_props(_obstacles.props)
 	_score.setup(network, _bus.spec)
 	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)
 	_setup_audio()
+	_setup_weather(hail_seed)
 	GameEvents.map_ready.emit(network, route)
 	_tutorial.setup(_hud, _route_system, _bus.spec)
 	_intro.setup(network, ground, _bus, _camera)
@@ -119,20 +134,12 @@ func _setup_audio() -> void:
 	audio.setup_street(ground.coast_x, stalls, stops)
 
 
-## Sets the sky and light of the city.
-func _apply_weather_of(theme: CityTheme) -> void:
-	var environment: Environment = ($WorldEnvironment as WorldEnvironment).environment
-	var sky: ProceduralSkyMaterial = environment.sky.sky_material
-	sky.sky_top_color = theme.sky_top
-	sky.sky_horizon_color = theme.sky_horizon
-	sky.ground_horizon_color = theme.sky_horizon
-	environment.fog_light_color = theme.fog
-	environment.fog_sky_affect = SKY_HAZE
-	environment.ambient_light_color = theme.ambient
-	environment.ambient_light_energy = theme.ambient_energy
-	var sun: DirectionalLight3D = $Sun
-	sun.light_color = theme.sun_colour
-	sun.light_energy = theme.sun_energy
+## The time of day and this shift's weather, planned from its seed so the same
+## seed brings the same downpour.
+func _setup_weather(weather_seed: int) -> void:
+	var settings := RainSettings.from_pack(Country.pack.data)
+	var shift_seconds: float = route.stops[route.stops.size() - 1].due
+	_weather.setup(time_of_day, WeatherPlan.make(weather_seed, time_of_day, settings, shift_seconds, forced_rain), settings)
 
 
 ## A new driver sees the opening scene, then the tutorial, with the clock held.
@@ -160,3 +167,7 @@ func route_system_for_tools() -> RouteSystem:
 
 func traffic_for_tools() -> TrafficSystem:
 	return _traffic
+
+
+func weather_for_tools() -> WeatherDirector:
+	return _weather

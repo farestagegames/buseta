@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/vehicle/bus.tscn" id="1"]
 [ext_resource type="Script" path="res://scripts/world/city_shift.gd" id="2"]
@@ -23,6 +23,7 @@
 [ext_resource type="Script" path="res://scripts/tutorial/tutorial_director.gd" id="17"]
 
 [ext_resource type="Script" path="res://scripts/world/street_life.gd" id="24"]
+[ext_resource type="Script" path="res://scripts/weather/weather_director.gd" id="25"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.38, 0.58, 0.82, 1)
@@ -104,6 +105,12 @@ script = ExtResource("14")
 
 [node name="Graphics" type="Node" parent="."]
 script = ExtResource("15")
+sun_path = NodePath("../Sun")
+environment_path = NodePath("../WorldEnvironment")
+camera_path = NodePath("../CameraRig")
+
+[node name="Weather" type="Node" parent="."]
+script = ExtResource("25")
 sun_path = NodePath("../Sun")
 environment_path = NodePath("../WorldEnvironment")
 camera_path = NodePath("../CameraRig")

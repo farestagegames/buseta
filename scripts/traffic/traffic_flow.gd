@@ -77,6 +77,10 @@ var bus_doors_open: bool = false
 var trailer_axle: Vector2 = Vector2.ZERO
 var trailer_heading: float = 0.0
 var bus_still_time: float = 0.0
+## On a wet road traffic drives slower, as a share of its usual speed, and keeps
+## longer gaps, as times its usual gap. WeatherClock sets both.
+var speed_share: float = 1.0
+var gap_scale: float = 1.0
 ## Where each vehicle was drawn after its last move, and its lane's direction.
 var positions: PackedVector2Array = PackedVector2Array()
 var forwards: PackedVector2Array = PackedVector2Array()
@@ -303,7 +307,7 @@ func _update_agent(index: int, dt: float) -> void:
 			free = minf(free, pass_speed)
 		elif _bus_parked():
 			free = minf(free, TrafficAgent.approach_speed(pass_speed, to_bus))
-	agent.drive(minf(free, _cap), _gap, _lead, dt)
+	agent.drive(minf(free * speed_share, _cap), _gap, _lead, dt, gap_scale)
 	agent.step_shift(dt)
 	if agent.distance >= lane.length:
 		agent.distance -= lane.length
