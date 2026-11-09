@@ -4,6 +4,8 @@ extends Control
 
 const PADDING := 12.0
 const REDRAW_SECONDS := 0.2
+## On the endless route the map shows only this far of the road ahead.
+const ENDLESS_LINE_AHEAD := 700.0
 
 var _road_lines: Array[PackedVector2Array] = []
 var _route_line: PackedVector2Array = PackedVector2Array()
@@ -14,6 +16,7 @@ var _bus_heading: float = 0.0
 var _stop: Vector2 = Vector2.ZERO
 var _has_stop: bool = false
 var _timer: float = 0.0
+var _route: RouteRunner
 var _style := StyleBoxFlat.new()
 
 
@@ -43,13 +46,16 @@ func _on_map_ready(network: RoadNetwork, route: RouteRunner) -> void:
 	_road_lines.clear()
 	for road: Dictionary in network.roads.values():
 		_road_lines.append(_to_map_line(road["points"]))
-	_route_line = _to_map_line(route.polyline)
+	_route = route
+	_route_line = _to_map_line(route.line_ahead(ENDLESS_LINE_AHEAD) if route.endless else route.polyline)
 	visible = true
 	queue_redraw()
 
 
 func _to_map_line(points: PackedVector2Array) -> PackedVector2Array:
 	var line := PackedVector2Array()
+	if points.is_empty():
+		return line
 	var step := maxi(points.size() / 24, 1)
 	for i in range(0, points.size(), step):
 		line.append(_to_map(points[i]))
@@ -67,6 +73,8 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	_timer -= get_physics_process_delta_time()
 	if _timer <= 0.0 and visible:
 		_timer = REDRAW_SECONDS
+		if _route != null and _route.endless:
+			_route_line = _to_map_line(_route.line_ahead(ENDLESS_LINE_AHEAD))
 		queue_redraw()
 
 

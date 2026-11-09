@@ -11,6 +11,12 @@ const HAIL_NOTICE_DISTANCE := 90.0
 ## After the police stop the bus, the shift ends this long later so the message is seen.
 const POLICE_STOP_SECONDS := 2.5
 const DODGER_SEED := 3131
+## On the endless route, more road is planned when fewer stops than this are left.
+const ENDLESS_STOPS_AHEAD := 6
+const ENDLESS_LEGS_PER_PLAN := 6
+const ENDLESS_LONGEST_RIDE := 8
+## Passengers on the endless route give up once their satisfaction falls this low.
+const GIVE_UP_SATISFACTION := 20.0
 ## Stopped this close short of a hail marker, the prompt says to pull forward.
 ## Further back, as at a red light, it just says how far the marker is.
 const PULL_FORWARD_NOTICE := 30
@@ -48,6 +54,11 @@ var _vendor_stop: int = -1
 var rain_slack: float = 0.0
 ## Chance each boarding passenger slips on without paying, from the difficulty.
 var dodger_chance: float = 0.0
+## The endless route's hail settings and map, set by CityShift, for planning more road.
+var endless_plan: Dictionary = {}
+var endless_map: Dictionary = {}
+var _endless_random := RandomNumberGenerator.new()
+var _endless_seed: int = 0
 var _dodgers := RandomNumberGenerator.new()
 var _slack_rate: float = 0.0
 
@@ -61,8 +72,13 @@ func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork, fare: int = 
 	for stop in route.stops:
 		times.append(stop.due)
 	schedule = ShiftSchedule.new(times)
-	ledger = PassengerLedger.new(PASSENGER_SEED, route.stops.size() - 2)
+	ledger = PassengerLedger.new(PASSENGER_SEED, (1 << 30) if route.endless else route.stops.size() - 2)
 	ledger.capacity = spec.capacity
+	if route.endless:
+		ledger.max_ride = ENDLESS_LONGEST_RIDE
+		_endless_random.seed = PASSENGER_SEED + 1
+	GameEvents.passengers_gave_up.connect(func() -> void:
+		get_tree().create_timer(POLICE_STOP_SECONDS).timeout.connect(finish_now))
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.reset_requested.connect(_on_recover_requested)
 	GameEvents.skip_stop_requested.connect(skip_to_next_stop)
@@ -88,6 +104,8 @@ func tick(data: BusTelemetry, dt: float) -> void:
 	var centre := BusFootprint.body_centre(rear, data.heading, _spec)
 	runner.update_position(centre, Vector2(-sin(data.heading), -cos(data.heading)))
 	_check_indicator(data)
+	if runner.endless and runner.stops.size() - runner.stop_index < ENDLESS_STOPS_AHEAD:
+		extend_endless()
 	var stop := runner.current_stop()
 	_aligned = stop.is_aligned(centre, data.heading)
 	var stopped := absf(data.speed) < BusPhysicsModel.STOPPED_SPEED
@@ -232,6 +250,20 @@ func skip_to_next_stop() -> void:
 
 
 ## Cheat: ends the shift where the bus is.
+## Plans more road and stops on the endless route.
+func extend_endless() -> void:
+	var last := runner.last_leg
+	var legs := EndlessPlanner.walk(_network, last["road"], int(last["dir"]), ENDLESS_LEGS_PER_PLAN, _endless_random)
+	_endless_seed += 1
+	var entries := EndlessPlanner.hails(legs, endless_plan, _network, _endless_seed * 7919, endless_map)
+	runner.extend(legs, _network, entries)
+	var times := PackedFloat32Array()
+	for stop in runner.stops:
+		times.append(stop.due)
+	schedule.due_times = times
+	GameEvents.route_extended.emit(runner)
+
+
 func finish_now() -> void:
 	if not finished:
 		_finish()

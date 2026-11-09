@@ -8,6 +8,8 @@ const CAPACITY := 40
 var capacity: int = CAPACITY
 var onboard: Array[int] = [] ## Destination stop index of each passenger.
 var carried_total: int = 0
+## Longest ride in stops, or 0 for any stop to the end. The endless route sets it.
+var max_ride: int = 0
 
 var _random := RandomNumberGenerator.new()
 var _last_stop: int
@@ -54,7 +56,8 @@ func boardable(waiting: int) -> int:
 func board_one(stop_index: int) -> void:
 	if stop_index >= _last_stop or onboard.size() >= capacity:
 		return
-	onboard.append(_random.randi_range(stop_index + 1, _last_stop))
+	var furthest := _last_stop if max_ride <= 0 else mini(_last_stop, stop_index + max_ride)
+	onboard.append(_random.randi_range(stop_index + 1, furthest))
 	carried_total += 1
 
 

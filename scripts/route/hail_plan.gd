@@ -10,7 +10,8 @@ const CLEAR_OF_PARKED_CARS := 26.0
 
 
 ## The route's stops in driving order, with hails added between them.
-static func fill(data: Dictionary, network: RoadNetwork, shift_seed: int, map_data: Dictionary = {}) -> Array:
+## finish false leaves out the end-of-route rules, for the endless route.
+static func fill(data: Dictionary, network: RoadNetwork, shift_seed: int, map_data: Dictionary = {}, finish: bool = true) -> Array:
 	var random := RandomNumberGenerator.new()
 	random.seed = shift_seed
 	var plan: Dictionary = data["hail"]
@@ -49,7 +50,8 @@ static func fill(data: Dictionary, network: RoadNetwork, shift_seed: int, map_da
 				driven += random.randf_range(float(spacing[0]), float(spacing[1]))
 		entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["driven"]) < float(b["driven"]))
 		filled.append_array(entries)
-	_finish(filled)
+	if finish:
+		_finish(filled)
 	return filled
 
 

@@ -34,6 +34,10 @@ var _faults_before_downpour: int = 0
 var _speeding_for: float = 0.0
 var _police_stopped: String = "" ## Why the police ended the run, or "".
 var _difficulty_id: String = ""
+## On the endless route, passengers give up when satisfaction gets this low.
+var give_up_below: float = -1.0
+var _gave_up: bool = false
+var _patience_check: float = 0.0
 
 
 func setup(network: RoadNetwork, spec: BusSpec, difficulty: Difficulty = null) -> void:
@@ -104,6 +108,13 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		GameEvents.speeding_started.emit()
 	_check_kerb(rear, data.heading, absf(data.speed))
 	GameEvents.score_updated.emit(score.total())
+	_patience_check -= dt
+	if give_up_below > 0.0 and not _gave_up and _patience_check <= 0.0:
+		_patience_check = 1.0
+		if float(score.categories()["satisfaction"]) < give_up_below:
+			_gave_up = true
+			GameEvents.penalty_shown.emit("Your passengers have had enough")
+			GameEvents.passengers_gave_up.emit()
 
 
 ## A wheel climbing the kerb. Only counts as a new strike when it comes back on.
@@ -226,6 +237,7 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	report["time_of_day"] = _time_of_day
 	report["difficulty"] = _difficulty_id
 	report["police_stopped"] = _police_stopped
+	report["gave_up"] = _gave_up
 	report["downpour"] = int(score.counts["downpours"]) > 0
 	var carried: int = summary["carried"]
 	report["score"] = score.total()

@@ -1,0 +1,29 @@
+{
+ "name": "Ruta Libre",
+ "map": "maps/puerto_marisol.json",
+ "service": "endless",
+ "start": {
+  "road": "depot_road",
+  "along": 35,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {
+   "road": "depot_road",
+   "dir": 1
+  }
+ ],
+ "hail": {
+  "spacing": [
+   170,
+   280
+  ],
+  "people": [
+   1,
+   3
+  ],
+  "vendor_every": 4
+ },
+ "stops": []
+}

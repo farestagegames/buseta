@@ -15,17 +15,24 @@ func _build(item: Dictionary) -> RouteRunner:
 	return RouteRunner.build(data, RoadNetwork.from_data(MapLoader.read_map_of(data)), 7, map_data)
 
 
+## Routes with a depot at the end. The endless route has none.
+func _timed_routes() -> Array:
+	return catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool:
+		return MapLoader.read_json(item["file"]).get("service", "") != "endless")
+
+
 func test_game_launches_with_five_routes_that_cost_more_as_they_go() -> void:
-	var routes: Array = catalog.items(Catalog.ROUTES)
-	assert_eq(routes.size(), 5)
+	var routes: Array = catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool: return item["id"] != "troncal" and item["id"] != "libre")
+	assert_eq(routes.size(), 4)
 	assert_eq(int(routes[0]["cost"]), 0, "The first route is free")
 	assert_eq(int(routes[1]["cost"]), 500)
-	for i in range(1, routes.size() - 1):
+	for i in range(1, routes.size()):
 		assert_gt(int(routes[i]["cost"]), int(routes[i - 1]["cost"]))
+	assert_eq(int(catalog.find(Catalog.ROUTES, "libre")["cost"]), 0, "The endless route is free to play")
 
 
 func test_every_route_ends_with_a_timed_stop_at_the_depot() -> void:
-	for item: Dictionary in catalog.items(Catalog.ROUTES):
+	for item: Dictionary in _timed_routes():
 		var stops := _build(item).stops
 		assert_true(stops[stops.size() - 1].is_final, item["id"])
 		assert_eq(stops[stops.size() - 1].stop_name, "Patio Central", item["id"])
@@ -48,7 +55,7 @@ func test_stops_are_far_enough_apart_to_brake_for() -> void:
 
 
 func test_bus_ends_each_shift_empty() -> void:
-	for item: Dictionary in catalog.items(Catalog.ROUTES):
+	for item: Dictionary in _timed_routes():
 		var stops := _build(item).stops
 		assert_eq(stops[stops.size() - 2].waiting, 0, "%s: nobody boards at the last stop" % item["id"])
 

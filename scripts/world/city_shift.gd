@@ -112,6 +112,10 @@ func _ready() -> void:
 	var difficulty := Profile.chosen_difficulty()
 	_score.setup(network, _bus.spec, difficulty)
 	_route_system.dodger_chance = difficulty.dodger_chance
+	if route.endless:
+		_route_system.endless_plan = route_data["hail"]
+		_route_system.endless_map = map_data
+		_score.give_up_below = RouteSystem.GIVE_UP_SATISFACTION
 	police = PoliceSystem.new()
 	add_child(police)
 	police.setup(_traffic, difficulty, hail_seed + 17)

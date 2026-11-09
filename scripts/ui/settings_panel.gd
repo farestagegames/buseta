@@ -11,6 +11,8 @@ var in_shift: bool = false
 var _mode_buttons: Array[Button] = []
 var language_picker: OptionButton
 var cheat_row: Control
+## Ends the shift and shows the report. Only on the endless route.
+var end_shift_button: Button
 var _quality_buttons: Dictionary = {}
 var _sensitivity_label: Label
 var _volume_label: Label
@@ -163,8 +165,13 @@ func _shift_actions() -> Control:
 		get_tree().paused = false
 		Profile.save()
 		get_tree().change_scene_to_file(CityShift.MENU_SCENE))
-	for button: Button in [resume, recover, quit]:
-		button.custom_minimum_size.x = 170.0
+	end_shift_button = _button("End shift")
+	end_shift_button.visible = false
+	end_shift_button.pressed.connect(func() -> void:
+		closed.emit()
+		GameEvents.finish_shift_requested.emit())
+	for button: Button in [resume, recover, end_shift_button, quit]:
+		button.custom_minimum_size.x = 150.0
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		actions.add_child(button)
 	return actions

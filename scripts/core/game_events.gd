@@ -79,6 +79,10 @@ signal police_fined(coins: int, reason: String)
 signal police_ended_run(reason: String)
 ## A boarding passenger slipped on without paying.
 signal fare_dodged
+## More road and stops were added to the endless route.
+signal route_extended(route: RouteRunner)
+## On the endless route, passengers lost patience and the run ends.
+signal passengers_gave_up
 ## A tip rather than a fault, such as why a control did nothing.
 signal hint_shown(text: String)
 signal score_updated(total: int)

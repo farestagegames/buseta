@@ -35,6 +35,13 @@
    "cost": 1500,
    "only_bus": "articulado_18",
    "description": "Fixed stations on a dedicated busway, in the 18 metre articulated bus."
+  },
+  {
+   "id": "libre",
+   "name": "Ruta Libre: Endless",
+   "file": "routes/libre.json",
+   "cost": 0,
+   "description": "No end and no depot: wander the whole city picking up whoever flags you down, for as long as your passengers stay happy."
   }
  ],
  "buses": [

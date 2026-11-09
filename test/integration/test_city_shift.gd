@@ -757,3 +757,27 @@ func test_a_police_patrol_turns_up_in_traffic_and_fines_a_fault_in_front_of_it()
 	GameEvents.red_light_run.emit()
 	assert_signal_emitted(GameEvents, "police_fined")
 
+
+
+func test_the_endless_route_keeps_going_and_passengers_can_give_up() -> void:
+	var was: String = Profile.data.selected[Catalog.ROUTES]
+	Profile.data.owned[Catalog.ROUTES].append("libre")
+	Profile.data.select(Catalog.ROUTES, "libre")
+	var endless: CityShift = SCENE.instantiate()
+	add_child_autofree(endless)
+	var system: RouteSystem = endless.get_node("RouteSystem")
+	assert_true(system.runner.endless)
+	var planned := system.runner.stops.size()
+	for i in planned + 10:
+		system._next_stop()
+		await wait_physics_frames(1)
+	assert_false(system.finished, "The endless route never runs out")
+	assert_gt(system.runner.stops.size(), planned + 10)
+	assert_eq(system.schedule.due_times.size(), system.runner.stops.size(), "The timetable grows with it")
+	watch_signals(GameEvents)
+	var score: ScoreKeeper = endless.get_node("ScoreKeeper")
+	for i in 40:
+		score.score.add_missed_stop()
+	await wait_seconds(1.5)
+	assert_signal_emitted(GameEvents, "passengers_gave_up")
+	Profile.data.select(Catalog.ROUTES, was)

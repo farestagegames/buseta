@@ -71,6 +71,12 @@ func _ready() -> void:
 	_traffic = _city.get_node("Traffic")
 	_keeper = _city.get_node("ScoreKeeper")
 	_build_path()
+	# The endless route grows as it is driven: plan the whole path again. Points
+	# keep their indices, so the cursor stays valid.
+	GameEvents.route_extended.connect(func(_route: RouteRunner) -> void:
+		_path.clear()
+		_speeds.clear()
+		_build_path())
 	for feature: Dictionary in _city.ground.features:
 		if feature["kind"] == "bump":
 			_bump_spots.append(feature["position"])

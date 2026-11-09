@@ -25,27 +25,82 @@ var stop_index: int = 0
 var progress: float = 0.0
 
 var _cursor: int = 0
+## The endless route keeps growing: see extend().
+var endless: bool = false
+## The leg the route currently ends on, for planning more.
+var last_leg: Dictionary = {}
+## The last leg's end, whose turn is only known once the route goes on.
+var _open_end: int = -1
+var _open_end_kind: String = ""
+var _hazard_points := PackedVector2Array()
+## The endless timetable: seconds per metre between stops, and per stop.
+const ENDLESS_PACE := 6.5
+const ENDLESS_DWELL := 20.0
+const ENDLESS_FIRST_LEGS := 8
 
 
 static func build(data: Dictionary, network: RoadNetwork, shift_seed: int = 0, map_data: Dictionary = {}) -> RouteRunner:
 	var runner := RouteRunner.new()
 	runner.route_name = data["name"]
 	runner.traffic_side = network.traffic_side
-	runner._build_polyline(data["legs"], network)
+	var service: String = data.get("service", "bays")
+	runner.endless = service == "endless"
+	var legs: Array = data["legs"].duplicate()
+	if runner.endless:
+		var random := RandomNumberGenerator.new()
+		random.seed = shift_seed
+		var last: Dictionary = legs[legs.size() - 1]
+		legs.append_array(EndlessPlanner.walk(network, last["road"], int(last["dir"]), ENDLESS_FIRST_LEGS, random))
+	runner._build_polyline(legs, network)
 	var start: Dictionary = data["start"]
 	var placed: Dictionary = network.sample(start["road"], start["along"], start["lateral"], start["dir"])
 	runner.start_position = placed["position"]
 	runner.start_heading = placed["heading"]
 	runner._cursor = runner._nearest_from_start(runner.start_position)
 	runner._apply_progress(runner.start_position)
-	var service: String = data.get("service", "bays")
-	runner.kind = {"informal": RouteStop.Kind.HAIL, "rapid": RouteStop.Kind.STATION}.get(service, RouteStop.Kind.BAY)
-	var entries: Array = HailPlan.fill(data, network, shift_seed, map_data) if service == "informal" else data["stops"]
+	runner.kind = {"informal": RouteStop.Kind.HAIL, "rapid": RouteStop.Kind.STATION, "endless": RouteStop.Kind.HAIL}.get(service, RouteStop.Kind.BAY)
+	var entries: Array
+	if runner.endless:
+		entries = EndlessPlanner.hails(legs, data["hail"], network, shift_seed, map_data)
+	else:
+		entries = HailPlan.fill(data, network, shift_seed, map_data) if service == "informal" else data["stops"]
 	for entry: Dictionary in entries:
 		runner._add_stop(entry, network)
 	if service == "informal":
 		runner._share_out_the_timetable()
+	if runner.endless:
+		runner._pace_timetable(0)
 	return runner
+
+
+## Adds more road and stops to the end of an endless route.
+func extend(legs: Array, network: RoadNetwork, entries: Array) -> void:
+	var first_new_point := polyline.size() - 1
+	var first_new_stop := stops.size()
+	_build_polyline(legs, network)
+	for point in _hazard_points:
+		_add_hazard_from(point, first_new_point)
+	for entry: Dictionary in entries:
+		_add_stop(entry, network)
+	_pace_timetable(first_new_stop)
+
+
+## Due times on the endless route: a steady pace plus time at each stop.
+func _pace_timetable(from_index: int) -> void:
+	for i in range(from_index, stops.size()):
+		var previous_due := stops[i - 1].due if i > 0 else 0.0
+		var previous_distance := stops[i - 1].route_distance if i > 0 else 0.0
+		stops[i].due = previous_due + (stops[i].route_distance - previous_distance) / ENDLESS_PACE + ENDLESS_DWELL
+
+
+## The route from here to this far ahead, for the map on the endless route.
+func line_ahead(metres: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for i in range(maxi(_cursor, 0), polyline.size()):
+		if distances[i] > progress + metres:
+			break
+		out.append(polyline[i])
+	return out
 
 
 ## Only the end of an informal route is timed. Each hail gets its share of that, so
@@ -97,7 +152,12 @@ func upcoming_turn() -> String:
 
 ## Records every place the route crosses this point, for warnings.
 func add_hazard(point: Vector2) -> void:
-	for i in polyline.size() - 1:
+	_hazard_points.append(point)
+	_add_hazard_from(point, 0)
+
+
+func _add_hazard_from(point: Vector2, first: int) -> void:
+	for i in range(first, polyline.size() - 1):
 		var closest := Geometry2D.get_closest_point_to_segment(point, polyline[i], polyline[i + 1])
 		if closest.distance_to(point) < HAZARD_ON_ROUTE_RADIUS:
 			var distance := distances[i] + closest.distance_to(polyline[i])
@@ -123,9 +183,14 @@ func recovery_pose() -> Dictionary:
 		"heading": RoadNetwork.heading_of(forward)}
 
 
+## Adds the legs to the end of the route. The turn at the end of the last leg is
+## left open until more road is added after it.
 func _build_polyline(legs: Array, network: RoadNetwork) -> void:
 	var leg_ends := PackedInt32Array()
 	var node_kinds: Array[String] = []
+	if _open_end >= 0:
+		leg_ends.append(_open_end)
+		node_kinds.append(_open_end_kind)
 	for leg: Dictionary in legs:
 		var road: Dictionary = network.roads[leg["road"]]
 		var points: PackedVector2Array = road["points"]
@@ -144,6 +209,11 @@ func _build_polyline(legs: Array, network: RoadNetwork) -> void:
 		distances.append(distances[i - 1] + polyline[i].distance_to(polyline[i - 1]))
 	for i in leg_ends.size() - 1:
 		_add_turn(leg_ends[i], node_kinds[i])
+	if not leg_ends.is_empty():
+		_open_end = leg_ends[leg_ends.size() - 1]
+		_open_end_kind = node_kinds[node_kinds.size() - 1]
+	if not legs.is_empty():
+		last_leg = legs[legs.size() - 1]
 
 
 func _add_turn(index: int, node_kind: String) -> void:
