@@ -40,7 +40,8 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 
 | Item | State | Tag | Notes |
 | --- | --- | --- | --- |
-| Release build | Done | `milestone-release-build` | Signed AAB from `sh tools/build_release.sh` (Gradle template, upload key in `~/Keys`, password from env/Keychain/prompt). RELEASE.md covers key backup, version bumps and the Play Console steps. Nothing uploaded yet. Next: back up the key, privacy policy page, internal then closed testing (12 testers, 14 days) |
+| Release build | Done | `milestone-release-build` | Signed AAB from `sh tools/build_release.sh` (Gradle template, upload key in `~/Keys`, password from env/Keychain/prompt). RELEASE.md covers key backup, version bumps and the Play Console steps. Nothing uploaded yet. Next: back up the key, internal then closed testing (12 testers, 14 days) |
 | Launcher icons | Done | | Original buseta icon from `tools/make_icons.py`: adaptive layers, monochrome themed icon, legacy 192 px, `store/icon_512.png` for the listing. Not yet seen on a phone's home screen |
+| Store prep | Done | | Listing text es-419 and en-US, feature graphic, 8 Spanish screenshots, privacy policy draft (placeholders to fill, not published), Play Console form answers. All in `store/`. Owner to check: target age 13+, a skim of in-game slang, hosting the privacy page |
 
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.
