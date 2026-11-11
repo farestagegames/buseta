@@ -100,8 +100,8 @@ ships.
    Families policy into play.
 7. Data safety: the game collects and shares no data, has no ads or analytics SDKs
    and asks for no internet permission. Saves stay on the phone.
-8. Privacy policy: Play requires a URL even when nothing is collected. A short page
-   saying so (e.g. a free GitHub Pages or Google Sites page) is enough.
+8. Privacy policy: https://callenomad.github.io/city-bus-shift-privacy/ (GitHub Pages, repository `callenomad/city-bus-shift-privacy`,
+   source `store/privacy/index.html`; re-upload it there after any change).
 9. App access (no login needed), Ads (none), Government app (no), Financial
    features (none), Health (none).
 10. Countries: Colombia first, more later.

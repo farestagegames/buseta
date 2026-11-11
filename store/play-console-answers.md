@@ -37,7 +37,7 @@ None. Everything it says about Play Console is confirmed. Two small notes:
 
 ## 1. Privacy policy
 
-- Answer: provide a URL. **Fill in:** `https://<TO BE FILLED>` (public, no login, not a PDF, loads without geo-block).
+- Answer: provide a URL. **Fill in:** `https://callenomad.github.io/city-bus-shift-privacy/` (public, no login, not a PDF, loads without geo-block).
 - Play requires it even though no data is collected (it is mandatory for all apps, and the Data safety form links to it).
 - The page can be short. It should state: app name and developer contact email; the game collects no personal data and does not share data; there are no ads, analytics or accounts; progress is stored only on the device (`user://`, never transmitted) and is removed when the app is uninstalled; no network access (the app does not request the INTERNET permission); the game is not directed at collecting children's data; how to contact the developer; effective date. Offer it in Spanish and English.
 - **CHECK** (local law): Colombia's Ley 1581 de 2012 (habeas data) is about processing personal data; with none processed, a short statement is sufficient. This is not legal advice.
@@ -157,9 +157,9 @@ Why this is correct: Google's definition of "collect" is transmitting data off t
 
 ## 14. Quick checklist before submitting
 
-1. Fill in the privacy policy URL in section 1 and publish the page.
+1. ~~Fill in the privacy policy URL~~ Done: https://callenomad.github.io/city-bus-shift-privacy/
 2. Skim `data/packs/colombia/lang/es_CO.json` for vendor goods and slang (sections 4, 5).
-3. Decide the target age group (recommended: 13+).
+3. ~~Decide the target age group~~ Done: 13 and over (owner, 11 Nov).
 4. Submit the IARC questionnaire with the answers in section 4 and record the real ratings it returns.
 5. Set Data safety to "No data collected" and "No data shared".
 6. After the first AAB upload, recheck Advertising ID and the target-API warning.
