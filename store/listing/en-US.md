@@ -3,10 +3,10 @@
 Translation of the es-419 listing. Spanish names are kept where the game keeps them (buseta, busetón, La Chiva, La Ola, Ruta Libre, Carrera Express, Malecón).
 Character counts are Unicode characters, as the Play Console counts them. Copy the text inside each block.
 
-## App name (14/30)
+## App name (26/30)
 
 ```text
-City Bus Shift
+Buseta Simulator: Colombia
 ```
 
 ## Short description (74/80)

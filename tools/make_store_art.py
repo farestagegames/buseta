@@ -83,6 +83,13 @@ def _u_strokes():
 
 
 GLYPHS["U"] = (0.72, _u_strokes())
+GLYPHS["E"] = (0.58, [[(0.58, 0.0), (0.0, 0.0), (0.0, 1.0), (0.58, 1.0)], [(0.0, 0.5), (0.46, 0.5)]])
+GLYPHS["A"] = (0.74, [[(0.0, 1.0), (0.37, 0.0), (0.74, 1.0)], [(0.14, 0.64), (0.60, 0.64)]])
+GLYPHS["M"] = (0.86, [[(0.0, 1.0), (0.0, 0.0), (0.43, 0.6), (0.86, 0.0), (0.86, 1.0)]])
+GLYPHS["L"] = (0.54, [[(0.0, 0.0), (0.0, 1.0), (0.54, 1.0)]])
+GLYPHS["O"] = (0.84, [_arc(0.42, 0.5, 0.42, 0.5, 0, 360, 48)])
+GLYPHS["R"] = (0.68, [[(0.0, 1.0), (0.0, 0.0), (0.34, 0.0)] + _arc(0.34, 0.25, 0.25, 0.25, 270, 450) + [(0.0, 0.5)],
+                      [(0.32, 0.5), (0.68, 1.0)]])
 
 
 def word_mask(text, cap, stroke, gap):
@@ -104,7 +111,7 @@ def word_mask(text, cap, stroke, gap):
     return mask
 
 
-def paste_title(img, text, left, top, cap):
+def paste_title(img, text, left, top, cap, fill=None):
     """Cream letters with an ink outline and a soft shadow."""
     stroke = cap * 0.24
     mask = word_mask(text, cap, stroke, cap * 0.16)
@@ -115,7 +122,7 @@ def paste_title(img, text, left, top, cap):
     off = round(cap * 0.07)
     img.paste((0, 0, 0), (left + off, top + off), shadow.point(lambda v: v * 0.45))
     img.paste(icons.INK, (left, top), outline)
-    img.paste(icons.CREAM, (left, top), mask)
+    img.paste(fill or icons.CREAM, (left, top), mask)
     return mask.size
 
 
@@ -239,11 +246,12 @@ def feature_graphic():
     img.paste(bus, (bx * K, round(by * K)), bus)
     # Title on the left, clear of the bus; stripes from the livery under the last word.
     cap = 66 * K
-    paste_title(img, "CITY BUS", 64 * K, 120 * K, cap)
-    w, h = paste_title(img, "SHIFT", 64 * K, 214 * K, cap)
-    sx = 64 + w / K + 14
-    d.rounded_rectangle(k(sx, 248, sx + 110, 262), radius=4 * K, fill=icons.YELLOW, outline=icons.INK, width=2 * K)
-    d.rounded_rectangle(k(sx, 270, sx + 110, 284), radius=4 * K, fill=icons.ORANGE, outline=icons.INK, width=2 * K)
+    paste_title(img, "BUSETA", 60 * K, 96 * K, 76 * K)
+    paste_title(img, "SIMULATOR", 62 * K, 206 * K, 44 * K)
+    w, h = paste_title(img, "COLOMBIA", 62 * K, 276 * K, 44 * K, fill=icons.YELLOW)
+    sx = 62 + w / K + 12
+    d.rounded_rectangle(k(sx, 290, sx + 70, 300), radius=3 * K, fill=icons.YELLOW, outline=icons.INK, width=2 * K)
+    d.rounded_rectangle(k(sx, 306, sx + 70, 316), radius=3 * K, fill=icons.ORANGE, outline=icons.INK, width=2 * K)
     out = img.resize((W, H), Image.LANCZOS).convert("RGB")
     out.save(STORE / "feature_graphic_1024x500.png", optimize=True)
     return out

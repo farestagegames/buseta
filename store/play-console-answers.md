@@ -1,6 +1,6 @@
 # Play Console: App content answers
 
-App: City Bus Shift, `com.citybusshift.game`, free game, personal developer account.
+App: Buseta Simulator: Colombia, `com.citybusshift.game`, free game, personal developer account.
 Prepared 11 Nov 2026 from the code and config at that date. Re-verify if permissions,
 SDKs or features change before upload. Items marked **CHECK** are uncertain or depend on
 wording Play Console may have changed; read the live form before ticking.

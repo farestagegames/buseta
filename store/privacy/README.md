@@ -1,4 +1,4 @@
-# City Bus Shift privacy policy page
+# Buseta Simulator: Colombia privacy policy page
 
 1. The developer name and contact email are filled in (11 Nov 2026).
 2. Free hosting option A: create a separate public GitHub repo, put `index.html` at its root, enable Settings > Pages (deploy from `main`); the URL is `https://<user>.github.io/<repo>/`.
