@@ -6,6 +6,8 @@ Package id: `com.citybusshift.game`. It can never change after the first upload.
 
 - Keystore: `~/Keys/city-bus-shift-upload.jks` (PKCS12, alias `upload`, RSA 4096,
   valid about 27 years). It lives outside the repository on purpose.
+- Upload certificate SHA-256 (public, for matching in Play Console):
+  `6A:3A:78:EB:F1:85:54:A7:B8:E9:C3:AA:82:0A:BE:0D:A2:27:82:92:9F:0D:AA:C7:44:53:E8:33:D6:BF:47:C2`
 - Password: chosen by you, one password for both the keystore and the key (PKCS12 and
   Godot both need them to match). It is in your password manager and, if you said yes
   when creating the key, in the macOS login Keychain as `city-bus-shift-upload`.
