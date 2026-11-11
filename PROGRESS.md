@@ -36,4 +36,10 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | Traffic awareness | Done | Cars and motos see the bus and its trailer, brake smoothly for obstacles, wait or pass a stopped bus only when the other side is clear, yield at junctions, stop for a reversing bus |
 | Batch of 9 Nov | Done | Cars recover after hits and honk; door camera clear of walls; hail prompt says how far; radio louder than the street; salsa station plus more vallenato and champeta; Easy/Normal/Hard with transit police and fare dodgers; Ruta Libre endless route; rear exit door; arcade mode Carrera Express |
 
+## Google Play release (11 Nov)
+
+| Item | State | Tag | Notes |
+| --- | --- | --- | --- |
+| Release build | Done | `milestone-release-build` | Signed AAB from `sh tools/build_release.sh` (Gradle template, upload key in `~/Keys`, password from env/Keychain/prompt). RELEASE.md covers key backup, version bumps and the Play Console steps. Nothing uploaded yet. Next: back up the key, launcher icons, privacy policy page, internal then closed testing (12 testers, 14 days) |
+
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.

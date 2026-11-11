@@ -7,3 +7,11 @@ export_credentials.cfg
 .DS_Store
 tools/screens/
 .tools/
+*.jks
+*.p12
+*.pepk
+*.zip.enc
+.env
+.env.*
+release_credentials*
+android/
