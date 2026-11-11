@@ -90,10 +90,10 @@ ships.
    testers opted in for 14 days in a row before they can apply for production.
    Start with Internal testing (up to 100 testers, available in minutes) to check the
    AAB installs, then a Closed testing track for the 12-tester rule.
-4. Store listing: short and full description (Spanish and English), 512×512 icon,
-   1024×500 feature graphic, at least 2 phone screenshots (`tools/screens/` has
-   gameplay shots to start from). The launcher icons in the preset are still empty,
-   so the app shows Godot's default icon until they are set.
+4. Store listing: short and full description (Spanish and English), 512×512 icon
+   (`store/icon_512.png`), 1024×500 feature graphic, at least 2 phone screenshots
+   (`tools/screens/` has gameplay shots to start from). The launcher icons come from
+   `python3 tools/make_icons.py`; rerun it after changing the drawing.
 5. Content rating: fill in the IARC questionnaire (driving, minor collisions with
    no injuries, no gambling, no user chat).
 6. Target audience and content: pick the age groups; choosing under 13 brings the
