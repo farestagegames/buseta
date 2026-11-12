@@ -1,0 +1,31 @@
+{
+ "name": "Route C0: Vuelta al Pueblo",
+ "map": "maps/alto_cafeto.json",
+ "start": {
+  "road": "depot_road",
+  "along": 26,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {"road": "depot_road", "dir": 1},
+  {"road": "subida_cafetal", "dir": 1},
+  {"road": "curva_cafe", "dir": 1},
+  {"road": "calle_real", "dir": 1},
+  {"road": "calle_real", "dir": -1},
+  {"road": "curva_cafe", "dir": -1},
+  {"road": "subida_cafetal", "dir": -1},
+  {"road": "depot_road", "dir": -1}
+ ],
+ "stops": [
+  {"name": "El Cafetal", "due": 30, "road": "subida_cafetal", "along": 58, "dir": 1, "waiting": 3},
+  {"name": "Plaza Principal", "due": 120, "road": "calle_real", "along": 62, "dir": 1, "waiting": 0},
+  {"name": "Patio Cafeto", "due": 250, "road": "depot_road", "along": 42, "dir": -1, "waiting": 0, "final": true}
+ ],
+ "service": "bays",
+ "goals": [
+  {"type": "finish_under", "value": 300},
+  {"type": "no_collisions"},
+  {"type": "no_fines"}
+ ]
+}

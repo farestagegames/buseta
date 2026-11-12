@@ -68,6 +68,14 @@
    "mode": "arcade",
    "level": 2,
    "description": "Race the clock through the city: drive through checkpoint arches for more time and hit the orange pads for a boost."
+  },
+  {
+   "id": "cafeto_c0",
+   "name": "Route C0: Vuelta al Pueblo",
+   "file": "routes/cafeto_c0.json",
+   "cost": 0,
+   "level": 6,
+   "description": "Up through the coffee groves to the Plaza and back, in the hill town of Alto Cafeto."
   }
  ],
  "buses": [

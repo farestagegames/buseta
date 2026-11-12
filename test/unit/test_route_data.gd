@@ -1,6 +1,9 @@
 extends GutTest
 ## Every route in the catalog has to be a shift that can be driven and scored.
 
+## Each town's depot, where every timed route in it ends.
+const DEPOTS := {"Puerto Marisol": "Patio Central", "Alto Cafeto": "Patio Cafeto"}
+
 var catalog: Catalog
 var map_data: Dictionary
 
@@ -10,9 +13,14 @@ func before_each() -> void:
 	map_data = MapLoader.read_json("res://data/packs/colombia/maps/puerto_marisol.json")
 
 
+func _map_of(item: Dictionary) -> Dictionary:
+	return MapLoader.read_map_of(MapLoader.read_json(item["file"]))
+
+
 func _build(item: Dictionary) -> RouteRunner:
 	var data := MapLoader.read_json(item["file"])
-	return RouteRunner.build(data, RoadNetwork.from_data(MapLoader.read_map_of(data)), 7, map_data)
+	var own_map := MapLoader.read_map_of(data)
+	return RouteRunner.build(data, RoadNetwork.from_data(own_map), 7, own_map)
 
 
 ## Routes with a depot at the end. The endless route has none.
@@ -40,7 +48,7 @@ func test_every_route_ends_with_a_timed_stop_at_the_depot() -> void:
 	for item: Dictionary in _timed_routes():
 		var stops := _build(item).stops
 		assert_true(stops[stops.size() - 1].is_final, item["id"])
-		assert_eq(stops[stops.size() - 1].stop_name, "Patio Central", item["id"])
+		assert_eq(stops[stops.size() - 1].stop_name, DEPOTS[_map_of(item)["name"]], item["id"])
 		for i in range(1, stops.size()):
 			assert_gt(stops[i].due, stops[i - 1].due, "%s: stop %d" % [item["id"], i])
 
@@ -67,13 +75,14 @@ func test_bus_ends_each_shift_empty() -> void:
 
 func test_no_bay_is_blocked_by_a_parked_car_or_a_prop() -> void:
 	for item: Dictionary in catalog.items(Catalog.ROUTES):
+		var own_map := _map_of(item)
 		for stop in _build(item).stops:
 			if stop.is_final:
 				continue
-			var named: bool = stop.kind != RouteStop.Kind.HAIL or stop.stop_name != RoadNetwork.from_data(map_data).roads[stop.road]["name"]
+			var named: bool = stop.kind != RouteStop.Kind.HAIL or stop.stop_name != RoadNetwork.from_data(own_map).roads[stop.road]["name"]
 			if named:
 				continue
-			for entry: Dictionary in map_data["parked_cars"]:
+			for entry: Dictionary in own_map["parked_cars"]:
 				if entry["road"] == stop.road and int(entry["dir"]) == stop.dir:
 					assert_gt(absf(float(entry["along"]) - stop.along), 21.0, "%s: %s" % [item["id"], stop.stop_name])
 

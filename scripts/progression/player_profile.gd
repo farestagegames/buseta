@@ -177,10 +177,13 @@ func arcade_tried(catalog: Catalog) -> bool:
 	return not item.is_empty() and best_scores.has(item["id"])
 
 
+## A free route above the driver's level (such as a second map's first route) is
+## owned from the start but cannot be driven until that level.
 func can_play_route(route_id: String, catalog: Catalog) -> bool:
 	if not owns(Catalog.ROUTES, route_id):
 		return false
-	return catalog.find(Catalog.ROUTES, route_id) != {}
+	var item := catalog.find(Catalog.ROUTES, route_id)
+	return item != {} and DriverLevel.level_for(xp) >= int(item.get("level", 1))
 
 
 ## Marks a route as finished and grants any routes it unlocks.

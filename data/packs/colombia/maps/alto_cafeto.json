@@ -1,0 +1,739 @@
+{
+ "name": "Alto Cafeto",
+ "traffic_share": 0.55,
+ "nodes": [
+  {
+   "id": "depot",
+   "x": -168,
+   "z": 196,
+   "kind": "terminal",
+   "radius": 17
+  },
+  {
+   "id": "a",
+   "x": -84,
+   "z": 196,
+   "radius": 14
+  },
+  {
+   "id": "b",
+   "x": 28,
+   "z": 196,
+   "radius": 14
+  },
+  {
+   "id": "h",
+   "x": -84,
+   "z": 56,
+   "radius": 14
+  },
+  {
+   "id": "c",
+   "x": 28,
+   "z": 56,
+   "kind": "roundabout",
+   "radius": 20,
+   "island": 8
+  },
+  {
+   "id": "d",
+   "x": 168,
+   "z": 56,
+   "radius": 14
+  },
+  {
+   "id": "e",
+   "x": 182,
+   "z": -154,
+   "radius": 16
+  },
+  {
+   "id": "f",
+   "x": -28,
+   "z": -154,
+   "radius": 14
+  },
+  {
+   "id": "g",
+   "x": -154,
+   "z": -56,
+   "radius": 14
+  }
+ ],
+ "roads": [
+  {
+   "id": "depot_road",
+   "from": "depot",
+   "to": "a",
+   "speed_limit": 30,
+   "traffic": false,
+   "name": "Carrera del Patio"
+  },
+  {
+   "id": "subida_cafetal",
+   "from": "a",
+   "to": "b",
+   "speed_limit": 30,
+   "name": "Subida del Cafetal"
+  },
+  {
+   "id": "curva_cafe",
+   "from": "b",
+   "to": "h",
+   "speed_limit": 30,
+   "via": [
+    [
+     42,
+     126
+    ],
+    [
+     -20,
+     111
+    ],
+    [
+     -84,
+     101
+    ]
+   ],
+   "name": "Curva del Café"
+  },
+  {
+   "id": "calle_real",
+   "from": "h",
+   "to": "c",
+   "speed_limit": 30,
+   "name": "Calle Real"
+  },
+  {
+   "id": "carrera_comercio",
+   "from": "c",
+   "to": "d",
+   "speed_limit": 30,
+   "name": "Carrera del Comercio"
+  },
+  {
+   "id": "camino_mirador",
+   "from": "d",
+   "to": "e",
+   "speed_limit": 40,
+   "via": [
+    [
+     217,
+     -28
+    ],
+    [
+     210,
+     -105
+    ]
+   ],
+   "name": "Camino al Mirador"
+  },
+  {
+   "id": "calle_las_lomas",
+   "from": "e",
+   "to": "f",
+   "speed_limit": 30,
+   "via": [
+    [
+     84,
+     -165
+    ]
+   ],
+   "name": "Calle de las Lomas"
+  },
+  {
+   "id": "bajada_guayacanes",
+   "from": "f",
+   "to": "g",
+   "speed_limit": 30,
+   "via": [
+    [
+     -112,
+     -133
+    ],
+    [
+     -161,
+     -98
+    ]
+   ],
+   "name": "Bajada de los Guayacanes"
+  },
+  {
+   "id": "carrera_colina",
+   "from": "g",
+   "to": "h",
+   "speed_limit": 30,
+   "name": "Carrera de la Colina"
+  },
+  {
+   "id": "carrera_parroquia",
+   "from": "c",
+   "to": "f",
+   "speed_limit": 30,
+   "name": "Carrera de la Parroquia"
+  }
+ ],
+ "hills": [
+  {
+   "x": 189,
+   "z": -161,
+   "radius": 266,
+   "height": 19.0
+  },
+  {
+   "x": -28,
+   "z": -161,
+   "radius": 224,
+   "height": 15.0
+  },
+  {
+   "x": 28,
+   "z": 56,
+   "radius": 182,
+   "height": 8.0
+  },
+  {
+   "x": 70,
+   "z": 210,
+   "radius": 168,
+   "height": 4.0
+  },
+  {
+   "x": -182,
+   "z": 210,
+   "radius": 154,
+   "height": -3.0
+  }
+ ],
+ "features": [
+  {
+   "type": "speed_bump",
+   "road": "calle_real",
+   "along": 26
+  },
+  {
+   "type": "speed_bump",
+   "road": "carrera_comercio",
+   "along": 70
+  },
+  {
+   "type": "speed_bump",
+   "road": "carrera_parroquia",
+   "along": 42
+  },
+  {
+   "type": "speed_bump",
+   "road": "bajada_guayacanes",
+   "along": 110
+  },
+  {
+   "type": "pothole",
+   "road": "subida_cafetal",
+   "along": 24,
+   "lateral": 1.5,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "subida_cafetal",
+   "along": 92,
+   "lateral": 2.2,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "calle_las_lomas",
+   "along": 40,
+   "lateral": 1.6,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "calle_las_lomas",
+   "along": 75,
+   "lateral": 2.3,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "calle_las_lomas",
+   "along": 110,
+   "lateral": 1.4,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "calle_las_lomas",
+   "along": 160,
+   "lateral": 2.0,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "carrera_colina",
+   "along": 60,
+   "lateral": 1.8,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "camino_mirador",
+   "along": 120,
+   "lateral": 2.2,
+   "dir": 1
+  }
+ ],
+ "parked_cars": [
+  {
+   "road": "carrera_comercio",
+   "along": 40,
+   "dir": 1
+  },
+  {
+   "road": "carrera_comercio",
+   "along": 100,
+   "dir": -1
+  },
+  {
+   "road": "calle_las_lomas",
+   "along": 55,
+   "dir": -1
+  },
+  {
+   "road": "calle_las_lomas",
+   "along": 140,
+   "dir": 1
+  },
+  {
+   "road": "carrera_parroquia",
+   "along": 150,
+   "dir": 1
+  },
+  {
+   "road": "carrera_colina",
+   "along": 95,
+   "dir": -1
+  }
+ ],
+ "knockables": [
+  {
+   "kind": "stall",
+   "road": "carrera_comercio",
+   "along": 30,
+   "lateral": 5.0,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "carrera_comercio",
+   "along": 50,
+   "lateral": 5.0,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "carrera_comercio",
+   "along": 85,
+   "lateral": 5.0,
+   "dir": -1
+  },
+  {
+   "kind": "stall",
+   "road": "carrera_comercio",
+   "along": 110,
+   "lateral": 5.0,
+   "dir": -1
+  },
+  {
+   "kind": "crate",
+   "road": "carrera_comercio",
+   "along": 34,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "carrera_comercio",
+   "along": 54,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "carrera_comercio",
+   "along": 89,
+   "lateral": 4.6,
+   "dir": -1
+  },
+  {
+   "kind": "crate",
+   "road": "carrera_comercio",
+   "along": 114,
+   "lateral": 4.6,
+   "dir": -1
+  },
+  {
+   "kind": "crate",
+   "road": "camino_mirador",
+   "along": 60,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "camino_mirador",
+   "along": 64,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "calle_las_lomas",
+   "along": 90,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "calle_las_lomas",
+   "along": 94,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "carrera_parroquia",
+   "along": 80,
+   "lateral": 4.6,
+   "dir": -1
+  },
+  {
+   "kind": "crate",
+   "road": "carrera_parroquia",
+   "along": 84,
+   "lateral": 4.6,
+   "dir": -1
+  },
+  {
+   "kind": "crate",
+   "road": "bajada_guayacanes",
+   "along": 60,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "bajada_guayacanes",
+   "along": 64,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "bin",
+   "road": "curva_cafe",
+   "along": 40,
+   "lateral": 4.6,
+   "dir": -1
+  },
+  {
+   "kind": "bin",
+   "road": "carrera_comercio",
+   "along": 70,
+   "lateral": 4.6,
+   "dir": -1
+  },
+  {
+   "kind": "bin",
+   "road": "calle_las_lomas",
+   "along": 120,
+   "lateral": 4.6,
+   "dir": -1
+  },
+  {
+   "kind": "bin",
+   "road": "carrera_colina",
+   "along": 40,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "bin",
+   "road": "carrera_parroquia",
+   "along": 120,
+   "lateral": 4.6,
+   "dir": 1
+  },
+  {
+   "kind": "bin",
+   "road": "bajada_guayacanes",
+   "along": 140,
+   "lateral": 4.6,
+   "dir": -1
+  }
+ ],
+ "bird_clusters": [
+  {
+   "id": "plaza_aromas",
+   "x": 28.0,
+   "z": 45.0,
+   "perch": 5.2,
+   "flock": 4,
+   "range": 28.0
+  },
+  {
+   "id": "mirador_canopy",
+   "x": 185.0,
+   "z": -165.0,
+   "perch": 6.0,
+   "flock": 5,
+   "range": 32.0
+  },
+  {
+   "id": "cafetal_entrada",
+   "x": -70.0,
+   "z": 210.0,
+   "perch": 4.5,
+   "flock": 3,
+   "range": 26.0
+  }
+ ],
+ "theme": {
+  "walls": [
+   [
+    0.95,
+    0.94,
+    0.9
+   ],
+   [
+    0.94,
+    0.74,
+    0.22
+   ],
+   [
+    0.18,
+    0.66,
+    0.7
+   ],
+   [
+    0.8,
+    0.38,
+    0.24
+   ],
+   [
+    0.72,
+    0.16,
+    0.18
+   ],
+   [
+    0.42,
+    0.66,
+    0.88
+   ],
+   [
+    0.5,
+    0.56,
+    0.24
+   ],
+   [
+    0.95,
+    0.94,
+    0.9
+   ]
+  ],
+  "roofs": [
+   [
+    0.68,
+    0.35,
+    0.22
+   ],
+   [
+    0.6,
+    0.3,
+    0.2
+   ],
+   [
+    0.72,
+    0.4,
+    0.26
+   ]
+  ],
+  "awnings": [
+   [
+    0.9,
+    0.2,
+    0.18
+   ],
+   [
+    0.98,
+    0.75,
+    0.12
+   ],
+   [
+    0.15,
+    0.4,
+    0.8
+   ],
+   [
+    0.15,
+    0.62,
+    0.35
+   ],
+   [
+    0.95,
+    0.5,
+    0.1
+   ]
+  ],
+  "leaves": [
+   [
+    0.18,
+    0.42,
+    0.16
+   ],
+   [
+    0.22,
+    0.48,
+    0.18
+   ],
+   [
+    0.14,
+    0.36,
+    0.16
+   ]
+  ],
+  "car_colours": [
+   [
+    0.9,
+    0.9,
+    0.92
+   ],
+   [
+    0.2,
+    0.45,
+    0.3
+   ],
+   [
+    0.75,
+    0.75,
+    0.78
+   ],
+   [
+    0.72,
+    0.16,
+    0.14
+   ],
+   [
+    0.17,
+    0.17,
+    0.2
+   ],
+   [
+    0.2,
+    0.3,
+    0.55
+   ],
+   [
+    0.98,
+    0.8,
+    0.1
+   ]
+  ],
+  "bunting": [
+   [
+    0.98,
+    0.8,
+    0.1
+   ],
+   [
+    0.1,
+    0.3,
+    0.7
+   ],
+   [
+    0.85,
+    0.12,
+    0.15
+   ],
+   [
+    0.15,
+    0.62,
+    0.35
+   ],
+   [
+    0.95,
+    0.45,
+    0.1
+   ]
+  ],
+  "grass_a": [
+   0.32,
+   0.52,
+   0.22
+  ],
+  "grass_b": [
+   0.38,
+   0.56,
+   0.24
+  ],
+  "sand": [
+   0.95,
+   0.86,
+   0.64
+  ],
+  "sea": [
+   0.08,
+   0.55,
+   0.66
+  ],
+  "palm_trunk": [
+   0.52,
+   0.42,
+   0.32
+  ],
+  "palm_leaf": [
+   0.22,
+   0.55,
+   0.2
+  ],
+  "palm_share": 0.0,
+  "house_share": 0.75,
+  "office_share": 0.0,
+  "lowest_storeys": 1,
+  "highest_storeys": 3,
+  "chimneys": false,
+  "bunting_every": 65,
+  "sky_top": [
+   0.22,
+   0.55,
+   0.92
+  ],
+  "sky_horizon": [
+   0.8,
+   0.87,
+   0.92
+  ],
+  "fog": [
+   0.86,
+   0.89,
+   0.9
+  ],
+  "ambient": [
+   0.8,
+   0.8,
+   0.78
+  ],
+  "ambient_energy": 0.56,
+  "sun_colour": [
+   1.0,
+   0.96,
+   0.85
+  ],
+  "sun_energy": 0.92,
+  "street_gap": 0.5,
+  "gap_low": 0.5,
+  "gap_high": 2.5,
+  "trees_on_pavement": true,
+  "width_low": 9,
+  "width_high": 17
+ }
+}

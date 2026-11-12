@@ -280,7 +280,7 @@ func _lateral_at(along: float, point: Vector2, forward: Vector2, right: Vector2)
 		var spot: Vector2 = _city.network.sample(car["road"], car["along"], 2.75, car["dir"])["position"]
 		if point.distance_to(spot) < 26.0 and (spot - point).dot(right) > 0.0:
 			lateral = minf(lateral, 0.45)
-	for line: Dictionary in map_data["cone_lines"]:
+	for line: Dictionary in map_data.get("cone_lines", []):
 		var from: Vector2 = _city.network.sample(line["road"], line["from"], line["lateral"], line["dir"])["position"]
 		var to: Vector2 = _city.network.sample(line["road"], line["to"], line["lateral"], line["dir"])["position"]
 		var same_way: bool = (to - from).dot(forward) * float(line["dir"]) > 0.0

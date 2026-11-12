@@ -91,8 +91,16 @@ var _police_lamps: Array[MeshInstance3D] = []
 var _police_flash: float = 0.0
 
 
-## density is the time of day's share of the usual traffic.
+## The map's share of the usual traffic: 1 unless the map says less (or more).
+static func map_traffic_share(map_data: Dictionary) -> float:
+	var share: Variant = map_data.get("traffic_share", 1.0)
+	return clampf(float(share), 0.1, 2.0) if (share is float or share is int) else 1.0
+
+
+## density is the time of day's share of the usual traffic. A small town scales it
+## down by its map's traffic_share, so its fewer streets are not twice as busy.
 func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec, density: float = 1.0) -> void:
+	density *= map_traffic_share(map_data)
 	_ground = ground
 	_car_colours = CityTheme.from_data(map_data).car_colours
 	flow = TrafficFlow.new(LaneGraph.build(network, map_data), spec)

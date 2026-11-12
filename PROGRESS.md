@@ -67,6 +67,15 @@ Prompts in `delegation/opencode-prompts.md`, run in order by the owner with open
 
 ## Next: second map, Alto Cafeto (planned 12 Nov)
 
-Fictional coffee-region town, small district (2 to 3 routes incl. a ~3 min starter), unlocks at driver level 6. Design doc by agy (Gemini) in `design/alto-cafeto.md`, concept art in `design/alto-cafeto/` (`.gdignore`, not in the game). Not started: owner to review the doc, then build its tasks one at a time with opencode. Main risk: slopes over ~14% stall the starter buseta.
+Fictional coffee-region town, small district (2 to 3 routes incl. a ~3 min starter), unlocks at driver level 6. Design doc by agy (Gemini) in `design/alto-cafeto.md`, concept art in `design/alto-cafeto/` (`.gdignore`, not in the game). Owner approved the doc as written (12 Nov). Main risk: slopes over ~14% stall the starter buseta.
+
+| # | Task | State | Notes |
+| --- | --- | --- | --- |
+| 1 | Playable slice: map, starter route C0, level 6 unlock, menu | Done | `maps/alto_cafeto.json` (doc layout ×1.4, retuned hills, max grade 11.1%), `routes/cafeto_c0.json` "Vuelta al Pueblo" (out and back, U-turn at the Plaza roundabout, 3 goals), catalog level 6, Routes tab grouped under town headings. Autopilot 4:11, no stall, 1 slow moto bump at the El Cafetal bay exit. Plain houses and normal traffic for now. Not checked on a phone or by menu screenshot |
+| 2 | Church and mirador landmarks | Next | Doc task 3 |
+| 3 | Willys jeep traffic | | Doc task 4 |
+| 4 | Routes C1 Mirador and C2 Las Lomas | | Doc task 5. Doc's stop "along" values need re-placing for the ×1.4 scale and 52 m bays |
+| 5 | District switcher on the Routes tab | | Doc task 6, once there are 3 routes |
+| 6 | Fog and mountain ambience | | Doc task 7 |
 
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.

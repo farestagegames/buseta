@@ -441,7 +441,7 @@ func _next_route() -> void:
 			break
 	for i in range(index + 1, routes.size()):
 		var id := str((routes[i] as Dictionary).get("id", ""))
-		if Profile.data.owns(Catalog.ROUTES, id) and routes[i] != Profile.catalog.arcade_route():
+		if Profile.data.can_play_route(id, Profile.catalog) and routes[i] != Profile.catalog.arcade_route():
 			Profile.select(Catalog.ROUTES, id)
 			get_tree().reload_current_scene()
 			return

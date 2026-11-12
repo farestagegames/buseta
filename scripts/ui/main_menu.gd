@@ -368,11 +368,40 @@ func _routes_tab() -> Control:
 	list.get_child(0).add_child(_time_card())
 	if Profile.difficulties().size() > 1:
 		list.get_child(0).add_child(_difficulty_card())
-	for item: Dictionary in Profile.catalog.items(Catalog.ROUTES):
-		if item == Profile.catalog.arcade_route():
-			continue # The arcade has its own button on Home.
+	var routes := Profile.catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool:
+		return item != Profile.catalog.arcade_route()) # The arcade has its own button on Home.
+	var towns := route_towns(routes)
+	var distinct := {}
+	for town: String in towns.values():
+		distinct[town] = true
+	var headed := distinct.size() > 1
+	var last_town := ""
+	for item: Dictionary in routes:
+		var town: String = towns.get(item["id"], "")
+		if headed and town != last_town:
+			var heading := _text(town, 28, ACCENT)
+			heading.name = "Town%s" % town.replace(" ", "")
+			list.get_child(0).add_child(heading)
+			last_town = town
 		list.get_child(0).add_child(_shop_row(Catalog.ROUTES, item, item.get("description", "")))
 	return list
+
+
+## Route id to the name of the town (map) it runs in, so the Routes tab can group
+## them under a heading once there is more than one town.
+static func route_towns(routes: Array) -> Dictionary:
+	var names := {}
+	var towns := {}
+	for item: Dictionary in routes:
+		if not item.has("file"):
+			continue
+		var map_path := str(MapLoader.read_json(item["file"]).get("map", ""))
+		if map_path == "":
+			continue
+		if not names.has(map_path):
+			names[map_path] = str(MapLoader.read_json(Country.pack.resolve(map_path)).get("name", ""))
+		towns[item["id"]] = names[map_path]
+	return towns
 
 
 ## The time of day for the next shift. Later times open as the driver levels up.
@@ -638,6 +667,9 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 	var level := DriverLevel.level_for(Profile.data.xp)
 	if Profile.data.selected[kind] == id:
 		button.text = "Selected"
+		button.disabled = true
+	elif kind == Catalog.ROUTES and int(item.get("level", 1)) > level:
+		button.text = tr("Level %d") % int(item["level"])
 		button.disabled = true
 	elif Profile.data.owns(kind, id):
 		button.text = "Select"

@@ -258,3 +258,71 @@ achievements; decided 12 Nov, see DECISIONS.md).
 Tests: each first fires once ever and survives a save/load; a matching achievement
 unlocks with one banner; the coins are added once.
 ```
+
+## Owner feedback (12 Nov, evening)
+
+Run 9 to 11 one at a time, like the others. 10 and 11 both touch the Drivers tab
+and `scripts/ui/driver_preview.gd`, so run 10 then 11.
+
+## 9. Vendor carts are never left unattended
+
+Difficulty: Easy to Medium. Light model is fine.
+
+```
+Bug: the street vendor carts/stalls (knockable kind "stall" in the map JSON,
+`data/packs/colombia/maps/*.json`; built in `scripts/world/obstacle_field.gd`, walkers
+in `scripts/world/street_life.gd`) often stand on the street with nobody at them.
+
+- Every stall always has a vendor standing beside it (behind the cart, facing the
+  street), on every map and every graphics level, day and night and in rain (rain may
+  give them an umbrella; they never walk away).
+- Reuse the existing pedestrian/passenger looks and instanced batches: no new draw
+  call per vendor, no per-frame allocations. The vendor is not a walker and is not
+  counted in the walker budget.
+- A knocked stall: its vendor steps back out of the way and stays near it, never
+  inside the bus or the cart.
+
+Tests: every stall in every map gets exactly one vendor, placed on the pavement
+within 2 m of the stall; still one after a rain toggle and at LOW quality; a knocked
+stall's vendor is not inside the stall or the road.
+```
+
+## 10. Try drivers on before buying, like the buses
+
+Difficulty: Medium. Strong model.
+
+```
+Feature: on the Drivers tab (`scripts/ui/main_menu.gd`, `_drivers_tab()`,
+`DriverPreview` in `scripts/ui/driver_preview.gd`), tapping any driver row, owned or
+not, shows that driver in the turning preview, the same way the Garage lets you try
+a bus or livery before buying (`_garage_row`, which uses `TouchScroll.on_tap`).
+
+- Tapping the row previews; only the Buy/Select button buys or selects. A drag to
+  scroll never previews or buys (follow the Garage pattern).
+- The preview names the driver shown and, when it is not owned, its price or level.
+- Leaving the tab or selecting goes back to showing the selected driver.
+
+Tests: tapping a locked driver's row changes the preview without spending coins or
+changing the selection; the Buy button still buys; a drag does neither.
+```
+
+## 11. Forehead shows through the hair when the menu driver spins
+
+Difficulty: Medium. Strong model (mesh/depth issue).
+
+```
+Bug: on the Drivers tab the preview head turns slowly, and at some angles the skin of
+the forehead shows through the hair (z-fighting or the hair shell being too close
+to / inside the head). Driver meshes come from `scripts/world/head_parts.gd` and
+`DriverLook` (see `scripts/ui/driver_preview.gd`, `driver_badge.gd`).
+
+- Find the cause (hair shell offset, winding/culling, transparency sort, or depth
+  precision at the preview camera's near plane) and fix it at the source so every
+  hair style on every driver is solid from all angles, in the menu and in the cab.
+- Don't just shrink the head or hide the forehead.
+
+Tests: for every driver look and hair style, sample points on the hair's front edge
+from 16 angles around the head and assert the hair surface sits at least a few
+millimetres outside the skull surface; include a regression case for the style that
+showed the glitch. Take a screenshot of the Drivers tab at three angles and look at it.
+```

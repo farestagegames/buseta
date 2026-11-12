@@ -72,7 +72,13 @@ func _show_frame() -> void:
 	_caption.text = tr(shots.caption()).replace("%s", Country.pack.data["city_name"])
 
 
+## On a town without the named street (the intro was shot in Puerto Marisol), the
+## longest road stands in, so the scene still sets up anywhere.
 func _road_point(network: RoadNetwork, ground: GroundSurface, road: String, along: float) -> Vector3:
+	if not network.roads.has(road):
+		for other: Dictionary in network.roads.values():
+			if not network.roads.has(road) or float(other["length"]) > float(network.roads[road]["length"]):
+				road = other["id"]
 	var spot: Vector2 = network.sample(road, along)["position"]
 	return Vector3(spot.x, ground.terrain_height(spot), spot.y)
 

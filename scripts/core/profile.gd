@@ -109,6 +109,8 @@ func horn_for(bus_item: Dictionary) -> Dictionary:
 
 
 func select(kind: String, id: String) -> bool:
+	if kind == Catalog.ROUTES and not data.can_play_route(id, catalog):
+		return false
 	if not data.select(kind, id):
 		return false
 	save()
