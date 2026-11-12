@@ -37,6 +37,8 @@ signal stop_session_started(stop_index: int, alighting: int, boarding: int)
 signal passenger_alighted(stop_index: int)
 signal passenger_boarded(stop_index: int)
 signal passenger_paid
+signal fare_collected(amount: int)
+signal perfect_stop(stop_index: int)
 signal hail_ignored(people: int)
 signal request_ignored(people: int)
 signal stop_requested ## Someone on board wants the next stop.
@@ -47,7 +49,7 @@ signal bus_jolted(strength: float)
 signal obstacle_hit(kind: String, speed_loss: float)
 
 # --- Traffic and scoring ---
-signal stop_arrived(stop_index: int, accuracy: float, seconds_late: float)
+signal stop_arrived(stop_index: int, accuracy: float, seconds_late: float, is_perfect: bool)
 signal indicator_missed
 signal red_light_run
 signal signal_ahead(state: int, distance: float) ## TrafficLightPlan.Light, or -1.

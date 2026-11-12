@@ -182,6 +182,21 @@ def siren_whoop():
     return out
 
 
+def perfect_chime():
+    """A short bright two-note chime for a clean stop."""
+    out = []
+    for freq, start, seconds in [(1046.5, 0.0, 0.18), (1568.0, 0.08, 0.22)]:
+        total = int(seconds * RATE)
+        offset = int(start * RATE)
+        while len(out) < offset + total:
+            out.append(0.0)
+        for i in range(total):
+            t = i / RATE
+            tone = math.sin(2 * math.pi * freq * t) + 0.35 * math.sin(4 * math.pi * freq * t)
+            out[offset + i] += 0.32 * math.exp(-t * 7.0) * envelope(i, total, 0.004, 0.12) * tone
+    return out
+
+
 def soft_bump():
     total = int(0.26 * RATE)
     noise = noise_filtered(0.26, 240, 12)
@@ -209,9 +224,14 @@ def main():
     save_quiet("bump.wav", soft_bump())
     save("siren_whoop.wav", siren_whoop())
     save_quiet("tap.wav", click(900, 0.04, 0.35))
-    horns.make_all(OUT, horn_loop())
-    ambience.make_all(OUT / "ambience")
-    music.make_all(OUT / "radio", OUT / "ambience")
+    save_quiet("perfect_chime.wav", perfect_chime())
+    # horns, ambience and radio music need numpy via sound_kit; generate core SFX even without it.
+    try:
+        horns.make_all(OUT, horn_loop())
+        ambience.make_all(OUT / "ambience")
+        music.make_all(OUT / "radio", OUT / "ambience")
+    except Exception as exc:
+        print(f"Skipping sound_kit assets: {exc}")
 
 
 if __name__ == "__main__":

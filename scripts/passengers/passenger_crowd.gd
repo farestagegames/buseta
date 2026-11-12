@@ -65,6 +65,7 @@ class Walker:
 	var seat: int = -1
 	var waving: bool = false ## Flagging down the bus.
 	var is_vendor: bool = false
+	var happy_left: float = 0.0
 
 	func step(dt: float, speed: float, ground: GroundSurface) -> bool:
 		var flat := Vector2(target.x - position.x, target.z - position.z)
@@ -77,11 +78,13 @@ class Walker:
 		position.x += move.x
 		position.z += move.y
 		_stride(flat, dt, speed)
-		position.y = ground.height_at(Vector2(position.x, position.z)) + absf(cos(stride)) * 0.04
+		position.y = ground.height_at(Vector2(position.x, position.z)) + absf(cos(stride)) * 0.04 + _bounce(dt)
 		return false
 
 	## Follows the path through the bus, step by step. True once it runs out.
 	func walk_path(dt: float, speed: float) -> bool:
+		if happy_left > 0.0:
+			happy_left = maxf(happy_left - dt, 0.0)
 		if pay_left > 0.0:
 			pay_left -= dt
 			right_arm.rotation.x = lerpf(right_arm.rotation.x, PAY_ARM_RAISE, minf(dt * 9.0, 1.0))
@@ -107,6 +110,15 @@ class Walker:
 	func hold_still(dt: float) -> void:
 		_idle(dt)
 
+	func cheer() -> void:
+		happy_left = 0.7
+
+	func _bounce(dt: float) -> float:
+		if happy_left <= 0.0:
+			return 0.0
+		happy_left = maxf(happy_left - dt, 0.0)
+		return absf(sin((0.7 - happy_left) * 18.0)) * 0.08
+
 	func _stride(direction: Vector2, dt: float, speed: float) -> void:
 		base_yaw = atan2(-direction.x, -direction.y)
 		rotation.y = base_yaw
@@ -120,14 +132,22 @@ class Walker:
 	## Standing people shift their weight and glance around, so a queue looks alive.
 	func _idle(dt: float) -> void:
 		idle_time += dt
+		happy_left = maxf(happy_left - dt, 0.0)
+		position.y += _bounce(0.0) # bounce already decayed above; keep small hop feel
 		var ease_out := minf(dt * 6.0, 1.0)
 		left_leg.rotation.x = lerpf(left_leg.rotation.x, 0.0, ease_out)
 		right_leg.rotation.x = lerpf(right_leg.rotation.x, 0.0, ease_out)
 		left_arm.rotation.x = lerpf(left_arm.rotation.x, 0.0, ease_out)
 		var arm_goal := WAVE_ARM + sin(idle_time * 7.0) * 0.28 if waving else 0.0
+		if happy_left > 0.0:
+			arm_goal = maxf(arm_goal, 2.2)
 		right_arm.rotation.x = lerpf(right_arm.rotation.x, arm_goal, ease_out)
 		rotation.y = base_yaw + sin(idle_time * 0.7 + stride) * 0.22
 		rotation.z = sin(idle_time * 0.45 + stride) * 0.025
+		# Re-snap base height in case idle is called without ground step this frame.
+		# (position managed by callers; keep small visual only)
+		if happy_left > 0.0:
+			position.y += absf(sin((0.7 - happy_left) * 18.0)) * 0.02
 
 
 ## One look's meshes, built once and shared by every walker wearing it.
@@ -160,6 +180,7 @@ func setup(route: RouteRunner, ground: GroundSurface, visual: BusVisual) -> void
 	GameEvents.shift_completed.connect(_on_shift_completed.unbind(1))
 	GameEvents.vendor_boarded.connect(_on_vendor_boarded)
 	GameEvents.vendor_left.connect(_on_vendor_left)
+	GameEvents.perfect_stop.connect(func(_stop: int) -> void: _on_perfect_stop())
 
 
 ## Moves two people apart along the line between them. Pure, so it can be tested.
@@ -391,6 +412,21 @@ func _walk_away(walker: Walker) -> void:
 	var goal := Vector2(spot.x, spot.z) + right * _random.randf_range(2.6, 4.0) + _bus_forward * along
 	walker.target = Vector3(goal.x, spot.y, goal.y)
 	leaving.append(walker)
+
+
+func _on_perfect_stop() -> void:
+	# One boarding passenger gives a quick happy reaction.
+	var candidates: Array[Walker] = []
+	for walker: Walker in boarding:
+		if not walker.is_vendor:
+			candidates.append(walker)
+	if candidates.is_empty():
+		for walker: Walker in waiting:
+			if not walker.is_vendor:
+				candidates.append(walker)
+				break
+	if not candidates.is_empty():
+		candidates[0].cheer()
 
 
 ## Everyone is off at the depot, and nobody is left standing in the bus.

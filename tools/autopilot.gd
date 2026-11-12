@@ -80,7 +80,7 @@ func _ready() -> void:
 	for feature: Dictionary in _city.ground.features:
 		if feature["kind"] == "bump":
 			_bump_spots.append(feature["position"])
-	GameEvents.stop_arrived.connect(func(_i: int, _a: float, _l: float) -> void: _arrivals.append(roundi(_system.clock)))
+	GameEvents.stop_arrived.connect(func(_i: int, _a: float, _l: float, _p: bool) -> void: _arrivals.append(roundi(_system.clock)))
 	GameEvents.red_light_run.connect(func() -> void: _red_lights += 1)
 	GameEvents.shift_report_ready.connect(func(report: Dictionary) -> void: _report_text = report)
 	GameEvents.bus_collided.connect(func(speed: float) -> void:

@@ -55,11 +55,11 @@ Prompts in `delegation/opencode-prompts.md`, run in order by the owner with open
 | 2 | Birds near trees only (3D sound plus flocks) | Done | `00bb2f6`. Not checked on a phone |
 | 3 | Two short starter routes | Done | `e28780b`. 2 new routes, unlock chain, fresh profile and save tests, autopilot A 238 s and B 356 s |
 | 4 | 3 route goals = 3 stars | Done | Goals on all routes, 3-star goal scoring, HUD/menu/results goal UI, 0-5→0-3 save migration, challenges/achievements updated |
-| 5 | Feedback at every stop | Planned |
+| 5 | Feedback at every stop | Done | Fare pop/clink, perfect-stop stamp/chime/bounce, StopQuality rule and perfect-stop counts in reports |
 | 6 | Payout screen | Planned |
 | 7 | Unlock every 1 to 2 shifts, cab decorations | Planned |
 | 8 | First-time banners tied to achievements | Planned |
 
-**Resume here:** task 5 next, then 7, 6, 8. Use a free model for 5, 7 and 8; use the strongest OpenCode Go model for 6 (payout animation). On the phone still to check: the tutorial ring, the birds, Starter A as the first route, the 3-goal checklist. Play: internal testing installed on the owner's phone (12 Nov); closed track, privacy page re-upload and key backup still to do (`store/testing-plan.md`).
+**Resume here:** task 7 next, then 6, 8. Use a free model for 7 and 8; use the strongest OpenCode Go model for 6 (payout animation). On the phone still to check: the tutorial ring, the birds, Starter A as the first route, the 3-goal checklist, stop feedback placement/feel. Play: internal testing installed on the owner's phone (12 Nov); closed track, privacy page re-upload and key backup still to do (`store/testing-plan.md`).
 
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.

@@ -26,6 +26,7 @@ var shift_panel: ShiftEndPanel
 var penalty_toast: PenaltyToast
 var tutorial_panel: TutorialPanel
 var goals_hud: GoalsHud
+var stop_feedback: StopFeedback
 
 var _controls: Control
 var _tilt_hint: Label
@@ -87,6 +88,10 @@ func _ready() -> void:
 	goals_hud.visible = false
 	_root.add_child(goals_hud)
 
+	stop_feedback = StopFeedback.new()
+	stop_feedback.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.add_child(stop_feedback)
+
 	penalty_toast = PenaltyToast.new()
 	_place(penalty_toast, Vector2(0.5, 0.0), Vector2(-280.0, 280.0), Vector2(560.0, 40.0))
 	_root.add_child(penalty_toast)
@@ -106,6 +111,8 @@ func _ready() -> void:
 	GameEvents.arcade_status.connect(_on_arcade_status)
 	GameEvents.map_ready.connect(_on_map_ready)
 	GameEvents.score_updated.connect(func(_total: int) -> void: _refresh_goals())
+	GameEvents.fare_collected.connect(_on_fare_collected)
+	GameEvents.perfect_stop.connect(_on_perfect_stop)
 
 	police_notice = Label.new()
 	police_notice.text = "POLICE NEARBY"
@@ -387,6 +394,24 @@ func _refresh_goals() -> void:
 	var keeper: ScoreKeeper = shift.get_node("ScoreKeeper")
 	var system: RouteSystem = shift.get_node("RouteSystem")
 	goals_hud.update_status(keeper.live_report(system.timetable_clock(), system.served_count(), system.carried_count()))
+
+
+func _on_fare_collected(amount: int) -> void:
+	if shift_panel.visible:
+		return
+	# Rise from the fare/gauge area at the top centre.
+	var hud_size: Vector2 = get_viewport().get_visible_rect().size
+	var at := Vector2(hud_size.x * 0.58, 78.0)
+	stop_feedback.show_fare("+%s" % Country.pack.money(amount), at)
+
+
+func _on_perfect_stop(_stop_index: int) -> void:
+	if shift_panel.visible:
+		return
+	# A short stamp kept clear of controls and the tutorial ring.
+	var hud_size: Vector2 = get_viewport().get_visible_rect().size
+	var at := Vector2(hud_size.x * 0.5, hud_size.y * 0.38)
+	stop_feedback.show_stamp(tr("Perfect stop!"), at)
 
 
 func _on_arcade_status(seconds_left: float, checkpoint: int, distance: float, _position: Vector2, boosting: bool) -> void:

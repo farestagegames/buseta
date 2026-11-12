@@ -40,6 +40,8 @@ var _left_behind: int = 0
 var _accuracy_total: float = 0.0
 var _aligned: bool = false
 var _session_was_accuracy_counted: bool = false
+var _approach_harsh_brake: bool = false
+var _perfect_stop: bool = false
 var _status: Dictionary = {}
 var _network: RoadNetwork
 var _next_turn: int = 0
@@ -83,6 +85,7 @@ func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork, fare: int = 
 	GameEvents.reset_requested.connect(_on_recover_requested)
 	GameEvents.skip_stop_requested.connect(skip_to_next_stop)
 	GameEvents.finish_shift_requested.connect(finish_now)
+	GameEvents.penalty_shown.connect(_on_penalty_shown)
 	GameEvents.police_ended_run.connect(func(_reason: String) -> void:
 		get_tree().create_timer(POLICE_STOP_SECONDS).timeout.connect(finish_now))
 	_dodgers.seed = DODGER_SEED
@@ -112,13 +115,16 @@ func tick(data: BusTelemetry, dt: float) -> void:
 
 	if stop.is_final:
 		if _aligned and stopped:
-			GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, timetable_clock()))
+			var final_perfect := StopQuality.is_perfect(stop, centre, data.heading, data.speed, _approach_harsh_brake)
+			GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, timetable_clock()), final_perfect)
+			if final_perfect:
+				GameEvents.perfect_stop.emit(runner.stop_index)
 			_finish(true)
 			return
 	elif session != null:
 		_run_session(stop, data, centre, dt)
 	elif _aligned and stopped and data.door_open_amount >= 1.0:
-		_start_session(stop, centre)
+		_start_session(stop, centre, data)
 	elif stop.is_passed(centre):
 		if stop.kind == RouteStop.Kind.HAIL:
 			_drive_past_hail(stop)
@@ -158,18 +164,21 @@ func _drive_past_hail(stop: RouteStop) -> void:
 		GameEvents.hail_ignored.emit(stop.waiting)
 
 
-func _start_session(stop: RouteStop, centre: Vector2) -> void:
+func _start_session(stop: RouteStop, centre: Vector2, data: BusTelemetry) -> void:
 	var alighting := ledger.alight_at(runner.stop_index)
 	var boarding := ledger.boardable(stop.waiting)
 	if runner.stop_index >= runner.stops.size() - 2:
 		boarding = 0
 	_accuracy_total += stop.accuracy(centre)
-	GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, timetable_clock()))
+	_perfect_stop = StopQuality.is_perfect(stop, centre, data.heading, data.speed, _approach_harsh_brake)
+	GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, timetable_clock()), _perfect_stop)
 	_session_stop = runner.stop_index
 	session = StopSession.new(alighting, boarding)
 	session.passenger_alighted.connect(_on_alighted)
 	session.passenger_boarded.connect(_on_boarded)
 	GameEvents.stop_session_started.emit(runner.stop_index, alighting, boarding)
+	if _perfect_stop:
+		GameEvents.perfect_stop.emit(runner.stop_index)
 
 
 func _run_session(stop: RouteStop, data: BusTelemetry, centre: Vector2, dt: float) -> void:
@@ -188,6 +197,11 @@ func _run_session(stop: RouteStop, data: BusTelemetry, centre: Vector2, dt: floa
 		_next_stop()
 
 
+func _on_penalty_shown(message: String) -> void:
+	if message == "Emergency stop":
+		_approach_harsh_brake = true
+
+
 func _on_alighted() -> void:
 	GameEvents.passenger_alighted.emit(_session_stop)
 	GameEvents.onboard_changed.emit(ledger.count() + session.alighting_left)
@@ -199,6 +213,8 @@ func _on_boarded() -> void:
 		GameEvents.fare_dodged.emit()
 	else:
 		_fares += _fare
+		if _fare > 0:
+			GameEvents.fare_collected.emit(_fare)
 	GameEvents.passenger_boarded.emit(_session_stop)
 	GameEvents.onboard_changed.emit(ledger.count())
 
@@ -206,6 +222,8 @@ func _on_boarded() -> void:
 func _next_stop() -> void:
 	_last_late = maxf(timetable_clock() - schedule.due_times[runner.stop_index], 0.0)
 	runner.advance_stop()
+	_approach_harsh_brake = false
+	_perfect_stop = false
 	_count_down_vendor()
 	if not runner.is_finished() and ledger.wanting_off(runner.stop_index) > 0:
 		GameEvents.stop_requested.emit()

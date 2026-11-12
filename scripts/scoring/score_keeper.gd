@@ -182,8 +182,8 @@ func _on_indicator_missed() -> void:
 	GameEvents.penalty_shown.emit("No indicator")
 
 
-func _on_stop_arrived(_index: int, accuracy: float, seconds_late: float) -> void:
-	score.add_stop(accuracy, seconds_late)
+func _on_stop_arrived(_index: int, accuracy: float, seconds_late: float, is_perfect: bool) -> void:
+	score.add_stop(accuracy, seconds_late, is_perfect)
 
 
 func _on_stop_missed(_index: int, stop_name: String) -> void:

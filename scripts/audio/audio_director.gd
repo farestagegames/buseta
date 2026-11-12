@@ -63,6 +63,7 @@ const SOUNDS := {
 	"reverse": "res://assets/audio/reverse_beep.wav",
 	"bump": "res://assets/audio/bump.wav",
 	"siren": "res://assets/audio/siren_whoop.wav",
+	"perfect": "res://assets/audio/perfect_chime.wav",
 }
 
 ## True from pressing the horn until it has faded out or finished its tune.
@@ -126,6 +127,7 @@ func _ready() -> void:
 	GameEvents.obstacle_hit.connect(func(_kind: String, _loss: float) -> void: play_effect("knock", -9.0))
 	GameEvents.bus_jolted.connect(_on_jolted)
 	GameEvents.passenger_paid.connect(func() -> void: play_effect("pay", -18.0))
+	GameEvents.perfect_stop.connect(func(_stop: int) -> void: play_effect("perfect", -14.0))
 	GameEvents.stop_requested.connect(func() -> void: play_effect("bell", -16.0))
 	GameEvents.stop_session_started.connect(func(_stop: int, _off: int, _on: int) -> void: play_effect("bell", -14.0))
 	GameEvents.traffic_horn.connect(_on_traffic_horn)

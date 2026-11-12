@@ -76,10 +76,10 @@ func _add_satisfaction_loss(amount: float) -> void:
 	_satisfaction_lost = maxf(_satisfaction_lost + amount, 0.0)
 
 
-func add_stop(accuracy: float, seconds_late: float) -> void:
+func add_stop(accuracy: float, seconds_late: float, is_perfect: bool = false) -> void:
 	_accuracy.append(clampf(accuracy, 0.0, 1.0) * 100.0)
 	_punctuality.append(ShiftSchedule.punctuality_score(seconds_late))
-	if accuracy >= RouteGoals.PERFECT_ACCURACY:
+	if is_perfect:
 		counts["perfect_stops"] = int(counts["perfect_stops"]) + 1
 	if not ShiftSchedule.is_on_time(seconds_late):
 		_satisfaction_lost += SATISFACTION_LATE_STOP
