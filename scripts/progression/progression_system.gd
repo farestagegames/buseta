@@ -13,6 +13,9 @@ func _on_report(report: Dictionary) -> void:
 	var bus_id: String = str(route.get("only_bus", Profile.selected_item(Catalog.BUSES)["id"]))
 	var time := TimeOfDay.find(Profile.times_of_day(), str(report.get("time_of_day", "")))
 	report["time_stat"] = time.stat if time != null else ""
+	var director: CelebrationDirector = get_parent().get_node_or_null("Celebrations") if get_parent() != null else null
+	if director != null:
+		director.on_shift_report(report)
 	var rewards := ShiftRewards.apply(Profile.data, report, route_id, DailyChallenge.today_key(),
 		DailyChallenge.load_list(), AchievementList.load_list(), bus_id)
 	var unlocked: Array[Dictionary] = []

@@ -45,6 +45,8 @@ signal stop_requested ## Someone on board wants the next stop.
 signal vendor_boarded
 signal vendor_left
 signal onboard_changed(count: int)
+## A first-time or achievement celebration to show mid-shift.
+signal celebration(text: String, coins: int)
 signal bus_jolted(strength: float)
 signal obstacle_hit(kind: String, speed_loss: float)
 

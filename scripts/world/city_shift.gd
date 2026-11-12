@@ -39,6 +39,7 @@ var ground: GroundSurface
 var route: RouteRunner
 var time_of_day: TimeOfDay
 var bird_ambience: BirdAmbience
+var celebrations: CelebrationDirector
 
 
 ## Runs before the bus readies, so it builds with the player's choices.
@@ -132,6 +133,10 @@ func _ready() -> void:
 		_route_system.endless_plan = route_data["hail"]
 		_route_system.endless_map = map_data
 		_score.give_up_below = RouteSystem.GIVE_UP_SATISFACTION
+	celebrations = get_node_or_null("Celebrations")
+	if celebrations != null:
+		var bus_item := chosen_bus_item()
+		celebrations.setup(Profile.data, AchievementList.load_list(), FirstsList.load_list(), _bus.spec, route, time_of_day, str(route_data.get("id", "")), str(bus_item.get("id", "")))
 	police = PoliceSystem.new()
 	add_child(police)
 	# No police in the arcade: it is a race against the clock.

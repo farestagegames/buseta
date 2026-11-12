@@ -149,7 +149,7 @@ func test_every_visible_string_in_the_code_has_a_translation() -> void:
 	var caps_label := RegEx.create_from_string("^[A-Z◀▶ ]+$")
 	var word := RegEx.create_from_string("^[A-Z][a-záéíóúñ]+$")
 	# A node path is never shown, but the rest of its line might be.
-	var node_path := RegEx.create_from_string("get_node\\(\"(?:[^\"\\\\]|\\\\.)*\"\\)")
+	var node_path := RegEx.create_from_string("get_node(?:_or_null)?\\(\"(?:[^\"\\\\]|\\\\.)*\"\\)")
 	var checked := 0
 	for path in files:
 		if path.ends_with("cheat_panel.gd"):

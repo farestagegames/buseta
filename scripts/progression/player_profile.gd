@@ -44,6 +44,8 @@ var horn: String = ""
 var time_of_day: String = ""
 ## The difficulty picked for the next shift, by its pack id, or "" for the default.
 var difficulty: String = ""
+## First-time celebrations already shown and rewarded (stable snake_case ids).
+var firsts: Array[String] = []
 
 
 
@@ -208,6 +210,7 @@ func to_dict() -> Dictionary:
 		"completed_routes": completed_routes,
 		"last_daily": last_daily, "daily_streak": daily_streak, "settings": settings, "intro_done": intro_done,
 		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day, "difficulty": difficulty,
+		"firsts": firsts,
 	}
 
 
@@ -282,6 +285,11 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	profile.time_of_day = saved_time if saved_time is String else ""
 	var saved_difficulty: Variant = saved.get("difficulty")
 	profile.difficulty = saved_difficulty if saved_difficulty is String else ""
+	var saved_firsts: Variant = saved.get("firsts")
+	if saved_firsts is Array:
+		for id: Variant in saved_firsts:
+			if id is String and not profile.firsts.has(id):
+				profile.firsts.append(id)
 	var saved_version := int(_number(saved.get("version"), 0.0))
 	if saved_version < 2:
 		profile.stats["best_stars"] = RouteGoals.migrate_best_stars(int(profile.stats.get("best_stars", 0)))

@@ -27,6 +27,7 @@ var penalty_toast: PenaltyToast
 var tutorial_panel: TutorialPanel
 var goals_hud: GoalsHud
 var stop_feedback: StopFeedback
+var celebration_banner: CelebrationBanner
 
 var _controls: Control
 var _tilt_hint: Label
@@ -91,6 +92,11 @@ func _ready() -> void:
 	stop_feedback = StopFeedback.new()
 	stop_feedback.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(stop_feedback)
+
+	celebration_banner = CelebrationBanner.new()
+	_root.add_child(celebration_banner)
+	GameEvents.celebration.connect(func(text: String, coins: int) -> void:
+		celebration_banner.show_celebration(text, coins))
 
 	penalty_toast = PenaltyToast.new()
 	_place(penalty_toast, Vector2(0.5, 0.0), Vector2(-280.0, 280.0), Vector2(560.0, 40.0))

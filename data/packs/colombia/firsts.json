@@ -1,0 +1,62 @@
+[
+  {
+    "id": "first_passenger_picked_up",
+    "reward": 50,
+    "achievement": "",
+    "text": "First passenger on board!"
+  },
+  {
+    "id": "first_perfect_stop",
+    "reward": 50,
+    "achievement": "",
+    "text": "First perfect stop!"
+  },
+  {
+    "id": "first_full_bus",
+    "reward": 75,
+    "achievement": "",
+    "text": "First full bus!"
+  },
+  {
+    "id": "first_three_star_route",
+    "reward": 100,
+    "achievement": "five_stars",
+    "text": "First 3-star route!"
+  },
+  {
+    "id": "first_shift_no_fines",
+    "reward": 75,
+    "achievement": "",
+    "text": "First shift with no fines!"
+  },
+  {
+    "id": "first_night_shift",
+    "reward": 50,
+    "achievement": "",
+    "text": "First night shift!"
+  },
+  {
+    "id": "first_rain_shift",
+    "reward": 75,
+    "achievement": "first_aguacero",
+    "text": "First shift in the rain!"
+  },
+  {
+    "id": "first_chiva_drive",
+    "reward": 75,
+    "achievement": "",
+    "text": "First drive in La Chiva!"
+  },
+  {
+    "id": "first_la_ola_shift",
+    "reward": 75,
+    "achievement": "",
+    "text": "First shift on La Ola!"
+  },
+  {
+    "id": "first_vendor_on_board",
+    "reward": 50,
+    "achievement": "",
+    "text": "First vendor on board!"
+  }
+]

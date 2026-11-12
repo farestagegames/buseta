@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/vehicle/bus.tscn" id="1"]
 [ext_resource type="Script" path="res://scripts/world/city_shift.gd" id="2"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://scripts/scoring/score_keeper.gd" id="13"]
 
 [ext_resource type="Script" path="res://scripts/progression/progression_system.gd" id="14"]
+[ext_resource type="Script" path="res://scripts/progression/celebration_director.gd" id="18"]
 
 [ext_resource type="Script" path="res://scripts/world/graphics_director.gd" id="15"]
 
@@ -99,6 +100,9 @@ script = ExtResource("12")
 
 [node name="ScoreKeeper" type="Node" parent="."]
 script = ExtResource("13")
+
+[node name="Celebrations" type="Node" parent="."]
+script = ExtResource("18")
 
 [node name="Progression" type="Node" parent="."]
 script = ExtResource("14")

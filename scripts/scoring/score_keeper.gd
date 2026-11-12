@@ -250,6 +250,7 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	if _in_downpour:
 		_end_downpour()
 	var report := summary.duplicate()
+	report["service"] = _service
 	report["time_of_day"] = _time_of_day
 	report["difficulty"] = _difficulty_id
 	report["police_stopped"] = _police_stopped

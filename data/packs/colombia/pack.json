@@ -48,7 +48,8 @@
     "catalog": "catalog.json",
     "achievements": "achievements.json",
     "daily_challenges": "daily_challenges.json",
-    "passengers": "passengers.json"
+    "passengers": "passengers.json",
+    "firsts": "firsts.json"
   },
   "sounds": {
     "birds": "res://assets/audio/ambience/birds.wav"
