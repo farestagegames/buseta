@@ -272,7 +272,10 @@ func show_report(report: Dictionary) -> void:
 	_build_unlock()
 
 	var all_stars := stars_shown >= _max_stars
-	again_button.text = tr("Next route") if all_stars else tr("Retry for ★★★")
+	if Profile.route_override != "":
+		again_button.text = tr("Play again")
+	else:
+		again_button.text = tr("Next route") if all_stars else tr("Retry for ★★★")
 	double_coins_button.visible = Profile.ads.is_available()
 
 	_t = 0.0
@@ -422,7 +425,7 @@ func _on_gui_input(event: InputEvent) -> void:
 
 
 func _on_main_action() -> void:
-	if stars_shown >= _max_stars:
+	if stars_shown >= _max_stars and Profile.route_override == "":
 		_next_route()
 	else:
 		get_tree().reload_current_scene()
@@ -438,7 +441,7 @@ func _next_route() -> void:
 			break
 	for i in range(index + 1, routes.size()):
 		var id := str((routes[i] as Dictionary).get("id", ""))
-		if Profile.data.owns(Catalog.ROUTES, id):
+		if Profile.data.owns(Catalog.ROUTES, id) and routes[i] != Profile.catalog.arcade_route():
 			Profile.select(Catalog.ROUTES, id)
 			get_tree().reload_current_scene()
 			return

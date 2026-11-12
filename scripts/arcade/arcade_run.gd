@@ -4,16 +4,19 @@ extends RefCounted
 ## time, boost pads that can each be used once, crashes that cost time, and the
 ## end when the clock runs out. Distances are along the course, in metres.
 
-const START_SECONDS := 60.0
-const CHECKPOINT_SECONDS := 18.0
-const CRASH_SECONDS := 3.0
+## Tuned to forgive (12 Nov feedback): more time to start, more per arch, less per crash.
+const START_SECONDS := 75.0
+const CHECKPOINT_SECONDS := 22.0
+const CRASH_SECONDS := 2.0
 const FIRST_CHECKPOINT := 180.0
 const CHECKPOINT_SPACING := 280.0
 const FIRST_BOOST := 330.0
 const BOOST_SPACING := 420.0
 const BOOST_SECONDS := 3.0
 ## A pad counts when the bus passes within this far of its centre, sideways.
-const BOOST_REACH := 2.6
+const BOOST_REACH := 3.4
+## Steering help in the arcade only: a quicker wheel and more cornering grip.
+const HANDLING := 1.3
 
 var seconds_left: float = START_SECONDS
 var elapsed: float = 0.0

@@ -34,6 +34,8 @@ var _horn_preview_db: float = AudioDirector.BUS_HORN_DB
 
 
 func _ready() -> void:
+	# Back at the menu, the next shift is the chosen route again.
+	Profile.route_override = ""
 	var backing := ColorRect.new()
 	backing.color = BACKGROUND
 	backing.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -265,7 +267,66 @@ func _home_tab() -> Control:
 	start.add_theme_font_size_override("font_size", 38)
 	start.pressed.connect(_start_shift)
 	side.add_child(start)
+	var arcade := _arcade_button()
+	if arcade != null:
+		side.add_child(arcade)
 	return page
+
+
+## Carrera Express in one tap, without changing the chosen route. Locked below its
+## level, with the best checkpoints once raced and a "New!" badge until then.
+func _arcade_button() -> Button:
+	var item := Profile.catalog.arcade_route()
+	if item.is_empty():
+		return null
+	var button := _button("")
+	button.name = "ArcadeButton"
+	button.custom_minimum_size.y = 96.0
+	button.add_theme_font_size_override("font_size", 28)
+	button.add_theme_color_override("font_color", ACCENT)
+	var detail := ""
+	if not Profile.data.arcade_unlocked(Profile.catalog):
+		detail = tr("Opens at level %d") % int(item.get("level", 1))
+		button.disabled = true
+	elif Profile.data.arcade_tried(Profile.catalog):
+		detail = tr("Best: %d checkpoints") % int(Profile.data.best_scores.get(item["id"], 0))
+	button.text = tr("Carrera Express") + ("\n" + detail if detail != "" else "")
+	button.pressed.connect(start_arcade)
+	if not button.disabled and not Profile.data.arcade_tried(Profile.catalog):
+		var badge := _text("New!", 18, BACKGROUND)
+		badge.name = "NewBadge"
+		var back := PanelContainer.new()
+		var style := StyleBoxFlat.new()
+		style.bg_color = ACCENT
+		style.set_corner_radius_all(10)
+		style.content_margin_left = 8.0
+		style.content_margin_right = 8.0
+		back.add_theme_stylebox_override("panel", style)
+		back.add_child(badge)
+		back.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		back.position = Vector2(-8.0, 6.0)
+		back.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(back)
+	return button
+
+
+func start_arcade() -> void:
+	if prepare_arcade():
+		get_tree().change_scene_to_file(SHIFT_SCENE)
+
+
+## Points the next shift at the arcade. False while it is still locked.
+static func prepare_arcade() -> bool:
+	var item := Profile.catalog.arcade_route()
+	if item.is_empty() or not Profile.data.arcade_unlocked(Profile.catalog):
+		return false
+	if not Profile.data.owns(Catalog.ROUTES, item["id"]):
+		(Profile.data.owned[Catalog.ROUTES] as Array).append(item["id"])
+	Profile.route_override = item["id"]
+	Profile.save()
+	return true
 
 
 ## A short line for the next item to work towards, with what is missing.
@@ -297,6 +358,7 @@ func _driver_button() -> Control:
 
 
 func _start_shift() -> void:
+	Profile.route_override = ""
 	Profile.save()
 	get_tree().change_scene_to_file(SHIFT_SCENE)
 
@@ -307,6 +369,8 @@ func _routes_tab() -> Control:
 	if Profile.difficulties().size() > 1:
 		list.get_child(0).add_child(_difficulty_card())
 	for item: Dictionary in Profile.catalog.items(Catalog.ROUTES):
+		if item == Profile.catalog.arcade_route():
+			continue # The arcade has its own button on Home.
 		list.get_child(0).add_child(_shop_row(Catalog.ROUTES, item, item.get("description", "")))
 	return list
 

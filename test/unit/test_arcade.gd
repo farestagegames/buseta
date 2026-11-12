@@ -62,3 +62,48 @@ func test_a_boost_raises_the_top_speed_and_the_pull() -> void:
 			model.step(0.0, 1.0, 0.0, 1.0 / 60.0)
 	assert_gt(boosted.speed, plain.speed + 3.0, "A boosted bus goes faster")
 	assert_lt(boosted.speed, spec.top_speed * (1.0 + BusPhysicsModel.BOOST_TOP_SPEED) + 0.5)
+
+
+func test_the_arcade_is_forgiving() -> void:
+	assert_gte(ArcadeRun.START_SECONDS, 75.0, "Time to learn the course")
+	assert_gte(ArcadeRun.CHECKPOINT_SECONDS, 22.0)
+	assert_lte(ArcadeRun.CRASH_SECONDS, 2.0)
+	var run := ArcadeRun.new()
+	run.plan_to(2000.0)
+	run.crash()
+	assert_almost_eq(run.seconds_left, ArcadeRun.START_SECONDS - ArcadeRun.CRASH_SECONDS, 0.01)
+
+
+func test_arcade_handling_steers_quicker_and_corners_harder() -> void:
+	var spec := load(Profile.catalog.find(Catalog.BUSES, "buseta_8")["file"]) as BusSpec
+	var plain := BusPhysicsModel.new(spec)
+	var helped := BusPhysicsModel.new(spec)
+	helped.handling = ArcadeRun.HANDLING
+	for model: BusPhysicsModel in [plain, helped]:
+		model.speed = 15.0
+		model.step(1.0, 0.0, 0.0, 0.1)
+	assert_gt(absf(helped.steer_angle), absf(plain.steer_angle), "The wheel turns quicker")
+	assert_gt(helped.steer_limit(), plain.steer_limit(), "More grip in corners")
+
+
+func test_a_saved_arcade_choice_goes_back_to_a_normal_route() -> void:
+	var catalog := Catalog.new()
+	var profile := PlayerProfile.new()
+	profile.grant_free_items(catalog)
+	profile.selected[Catalog.ROUTES] = catalog.arcade_route()["id"]
+	profile.repair_choices(catalog)
+	assert_ne(profile.selected[Catalog.ROUTES], catalog.arcade_route()["id"], "The arcade has its own button")
+
+
+func test_the_arcade_opens_at_its_level() -> void:
+	var catalog := Catalog.new()
+	var profile := PlayerProfile.new()
+	var level := int(catalog.arcade_route().get("level", 1))
+	assert_gt(level, 1, "Not open on the very first launch")
+	profile.xp = DriverLevel.xp_for_level(level) - 1
+	assert_false(profile.arcade_unlocked(catalog))
+	profile.xp = DriverLevel.xp_for_level(level)
+	assert_true(profile.arcade_unlocked(catalog))
+	assert_false(profile.arcade_tried(catalog))
+	profile.best_scores[catalog.arcade_route()["id"]] = 2
+	assert_true(profile.arcade_tried(catalog))

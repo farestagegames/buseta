@@ -8,7 +8,7 @@ func _ready() -> void:
 
 
 func _on_report(report: Dictionary) -> void:
-	var route: Dictionary = Profile.selected_item(Catalog.ROUTES)
+	var route: Dictionary = Profile.shift_route()
 	var route_id: String = route["id"]
 	var bus_id: String = str(route.get("only_bus", Profile.selected_item(Catalog.BUSES)["id"]))
 	var time := TimeOfDay.find(Profile.times_of_day(), str(report.get("time_of_day", "")))

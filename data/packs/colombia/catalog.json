@@ -65,6 +65,8 @@
    "name": "Arcade: Carrera Express",
    "file": "routes/arcade.json",
    "cost": 0,
+   "mode": "arcade",
+   "level": 2,
    "description": "Race the clock through the city: drive through checkpoint arches for more time and hit the orange pads for a boost."
   }
  ],

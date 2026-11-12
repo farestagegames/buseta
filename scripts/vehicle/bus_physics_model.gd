@@ -32,6 +32,8 @@ var road_slope: float = 0.0 ## Rise per metre along the heading. Positive is uph
 ## Tyre grip as a share of a dry road. A wet road lowers it, which lengthens
 ## braking and widens the turns the bus can hold at speed.
 var grip: float = 1.0
+## Steering help, 1 for a normal shift: scales the wheel speed and cornering grip.
+var handling: float = 1.0
 
 var throttle: float = 0.0 ## Pedal after lag.
 var brake: float = 0.0 ## Pedal after lag.
@@ -147,7 +149,7 @@ func steer_limit() -> float:
 	var speed_squared := speed * speed
 	if speed_squared < 0.01:
 		return full_lock
-	return minf(full_lock, atan(_spec.max_lateral_accel * grip * _spec.wheelbase / speed_squared))
+	return minf(full_lock, atan(_spec.max_lateral_accel * grip * handling * _spec.wheelbase / speed_squared))
 
 
 func _update_pedals(throttle_input: float, brake_input: float, dt: float) -> void:
@@ -160,7 +162,7 @@ func _update_pedals(throttle_input: float, brake_input: float, dt: float) -> voi
 func _update_steering(steer_input: float, dt: float) -> void:
 	var limit := steer_limit()
 	var target := clampf(steer_input * deg_to_rad(_spec.max_steer_degrees), -limit, limit)
-	steer_angle = move_toward(steer_angle, target, deg_to_rad(_spec.steer_rate_degrees) * dt)
+	steer_angle = move_toward(steer_angle, target, deg_to_rad(_spec.steer_rate_degrees) * handling * dt)
 	steer_angle = clampf(steer_angle, -limit, limit)
 
 

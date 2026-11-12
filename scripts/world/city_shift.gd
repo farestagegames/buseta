@@ -60,7 +60,7 @@ static func chosen_spec() -> BusSpec:
 
 ## The bus for this shift: the player's, unless the route has a bus of its own.
 static func chosen_bus_item() -> Dictionary:
-	var route := Profile.selected_item(Catalog.ROUTES)
+	var route := Profile.shift_route()
 	if route.has("only_bus"):
 		return Profile.catalog.find(Catalog.BUSES, route["only_bus"])
 	return Profile.selected_item(Catalog.BUSES)
@@ -102,7 +102,7 @@ static func _colour(values: Array) -> Color:
 
 
 func _ready() -> void:
-	var route_data := MapLoader.read_json(Profile.selected_item(Catalog.ROUTES)["file"])
+	var route_data := MapLoader.read_json(Profile.shift_route()["file"])
 	var map_data := MapLoader.read_map_of(route_data)
 	network = RoadNetwork.from_data(map_data, Country.pack.traffic_side, Country.pack.default_speed_limit())
 	var hail_seed := shift_seed if shift_seed >= 0 else randi()
@@ -145,6 +145,7 @@ func _ready() -> void:
 		arcade = ArcadeSystem.new()
 		add_child(arcade)
 		arcade.setup(route, network, ground, hail_seed)
+		_bus.model.handling = ArcadeRun.HANDLING
 	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)
 	if arcade != null:

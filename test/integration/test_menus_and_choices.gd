@@ -311,3 +311,78 @@ func test_a_country_without_radio_hides_the_button_and_slider() -> void:
 	add_child_autofree(colombian)
 	await wait_frames(1)
 	assert_true(colombian.radio_button.visible)
+
+
+func _arcade_button(menu: MainMenu) -> Button:
+	return menu.find_child("ArcadeButton", true, false) as Button
+
+
+func test_home_has_a_carrera_express_button_locked_until_its_level() -> void:
+	Profile.data.grant_free_items(Profile.catalog)
+	var level := int(Profile.catalog.arcade_route()["level"])
+	Profile.data.xp = DriverLevel.xp_for_level(level) - 1
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	var button := _arcade_button(menu)
+	assert_not_null(button, "Carrera Express is on Home")
+	assert_true(button.disabled, "Locked below its level")
+	assert_string_contains(button.text, str(level))
+	assert_false(MainMenu.prepare_arcade(), "A locked arcade does not start")
+	Profile.data.xp = DriverLevel.xp_for_level(level)
+	menu.show_tab(0)
+	await wait_frames(2)
+	button = _arcade_button(menu)
+	assert_false(button.disabled, "Open at its level")
+	assert_not_null(button.find_child("NewBadge", true, false), "New until raced once")
+	Profile.data.best_scores[Profile.catalog.arcade_route()["id"]] = 7
+	menu.show_tab(0)
+	await wait_frames(2)
+	button = _arcade_button(menu)
+	assert_null(button.find_child("NewBadge", true, false), "No badge once raced")
+	assert_string_contains(button.text, "7")
+
+
+func test_the_arcade_button_plays_the_arcade_without_changing_the_chosen_route() -> void:
+	Profile.data.grant_free_items(Profile.catalog)
+	Profile.data.xp = 100000
+	var chosen: String = Profile.data.selected[Catalog.ROUTES]
+	assert_true(MainMenu.prepare_arcade())
+	assert_eq(Profile.shift_route()["id"], Profile.catalog.arcade_route()["id"], "The next shift is the arcade")
+	assert_eq(Profile.data.selected[Catalog.ROUTES], chosen, "The chosen route stays")
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	assert_eq(Profile.shift_route()["id"], chosen, "Back at the menu, Start shift drives the chosen route")
+
+
+func test_the_routes_tab_leaves_the_arcade_to_its_home_button() -> void:
+	Profile.data.grant_free_items(Profile.catalog)
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(1)
+	await wait_frames(2)
+	var labels := menu._content.find_children("*", "Label", true, false)
+	for label: Label in labels:
+		assert_false(label.text.contains("Carrera Express"), "Not listed with the routes")
+
+
+func test_the_arcade_button_text_fits_in_both_languages() -> void:
+	Profile.data.grant_free_items(Profile.catalog)
+	Profile.data.xp = 100000
+	Profile.data.best_scores[Profile.catalog.arcade_route()["id"]] = 188
+	var was := GameSettings.language
+	for width: int in [1280, 1560]:
+		for language: String in ["es_CO", "en"]:
+			GameSettings.language = language
+			var screen := SubViewport.new()
+			screen.size = Vector2i(width, 720)
+			add_child_autofree(screen)
+			var menu: MainMenu = MENU.instantiate()
+			screen.add_child(menu)
+			await wait_frames(3)
+			var button := _arcade_button(menu)
+			assert_lte(button.get_combined_minimum_size().x, button.size.x + 0.5, "%s at %d fits" % [language, width])
+			assert_true(Rect2(Vector2.ZERO, Vector2(screen.size)).encloses(button.get_global_rect()), "%s at %d on screen" % [language, width])
+			screen.queue_free()
+	GameSettings.language = was
+	Profile.data.best_scores.clear()

@@ -10,6 +10,8 @@ var catalog := Catalog.new()
 var ads := AdProvider.new()
 
 var _path: String = SAVE_PATH
+## A route this run plays instead of the chosen one (the arcade), or "".
+var route_override: String = ""
 
 
 func _ready() -> void:
@@ -58,6 +60,16 @@ func next_unlock() -> Dictionary:
 
 func save() -> bool:
 	return SaveStore.write(_path, data.to_dict())
+
+
+## The route the next shift drives: the arcade when its Home button started it,
+## otherwise the chosen route. Not saved; the menu clears it.
+func shift_route() -> Dictionary:
+	if route_override != "":
+		var item := catalog.find(Catalog.ROUTES, route_override)
+		if not item.is_empty():
+			return item
+	return selected_item(Catalog.ROUTES)
 
 
 func selected_item(kind: String) -> Dictionary:

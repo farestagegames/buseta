@@ -37,7 +37,7 @@ func setup(route: RouteRunner, network: RoadNetwork, ground: GroundSurface, rand
 	GameEvents.bus_collided.connect(func(impact: float) -> void:
 		if impact >= ScoreKeeper.LOST_COLLISION_SPEED:
 			run.crash()
-			GameEvents.penalty_shown.emit("Crash: -3 s"))
+			GameEvents.penalty_shown.emit(tr("Crash: -%d s") % roundi(ArcadeRun.CRASH_SECONDS)))
 
 
 func _on_telemetry(data: BusTelemetry) -> void:

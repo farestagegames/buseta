@@ -35,6 +35,14 @@ func find(kind: String, id: String) -> Dictionary:
 	return {}
 
 
+## The arcade course (Carrera Express), reached from its own Home button, or {}.
+func arcade_route() -> Dictionary:
+	for item: Dictionary in items(ROUTES):
+		if str(item.get("mode", "")) == "arcade":
+			return item
+	return {}
+
+
 ## The route a new player starts on.
 func default_route() -> String:
 	var route: Variant = data.get("default_route", "")

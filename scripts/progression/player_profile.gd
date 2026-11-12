@@ -97,12 +97,14 @@ func repair_choices(catalog: Catalog) -> void:
 			fallback = owned_items[0]["id"] if not owned_items.is_empty() else ""
 		if fallback != "":
 			selected[kind] = fallback
-	# A selected route the player cannot use yet falls back to one they can.
-	if not can_play_route(selected.get(Catalog.ROUTES, ""), catalog):
+	# A selected route the player cannot use yet falls back to one they can. The
+	# arcade is never the chosen route: it has its own Home button.
+	var chosen_route: String = selected.get(Catalog.ROUTES, "")
+	if not can_play_route(chosen_route, catalog) or catalog.arcade_route().get("id", "") == chosen_route:
 		var route := catalog.default_route()
 		if not can_play_route(route, catalog):
 			for item: Dictionary in catalog.items(Catalog.ROUTES):
-				if can_play_route(item["id"], catalog):
+				if can_play_route(item["id"], catalog) and item != catalog.arcade_route():
 					route = item["id"]
 					break
 		if route != "":
@@ -163,6 +165,18 @@ func has_completed_route(route_id: String) -> bool:
 
 
 ## A route the player owns and can start now.
+## The arcade opens at its driver level; before that its Home button shows the level.
+func arcade_unlocked(catalog: Catalog) -> bool:
+	var item := catalog.arcade_route()
+	return not item.is_empty() and DriverLevel.level_for(xp) >= int(item.get("level", 1))
+
+
+## The arcade has been raced at least once, so its "New!" badge can go.
+func arcade_tried(catalog: Catalog) -> bool:
+	var item := catalog.arcade_route()
+	return not item.is_empty() and best_scores.has(item["id"])
+
+
 func can_play_route(route_id: String, catalog: Catalog) -> bool:
 	if not owns(Catalog.ROUTES, route_id):
 		return false

@@ -106,7 +106,6 @@
  "Complete a shift without striking a kerb": "Termina un turno sin golpear el sardinel",
  "Complete daily challenges 7 days in a row": "Cumple el reto del día 7 días seguidos",
  "Counts down the days to Carnival all year round.": "Se la pasa todo el año contando los días para el Carnaval.",
- "Crash: -3 s": "Choque: -3 s",
  "Cumbia": "Cumbia",
  "DOORS": "PUERTAS",
  "DOORS OPEN": "PUERTAS ABIERTAS",
@@ -380,5 +379,11 @@
  "Total": "Total",
  "Next route": "Siguiente ruta",
  "Retry for ★★★": "Reintentar por ★★★",
- "Menu": "Menú"
+ "Menu": "Menú",
+ "Crash: -%d s": "Choque: -%d s",
+ "Carrera Express": "Carrera Express",
+ "Best: %d checkpoints": "Récord: %d controles",
+ "New!": "¡Nuevo!",
+ "Opens at level %d": "Se abre en el nivel %d",
+ "Play again": "Otra vez"
 }
