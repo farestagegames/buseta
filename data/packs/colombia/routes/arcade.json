@@ -14,16 +14,5 @@
    "dir": 1
   }
  ],
- "stops": [],
- "goals": [
-  {
-   "type": "no_collisions"
-  },
-  {
-   "type": "no_fines"
-  },
-  {
-   "type": "no_knocked"
-  }
- ]
+ "stops": []
 }

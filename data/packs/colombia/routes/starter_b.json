@@ -88,7 +88,7 @@
  "goals": [
   {
    "type": "finish_under",
-   "value": 360
+   "value": 450
   },
   {
    "type": "no_collisions"
