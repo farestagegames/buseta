@@ -96,5 +96,10 @@ signal hint_shown(text: String)
 signal score_updated(total: int)
 signal shift_report_ready(report: Dictionary)
 signal shift_rewards_ready(report: Dictionary)
+## Payout animation beats: a coin line lands, the total lands, a star pops, a level-up.
+signal payout_tick
+signal payout_total
+signal payout_star
+signal payout_level_up
 ## True while the opening scene or tutorial runs: no clock, no penalties.
 signal shift_held_changed(held: bool)

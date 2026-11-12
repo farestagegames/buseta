@@ -271,15 +271,18 @@ func _on_shift_completed(summary: Dictionary) -> void:
 		report["stars"] = ArcadeRun.stars_for(int(arcade["checkpoints"]))
 		report["coins"] = ArcadeRun.coins_for(int(arcade["checkpoints"]), float(arcade["distance"]))
 		report["goals"] = []
+		report["coin_breakdown"] = {}
 	elif _service == "endless":
 		report["stars"] = score.stars()
-		report["coins"] = score.coins(carried, int(report["stars"]))
+		report["coin_breakdown"] = score.coin_breakdown(carried, int(report["stars"]))
+		report["coins"] = int(report["coin_breakdown"]["total"])
 		report["goals"] = []
 	else:
 		var evaluated := RouteGoals.evaluate(_goals, report)
 		report["goals"] = evaluated
 		report["stars"] = RouteGoals.stars_for(_goals, report)
-		report["coins"] = score.coins(carried, int(report["stars"]))
+		report["coin_breakdown"] = score.coin_breakdown(carried, int(report["stars"]))
+		report["coins"] = int(report["coin_breakdown"]["total"])
 	report["details"] = _details(summary)
 	var weakest := score.weakest_category()
 	report["tip"] = tr(TIPS[weakest]) if weakest != "" else ""

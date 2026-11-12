@@ -219,11 +219,30 @@ func stars() -> int:
 	return 0
 
 
-func coins(passengers_carried: int, star_count: int = -1) -> int:
+## The five lines of a shift's pay, in display order, plus the total. The four
+## positive lines sum to the gross earnings, the fines come off, and the on-time
+## bonus absorbs any rounding, so the lines always add up exactly to the total.
+func coin_breakdown(passengers_carried: int, star_count: int = -1) -> Dictionary:
 	var earned_stars := star_count if star_count >= 0 else stars()
-	var earned := BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER + earned_stars * COINS_PER_STAR \
-		+ int(counts["clean_downpours"]) * DOWNPOUR_COINS
-	return maxi(roundi(earned * coin_scale) - fined_coins, 0)
+	var gross := roundi((BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER \
+		+ earned_stars * COINS_PER_STAR + int(counts["clean_downpours"]) * DOWNPOUR_COINS) * coin_scale)
+	var fines := mini(fined_coins, gross)
+	var fares := floori(passengers_carried * COINS_PER_PASSENGER * coin_scale)
+	var tips := floori(earned_stars * COINS_PER_STAR * coin_scale)
+	var clean := floori((BASE_COINS + int(counts["clean_downpours"]) * DOWNPOUR_COINS) * coin_scale)
+	var on_time := maxi(gross - fares - tips - clean, 0)
+	return {
+		"fares": fares,
+		"tips": tips,
+		"clean": clean,
+		"on_time": on_time,
+		"fines": fines,
+		"total": gross - fines,
+	}
+
+
+func coins(passengers_carried: int, star_count: int = -1) -> int:
+	return int(coin_breakdown(passengers_carried, star_count)["total"])
 
 
 ## The category that cost the most points, for the report's advice.

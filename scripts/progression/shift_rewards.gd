@@ -7,6 +7,7 @@ extends RefCounted
 ## bus_id is the bus actually driven, which a route can force.
 static func apply(profile: PlayerProfile, report: Dictionary, route_id: String, date_key: String, challenges: Array, achievements: Array, bus_id: String = "") -> Dictionary:
 	var level_before := DriverLevel.level_for(profile.xp)
+	var xp_before := profile.xp
 	var coins: int = report["coins"]
 	var xp := DriverLevel.xp_from_shift(report["score"], report["stars"])
 	var counts: Dictionary = report["counts"]
@@ -56,6 +57,7 @@ static func apply(profile: PlayerProfile, report: Dictionary, route_id: String, 
 	profile.coins += coins + daily_coins + achievement_coins
 	return {
 		"coins": coins, "daily_coins": daily_coins, "xp": xp,
+		"xp_before": xp_before, "xp_after": profile.xp,
 		"daily_text": daily["text"] if daily_coins > 0 else "",
 		"daily_streak": profile.daily_streak if daily_coins > 0 else 0,
 		"level": DriverLevel.level_for(profile.xp),

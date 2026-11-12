@@ -56,10 +56,10 @@ Prompts in `delegation/opencode-prompts.md`, run in order by the owner with open
 | 3 | Two short starter routes | Done | `e28780b`. 2 new routes, unlock chain, fresh profile and save tests, autopilot A 238 s and B 356 s |
 | 4 | 3 route goals = 3 stars | Done | Goals on all routes, 3-star goal scoring, HUD/menu/results goal UI, 0-5→0-3 save migration, challenges/achievements updated |
 | 5 | Feedback at every stop | Done | Fare pop/clink, perfect-stop stamp/chime/bounce, StopQuality rule and perfect-stop counts in reports |
-| 6 | Payout screen | Planned |
+| 6 | Payout screen | Done | Coin breakdown (fares/tips/clean/on-time/fines) counts up, stars pop with goal names, XP bar + level burst, next-unlock bar, next-route/retry + menu buttons, tap to skip under 6 s |
 | 7 | Unlock every 1 to 2 shifts, cab decorations | Done | `overnight` | Liveries and horns re-cost/gated from autopilot averages (~438 coins/shift on starters and Route 1); 7 cheap cab decorations (one free) shown in cockpit and garage try-on; "Próximo desbloqueo" on the menu and exposed for the results screen. Existing saves keep purchases and coins. Not checked on a phone |
-| 8 | First-time banners tied to achievements | Planned |
+| 8 | First-time banners tied to achievements | Done | `firsts.json`, confetti celebration banner, profile-saved firsts, live achievement/first unlocks, and celebration tests |
 
-**Resume here:** task 6 next (payout screen), then 8. Use the strongest OpenCode Go model for 6 (payout animation); use a free model for 8. On the phone still to check: the tutorial ring, the birds, Starter A as the first route, the 3-goal checklist, stop feedback placement/feel, cab decorations in cockpit and the next-unlock line. Play: internal testing installed on the owner's phone (12 Nov); closed track, privacy page re-upload and key backup still to do (`store/testing-plan.md`).
+**Resume here:** all eight engagement tasks are done. On the phone still to check: the tutorial ring, the birds, Starter A as the first route, the 3-goal checklist, stop feedback placement/feel, cab decorations in cockpit, the next-unlock line, the payout sequence, and first-time/achievement celebration banners. Play: internal testing installed on the owner's phone (12 Nov); closed track, privacy page re-upload and key backup still to do (`store/testing-plan.md`).
 
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.
