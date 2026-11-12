@@ -829,3 +829,39 @@ func test_the_arcade_runs_against_the_clock_and_reports_checkpoints() -> void:
 	assert_gt(arcade_reports.size(), 0)
 	for report: Dictionary in arcade_reports:
 		assert_eq(int(report["score"]), 3, "Scored on checkpoints")
+
+
+## Driving into a motorbike used to take no speed off the bus, so on the phone the
+## bus seemed to pass straight through it, worst at arcade boost speed.
+func test_a_motorbike_stops_the_bus_instead_of_passing_through_even_at_boost_speed() -> void:
+	var traffic: TrafficSystem = scene.traffic_for_tools()
+	var moto: TrafficAgent = traffic.agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto)[0]
+	var spec := bus.spec
+	var boosted := spec.top_speed * (1.0 + BusPhysicsModel.BOOST_TOP_SPEED)
+	var hits: Array[float] = []
+	var on_hit := func(kind: String, loss: float) -> void:
+		if kind == "moto":
+			hits.append(loss)
+	GameEvents.obstacle_hit.connect(on_hit)
+	for dt: float in [1.0 / 30.0, 1.0 / 60.0]:
+		for speed: float in [8.0, boosted]:
+			hits.clear()
+			moto.stunned = 0.0
+			var spot: Vector2 = traffic._position_of(moto)
+			var forward := Vector2(0.0, -1.0) # Heading 0 faces -Z.
+			var nose := spec.wheelbase + spec.front_overhang
+			var rear := spot - forward * (nose + 15.0)
+			bus.model.speed = speed
+			traffic._bus_heading = 0.0
+			traffic._bus_speed = speed
+			while (rear - spot).dot(forward) < 5.0:
+				rear += forward * speed * dt
+				traffic._bus_position = rear
+				traffic._check_bus_hits()
+			assert_gt(hits.size(), 0, "Hit at %.1f m/s, dt %.3f" % [speed, dt])
+			if hits.is_empty():
+				continue
+			assert_gt(moto.stunned, 0.0, "The rider stops")
+			assert_almost_eq(hits[0], speed * TrafficSystem.MOTO_LOSS_SHARE, 0.01, "The bus loses speed")
+			assert_lt(bus.model.speed, speed - 1.0, "The bus slows at %.1f m/s" % speed)
+	GameEvents.obstacle_hit.disconnect(on_hit)

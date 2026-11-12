@@ -20,6 +20,11 @@ const MOTO_HALF_LENGTH := TrafficAgent.MOTO_HALF_LENGTH
 const MOTO_HALF_WIDTH := TrafficAgent.MOTO_HALF_WIDTH
 const MOTO_RADIUS := 0.55
 const MOTO_COLLISION := 2.0 ## How hard a moto counts as a knock, in m/s lost.
+## Share of the bus's speed a moto hit takes off. It was nothing, so the bus
+## seemed to drive straight through motorbikes, worst at arcade boost speed.
+const MOTO_LOSS_SHARE := 0.4
+## How hard a hit moto is thrown clear of the bus's path, sideways, in m/s.
+const MOTO_SIDE_SHOVE := 4.0
 const LAMP_SHADER := preload("res://assets/shaders/vehicle_lamps.gdshader")
 const MOTO_COLOURS: Array[Color] = [
 	Color(0.85, 0.15, 0.12), Color(0.12, 0.2, 0.55), Color(0.12, 0.12, 0.14), Color(0.9, 0.9, 0.92), Color(0.15, 0.55, 0.3),
@@ -220,10 +225,16 @@ func _check_moto_hit(agent: TrafficAgent, spot: Vector2, bus_velocity: Vector2) 
 	if not BusFootprint.touches(_bus_position, _bus_heading, _spec, spot, MOTO_RADIUS) and not _trailer_touches(spot, MOTO_RADIUS):
 		return
 	if absf(_bus_speed) >= BUS_FAULT_SPEED and agent.stunned <= TrafficAgent.STUN_SECONDS - HIT_REPEAT_SECONDS:
-		agent.hit_by_bus(bus_velocity * 0.3)
+		var forward := Vector2(-sin(_bus_heading), -cos(_bus_heading))
+		var away := spot - BusFootprint.body_centre(_bus_position, _bus_heading, _spec)
+		var side := away - forward * away.dot(forward)
+		if side.length_squared() < 0.0001:
+			side = Vector2(-forward.y, forward.x)
+		agent.hit_by_bus(bus_velocity * 0.3 + side.normalized() * MOTO_SIDE_SHOVE)
 		flow.honk_after_hit(agents.find(agent))
-		GameEvents.obstacle_hit.emit("moto", 0.0)
-		GameEvents.bus_collided.emit(MOTO_COLLISION)
+		var loss := absf(_bus_speed) * MOTO_LOSS_SHARE
+		GameEvents.obstacle_hit.emit("moto", loss)
+		GameEvents.bus_collided.emit(maxf(loss, MOTO_COLLISION))
 	else:
 		agent.stop_against_bus((spot - _bus_position).normalized() * SEPARATION_PER_TICK)
 
