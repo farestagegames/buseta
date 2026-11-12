@@ -143,5 +143,18 @@
    3
   ],
   "vendor_every": 3
- }
+ },
+ "goals": [
+  {
+   "type": "finish_under",
+   "value": 780
+  },
+  {
+   "type": "no_collisions"
+  },
+  {
+   "type": "satisfaction",
+   "value": 70
+  }
+ ]
 }

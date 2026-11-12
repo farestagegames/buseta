@@ -95,5 +95,17 @@
    3
   ],
   "vendor_every": 3
- }
+ },
+ "goals": [
+  {
+   "type": "finish_under",
+   "value": 430
+  },
+  {
+   "type": "no_fines"
+  },
+  {
+   "type": "no_missed"
+  }
+ ]
 }

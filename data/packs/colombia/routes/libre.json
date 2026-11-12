@@ -25,5 +25,17 @@
   ],
   "vendor_every": 4
  },
- "stops": []
+ "stops": [],
+ "goals": [
+  {
+   "type": "passengers",
+   "value": 20
+  },
+  {
+   "type": "no_collisions"
+  },
+  {
+   "type": "no_fines"
+  }
+ ]
 }

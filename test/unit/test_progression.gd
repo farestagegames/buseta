@@ -14,9 +14,9 @@ func before_each() -> void:
 			DirAccess.remove_absolute(PATH + suffix)
 
 
-func _report(score: int = 80, stars: int = 4) -> Dictionary:
-	return {"score": score, "stars": stars, "coins": 400, "carried": 20,
-		"counts": {"collisions": 0, "harsh_brakes": 0, "kerbs": 0, "indicators": 0, "red_lights": 0, "knocked": 0, "jolts": 0}}
+func _report(score: int = 80, stars: int = 3) -> Dictionary:
+	return {"score": score, "stars": stars, "coins": 400, "carried": 20, "served": 3, "perfect_stops": 3,
+		"counts": {"collisions": 0, "harsh_brakes": 0, "kerbs": 0, "indicators": 0, "red_lights": 0, "knocked": 0, "jolts": 0, "perfect_stops": 3}}
 
 
 func test_new_player_starts_with_the_free_items() -> void:
@@ -135,11 +135,10 @@ func test_level_progress_is_a_share() -> void:
 
 
 func test_shift_pays_coins_xp_and_stats() -> void:
-	var challenges := [{"id": "x", "text": "x", "min_stars": 5}]
-	var rewards := ShiftRewards.apply(profile, _report(), "route_01", "2026-11-06", challenges, [])
+	var rewards := ShiftRewards.apply(profile, _report(), "route_01", "2026-11-06", [], [])
 	assert_eq(profile.coins, 400)
-	assert_eq(int(rewards["xp"]), 120)
-	assert_eq(profile.xp, 120)
+	assert_eq(int(rewards["xp"]), 131)
+	assert_eq(profile.xp, 131)
 	assert_eq(int(profile.stats["shifts"]), 1)
 	assert_eq(int(profile.stats["passengers"]), 20)
 	assert_eq(int(profile.stats["clean_shifts"]), 1)
@@ -174,8 +173,8 @@ func test_daily_challenge_is_stable_for_a_date_and_changes_over_days() -> void:
 
 
 func test_star_challenge() -> void:
-	assert_true(DailyChallenge.is_passed({"min_stars": 4}, _report(80, 4)))
-	assert_false(DailyChallenge.is_passed({"min_stars": 4}, _report(60, 3)))
+	assert_true(DailyChallenge.is_passed({"min_stars": 3}, _report(80, 3)))
+	assert_false(DailyChallenge.is_passed({"min_stars": 3}, _report(60, 2)))
 
 
 func test_achievement_is_awarded_once() -> void:
@@ -202,7 +201,7 @@ func test_best_score_only_rises() -> void:
 
 func test_level_up_is_reported() -> void:
 	profile.xp = 140
-	var rewards := ShiftRewards.apply(profile, _report(), "route_01", "2026-11-06", [{"id": "x", "text": "x", "min_stars": 5}], [])
+	var rewards := ShiftRewards.apply(profile, _report(), "route_01", "2026-11-06", [{"id": "x", "text": "x", "min_stars": 3}], [])
 	assert_true(rewards["levelled_up"])
 
 
@@ -275,3 +274,14 @@ func test_completed_routes_survive_saving() -> void:
 	var copy := PlayerProfile.from_dict(JSON.parse_string(JSON.stringify(profile.to_dict())))
 	assert_true(copy.has_completed_route("starter_a"))
 	assert_true(copy.owns(Catalog.ROUTES, "starter_b"))
+
+
+func test_old_star_save_is_migrated_to_three_stars() -> void:
+	var old := PlayerProfile.from_dict({
+		"version": 1,
+		"stats": {"best_stars": 5},
+		"best_stars": {"route_01": 4, "route_02": 2},
+	})
+	assert_eq(int(old.stats["best_stars"]), 3)
+	assert_eq(int(old.best_stars.get("route_01", -1)), 2)
+	assert_eq(int(old.best_stars.get("route_02", -1)), 1)

@@ -117,7 +117,7 @@ func _ready() -> void:
 	_traffic.setup(map_data, network, ground, _bus.spec, time_of_day.traffic)
 	_traffic.watch_props(_obstacles.props)
 	var difficulty := Profile.chosen_difficulty()
-	_score.setup(network, _bus.spec, difficulty)
+	_score.setup(network, _bus.spec, difficulty, route.goals, route.service)
 	_route_system.dodger_chance = difficulty.dodger_chance
 	if route.endless and not is_arcade:
 		_route_system.endless_plan = route_data["hail"]

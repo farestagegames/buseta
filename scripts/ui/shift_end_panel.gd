@@ -115,8 +115,9 @@ func _add_category(grid: GridContainer, key: String) -> void:
 
 
 func show_report(report: Dictionary) -> void:
-	stars_shown = report["stars"]
-	_stars.text = "★".repeat(stars_shown) + "☆".repeat(5 - stars_shown)
+	stars_shown = int(report["stars"])
+	var max_stars := 5 if report.has("arcade") else 3
+	_stars.text = "★".repeat(stars_shown) + "☆".repeat(maxi(max_stars - stars_shown, 0))
 	var minutes := int(report["time"]) / 60
 	var seconds := int(report["time"]) % 60
 	_headline.text = tr("Shift complete: %d points in %d:%02d") % [report["score"], minutes, seconds]
@@ -130,13 +131,30 @@ func show_report(report: Dictionary) -> void:
 	var categories: Dictionary = report["categories"]
 	for key: String in _bars:
 		(_bars[key] as ProgressBar).value = categories[key]
+	var detail_text: String = report.get("details", "")
+	var goal_text := _goal_lines(report.get("goals", []))
+	if goal_text != "":
+		detail_text = "%s\n\n%s" % [detail_text, goal_text]
 	var tip: String = report.get("tip", "")
-	_details.text = "%s\n%s" % [report["details"], tip] if tip != "" else report["details"]
+	_details.text = "%s\n%s" % [detail_text, tip] if tip != "" else detail_text
 	var rewards: Dictionary = report["rewards"]
 	_coins_earned = rewards["coins"]
 	_rewards.text = _reward_lines(rewards)
 	double_coins_button.visible = Profile.ads.is_available()
 	visible = true
+
+
+func _goal_lines(goals: Array) -> String:
+	if goals.is_empty():
+		return ""
+	var lines: Array[String] = [tr("Goals")]
+	for goal: Variant in goals:
+		if not goal is Dictionary:
+			continue
+		var entry: Dictionary = goal
+		var mark := "✓" if bool(entry.get("met", false)) else "✗"
+		lines.append("%s %s" % [mark, str(entry.get("text", ""))])
+	return "\n".join(lines)
 
 
 func _reward_lines(rewards: Dictionary) -> String:

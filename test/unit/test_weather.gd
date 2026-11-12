@@ -501,7 +501,7 @@ func test_the_bonus_offsets_a_little_lost_satisfaction() -> void:
 func _report(counts: Dictionary, time_stat: String = "") -> Dictionary:
 	var all := {"collisions": 0, "harsh_brakes": 0, "kerbs": 0, "indicators": 0, "red_lights": 0, "knocked": 0, "jolts": 0}
 	all.merge(counts, true)
-	return {"score": 80, "stars": 4, "coins": 400, "carried": 20, "counts": all, "time_stat": time_stat}
+	return {"score": 80, "stars": 3, "coins": 400, "carried": 20, "served": 3, "perfect_stops": 3, "counts": all, "time_stat": time_stat}
 
 
 func test_rain_and_night_shifts_count_towards_achievements() -> void:

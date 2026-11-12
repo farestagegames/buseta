@@ -4,7 +4,7 @@ extends RefCounted
 ## Pure logic. Loading tolerates missing or damaged fields, so an old or hand
 ## edited save can never stop the game from starting.
 
-const VERSION := 1
+const VERSION := 2
 const DEFAULT_ROUTE := "starter_a"
 const DEFAULT_BUS := "buseta_8"
 const DEFAULT_LIVERY := "rojo_caribe"
@@ -28,6 +28,7 @@ var stats: Dictionary = {
 }
 var achievements: Array[String] = []
 var best_scores: Dictionary = {} ## Route id to best score.
+var best_stars: Dictionary = {} ## Route id to best stars (0-3).
 var completed_routes: Array[String] = [] ## Routes finished properly at least once.
 var last_daily: String = "" ## Date key of the last daily challenge completed.
 ## Daily challenges completed on days in a row, ending on last_daily.
@@ -181,10 +182,26 @@ func record_best(route_id: String, score: int) -> bool:
 	return true
 
 
+func record_best_stars(route_id: String, stars: int) -> bool:
+	var value := clampi(stars, 0, 3)
+	if value <= int(best_stars.get(route_id, -1)):
+		return false
+	best_stars[route_id] = value
+	stats["best_stars"] = _max_best_stars()
+	return true
+
+
+func _max_best_stars() -> int:
+	var best := 0
+	for value: Variant in best_stars.values():
+		best = maxi(best, int(value))
+	return maxi(best, int(stats.get("best_stars", 0)))
+
+
 func to_dict() -> Dictionary:
 	return {
 		"version": VERSION, "coins": coins, "xp": xp, "owned": owned, "selected": selected,
-		"stats": stats, "achievements": achievements, "best_scores": best_scores,
+		"stats": stats, "achievements": achievements, "best_scores": best_scores, "best_stars": best_stars,
 		"completed_routes": completed_routes,
 		"last_daily": last_daily, "daily_streak": daily_streak, "settings": settings, "intro_done": intro_done,
 		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day, "difficulty": difficulty,
@@ -226,6 +243,10 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	if saved_best is Dictionary:
 		for key: Variant in saved_best:
 			profile.best_scores[str(key)] = int(_number((saved_best as Dictionary)[key], 0.0))
+	var saved_route_stars: Variant = saved.get("best_stars")
+	if saved_route_stars is Dictionary:
+		for key: Variant in saved_route_stars:
+			profile.best_stars[str(key)] = clampi(int(_number((saved_route_stars as Dictionary)[key], 0.0)), 0, 3)
 	var saved_completed: Variant = saved.get("completed_routes")
 	if saved_completed is Array:
 		for route_id: Variant in saved_completed:
@@ -252,6 +273,12 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	profile.time_of_day = saved_time if saved_time is String else ""
 	var saved_difficulty: Variant = saved.get("difficulty")
 	profile.difficulty = saved_difficulty if saved_difficulty is String else ""
+	var saved_version := int(_number(saved.get("version"), 0.0))
+	if saved_version < 2:
+		profile.stats["best_stars"] = RouteGoals.migrate_best_stars(int(profile.stats.get("best_stars", 0)))
+		for key: Variant in profile.best_stars.keys():
+			profile.best_stars[key] = RouteGoals.migrate_best_stars(int(profile.best_stars[key]))
+	profile.stats["best_stars"] = maxi(int(profile.stats.get("best_stars", 0)), profile._max_best_stars())
 	return profile
 
 

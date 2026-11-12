@@ -25,6 +25,7 @@ var arcade_clock: Label
 var shift_panel: ShiftEndPanel
 var penalty_toast: PenaltyToast
 var tutorial_panel: TutorialPanel
+var goals_hud: GoalsHud
 
 var _controls: Control
 var _tilt_hint: Label
@@ -81,8 +82,13 @@ func _ready() -> void:
 	_place(route_panel, Vector2(0.5, 0.0), Vector2(-280.0, 124.0), Vector2(560.0, 84.0))
 	_root.add_child(route_panel)
 
+	goals_hud = GoalsHud.new()
+	_place(goals_hud, Vector2(0.5, 0.0), Vector2(-280.0, 212.0), Vector2(560.0, 64.0))
+	goals_hud.visible = false
+	_root.add_child(goals_hud)
+
 	penalty_toast = PenaltyToast.new()
-	_place(penalty_toast, Vector2(0.5, 0.0), Vector2(-280.0, 214.0), Vector2(560.0, 40.0))
+	_place(penalty_toast, Vector2(0.5, 0.0), Vector2(-280.0, 280.0), Vector2(560.0, 40.0))
 	_root.add_child(penalty_toast)
 
 	minimap = Minimap.new()
@@ -98,6 +104,8 @@ func _ready() -> void:
 	_place(arcade_clock, Vector2(0.5, 0.0), Vector2(-280.0, 124.0), Vector2(560.0, 84.0))
 	_root.add_child(arcade_clock)
 	GameEvents.arcade_status.connect(_on_arcade_status)
+	GameEvents.map_ready.connect(_on_map_ready)
+	GameEvents.score_updated.connect(func(_total: int) -> void: _refresh_goals())
 
 	police_notice = Label.new()
 	police_notice.text = "POLICE NEARBY"
@@ -362,8 +370,29 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		gear_switch.is_reverse = data.is_reverse
 
 
+func _on_map_ready(_network: RoadNetwork, route: RouteRunner) -> void:
+	if route.service == "endless" or route.service == "arcade" or route.goals.is_empty():
+		goals_hud.visible = false
+		return
+	goals_hud.set_goals(route.goals)
+	_refresh_goals()
+
+
+func _refresh_goals() -> void:
+	if not goals_hud.visible or shift_panel.visible:
+		return
+	var shift := get_tree().current_scene
+	if shift == null or not shift.has_node("ScoreKeeper") or not shift.has_node("RouteSystem"):
+		return
+	var keeper: ScoreKeeper = shift.get_node("ScoreKeeper")
+	var system: RouteSystem = shift.get_node("RouteSystem")
+	goals_hud.update_status(keeper.live_report(system.timetable_clock(), system.served_count(), system.carried_count()))
+
+
 func _on_arcade_status(seconds_left: float, checkpoint: int, distance: float, _position: Vector2, boosting: bool) -> void:
 	route_panel.visible = false
+	if goals_hud != null:
+		goals_hud.visible = false
 	arcade_clock.visible = not shift_panel.visible
 	var low := seconds_left < 10.0
 	arcade_clock.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4) if low else (Color(1.0, 0.6, 0.2) if boosting else Color.WHITE))

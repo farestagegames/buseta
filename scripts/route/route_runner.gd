@@ -23,6 +23,8 @@ var start_position: Vector2 = Vector2.ZERO
 var start_heading: float = 0.0
 var stop_index: int = 0
 var progress: float = 0.0
+var goals: Array = []
+var service: String = "bays"
 
 var _cursor: int = 0
 ## The endless route keeps growing: see extend().
@@ -44,6 +46,8 @@ static func build(data: Dictionary, network: RoadNetwork, shift_seed: int = 0, m
 	runner.route_name = data["name"]
 	runner.traffic_side = network.traffic_side
 	var service: String = data.get("service", "bays")
+	runner.service = service
+	runner.goals = data.get("goals", []).duplicate(true)
 	runner.endless = service == "endless" or service == "arcade"
 	var legs: Array = data["legs"].duplicate()
 	if runner.endless:

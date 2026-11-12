@@ -502,10 +502,29 @@ func _shop_row(kind: String, item: Dictionary, description: String) -> Control:
 	lines.add_child(_text(item["name"], 26, Color.WHITE))
 	if description != "":
 		lines.add_child(_wrapped(description, 19, MUTED))
+	if kind == Catalog.ROUTES:
+		var goals := _route_goals(item)
+		if not goals.is_empty():
+			lines.add_child(_wrapped(_goals_text(goals), 17, MUTED))
 	row.add_child(lines)
 	row.add_child(_shop_button(kind, item))
 	card.add_child(row)
 	return card
+
+
+func _route_goals(item: Dictionary) -> Array:
+	if not item.has("file"):
+		return []
+	var data := MapLoader.read_json(item["file"])
+	return data.get("goals", [])
+
+
+func _goals_text(goals: Array) -> String:
+	var parts: Array[String] = []
+	for goal: Variant in goals:
+		if goal is Dictionary:
+			parts.append("• %s" % RouteGoals.text_for(goal))
+	return "\n".join(parts)
 
 
 func _shop_button(kind: String, item: Dictionary) -> Button:

@@ -84,5 +84,17 @@
    "final": true
   }
  ],
- "service": "bays"
+ "service": "bays",
+ "goals": [
+  {
+   "type": "finish_under",
+   "value": 360
+  },
+  {
+   "type": "no_collisions"
+  },
+  {
+   "type": "no_fines"
+  }
+ ]
 }

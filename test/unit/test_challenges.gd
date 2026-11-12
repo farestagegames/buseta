@@ -22,10 +22,10 @@ func _ids(list: Array) -> Array:
 
 
 func test_all_conditions_must_hold() -> void:
-	var challenge := {"route": "troncal", "min_stars": 4}
-	assert_true(DailyChallenge.is_passed(challenge, _report(4), {"route": "troncal"}))
-	assert_false(DailyChallenge.is_passed(challenge, _report(4), {"route": "route_01"}), "Wrong route")
-	assert_false(DailyChallenge.is_passed(challenge, _report(3), {"route": "troncal"}), "Too few stars")
+	var challenge := {"route": "troncal", "min_stars": 3}
+	assert_true(DailyChallenge.is_passed(challenge, _report(3), {"route": "troncal"}))
+	assert_false(DailyChallenge.is_passed(challenge, _report(3), {"route": "route_01"}), "Wrong route")
+	assert_false(DailyChallenge.is_passed(challenge, _report(2), {"route": "troncal"}), "Too few stars")
 
 
 func test_bus_and_time_conditions() -> void:
@@ -45,7 +45,7 @@ func test_minimum_counts_read_counts_and_report_numbers() -> void:
 
 
 func test_challenges_for_things_not_owned_are_not_offered() -> void:
-	var list := [{"id": "ola", "text": "x", "route": "troncal", "min_stars": 4}, {"id": "any", "text": "x", "min_stars": 4}]
+	var list := [{"id": "ola", "text": "x", "route": "troncal", "min_stars": 3}, {"id": "any", "text": "x", "min_stars": 3}]
 	for day in range(1, 29):
 		assert_eq(DailyChallenge.for_date("2026-11-%02d" % day, list, profile)["id"], "any")
 	profile.owned[Catalog.ROUTES].append("troncal")

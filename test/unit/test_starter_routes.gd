@@ -9,7 +9,7 @@ func before_each() -> void:
 
 
 func _report(completed: bool = true) -> Dictionary:
-	return {"score": 80, "stars": 4, "coins": 400, "carried": 8, "fares": 2320,
+	return {"score": 80, "stars": 3, "coins": 400, "carried": 8, "fares": 2320, "served": 3, "perfect_stops": 3,
 		"completed": completed,
 		"counts": {"collisions": 0, "harsh_brakes": 0, "kerbs": 0, "indicators": 0,
 			"red_lights": 0, "knocked": 0, "jolts": 0}}

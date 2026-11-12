@@ -26,4 +26,4 @@ static func progress(xp: int) -> float:
 
 
 static func xp_from_shift(score: int, stars: int) -> int:
-	return score + stars * 10
+	return score + stars * 17

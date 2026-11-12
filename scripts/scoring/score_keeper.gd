@@ -34,15 +34,19 @@ var _faults_before_downpour: int = 0
 var _speeding_for: float = 0.0
 var _police_stopped: String = "" ## Why the police ended the run, or "".
 var _difficulty_id: String = ""
+var _goals: Array = []
+var _service: String = "bays"
 ## On the endless route, passengers give up when satisfaction gets this low.
 var give_up_below: float = -1.0
 var _gave_up: bool = false
 var _patience_check: float = 0.0
 
 
-func setup(network: RoadNetwork, spec: BusSpec, difficulty: Difficulty = null) -> void:
+func setup(network: RoadNetwork, spec: BusSpec, difficulty: Difficulty = null, goals: Array = [], service: String = "bays") -> void:
 	_network = network
 	_spec = spec
+	_goals = goals
+	_service = service
 	if difficulty != null:
 		score.penalty_scale = difficulty.penalty_scale
 		score.coin_scale = difficulty.coin_scale
@@ -230,6 +234,18 @@ func _on_vendor_boarded() -> void:
 	score.add_vendor()
 
 
+func live_report(time: float, served: int, carried: int) -> Dictionary:
+	return {
+		"time": time,
+		"served": served,
+		"carried": carried,
+		"counts": score.counts.duplicate(),
+		"categories": score.categories(),
+		"fined_coins": score.fined_coins,
+		"perfect_stops": int(score.counts.get("perfect_stops", 0)),
+	}
+
+
 func _on_shift_completed(summary: Dictionary) -> void:
 	if _in_downpour:
 		_end_downpour()
@@ -242,18 +258,28 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	report["downpour"] = int(score.counts["downpours"]) > 0
 	var carried: int = summary["carried"]
 	report["score"] = score.total()
-	report["stars"] = score.stars()
-	report["coins"] = score.coins(carried)
+	report["categories"] = score.categories()
+	report["counts"] = score.counts.duplicate()
+	report["fined_coins"] = score.fined_coins
+	report["perfect_stops"] = int(score.counts.get("perfect_stops", 0))
+	report["served"] = int(summary.get("served", 0))
 	if summary.has("arcade"):
-		# The arcade is scored on checkpoints, which is also its best to beat.
 		var arcade: Dictionary = summary["arcade"]
 		report["arcade"] = arcade
 		report["score"] = int(arcade["checkpoints"])
 		report["stars"] = ArcadeRun.stars_for(int(arcade["checkpoints"]))
 		report["coins"] = ArcadeRun.coins_for(int(arcade["checkpoints"]), float(arcade["distance"]))
-	report["categories"] = score.categories()
+		report["goals"] = []
+	elif _service == "endless":
+		report["stars"] = score.stars()
+		report["coins"] = score.coins(carried, int(report["stars"]))
+		report["goals"] = []
+	else:
+		var evaluated := RouteGoals.evaluate(_goals, report)
+		report["goals"] = evaluated
+		report["stars"] = RouteGoals.stars_for(_goals, report)
+		report["coins"] = score.coins(carried, int(report["stars"]))
 	report["details"] = _details(summary)
-	report["counts"] = score.counts.duplicate()
 	var weakest := score.weakest_category()
 	report["tip"] = tr(TIPS[weakest]) if weakest != "" else ""
 	GameEvents.shift_report_ready.emit(report)

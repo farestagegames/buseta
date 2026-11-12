@@ -1,20 +1,146 @@
 [
-  {"id": "first_shift", "name": "First Day", "description": "Complete a shift", "stat": "shifts", "target": 1, "reward": 100},
-  {"id": "ten_shifts", "name": "Regular", "description": "Complete 10 shifts", "stat": "shifts", "target": 10, "reward": 300},
-  {"id": "fifty_shifts", "name": "Old Hand", "description": "Complete 50 shifts", "stat": "shifts", "target": 50, "reward": 1000},
-  {"id": "five_stars", "name": "Five Star Service", "description": "Earn 5 stars on a shift", "stat": "best_stars", "target": 5, "reward": 300},
-  {"id": "clean_shift", "name": "Not a Scratch", "description": "Finish a shift with no collisions", "stat": "clean_shifts", "target": 1, "reward": 150},
-  {"id": "smooth_operator", "name": "Smooth Operator", "description": "Finish a shift with no emergency stops", "stat": "smooth_shifts", "target": 1, "reward": 150},
-  {"id": "hundred_passengers", "name": "Full House", "description": "Carry 100 passengers", "stat": "passengers", "target": 100, "reward": 200},
-  {"id": "thousand_passengers", "name": "Backbone of the City", "description": "Carry 1,000 passengers", "stat": "passengers", "target": 1000, "reward": 1000},
-  {"id": "first_aguacero", "name": "First Aguacero", "description": "Finish a shift through a downpour", "stat": "rain_shifts", "target": 1, "reward": 200},
-  {"id": "steady_in_the_rain", "name": "Steady in the Rain", "description": "Get through 5 downpours with no collisions, knocks or emergency stops", "stat": "clean_downpours", "target": 5, "reward": 500},
-  {"id": "night_owl", "name": "Night Owl", "description": "Complete 5 night shifts", "stat": "night_shifts", "target": 5, "reward": 400},
-  {"id": "market_on_wheels", "name": "Market on Wheels", "description": "Carry 10 street vendors", "stat": "vendors", "target": 10, "reward": 300},
-  {"id": "fare_box", "name": "Full Fare Box", "description": "Collect $1.000.000 in fares", "stat": "fares", "target": 10000, "reward": 500},
-  {"id": "riding_la_ola", "name": "Riding La Ola", "description": "Drive 10 shifts on the La Ola line", "stat": "route:troncal", "target": 10, "reward": 500},
-  {"id": "chiva_party", "name": "Party on Wheels", "description": "Drive 5 shifts in La Chiva", "stat": "bus:chiva", "target": 5, "reward": 400},
-  {"id": "every_corner", "name": "Every Corner", "description": "Drive every route at least once", "stat": "routes_driven", "target": 5, "reward": 600},
-  {"id": "daily_regular", "name": "Never Misses a Day", "description": "Complete daily challenges 7 days in a row", "stat": "best_daily_streak", "target": 7, "reward": 700},
-  {"id": "twenty_dailies", "name": "Challenge Accepted", "description": "Complete 20 daily challenges", "stat": "dailies", "target": 20, "reward": 500}
+  {
+    "id": "first_shift",
+    "name": "First Day",
+    "description": "Complete a shift",
+    "stat": "shifts",
+    "target": 1,
+    "reward": 100
+  },
+  {
+    "id": "ten_shifts",
+    "name": "Regular",
+    "description": "Complete 10 shifts",
+    "stat": "shifts",
+    "target": 10,
+    "reward": 300
+  },
+  {
+    "id": "fifty_shifts",
+    "name": "Old Hand",
+    "description": "Complete 50 shifts",
+    "stat": "shifts",
+    "target": 50,
+    "reward": 1000
+  },
+  {
+    "id": "five_stars",
+    "name": "Three Star Service",
+    "description": "Earn 3 stars on a shift",
+    "stat": "best_stars",
+    "target": 3,
+    "reward": 300
+  },
+  {
+    "id": "clean_shift",
+    "name": "Not a Scratch",
+    "description": "Finish a shift with no collisions",
+    "stat": "clean_shifts",
+    "target": 1,
+    "reward": 150
+  },
+  {
+    "id": "smooth_operator",
+    "name": "Smooth Operator",
+    "description": "Finish a shift with no emergency stops",
+    "stat": "smooth_shifts",
+    "target": 1,
+    "reward": 150
+  },
+  {
+    "id": "hundred_passengers",
+    "name": "Full House",
+    "description": "Carry 100 passengers",
+    "stat": "passengers",
+    "target": 100,
+    "reward": 200
+  },
+  {
+    "id": "thousand_passengers",
+    "name": "Backbone of the City",
+    "description": "Carry 1,000 passengers",
+    "stat": "passengers",
+    "target": 1000,
+    "reward": 1000
+  },
+  {
+    "id": "first_aguacero",
+    "name": "First Aguacero",
+    "description": "Finish a shift through a downpour",
+    "stat": "rain_shifts",
+    "target": 1,
+    "reward": 200
+  },
+  {
+    "id": "steady_in_the_rain",
+    "name": "Steady in the Rain",
+    "description": "Get through 5 downpours with no collisions, knocks or emergency stops",
+    "stat": "clean_downpours",
+    "target": 5,
+    "reward": 500
+  },
+  {
+    "id": "night_owl",
+    "name": "Night Owl",
+    "description": "Complete 5 night shifts",
+    "stat": "night_shifts",
+    "target": 5,
+    "reward": 400
+  },
+  {
+    "id": "market_on_wheels",
+    "name": "Market on Wheels",
+    "description": "Carry 10 street vendors",
+    "stat": "vendors",
+    "target": 10,
+    "reward": 300
+  },
+  {
+    "id": "fare_box",
+    "name": "Full Fare Box",
+    "description": "Collect $1.000.000 in fares",
+    "stat": "fares",
+    "target": 10000,
+    "reward": 500
+  },
+  {
+    "id": "riding_la_ola",
+    "name": "Riding La Ola",
+    "description": "Drive 10 shifts on the La Ola line",
+    "stat": "route:troncal",
+    "target": 10,
+    "reward": 500
+  },
+  {
+    "id": "chiva_party",
+    "name": "Party on Wheels",
+    "description": "Drive 5 shifts in La Chiva",
+    "stat": "bus:chiva",
+    "target": 5,
+    "reward": 400
+  },
+  {
+    "id": "every_corner",
+    "name": "Every Corner",
+    "description": "Drive every route at least once",
+    "stat": "routes_driven",
+    "target": 5,
+    "reward": 600
+  },
+  {
+    "id": "daily_regular",
+    "name": "Never Misses a Day",
+    "description": "Complete daily challenges 7 days in a row",
+    "stat": "best_daily_streak",
+    "target": 7,
+    "reward": 700
+  },
+  {
+    "id": "twenty_dailies",
+    "name": "Challenge Accepted",
+    "description": "Complete 20 daily challenges",
+    "stat": "dailies",
+    "target": 20,
+    "reward": 500
+  }
 ]

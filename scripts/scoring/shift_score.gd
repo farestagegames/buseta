@@ -7,7 +7,6 @@ extends RefCounted
 const WEIGHTS := {
 	"punctuality": 0.25, "accuracy": 0.2, "smoothness": 0.2, "rules": 0.2, "satisfaction": 0.15,
 }
-const STAR_THRESHOLDS: Array[int] = [35, 50, 70, 88] ## Score for 2, 3, 4 and 5 stars.
 ## How quickly a category falls. Losses level off, so a few bad moments cost a
 ## lot less than the whole category, and a rough shift can still recover.
 const CATEGORY_SOFTNESS := 90.0
@@ -48,13 +47,13 @@ const DOWNPOUR_COINS := 60
 const BASE_COINS := 50
 const COINS_PER_POINT := 2
 const COINS_PER_PASSENGER := 3
-const COINS_PER_STAR := 40
+const COINS_PER_STAR := 67 ## 0-3 stars from route goals, about the same as the old 1-5.
 
 var counts: Dictionary = {
 	"harsh_brakes": 0, "jolts": 0, "collisions": 0, "knocked": 0,
 	"red_lights": 0, "kerbs": 0, "indicators": 0, "missed_stops": 0, "left_behind": 0,
 	"ignored_hails": 0, "ignored_requests": 0, "vendors": 0,
-	"downpours": 0, "clean_downpours": 0, "fines": 0, "dodgers": 0,
+	"downpours": 0, "clean_downpours": 0, "fines": 0, "dodgers": 0, "perfect_stops": 0,
 }
 ## From the difficulty: every fault's points are multiplied by penalty_scale and
 ## the coins by coin_scale.
@@ -80,6 +79,8 @@ func _add_satisfaction_loss(amount: float) -> void:
 func add_stop(accuracy: float, seconds_late: float) -> void:
 	_accuracy.append(clampf(accuracy, 0.0, 1.0) * 100.0)
 	_punctuality.append(ShiftSchedule.punctuality_score(seconds_late))
+	if accuracy >= RouteGoals.PERFECT_ACCURACY:
+		counts["perfect_stops"] = int(counts["perfect_stops"]) + 1
 	if not ShiftSchedule.is_on_time(seconds_late):
 		_satisfaction_lost += SATISFACTION_LATE_STOP
 
@@ -207,16 +208,20 @@ func total() -> int:
 
 
 func stars() -> int:
+	# Normal route stars come from route goals; this remains for legacy callers.
 	var score := total()
-	var earned := 1
-	for threshold in STAR_THRESHOLDS:
-		if score >= threshold:
-			earned += 1
-	return earned
+	if score >= 88:
+		return 3
+	if score >= 50:
+		return 2
+	if score >= 35:
+		return 1
+	return 0
 
 
-func coins(passengers_carried: int) -> int:
-	var earned := BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER + stars() * COINS_PER_STAR \
+func coins(passengers_carried: int, star_count: int = -1) -> int:
+	var earned_stars := star_count if star_count >= 0 else stars()
+	var earned := BASE_COINS + total() * COINS_PER_POINT + passengers_carried * COINS_PER_PASSENGER + earned_stars * COINS_PER_STAR \
 		+ int(counts["clean_downpours"]) * DOWNPOUR_COINS
 	return maxi(roundi(earned * coin_scale) - fined_coins, 0)
 

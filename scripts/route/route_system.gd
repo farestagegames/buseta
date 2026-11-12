@@ -297,6 +297,14 @@ func timetable_clock() -> float:
 	return clock - rain_slack
 
 
+func served_count() -> int:
+	return _served
+
+
+func carried_count() -> int:
+	return ledger.carried_total if ledger != null else 0
+
+
 ## How the bus stands against the timetable. It only shows as late once a stop
 ## is overdue, or when it left the last stop behind time.
 func _running_lateness() -> float:

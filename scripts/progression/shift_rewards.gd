@@ -13,7 +13,7 @@ static func apply(profile: PlayerProfile, report: Dictionary, route_id: String, 
 	var stats := profile.stats
 	stats["shifts"] = int(stats["shifts"]) + 1
 	stats["passengers"] = int(stats["passengers"]) + int(report["carried"])
-	stats["best_stars"] = maxi(int(stats["best_stars"]), int(report["stars"]))
+	var new_best_stars := profile.record_best_stars(route_id, int(report.get("stars", 0)))
 	if int(counts["collisions"]) == 0:
 		stats["clean_shifts"] = int(stats["clean_shifts"]) + 1
 	if int(counts["harsh_brakes"]) == 0:
@@ -61,6 +61,7 @@ static func apply(profile: PlayerProfile, report: Dictionary, route_id: String, 
 		"level": DriverLevel.level_for(profile.xp),
 		"levelled_up": DriverLevel.level_for(profile.xp) > level_before,
 		"new_best": new_best,
+		"new_best_stars": new_best_stars,
 		"achievements": earned,
 		"achievement_coins": achievement_coins,
 	}
