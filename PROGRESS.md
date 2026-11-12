@@ -62,4 +62,8 @@ Prompts in `delegation/opencode-prompts.md`, run in order by the owner with open
 
 **Resume here:** all eight engagement tasks are done. On the phone still to check: the tutorial ring, the birds, Starter A as the first route, the 3-goal checklist, stop feedback placement/feel, cab decorations in cockpit, the next-unlock line, the payout sequence, and first-time/achievement celebration banners. Play: internal testing installed on the owner's phone (12 Nov); closed track, privacy page re-upload and key backup still to do (`store/testing-plan.md`).
 
+## Next: second map, Alto Cafeto (planned 12 Nov)
+
+Fictional coffee-region town, small district (2 to 3 routes incl. a ~3 min starter), unlocks at driver level 6. Design doc by agy (Gemini) in `design/alto-cafeto.md`, concept art in `design/alto-cafeto/` (`.gdignore`, not in the game). Not started: owner to review the doc, then build its tasks one at a time with opencode. Main risk: slopes over ~14% stall the starter buseta.
+
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.
