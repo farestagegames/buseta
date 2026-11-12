@@ -15,6 +15,8 @@ func _ready() -> void:
 	Profile.data.stats["shifts"] = 6
 	Profile.data.stats["passengers"] = 151
 	Profile.data.best_scores["route_01"] = 74
+	if not Profile.data.owns(Catalog.ROUTES, "starter_a"):
+		(Profile.data.owned[Catalog.ROUTES] as Array).append("starter_a")
 	Profile.data.intro_done = true
 	GameSettings.language = "en"
 

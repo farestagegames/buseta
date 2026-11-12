@@ -5,7 +5,7 @@ extends RefCounted
 ## edited save can never stop the game from starting.
 
 const VERSION := 1
-const DEFAULT_ROUTE := "route_01"
+const DEFAULT_ROUTE := "starter_a"
 const DEFAULT_BUS := "buseta_8"
 const DEFAULT_LIVERY := "rojo_caribe"
 const DEFAULT_DRIVER := "wilmer_pertuz"
@@ -28,6 +28,7 @@ var stats: Dictionary = {
 }
 var achievements: Array[String] = []
 var best_scores: Dictionary = {} ## Route id to best score.
+var completed_routes: Array[String] = [] ## Routes finished properly at least once.
 var last_daily: String = "" ## Date key of the last daily challenge completed.
 ## Daily challenges completed on days in a row, ending on last_daily.
 var daily_streak: int = 0
@@ -43,6 +44,7 @@ var time_of_day: String = ""
 var difficulty: String = ""
 
 
+
 func owns(kind: String, id: String) -> bool:
 	return (owned[kind] as Array).has(id)
 
@@ -51,6 +53,8 @@ func buy(kind: String, item: Dictionary) -> bool:
 	var id: String = item["id"]
 	var cost: int = item["cost"]
 	if owns(kind, id) or coins < cost or DriverLevel.level_for(xp) < int(item.get("level", 1)):
+		return false
+	if kind == Catalog.ROUTES and str(item.get("requires", "")) != "" and not has_completed_route(str(item["requires"])):
 		return false
 	coins -= cost
 	(owned[kind] as Array).append(id)
@@ -64,11 +68,12 @@ func select(kind: String, id: String) -> bool:
 	return true
 
 
-## Anything the catalog gives away is owned from the start.
+## Anything the catalog gives away is owned from the start. Routes that need
+## another route finished first are unlocked when that route is completed.
 func grant_free_items(catalog: Catalog) -> void:
 	for kind: String in owned:
 		for item: Dictionary in catalog.items(kind):
-			if int(item["cost"]) == 0 and not owns(kind, item["id"]):
+			if int(item["cost"]) == 0 and catalog.requires(item) == "" and not owns(kind, item["id"]):
 				(owned[kind] as Array).append(item["id"])
 
 
@@ -79,11 +84,24 @@ func repair_choices(catalog: Catalog) -> void:
 		if not catalog.find(kind, selected[kind]).is_empty():
 			continue
 		var fallback: String = DEFAULTS[kind]
+		if kind == Catalog.ROUTES:
+			fallback = catalog.default_route()
 		if catalog.find(kind, fallback).is_empty() or not owns(kind, fallback):
 			var owned_items := catalog.items(kind).filter(func(item: Dictionary) -> bool: return owns(kind, item["id"]))
 			fallback = owned_items[0]["id"] if not owned_items.is_empty() else ""
 		if fallback != "":
 			selected[kind] = fallback
+	# A selected route the player cannot use yet falls back to one they can.
+	if not can_play_route(selected.get(Catalog.ROUTES, ""), catalog):
+		var route := catalog.default_route()
+		if not can_play_route(route, catalog):
+			for item: Dictionary in catalog.items(Catalog.ROUTES):
+				if can_play_route(item["id"], catalog):
+					route = item["id"]
+					break
+		if route != "":
+			selected[Catalog.ROUTES] = route
+
 
 
 func owns_horn(horn_id: String) -> bool:
@@ -134,6 +152,28 @@ func choose_time(time: TimeOfDay) -> bool:
 	return true
 
 
+func has_completed_route(route_id: String) -> bool:
+	return completed_routes.has(route_id)
+
+
+## A route the player owns and can start now.
+func can_play_route(route_id: String, catalog: Catalog) -> bool:
+	if not owns(Catalog.ROUTES, route_id):
+		return false
+	return catalog.find(Catalog.ROUTES, route_id) != {}
+
+
+## Marks a route as finished and grants any routes it unlocks.
+func complete_route(route_id: String, catalog: Catalog) -> Array[Dictionary]:
+	if not has_completed_route(route_id):
+		completed_routes.append(route_id)
+	var unlocked: Array[Dictionary] = []
+	for item: Dictionary in catalog.unlocked_by(route_id, self):
+		(owned[Catalog.ROUTES] as Array).append(item["id"])
+		unlocked.append(item)
+	return unlocked
+
+
 func record_best(route_id: String, score: int) -> bool:
 	if score <= int(best_scores.get(route_id, -1)):
 		return false
@@ -145,6 +185,7 @@ func to_dict() -> Dictionary:
 	return {
 		"version": VERSION, "coins": coins, "xp": xp, "owned": owned, "selected": selected,
 		"stats": stats, "achievements": achievements, "best_scores": best_scores,
+		"completed_routes": completed_routes,
 		"last_daily": last_daily, "daily_streak": daily_streak, "settings": settings, "intro_done": intro_done,
 		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day, "difficulty": difficulty,
 	}
@@ -185,6 +226,11 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	if saved_best is Dictionary:
 		for key: Variant in saved_best:
 			profile.best_scores[str(key)] = int(_number((saved_best as Dictionary)[key], 0.0))
+	var saved_completed: Variant = saved.get("completed_routes")
+	if saved_completed is Array:
+		for route_id: Variant in saved_completed:
+			if route_id is String and not profile.completed_routes.has(route_id):
+				profile.completed_routes.append(route_id)
 	var daily: Variant = saved.get("last_daily")
 	profile.last_daily = daily if daily is String else ""
 	profile.daily_streak = maxi(int(_number(saved.get("daily_streak"), 0.0)), 0)

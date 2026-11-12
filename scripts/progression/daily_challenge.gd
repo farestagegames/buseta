@@ -31,6 +31,11 @@ static func for_date(date_key: String, challenges: Array, profile: PlayerProfile
 	if profile != null:
 		offered = challenges.filter(func(challenge: Dictionary) -> bool: return is_available(challenge, profile))
 		if offered.is_empty():
+			# Fall back to challenges with no route or bus requirement the player lacks.
+			offered = challenges.filter(func(challenge: Dictionary) -> bool:
+				return (not challenge.has("route") or profile.owns(Catalog.ROUTES, challenge["route"])) \
+					and (not challenge.has("bus") or profile.owns(Catalog.BUSES, challenge["bus"])))
+		if offered.is_empty():
 			offered = challenges
 	if offered.is_empty():
 		return {}

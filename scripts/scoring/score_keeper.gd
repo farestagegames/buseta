@@ -238,6 +238,7 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	report["difficulty"] = _difficulty_id
 	report["police_stopped"] = _police_stopped
 	report["gave_up"] = _gave_up
+	report["completed"] = bool(summary.get("completed", false))
 	report["downpour"] = int(score.counts["downpours"]) > 0
 	var carried: int = summary["carried"]
 	report["score"] = score.total()

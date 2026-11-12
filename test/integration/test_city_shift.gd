@@ -16,6 +16,9 @@ var keeper: ScoreKeeper
 func before_all() -> void:
 	Profile.load_from("user://test_save_scene.json")
 	Profile.data.intro_done = true
+	if not Profile.data.owns(Catalog.ROUTES, "route_01"):
+		(Profile.data.owned[Catalog.ROUTES] as Array).append("route_01")
+	Profile.data.select(Catalog.ROUTES, "route_01")
 
 
 func before_each() -> void:

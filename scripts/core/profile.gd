@@ -22,11 +22,32 @@ func _ready() -> void:
 ## Tests use this to keep away from the real save.
 func load_from(path: String) -> void:
 	_path = path
-	data = PlayerProfile.from_dict(SaveStore.read(path))
+	catalog = Catalog.new()
+	var saved := SaveStore.read(path)
+	data = PlayerProfile.from_dict(saved)
+	# A fresh save follows the country's default route, not the class default.
+	if saved.is_empty():
+		var route := catalog.default_route()
+		if route != "":
+			data.selected[Catalog.ROUTES] = route
+			if not data.owns(Catalog.ROUTES, route):
+				(data.owned[Catalog.ROUTES] as Array).append(route)
 	data.grant_free_items(catalog)
+	_grant_completed_unlocks()
 	data.repair_choices(catalog)
 	data.settle_horns(Country.pack.horns())
 	_apply_settings()
+
+
+## Routes unlocked by routes finished in earlier versions of the save.
+func _grant_completed_unlocks() -> void:
+	var changed := true
+	while changed:
+		changed = false
+		for route_id: String in data.completed_routes:
+			for item: Dictionary in catalog.unlocked_by(route_id, data):
+				(data.owned[Catalog.ROUTES] as Array).append(item["id"])
+				changed = true
 
 
 func save() -> bool:
@@ -110,6 +131,9 @@ func chosen_time() -> TimeOfDay:
 ## The next shift plays the opening scene and tutorial again.
 func reset_tutorial() -> void:
 	data.intro_done = false
+	var route := catalog.default_route()
+	if route != "":
+		data.select(Catalog.ROUTES, route)
 	save()
 
 
@@ -126,6 +150,8 @@ func _notification(what: int) -> void:
 
 func _on_pack_changed() -> void:
 	catalog = Catalog.new()
+	_grant_completed_unlocks()
+	data.repair_choices(catalog)
 	data.settle_horns(Country.pack.horns())
 
 

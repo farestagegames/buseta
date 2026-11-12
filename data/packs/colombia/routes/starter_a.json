@@ -1,0 +1,64 @@
+{
+ "name": "Route 0A: Short Loop",
+ "map": "maps/puerto_marisol.json",
+ "start": {
+  "road": "depot_road",
+  "along": 35,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {
+   "road": "depot_road",
+   "dir": 1
+  },
+  {
+   "road": "mill_lane",
+   "dir": 1
+  },
+  {
+   "road": "cross_street",
+   "dir": 1
+  },
+  {
+   "road": "station_road",
+   "dir": 1
+  },
+  {
+   "road": "park_avenue",
+   "dir": 1
+  },
+  {
+   "road": "depot_road",
+   "dir": -1
+  }
+ ],
+ "stops": [
+  {
+   "name": "Los Almendros",
+   "due": 60,
+   "road": "mill_lane",
+   "along": 125,
+   "dir": 1,
+   "waiting": 1
+  },
+  {
+   "name": "Terminal Norte",
+   "due": 120,
+   "road": "station_road",
+   "along": 80,
+   "dir": 1,
+   "waiting": 0
+  },
+  {
+   "name": "Patio Central",
+   "due": 190,
+   "road": "depot_road",
+   "along": 80,
+   "dir": -1,
+   "waiting": 0,
+   "final": true
+  }
+ ],
+ "service": "bays"
+}

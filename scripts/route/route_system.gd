@@ -113,7 +113,7 @@ func tick(data: BusTelemetry, dt: float) -> void:
 	if stop.is_final:
 		if _aligned and stopped:
 			GameEvents.stop_arrived.emit(runner.stop_index, stop.accuracy(centre), schedule.seconds_late(runner.stop_index, timetable_clock()))
-			_finish()
+			_finish(true)
 			return
 	elif session != null:
 		_run_session(stop, data, centre, dt)
@@ -219,7 +219,7 @@ func _count_down_vendor() -> void:
 		GameEvents.vendor_left.emit()
 
 
-func _finish() -> void:
+func _finish(completed: bool = false) -> void:
 	finished = true
 	var carried := ledger.carried_total
 	ledger.clear()
@@ -228,6 +228,7 @@ func _finish() -> void:
 		"route": runner.route_name, "carried": carried, "served": _served, "missed": _missed,
 		"left_behind": _left_behind, "time": clock, "fares": _fares,
 		"accuracy": _accuracy_total / float(maxi(_served, 1)),
+		"completed": completed,
 	})
 
 
@@ -266,7 +267,7 @@ func extend_endless() -> void:
 
 func finish_now() -> void:
 	if not finished:
-		_finish()
+		_finish(false)
 
 
 func _on_recover_requested() -> void:

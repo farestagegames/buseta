@@ -1,10 +1,27 @@
 {
+ "default_route": "starter_a",
  "routes": [
+  {
+   "id": "starter_a",
+   "name": "Route 0A: Short Loop",
+   "file": "routes/starter_a.json",
+   "cost": 0,
+   "description": "A short first run through quiet streets."
+  },
+  {
+   "id": "starter_b",
+   "name": "Route 0B: Seafront Stroll",
+   "file": "routes/starter_b.json",
+   "cost": 0,
+   "requires": "starter_a",
+   "description": "A gentle ride past the roundabout and along the Malecón."
+  },
   {
    "id": "route_01",
    "name": "Route 1: Malecón Loop",
    "file": "routes/route_01.json",
    "cost": 0,
+   "requires": "starter_b",
    "description": "The full loop: roundabout, seafront and market."
   },
   {

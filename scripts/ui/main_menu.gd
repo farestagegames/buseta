@@ -520,6 +520,11 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 	elif Profile.data.owns(kind, id):
 		button.text = "Select"
 		button.pressed.connect(_on_select.bind(kind, id))
+	elif kind == Catalog.ROUTES and not Profile.catalog.requirement_met(item, Profile.data):
+		var need := Profile.catalog.find(Catalog.ROUTES, Profile.catalog.requires(item))
+		button.text = tr("Locked")
+		button.tooltip_text = tr("Finish %s first") % tr(need.get("name", ""))
+		button.disabled = true
 	elif int(item.get("level", 1)) > level:
 		button.text = tr("Level %d") % int(item["level"])
 		button.disabled = true
@@ -575,6 +580,9 @@ func _career_tab() -> Control:
 	rows.add_child(card)
 	rows.add_child(_text("Achievements", 26, ACCENT))
 	for entry: Dictionary in AchievementList.load_list():
+		var route := AchievementList.route_of(entry)
+		if route != "" and not Profile.data.owns(Catalog.ROUTES, route) and not Profile.data.achievements.has(entry["id"]):
+			continue
 		var earned := Profile.data.achievements.has(entry["id"])
 		var row := _card()
 		var text := VBoxContainer.new()

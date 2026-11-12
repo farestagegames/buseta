@@ -108,7 +108,7 @@ func _take(shot: Dictionary) -> void:
 func _menus() -> void:
 	# A mid-career player: some buses and routes bought, the rest still for sale.
 	Profile.data.owned[Catalog.BUSES] = ["buseta_8", "midi_10", "chiva"]
-	Profile.data.owned[Catalog.ROUTES] = ["route_01", "route_02", "libre", "arcade"]
+	Profile.data.owned[Catalog.ROUTES] = ["starter_a", "starter_b", "route_01", "route_02", "libre", "arcade"]
 	Profile.data.select(Catalog.ROUTES, "route_01")
 	Profile.data.select(Catalog.BUSES, "chiva")
 	var menu: MainMenu = load(MENU).instantiate()

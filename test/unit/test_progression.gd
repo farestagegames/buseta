@@ -20,7 +20,12 @@ func _report(score: int = 80, stars: int = 4) -> Dictionary:
 
 
 func test_new_player_starts_with_the_free_items() -> void:
-	assert_true(profile.owns(Catalog.ROUTES, "route_01"))
+	profile.grant_free_items(catalog)
+	profile.repair_choices(catalog)
+	assert_true(profile.owns(Catalog.ROUTES, "starter_a"))
+	assert_eq(profile.selected[Catalog.ROUTES], "starter_a")
+	assert_false(profile.owns(Catalog.ROUTES, "starter_b"))
+	assert_false(profile.owns(Catalog.ROUTES, "route_01"))
 	assert_true(profile.owns(Catalog.BUSES, "buseta_8"))
 	assert_true(profile.owns(Catalog.LIVERIES, "rojo_caribe"))
 	assert_false(profile.owns(Catalog.ROUTES, "route_02"))
@@ -205,6 +210,41 @@ func test_ads_are_off_with_no_sdk() -> void:
 	assert_false(AdProvider.new().is_available())
 
 
+func test_starter_routes_unlock_in_order() -> void:
+	profile.grant_free_items(catalog)
+	profile.repair_choices(catalog)
+	assert_true(profile.owns(Catalog.ROUTES, "starter_a"))
+	assert_false(profile.owns(Catalog.ROUTES, "starter_b"))
+	assert_false(profile.owns(Catalog.ROUTES, "route_01"))
+
+	var unlocked_a := profile.complete_route("starter_a", catalog)
+	assert_true(profile.has_completed_route("starter_a"))
+	assert_eq(unlocked_a.size(), 1)
+	assert_eq(unlocked_a[0]["id"], "starter_b")
+	assert_true(profile.owns(Catalog.ROUTES, "starter_b"))
+	assert_false(profile.owns(Catalog.ROUTES, "route_01"))
+
+	var unlocked_b := profile.complete_route("starter_b", catalog)
+	assert_true(profile.has_completed_route("starter_b"))
+	assert_eq(unlocked_b.size(), 1)
+	assert_eq(unlocked_b[0]["id"], "route_01")
+	assert_true(profile.owns(Catalog.ROUTES, "route_01"))
+
+
+func test_existing_save_keeps_owned_routes() -> void:
+	var old := PlayerProfile.from_dict({
+		"coins": 40,
+		"owned": {"routes": ["route_01", "route_02"], "buses": ["buseta_8"], "liveries": ["rojo_caribe"], "drivers": ["wilmer_pertuz"]},
+		"selected": {"routes": "route_01", "buses": "buseta_8", "liveries": "rojo_caribe", "drivers": "wilmer_pertuz"},
+	})
+	old.grant_free_items(catalog)
+	old.repair_choices(catalog)
+	assert_true(old.owns(Catalog.ROUTES, "route_01"), "Owned routes are never removed")
+	assert_true(old.owns(Catalog.ROUTES, "route_02"))
+	assert_eq(old.selected[Catalog.ROUTES], "route_01", "A kept route stays selected")
+	assert_false(old.has_completed_route("starter_a"))
+
+
 func test_a_few_good_shifts_buy_the_first_unlock() -> void:
 	var score := ShiftScore.new()
 	for i in 7:
@@ -227,3 +267,11 @@ func test_tutorial_flag_survives_saving() -> void:
 	profile.intro_done = true
 	assert_true(PlayerProfile.from_dict(JSON.parse_string(JSON.stringify(profile.to_dict()))).intro_done)
 	assert_false(PlayerProfile.from_dict({}).intro_done, "A new player sees the tutorial")
+
+
+func test_completed_routes_survive_saving() -> void:
+	profile.grant_free_items(catalog)
+	profile.complete_route("starter_a", catalog)
+	var copy := PlayerProfile.from_dict(JSON.parse_string(JSON.stringify(profile.to_dict())))
+	assert_true(copy.has_completed_route("starter_a"))
+	assert_true(copy.owns(Catalog.ROUTES, "starter_b"))

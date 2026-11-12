@@ -1,0 +1,88 @@
+{
+ "name": "Route 0B: Seafront Stroll",
+ "map": "maps/puerto_marisol.json",
+ "start": {
+  "road": "depot_road",
+  "along": 35,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {
+   "road": "depot_road",
+   "dir": 1
+  },
+  {
+   "road": "mill_lane",
+   "dir": 1
+  },
+  {
+   "road": "market_street",
+   "dir": 1
+  },
+  {
+   "road": "river_road",
+   "dir": 1
+  },
+  {
+   "road": "high_street",
+   "dir": 1
+  },
+  {
+   "road": "station_road",
+   "dir": 1
+  },
+  {
+   "road": "park_avenue",
+   "dir": 1
+  },
+  {
+   "road": "depot_road",
+   "dir": -1
+  }
+ ],
+ "stops": [
+  {
+   "name": "Los Almendros",
+   "due": 55,
+   "road": "mill_lane",
+   "along": 125,
+   "dir": 1,
+   "waiting": 1
+  },
+  {
+   "name": "La Bocana",
+   "due": 160,
+   "road": "river_road",
+   "along": 130,
+   "dir": 1,
+   "waiting": 1
+  },
+  {
+   "name": "Malecón Norte",
+   "due": 195,
+   "road": "river_road",
+   "along": 230,
+   "dir": 1,
+   "waiting": 1
+  },
+  {
+   "name": "Terminal",
+   "due": 285,
+   "road": "station_road",
+   "along": 80,
+   "dir": 1,
+   "waiting": 0
+  },
+  {
+   "name": "Patio Central",
+   "due": 355,
+   "road": "depot_road",
+   "along": 80,
+   "dir": -1,
+   "waiting": 0,
+   "final": true
+  }
+ ],
+ "service": "bays"
+}

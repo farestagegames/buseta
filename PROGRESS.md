@@ -53,7 +53,7 @@ Prompts in `delegation/opencode-prompts.md`, run in order by the owner with open
 | --- | --- | --- |
 | 1 | Tutorial ring offset on phone | Planned |
 | 2 | Birds near trees only (3D sound plus flocks) | Done |
-| 3 | Two short starter routes | Planned |
+| 3 | Two short starter routes | Done | 2 new routes, unlock chain, fresh profile and save tests, autopilot A 238 s and B 356 s |
 | 4 | 3 route goals = 3 stars | Planned |
 | 5 | Feedback at every stop | Planned |
 | 6 | Payout screen | Planned |

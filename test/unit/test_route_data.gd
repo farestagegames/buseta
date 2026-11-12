@@ -22,12 +22,17 @@ func _timed_routes() -> Array:
 
 
 func test_game_launches_with_five_routes_that_cost_more_as_they_go() -> void:
-	var routes: Array = catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool: return not ["troncal", "libre", "arcade"].has(item["id"]))
-	assert_eq(routes.size(), 4)
-	assert_eq(int(routes[0]["cost"]), 0, "The first route is free")
-	assert_eq(int(routes[1]["cost"]), 500)
-	for i in range(1, routes.size()):
-		assert_gt(int(routes[i]["cost"]), int(routes[i - 1]["cost"]))
+	var ids: Array = catalog.items(Catalog.ROUTES).map(func(item: Dictionary) -> String: return item["id"])
+	assert_eq(ids[0], "starter_a")
+	assert_eq(ids[1], "starter_b")
+	assert_eq(ids[2], "route_01")
+	assert_eq(int(catalog.find(Catalog.ROUTES, "starter_a")["cost"]), 0, "The first route is free")
+	assert_eq(int(catalog.find(Catalog.ROUTES, "starter_b")["cost"]), 0)
+	assert_eq(int(catalog.find(Catalog.ROUTES, "route_01")["cost"]), 0)
+	var paid: Array = ["route_02", "route_03", "route_04"].map(func(id: String) -> Dictionary: return catalog.find(Catalog.ROUTES, id))
+	assert_eq(int(paid[0]["cost"]), 500)
+	for i in range(1, paid.size()):
+		assert_gt(int(paid[i]["cost"]), int(paid[i - 1]["cost"]))
 	assert_eq(int(catalog.find(Catalog.ROUTES, "libre")["cost"]), 0, "The endless route is free to play")
 
 
@@ -107,6 +112,16 @@ func test_the_same_seed_lays_out_the_same_hails() -> void:
 	var one := RouteRunner.build(data, network, 5, map_data)
 	var two := RouteRunner.build(data, network, 5, map_data)
 	assert_eq(one.stops.size(), two.stops.size())
+
+
+func test_starter_routes_are_short_and_simple() -> void:
+	var a := _build(catalog.find(Catalog.ROUTES, "starter_a"))
+	var b := _build(catalog.find(Catalog.ROUTES, "starter_b"))
+	assert_eq(a.stops.size(), 3)
+	assert_eq(b.stops.size(), 5)
+	assert_eq(a.stops[a.stops.size() - 1].stop_name, "Patio Central")
+	assert_eq(b.stops[b.stops.size() - 1].stop_name, "Patio Central")
+	assert_lt(a.stops[a.stops.size() - 1].due, b.stops[b.stops.size() - 1].due)
 
 
 func test_informal_timetable_rises_with_the_distance_driven() -> void:

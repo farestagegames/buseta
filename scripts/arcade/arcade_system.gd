@@ -82,7 +82,7 @@ func _extend() -> void:
 func _finish() -> void:
 	GameEvents.shift_completed.emit({
 		"route": runner.route_name, "carried": 0, "served": run.checkpoints_passed, "missed": 0,
-		"left_behind": 0, "time": run.elapsed, "fares": 0, "accuracy": 1.0,
+		"left_behind": 0, "time": run.elapsed, "fares": 0, "accuracy": 1.0, "completed": false,
 		"arcade": {"checkpoints": run.checkpoints_passed, "distance": runner.progress},
 	})
 

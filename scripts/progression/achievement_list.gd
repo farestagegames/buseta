@@ -36,6 +36,12 @@ static func reward_of(entry: Dictionary) -> int:
 	return maxi(int(entry.get("reward", 0)), 0)
 
 
+## The route this achievement is about, or "".
+static func route_of(entry: Dictionary) -> String:
+	var stat := str(entry.get("stat", ""))
+	return stat.trim_prefix(ROUTE_PREFIX) if stat.begins_with(ROUTE_PREFIX) else ""
+
+
 ## True for a fixed stat, or a route or bus stat naming a real id.
 static func is_known_stat(stat: String, route_ids: Array, bus_ids: Array) -> bool:
 	if PlayerProfile.new().stats.has(stat):
