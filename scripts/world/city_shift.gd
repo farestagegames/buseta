@@ -38,6 +38,7 @@ var network: RoadNetwork
 var ground: GroundSurface
 var route: RouteRunner
 var time_of_day: TimeOfDay
+var bird_ambience: BirdAmbience
 
 
 ## Runs before the bus readies, so it builds with the player's choices.
@@ -135,6 +136,10 @@ func _ready() -> void:
 	if arcade != null:
 		_beacon.visible = false
 		_beacon.process_mode = Node.PROCESS_MODE_DISABLED
+	bird_ambience = BirdAmbience.new()
+	bird_ambience.name = "BirdAmbience"
+	add_child(bird_ambience)
+	bird_ambience.setup(map_data, ground, time_of_day, hail_seed + 101)
 	_setup_audio()
 	_setup_weather(hail_seed)
 	GameEvents.map_ready.emit(network, route)

@@ -663,6 +663,64 @@
   "x": 488,
   "beach": 46
  },
+ "bird_clusters": [
+  {
+   "id": "malecon_palms",
+   "x": 491.0,
+   "z": -96.0,
+   "perch": 7.6,
+   "flock": 4,
+   "range": 32.0
+  },
+  {
+   "id": "malecon_sombra",
+   "x": 451.4,
+   "z": -130.6,
+   "perch": 4.6,
+   "flock": 0,
+   "range": 28.0
+  },
+  {
+   "id": "parque_del_alamo",
+   "x": -277.0,
+   "z": -73.8,
+   "perch": 4.4,
+   "flock": 3,
+   "range": 30.0
+  },
+  {
+   "id": "parque_bosque",
+   "x": -306.6,
+   "z": -160.0,
+   "perch": 4.5,
+   "flock": 0,
+   "range": 26.0
+  },
+  {
+   "id": "mangos_sur",
+   "x": 130.0,
+   "z": 305.2,
+   "perch": 4.5,
+   "flock": 5,
+   "range": 30.0
+  },
+  {
+   "id": "calle_colegio",
+   "x": -35.2,
+   "z": 180.0,
+   "perch": 4.5,
+   "flock": 0,
+   "range": 25.0
+  },
+  {
+   "id": "avenida_terminal",
+   "x": -210.0,
+   "z": -225.2,
+   "perch": 4.4,
+   "flock": 0,
+   "range": 25.0
+  }
+ ],
  "theme": {
   "walls": [
    [

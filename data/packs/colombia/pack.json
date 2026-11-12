@@ -50,7 +50,9 @@
     "daily_challenges": "daily_challenges.json",
     "passengers": "passengers.json"
   },
-  "sounds": {},
+  "sounds": {
+    "birds": "res://assets/audio/ambience/birds.wav"
+  },
   "horns": [
     {
       "id": "two_tone",
@@ -193,13 +195,6 @@
       "far": 230,
       "volume_db": -9,
       "radio_ducks_db": -9
-    },
-    {
-      "id": "birds",
-      "file": "res://assets/audio/ambience/birds.wav",
-      "rule": "calm",
-      "dry": true,
-      "volume_db": -13
     },
     {
       "id": "shop_music",

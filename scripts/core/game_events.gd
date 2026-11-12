@@ -58,7 +58,7 @@ signal traffic_horn(spot: Vector2, kind: int)
 signal radio_cycle_requested ## Off, the next station, and back to off.
 ## The radio was tuned. Empty name and frequency mean it was switched off.
 signal radio_tuned(station_name: String, frequency: String)
-## 0 is dry, 1 is a downpour. The street ambience fades rain in and birds out.
+## 0 is dry, 1 is a downpour. Rain fades in and the positional tree birds fade out.
 signal rain_changed(amount: float)
 ## The weather moved on: rain, clouds and how wet the road is. Sent while it changes.
 signal weather_updated(weather: WeatherClock)

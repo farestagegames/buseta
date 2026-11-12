@@ -400,8 +400,10 @@ func test_colombia_has_horns_ambience_and_radio() -> void:
 	for station: Dictionary in pack.radio_stations():
 		assert_gte((station["tracks"] as Array).size(), 2, station["id"])
 	var rules := pack.ambience_layers().map(func(layer: Dictionary) -> String: return layer["rule"])
-	for rule: String in ["always", "sea", "stalls", "calm", "rain"]:
+	for rule: String in ["always", "sea", "stalls", "rain"]:
 		assert_true(rules.has(rule), rule)
+	assert_false(rules.has("calm"), "Birds are positional map clusters, not a map-wide layer")
+	assert_false(pack.ambience_layers().any(func(layer: Dictionary) -> bool: return layer["id"] == "birds"))
 
 
 func test_the_test_pack_has_no_radio_and_still_validates() -> void:

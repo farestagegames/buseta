@@ -300,11 +300,28 @@ func test_the_sea_is_heard_on_the_malecon_and_not_in_town() -> void:
 
 
 func test_rain_has_a_hook_for_the_weather() -> void:
+	var birds: BirdAmbience = scene.get_node("BirdAmbience")
 	GameEvents.rain_changed.emit(1.0)
-	await wait_seconds(0.8)
+	await wait_seconds(0.9)
 	assert_gt(audio.street_level("rain"), 0.9)
-	assert_lt(audio.street_level("birds"), 0.05)
+	assert_eq(birds.sound_level, 0.0)
+	for player: AudioStreamPlayer3D in birds.players:
+		assert_eq(player.volume_db, BirdAmbience.SILENT_DB)
 	GameEvents.rain_changed.emit(0.0)
+
+
+func test_bird_players_match_only_the_map_clusters() -> void:
+	var birds: BirdAmbience = scene.get_node("BirdAmbience")
+	var route_data := MapLoader.read_json(Profile.selected_item(Catalog.ROUTES)["file"])
+	var clusters: Array = MapLoader.read_map_of(route_data).get("bird_clusters", [])
+	assert_eq(clusters.size(), 7, "Puerto Marisol selects its bird habitats in map data")
+	assert_eq(birds.players.size(), clusters.size())
+	for i in clusters.size():
+		var entry: Dictionary = clusters[i]
+		var flat := Vector2(float(entry["x"]), float(entry["z"]))
+		var expected := Vector3(flat.x, scene.ground.terrain_height(flat) + float(entry["perch"]), flat.y)
+		assert_almost_eq(birds.players[i].global_position.distance_to(expected), 0.0, 0.001, entry["id"])
+		assert_eq(birds.players[i].max_distance, float(entry["range"]), entry["id"])
 
 
 func test_door_sound_plays_when_doors_open() -> void:

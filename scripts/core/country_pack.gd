@@ -274,7 +274,9 @@ func _check_route(problems: Array[String], item: Dictionary) -> void:
 	if not FileAccess.file_exists(map_path):
 		problems.append("Route %s has no map at %s" % [item["id"], route["map"]])
 		return
-	var roads: Array = (MapLoader.read_json(map_path)["roads"] as Array).map(func(road: Dictionary) -> String: return road["id"])
+	var map_data := MapLoader.read_json(map_path)
+	problems.append_array(MapLoader.check_bird_clusters(map_data.get("bird_clusters")))
+	var roads: Array = (map_data["roads"] as Array).map(func(road: Dictionary) -> String: return road["id"])
 	for leg: Dictionary in route["legs"]:
 		if not roads.has(leg["road"]):
 			problems.append("Route %s uses unknown road %s" % [item["id"], leg["road"]])
