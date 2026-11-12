@@ -85,9 +85,15 @@ static func safe_insets(view: Vector2, screen: Vector2i, safe: Rect2i) -> Vector
 		maxf((screen.x - safe.end.x) * scale.x, 0.0), maxf((screen.y - safe.end.y) * scale.y, 0.0))
 
 
+## When set, screen_insets() returns this instead of the device safe area. Tests only.
+static var test_insets_override: Variant = null
+
+
 ## The phone's insets for this view, the same on opposite edges. Zero on a
 ## computer, where the safe area belongs to the desktop rather than the game window.
 static func screen_insets(view: Vector2) -> Vector4:
+	if test_insets_override is Vector4:
+		return both_ways(test_insets_override)
 	if not OS.has_feature("mobile"):
 		return Vector4.ZERO
 	return both_ways(safe_insets(view, DisplayServer.screen_get_size(), DisplayServer.get_display_safe_area()))

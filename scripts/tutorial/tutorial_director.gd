@@ -26,6 +26,7 @@ func setup(hud: DriveHud, route: RouteSystem, spec: BusSpec) -> void:
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.camera_view_changed.connect(_on_view_changed)
 	_hud.tutorial_panel.skip_requested.connect(finish)
+	get_viewport().size_changed.connect(_on_viewport_resized)
 
 
 func start() -> void:
@@ -75,9 +76,24 @@ func _read_state(data: BusTelemetry) -> void:
 	_state["session_done"] = _route.session != null and _route.session.is_complete()
 
 
+func _on_viewport_resized() -> void:
+	if active and _shown_step != "":
+		# Controls may move after a resize; refresh on the next frame once layout settles.
+		call_deferred("_refresh_ring")
+
+
+func _refresh_ring() -> void:
+	if not active or _shown_step == "":
+		return
+	var step := script_steps.step()
+	if step.is_empty():
+		return
+	_hud.tutorial_panel.show_step(step["text"], _hud.control_rect(step["focus"]))
+
+
 func _show_step() -> void:
 	var step := script_steps.step()
 	if step.is_empty() or step["id"] == _shown_step:
 		return
 	_shown_step = step["id"]
-	_hud.tutorial_panel.show_step(step["text"], _hud.control_rect(step["focus"]))
+	_refresh_ring()

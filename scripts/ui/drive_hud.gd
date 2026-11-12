@@ -42,21 +42,25 @@ var _worst_frame: float = 0.0
 var _frame_timer: float = 0.0
 
 
+var _root: Control
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root = Control.new()
+	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Thumbs do not change with the language: right-to-left text keeps the wheel on
 	# the left and the pedals on the right.
-	root.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	add_child(root)
-	_apply_safe_area(root)
+	_root.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	add_child(_root)
+	_apply_safe_area(_root)
+	get_viewport().size_changed.connect(_on_viewport_resized)
 
 	_controls = Control.new()
 	_controls.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(_controls)
+	_root.add_child(_controls)
 
 	_build_steering()
 	_build_pedals()
@@ -64,26 +68,26 @@ func _ready() -> void:
 
 	gauge = HudGauge.new()
 	_place(gauge, Vector2(0.5, 0.0), Vector2(-190.0, 8.0), Vector2(380.0, 112.0))
-	root.add_child(gauge)
+	_root.add_child(gauge)
 
 	_frame_rate = Label.new()
 	_frame_rate.add_theme_font_size_override("font_size", 18)
 	_place(_frame_rate, Vector2(0.5, 0.0), Vector2(-190.0, 210.0), Vector2(380.0, 24.0))
 	_frame_rate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_frame_rate.visible = false
-	root.add_child(_frame_rate)
+	_root.add_child(_frame_rate)
 
 	route_panel = RoutePanel.new()
 	_place(route_panel, Vector2(0.5, 0.0), Vector2(-280.0, 124.0), Vector2(560.0, 84.0))
-	root.add_child(route_panel)
+	_root.add_child(route_panel)
 
 	penalty_toast = PenaltyToast.new()
 	_place(penalty_toast, Vector2(0.5, 0.0), Vector2(-280.0, 214.0), Vector2(560.0, 40.0))
-	root.add_child(penalty_toast)
+	_root.add_child(penalty_toast)
 
 	minimap = Minimap.new()
 	_place(minimap, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 8.0), Vector2(190.0, 190.0))
-	root.add_child(minimap)
+	_root.add_child(minimap)
 
 	arcade_clock = Label.new()
 	arcade_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -92,7 +96,7 @@ func _ready() -> void:
 	arcade_clock.add_theme_constant_override("outline_size", 8)
 	arcade_clock.visible = false
 	_place(arcade_clock, Vector2(0.5, 0.0), Vector2(-280.0, 124.0), Vector2(560.0, 84.0))
-	root.add_child(arcade_clock)
+	_root.add_child(arcade_clock)
 	GameEvents.arcade_status.connect(_on_arcade_status)
 
 	police_notice = Label.new()
@@ -104,11 +108,11 @@ func _ready() -> void:
 	police_notice.add_theme_constant_override("outline_size", 6)
 	police_notice.visible = false
 	_place(police_notice, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 202.0), Vector2(190.0, 26.0))
-	root.add_child(police_notice)
+	_root.add_child(police_notice)
 	GameEvents.police_nearby.connect(func(near: bool) -> void: police_notice.visible = near)
 
 	tutorial_panel = TutorialPanel.new()
-	root.add_child(tutorial_panel)
+	_root.add_child(tutorial_panel)
 	# Clear of the indicators on the left and the horn on the right.
 	tutorial_panel.keep_clear_of(EDGE + 166.0 + 150.0 + GAP, EDGE + 150.0 + GAP + 200.0 + GAP)
 
@@ -121,13 +125,13 @@ func _ready() -> void:
 			settings_panel.end_shift_button.visible = route.endless)
 	settings_panel.layout_direction = Control.LAYOUT_DIRECTION_APPLICATION_LOCALE
 	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-340.0, -340.0), Vector2(680.0, 680.0))
-	root.add_child(settings_panel)
+	_root.add_child(settings_panel)
 
 	shift_panel = ShiftEndPanel.new()
 	shift_panel.visible = false
 	shift_panel.layout_direction = Control.LAYOUT_DIRECTION_APPLICATION_LOCALE
 	_place(shift_panel, Vector2(0.5, 0.5), Vector2(-600.0, -340.0), Vector2(1200.0, 680.0))
-	root.add_child(shift_panel)
+	_root.add_child(shift_panel)
 	GameEvents.shift_rewards_ready.connect(_on_shift_report)
 
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
@@ -375,3 +379,10 @@ func _apply_safe_area(root: Control) -> void:
 	var insets := UiStyle.screen_insets(root.get_viewport_rect().size)
 	root.offset_left = insets.x
 	root.offset_right = -insets.z
+	root.offset_top = 0.0
+	root.offset_bottom = 0.0
+
+
+func _on_viewport_resized() -> void:
+	if _root != null:
+		_apply_safe_area(_root)

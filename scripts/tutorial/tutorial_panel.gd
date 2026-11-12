@@ -10,7 +10,7 @@ const PULSE_SPEED := 5.0
 
 var _message: Label
 var _panel: PanelContainer
-var _ring_rect: Rect2 = Rect2()
+var _ring_global: Rect2 = Rect2()
 var _ring_style := StyleBoxFlat.new()
 var _time: float = 0.0
 var _left_clear: float = 0.0
@@ -82,28 +82,36 @@ func _notification(what: int) -> void:
 func show_step(text: String, ring: Rect2) -> void:
 	_message.text = text
 	_panel.offset_bottom = PANEL_TOP + PANEL_SIZE.y
-	_ring_rect = ring
+	_ring_global = ring
 	visible = true
 	queue_redraw()
 
 
 func hide_panel() -> void:
 	visible = false
+	_ring_global = Rect2()
 
 
 func ring() -> Rect2:
-	return _ring_rect
+	return _ring_local()
+
+
+func _ring_local() -> Rect2:
+	if not _ring_global.has_area():
+		return Rect2()
+	return Rect2(_ring_global.position - get_global_rect().position, _ring_global.size)
 
 
 func _process(dt: float) -> void:
-	if visible and _ring_rect.has_area():
+	if visible and _ring_global.has_area():
 		_time += dt
 		queue_redraw()
 
 
 func _draw() -> void:
-	if not _ring_rect.has_area():
+	var ring_rect := _ring_local()
+	if not ring_rect.has_area():
 		return
 	var pulse := 0.5 + 0.5 * sin(_time * PULSE_SPEED)
 	_ring_style.border_color = Color(UiStyle.ACCENT, 0.5 + 0.5 * pulse)
-	draw_style_box(_ring_style, _ring_rect.grow(8.0 + 5.0 * pulse))
+	draw_style_box(_ring_style, ring_rect.grow(8.0 + 5.0 * pulse))
