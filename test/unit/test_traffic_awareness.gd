@@ -969,3 +969,30 @@ func test_honks_fade_with_distance_and_stop_out_of_earshot() -> void:
 	assert_eq(AudioDirector.car_horn_db(5.0), AudioDirector.CAR_HORN_DB)
 	assert_almost_eq(AudioDirector.car_horn_db(20.0), AudioDirector.CAR_HORN_DB - 6.0, 0.01)
 	assert_eq(AudioDirector.car_horn_db(AudioDirector.CAR_HORN_RANGE + 1.0), -INF)
+
+
+## Hailed from the lane, the bus stops away from the kerb and people walk across
+## the gap. A moto riding up the kerb side used to ride straight through them.
+func test_a_moto_waits_for_people_boarding_between_the_bus_and_the_kerb() -> void:
+	for side in SIDES:
+		_straight(side)
+		var lane := _lane("main", "e")
+		_bus_in_lane(lane, 300.0, -0.6)
+		doors_open = true
+		var moto := _add(lane, 240.0, 10.0, true)
+		var kerb := _kerb(lane, 290.0)
+		var centre := rear + _forward(heading) * -spec.body_centre_z()
+		var entered := false
+		for i in 900:
+			_tick()
+			var offset := flow.positions[0] - centre
+			var along := absf(offset.dot(_forward(heading)))
+			var across := offset.dot(kerb)
+			if along < spec.overall_length() / 2.0 and across > spec.body_width / 2.0 and across < spec.body_width / 2.0 + 3.0:
+				entered = true
+		assert_false(entered, "Kept out of the boarding strip, side %d" % side)
+		assert_false(_touches_bus(0), "Side %d" % side)
+		doors_open = false
+		for i in 900:
+			_tick()
+		assert_gt(moto.distance, 245.0, "Rides on once the doors shut, side %d" % side)

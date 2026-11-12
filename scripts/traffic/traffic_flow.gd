@@ -49,6 +49,10 @@ const CAR_PASS_SPEED := 7.0
 ## passing speed.
 const BESIDE_BUS := 6.0
 const MOTO_PASS_SPEED := 4.0
+## Width of the strip beside an open-door bus kept clear for passengers, from the
+## bus side towards the kerb, and how far it reaches past each end of the bus.
+const BOARDING_ZONE_WIDTH := 4.0
+const BOARDING_ZONE_REACH := 1.0
 ## A moto filtering past a car goes at most this much faster than it.
 const FILTER_SPEED := 4.0
 const FILTER_ROOM := 0.45
@@ -110,6 +114,10 @@ var _props_moved: bool = true
 var _prop_timer: float = 0.0
 var _bus_box := TrafficBox.new()
 var _trailer_box := TrafficBox.new()
+## The strip between the bus and the kerb while its doors are open, where people
+## step on and off. Traffic stops for it instead of riding through them.
+var _boarding_box := TrafficBox.new()
+var _boarding := false
 var _has_trailer: bool = false
 var _lane_head := PackedInt32Array() ## Per lane, the first vehicle on it, or -1.
 var _lane_next := PackedInt32Array() ## Per vehicle, the next one on its lane.
@@ -268,6 +276,17 @@ func _prepare(dt: float) -> void:
 			_lane_out[lane] += 1
 	if bus_active:
 		_has_trailer = TrafficSense.bus_boxes(bus_rear, bus_heading, bus_speed, spec, trailer_axle, trailer_heading, _bus_box, _trailer_box)
+	_boarding = bus_active and bus_doors_open
+	if _boarding:
+		var forward := Vector2(-sin(bus_heading), -cos(bus_heading))
+		var kerb := Vector2(-forward.y, forward.x) * float(_side)
+		var centre := bus_rear + forward * -spec.body_centre_z()
+		# One box for the bus and the strip, so traffic passes it like a wider
+		# parked bus, on the road side only.
+		_boarding_box.kind = TrafficBox.Kind.BUS
+		_boarding_box.set_pose(centre + kerb * (BOARDING_ZONE_WIDTH / 2.0), forward,
+			spec.overall_length() / 2.0 + BOARDING_ZONE_REACH, spec.body_width / 2.0 + BOARDING_ZONE_WIDTH / 2.0)
+		_boarding_box.velocity = Vector2.ZERO
 	bus_still_time = bus_still_time + dt if absf(bus_speed) < TrafficSense.STILL_SPEED else 0.0
 	_prop_timer -= dt
 	if _prop_timer <= 0.0:
@@ -581,6 +600,8 @@ func _gather(index: int, agent: TrafficAgent, lane: TrafficLane, reach: float) -
 	_box_count = 0
 	_vehicle_count = 0
 	var spot := positions[index]
+	if _boarding:
+		_consider(_boarding_box, spot, reach)
 	if bus_active:
 		_consider(_bus_box, spot, reach)
 		if _has_trailer:

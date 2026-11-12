@@ -159,15 +159,27 @@ func test_ledger_is_repeatable_with_the_same_seed() -> void:
 	assert_eq(a.onboard, b.onboard)
 
 
-func test_session_alights_then_boards() -> void:
+func test_session_boards_while_others_get_off() -> void:
 	var order: Array[String] = []
-	var session := StopSession.new(1, 1)
+	var session := StopSession.new(4, 2)
 	session.passenger_alighted.connect(func() -> void: order.append("off"))
 	session.passenger_boarded.connect(func() -> void: order.append("on"))
 	for i in 600:
 		session.update(1.0 / 60.0, true)
-	assert_eq(order, ["off", "on"] as Array[String])
+	assert_eq(order.count("off"), 4)
+	assert_eq(order.count("on"), 2)
+	assert_lt(order.find("on"), order.rfind("off"), "Someone gets on before the last one is off")
 	assert_true(session.is_complete())
+
+
+func test_a_busy_stop_is_quicker_than_one_side_after_the_other() -> void:
+	var session := StopSession.new(4, 4)
+	var seconds := 0.0
+	while not session.is_complete() and seconds < 60.0:
+		session.update(1.0 / 60.0, true)
+		seconds += 1.0 / 60.0
+	var one_after_other := 4 * StopSession.ALIGHT_SECONDS + StopSession.QUEUE_SECONDS + 3 * StopSession.BOARD_SECONDS
+	assert_lt(seconds, one_after_other - 2.0)
 
 
 func test_session_waits_for_open_doors() -> void:

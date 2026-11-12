@@ -61,8 +61,9 @@ Prompts in `delegation/opencode-prompts.md`, run in order by the owner with open
 | 8 | First-time banners tied to achievements | Done | `firsts.json`, confetti celebration banner, profile-saved firsts, live achievement/first unlocks, and celebration tests |
 
 | 9 | Owner feedback: arcade access and motorbikes | Done | `6af4597` Carrera Express button on Home (level 2, New! badge, best checkpoints) and a more forgiving arcade; then the moto fix (hits slow the bus and shove the rider aside, on every route). Regression test at boost speed. Not checked on a phone |
+| 10 | Owner feedback: motos through boarding passengers, slow stops | Done | Traffic keeps out of a strip beside an open-door bus; boarding runs alongside alighting. Not checked on a phone |
 
-**Resume here:** all eight engagement tasks are done. On the phone still to check: the Carrera Express Home button and the arcade's feel, hitting a motorbike (bus should jolt and slow, rider thrown aside), the tutorial ring, the birds, Starter A as the first route, the 3-goal checklist, stop feedback placement/feel, cab decorations in cockpit, the next-unlock line, the payout sequence, and first-time/achievement celebration banners. Play: internal testing installed on the owner's phone (12 Nov); closed track, privacy page re-upload and key backup still to do (`store/testing-plan.md`).
+**Resume here:** all eight engagement tasks are done. On the phone still to check: the Carrera Express Home button and the arcade's feel, hitting a motorbike (bus should jolt and slow, rider thrown aside), motos waiting while people board, boarding during alighting, the tutorial ring, the birds, Starter A as the first route, the 3-goal checklist, stop feedback placement/feel, cab decorations in cockpit, the next-unlock line, the payout sequence, and first-time/achievement celebration banners. Play: internal testing installed on the owner's phone (12 Nov); closed track, privacy page re-upload and key backup still to do (`store/testing-plan.md`).
 
 ## Next: second map, Alto Cafeto (planned 12 Nov)
 
