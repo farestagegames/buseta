@@ -45,4 +45,19 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | Store prep | Done | | Renamed "Buseta Simulator: Colombia" (privacy page must be re-uploaded to GitHub). Listing text es-419 and en-US, feature graphic, 8 Spanish screenshots, privacy policy (filled in, not yet hosted), Play Console form answers. All in `store/`. Target age 13+ confirmed. Owner to do: skim in-game slang, paste the privacy URL into Play Console (https://callenomad.github.io/city-bus-shift-privacy/) |
 | Play testing | In progress | | 0.1.0 (code 1) uploaded to Internal testing (11 Nov). Owner steps in `store/testing-plan.md`: add tester list, roll out, install from the opt-in link, check icon, menu title and a short drive; then a closed track via a Google Group for 12+ testers for 14 days, with es/en invite drafts. Still to do: re-upload the privacy page (old name), back up the upload key off this Mac |
 
+## Engagement batch and feedback fixes (12 Nov, planned)
+
+Prompts in `delegation/opencode-prompts.md`, run in order by the owner with opencode.
+
+| # | Item | State |
+| --- | --- | --- |
+| 1 | Tutorial ring offset on phone | Planned |
+| 2 | Birds near trees only (3D sound plus flocks) | Planned |
+| 3 | Two short starter routes | Planned |
+| 4 | 3 route goals = 3 stars | Planned |
+| 5 | Feedback at every stop | Planned |
+| 6 | Payout screen | Planned |
+| 7 | Unlock every 1 to 2 shifts, cab decorations | Planned |
+| 8 | First-time banners tied to achievements | Planned |
+
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.
