@@ -6,6 +6,8 @@ const ROUTES := "routes"
 const BUSES := "buses"
 const LIVERIES := "liveries"
 const DRIVERS := "drivers"
+const DECORATIONS := "decorations"
+const KINDS := [ROUTES, BUSES, LIVERIES, DRIVERS, DECORATIONS]
 
 var data: Dictionary
 
@@ -16,7 +18,7 @@ func _init(catalog_data: Dictionary = {}) -> void:
 		data = catalog_data
 		return
 	data = MapLoader.read_json(Country.pack.content_path("catalog"))
-	for kind: String in [ROUTES, BUSES, LIVERIES, DRIVERS]:
+	for kind: String in KINDS:
 		for item: Dictionary in data.get(kind, []):
 			if item.has("file"):
 				item["file"] = Country.pack.resolve(item["file"])

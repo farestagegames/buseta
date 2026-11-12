@@ -50,13 +50,22 @@ func _grant_completed_unlocks() -> void:
 				changed = true
 
 
+## The next item the player can work towards: cheapest reachable, with what's missing.
+## Exposed for the results screen (task 6).
+func next_unlock() -> Dictionary:
+	return UnlockProgress.next(data, catalog, Country.pack)
+
+
 func save() -> bool:
 	return SaveStore.write(_path, data.to_dict())
 
 
 func selected_item(kind: String) -> Dictionary:
-	var item := catalog.find(kind, data.selected[kind])
-	return item if not item.is_empty() else catalog.items(kind)[0]
+	var item := catalog.find(kind, data.selected.get(kind, ""))
+	if not item.is_empty():
+		return item
+	var items := catalog.items(kind)
+	return items[0] if not items.is_empty() else {}
 
 
 func buy(kind: String, id: String) -> bool:

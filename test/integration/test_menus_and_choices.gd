@@ -30,8 +30,9 @@ func test_buying_in_the_menu_spends_coins_and_selects() -> void:
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)
 	menu.show_tab(2)
+	var cost := int(Profile.catalog.find(Catalog.LIVERIES, "verde_manglar")["cost"])
 	menu._on_buy(Catalog.LIVERIES, "verde_manglar")
-	assert_eq(Profile.data.coins, 600)
+	assert_eq(Profile.data.coins, 1000 - cost)
 	assert_eq(Profile.data.selected[Catalog.LIVERIES], "verde_manglar")
 
 

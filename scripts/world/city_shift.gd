@@ -49,6 +49,7 @@ func _enter_tree() -> void:
 	var visual: BusVisual = bus.get_node("Visual")
 	visual.spec = spec
 	visual.driver_look = chosen_look()
+	visual.decoration = chosen_decoration()
 
 
 ## The player's bus in their livery. A copy, so the shared data stays untouched.
@@ -78,6 +79,14 @@ static func spec_for(bus_item: Dictionary, livery: Dictionary) -> BusSpec:
 
 static func chosen_look() -> DriverLook:
 	return DriverLook.from_item(Profile.selected_item(Catalog.DRIVERS))
+
+
+## The cab decoration the player has fitted, or an empty dictionary if none.
+static func chosen_decoration() -> Dictionary:
+	if not Profile.catalog.data.has(Catalog.DECORATIONS):
+		return {}
+	var item := Profile.selected_item(Catalog.DECORATIONS)
+	return item if not item.is_empty() and Profile.data.owns(Catalog.DECORATIONS, str(item.get("id", ""))) else {}
 
 
 ## The time of day the player picked, if their level has unlocked it.

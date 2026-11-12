@@ -57,6 +57,8 @@ const BUS_LAYER := 2
 @export var spec: BusSpec
 
 var driver_look: DriverLook
+var decoration: Dictionary = {}
+var _decoration_mesh: MeshInstance3D
 var cockpit_anchor: Node3D
 var cabin: CabinLayout
 
@@ -141,6 +143,7 @@ func _ready() -> void:
 	_build_trailer()
 	_build_riders()
 	_build_driver()
+	_build_decoration()
 	_build_night_lights()
 	_build_wipers()
 	_add_to_bus_layer(self)
@@ -345,14 +348,19 @@ func _add_mesh(b: LowPolyBuilder, parent: Node3D) -> void:
 ## Rows of seats, so the windows are not looking at an empty box. Only seats in the
 ## main section are counted for riders.
 func _add_seats(b: LowPolyBuilder, from_z: float, to_z: float, colour: Color, for_riders: bool) -> void:
+	var seat_colour := colour
+	var seat_trim := colour.lightened(0.1)
+	if for_riders and decoration.get("kind", "") == "seat_cover":
+		seat_colour = _deco_colour("colour", colour)
+		seat_trim = _deco_colour("trim", colour.lightened(0.1))
 	var row_z := from_z
 	while row_z < to_z:
 		for x: float in [-0.95, -0.5, 0.5, 0.95]:
 			# The way out to the rear door is kept clear.
 			if x * spec.door_side > 0.0 and _in_rear_door(row_z, 0.35):
 				continue
-			b.box(Vector3(x, 0.72, row_z), Vector3(0.4, 0.5, 0.42), colour)
-			b.box(Vector3(x, 1.12, row_z + 0.18), Vector3(0.4, 0.55, 0.08), colour)
+			b.box(Vector3(x, 0.72, row_z), Vector3(0.4, 0.5, 0.42), seat_colour)
+			b.box(Vector3(x, 1.12, row_z + 0.18), Vector3(0.4, 0.55, 0.08), seat_trim)
 			if for_riders:
 				_seat_points.append(Vector3(x, 0.97, row_z))
 		row_z += 0.95
@@ -1080,3 +1088,70 @@ func _process(dt: float) -> void:
 ## Blade rotation for a count of sweeps: flat at whole numbers, fully up at halves.
 static func wiper_angle(phase: float) -> float:
 	return -WIPER_SWEEP * (1.0 - cos(TAU * phase)) / 2.0
+
+
+func _deco_colour(key: String, fallback: Color) -> Color:
+	var value: Variant = decoration.get(key)
+	if value is Array and (value as Array).size() >= 3:
+		return Color(float(value[0]), float(value[1]), float(value[2]))
+	return fallback
+
+
+## Small cab decorations: seat covers recolour seats, the rest are built here.
+func _build_decoration() -> void:
+	var kind := str(decoration.get("kind", ""))
+	if kind == "" or kind == "seat_cover":
+		return
+	var b := LowPolyBuilder.new()
+	match kind:
+		"dash_toy":
+			_build_dash_toy(b)
+		"mirror_charm":
+			_build_mirror_charm(b)
+		"pennant":
+			_build_pennant(b)
+		_:
+			return
+	_decoration_mesh = MeshInstance3D.new()
+	_decoration_mesh.mesh = b.build(LowPolyBuilder.vertex_colour_material())
+	_body.add_child(_decoration_mesh)
+
+
+func decoration_mesh() -> MeshInstance3D:
+	return _decoration_mesh
+
+
+func shows_decoration(id: String) -> bool:
+	return str(decoration.get("id", "")) == id and (id == "" or str(decoration.get("kind", "")) == "seat_cover" or _decoration_mesh != null)
+
+
+func _build_dash_toy(b: LowPolyBuilder) -> void:
+	var base := _deco_colour("colour", Color(0.8, 0.7, 0.5))
+	var accent := _deco_colour("accent", Color(0.2, 0.2, 0.2))
+	var pos := Vector3(spec.driver_seat_x + 0.22 * float(spec.door_side), 1.18, _cab_z + 0.35)
+	# A small bobble figure sitting on the dash.
+	b.box(pos + Vector3(0.0, 0.04, 0.0), Vector3(0.1, 0.08, 0.08), base)
+	b.box(pos + Vector3(0.0, 0.11, 0.0), Vector3(0.08, 0.06, 0.07), base.lightened(0.1))
+	b.box(pos + Vector3(0.0, 0.11, -0.04), Vector3(0.03, 0.02, 0.01), accent)
+	b.box(pos + Vector3(-0.02, 0.12, -0.04), Vector3(0.015, 0.015, 0.01), accent)
+	b.box(pos + Vector3(0.02, 0.12, -0.04), Vector3(0.015, 0.015, 0.01), accent)
+
+
+func _build_mirror_charm(b: LowPolyBuilder) -> void:
+	var base := _deco_colour("colour", Color(0.2, 0.6, 0.3))
+	var accent := _deco_colour("accent", Color(0.5, 0.35, 0.2))
+	var hang := Vector3(0.1 * float(spec.door_side), _top_y - 0.68, _cab_z + 0.4)
+	b.box(hang + Vector3(0.0, 0.05, 0.0), Vector3(0.01, 0.1, 0.01), accent)
+	b.box(hang + Vector3(0.0, -0.01, 0.0), Vector3(0.05, 0.03, 0.02), base)
+	b.box(hang + Vector3(-0.025, -0.02, 0.0), Vector3(0.03, 0.02, 0.015), base)
+	b.box(hang + Vector3(0.025, -0.02, 0.0), Vector3(0.03, 0.02, 0.015), base)
+
+
+func _build_pennant(b: LowPolyBuilder) -> void:
+	var base := _deco_colour("colour", Color(0.9, 0.8, 0.2))
+	var accent := _deco_colour("accent", Color(0.1, 0.4, 0.2))
+	var side := float(spec.door_side)
+	var top := Vector3(-side * (_half_width - 0.2), _top_y - 0.35, _cab_z + 0.9)
+	b.box(top + Vector3(0.0, 0.12, 0.0), Vector3(0.01, 0.24, 0.01), Color(0.75, 0.75, 0.72))
+	b.flag(top + Vector3(0.0, 0.22, 0.0), top + Vector3(0.0, 0.06, 0.0), top + Vector3(side * 0.22, 0.14, 0.0), base)
+	b.flag(top + Vector3(0.0, 0.18, 0.002), top + Vector3(0.0, 0.1, 0.002), top + Vector3(side * 0.1, 0.14, 0.002), accent)

@@ -247,6 +247,20 @@ func _check_content(problems: Array[String]) -> void:
 			if ids.has(item["id"]):
 				problems.append("%s has %s twice" % [kind, item["id"]])
 			ids[item["id"]] = true
+	# Cab decorations are optional: validate them when a pack offers them.
+	var decorations: Array = catalog.get(Catalog.DECORATIONS, [])
+	if not decorations.is_empty():
+		var free := decorations.filter(func(item: Dictionary) -> bool: return int(item.get("cost", 0)) == 0)
+		if free.is_empty():
+			problems.append("decorations needs at least one free item")
+		var ids := {}
+		for item: Dictionary in decorations:
+			if ids.has(item["id"]):
+				problems.append("decorations has %s twice" % item["id"])
+			ids[item["id"]] = true
+			var kind_name := str(item.get("kind", ""))
+			if not ["seat_cover", "dash_toy", "mirror_charm", "pennant"].has(kind_name):
+				problems.append("Decoration %s has an unknown kind %s" % [item["id"], kind_name])
 	var horn_ids := horns().map(func(item: Variant) -> String: return str(item.get("id", "")) if item is Dictionary else "")
 	for bus: Dictionary in catalog.get(Catalog.BUSES, []):
 		_check_file(problems, bus["file"], "bus %s" % bus["id"])

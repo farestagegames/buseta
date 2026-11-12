@@ -4,21 +4,22 @@ extends RefCounted
 ## Pure logic. Loading tolerates missing or damaged fields, so an old or hand
 ## edited save can never stop the game from starting.
 
-const VERSION := 2
+const VERSION := 3
 const DEFAULT_ROUTE := "starter_a"
 const DEFAULT_BUS := "buseta_8"
 const DEFAULT_LIVERY := "rojo_caribe"
 const DEFAULT_DRIVER := "wilmer_pertuz"
+const DEFAULT_DECORATION := "seat_sky"
 const DEFAULTS := {
 	Catalog.ROUTES: DEFAULT_ROUTE, Catalog.BUSES: DEFAULT_BUS, Catalog.LIVERIES: DEFAULT_LIVERY,
-	Catalog.DRIVERS: DEFAULT_DRIVER,
+	Catalog.DRIVERS: DEFAULT_DRIVER, Catalog.DECORATIONS: DEFAULT_DECORATION,
 }
 
 var coins: int = 0
 var xp: int = 0
 var owned: Dictionary = {
 	Catalog.ROUTES: [DEFAULT_ROUTE], Catalog.BUSES: [DEFAULT_BUS], Catalog.LIVERIES: [DEFAULT_LIVERY],
-	Catalog.DRIVERS: [DEFAULT_DRIVER],
+	Catalog.DRIVERS: [DEFAULT_DRIVER], Catalog.DECORATIONS: [DEFAULT_DECORATION],
 }
 var selected: Dictionary = DEFAULTS.duplicate()
 var stats: Dictionary = {
@@ -74,7 +75,7 @@ func select(kind: String, id: String) -> bool:
 func grant_free_items(catalog: Catalog) -> void:
 	for kind: String in owned:
 		for item: Dictionary in catalog.items(kind):
-			if int(item["cost"]) == 0 and catalog.requires(item) == "" and not owns(kind, item["id"]):
+			if int(item.get("cost", 0)) == 0 and catalog.requires(item) == "" and not owns(kind, item["id"]):
 				(owned[kind] as Array).append(item["id"])
 
 
@@ -82,9 +83,11 @@ func grant_free_items(catalog: Catalog) -> void:
 ## game, goes back to the default, or to the first item owned if there is none.
 func repair_choices(catalog: Catalog) -> void:
 	for kind: String in selected:
+		if catalog.items(kind).is_empty():
+			continue
 		if not catalog.find(kind, selected[kind]).is_empty():
 			continue
-		var fallback: String = DEFAULTS[kind]
+		var fallback: String = DEFAULTS.get(kind, "")
 		if kind == Catalog.ROUTES:
 			fallback = catalog.default_route()
 		if catalog.find(kind, fallback).is_empty() or not owns(kind, fallback):
@@ -224,8 +227,14 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	if saved_selected is Dictionary:
 		for kind: String in profile.selected:
 			var id: Variant = (saved_selected as Dictionary).get(kind)
-			if id is String:
-				profile.select(kind, id)
+			if id is String and profile.owns(kind, id):
+				profile.selected[kind] = id
+	# Older saves or packs without this kind may not have a valid decoration yet.
+	if not saved.has("version") or int(_number(saved.get("version"), 0.0)) < 3:
+		if profile.selected.get(Catalog.DECORATIONS, "") == "":
+			profile.selected[Catalog.DECORATIONS] = DEFAULT_DECORATION
+		if not profile.owns(Catalog.DECORATIONS, profile.selected[Catalog.DECORATIONS]):
+			(profile.owned[Catalog.DECORATIONS] as Array).append(profile.selected[Catalog.DECORATIONS])
 	var saved_stats: Variant = saved.get("stats")
 	if saved_stats is Dictionary:
 		for key: String in profile.stats:

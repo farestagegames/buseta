@@ -26,6 +26,7 @@ var _garage_preview: BusPreview
 var _preview_note: Label
 var _preview_bus: Dictionary = {}
 var _preview_livery: Dictionary = {}
+var _preview_decoration: Dictionary = {}
 var _frame: MarginContainer
 var _horn_preview: AudioStreamPlayer
 var _horn_preview_left: float = 0.0
@@ -248,12 +249,39 @@ func _home_tab() -> Control:
 	daily_card.add_child(daily_lines)
 	column.add_child(daily_card)
 
+	var next_card := _card()
+	var next_lines := VBoxContainer.new()
+	next_lines.add_child(_text("Next unlock", 22, ACCENT))
+	var next := Profile.next_unlock()
+	if next.is_empty():
+		next_lines.add_child(_wrapped(tr("All unlocked"), 24, Color.WHITE))
+	else:
+		next_lines.add_child(_wrapped(next_unlock_text(next), 24, Color.WHITE))
+	next_card.add_child(next_lines)
+	column.add_child(next_card)
+
 	var start := _button("Start shift")
 	start.custom_minimum_size.y = 110.0
 	start.add_theme_font_size_override("font_size", 38)
 	start.pressed.connect(_start_shift)
 	side.add_child(start)
 	return page
+
+
+## A short line for the next item to work towards, with what is missing.
+static func next_unlock_text(info: Dictionary) -> String:
+	if info.is_empty():
+		return TranslationServer.translate("All unlocked")
+	var name := TranslationServer.translate(str(info.get("name", "")))
+	var coins_missing := int(info.get("coins_missing", 0))
+	var levels_missing := int(info.get("levels_missing", 0))
+	if coins_missing <= 0 and levels_missing <= 0:
+		return TranslationServer.translate("%s: ready") % name
+	if coins_missing > 0 and levels_missing > 0:
+		return TranslationServer.translate("%s: %s more, level %d") % [name, Country.pack.money(coins_missing), int(info.get("level", 1))]
+	if levels_missing > 0:
+		return TranslationServer.translate("%s: level %d") % [name, int(info.get("level", 1))]
+	return TranslationServer.translate("%s: %s more") % [name, Country.pack.money(coins_missing)]
 
 
 ## Today's driver. Tapping the portrait goes to the choice of drivers.
@@ -361,11 +389,12 @@ func _garage_tab() -> Control:
 	_garage_preview = BusPreview.new()
 	_garage_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side.add_child(_garage_preview)
-	_preview_note = _wrapped("Tap a bus, paint or horn to try it", 20, MUTED)
+	_preview_note = _wrapped("Tap a bus, paint or decoration to try it", 20, MUTED)
 	_preview_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	side.add_child(_preview_note)
 	_preview_bus = Profile.selected_item(Catalog.BUSES)
 	_preview_livery = Profile.selected_item(Catalog.LIVERIES)
+	_preview_decoration = Profile.selected_item(Catalog.DECORATIONS)
 	var rows := list.get_child(0)
 	rows.add_child(_text("Buses", 26, ACCENT))
 	for item: Dictionary in Profile.catalog.items(Catalog.BUSES):
@@ -374,6 +403,10 @@ func _garage_tab() -> Control:
 	rows.add_child(_text("Liveries", 26, ACCENT))
 	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
 		rows.add_child(_garage_row(Catalog.LIVERIES, item, ""))
+	if not Profile.catalog.items(Catalog.DECORATIONS).is_empty():
+		rows.add_child(_text("Cab decorations", 26, ACCENT))
+		for item: Dictionary in Profile.catalog.items(Catalog.DECORATIONS):
+			rows.add_child(_garage_row(Catalog.DECORATIONS, item, ""))
 	rows.add_child(_text("Horn", 26, ACCENT))
 	Profile.data.settle_horns(Country.pack.horns())
 	rows.add_child(_horn_row({}))
@@ -468,10 +501,16 @@ func _garage_row(kind: String, item: Dictionary, description: String) -> Control
 func try_on(kind: String, item: Dictionary) -> void:
 	if kind == Catalog.BUSES:
 		_preview_bus = item
-	else:
+	elif kind == Catalog.LIVERIES:
 		_preview_livery = item
-	_garage_preview.show_spec(CityShift.spec_for(_preview_bus, _preview_livery))
-	_preview_note.text = "%s, %s" % [_preview_bus["name"], tr(_preview_livery["name"])]
+	elif kind == Catalog.DECORATIONS:
+		_preview_decoration = item
+	_garage_preview.show_spec(CityShift.spec_for(_preview_bus, _preview_livery), _preview_decoration)
+	var decor_name := tr(_preview_decoration.get("name", "")) if not _preview_decoration.is_empty() else ""
+	if decor_name != "":
+		_preview_note.text = "%s, %s, %s" % [_preview_bus["name"], tr(_preview_livery["name"]), decor_name]
+	else:
+		_preview_note.text = "%s, %s" % [_preview_bus["name"], tr(_preview_livery["name"])]
 
 
 func _drivers_tab() -> Control:
@@ -493,7 +532,7 @@ func _shop_row(kind: String, item: Dictionary, description: String) -> Control:
 	var card := _card()
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
-	if item.has("body"):
+	if item.has("body") or item.has("colour"):
 		row.add_child(_swatch(item))
 	if kind == Catalog.DRIVERS:
 		row.add_child(DriverBadge.new(DriverLook.from_item(item)))
@@ -566,19 +605,35 @@ func _on_buy(kind: String, id: String) -> void:
 
 
 func _swatch(item: Dictionary) -> Control:
-	var body: Array = item["body"]
-	var stripe: Array = item["stripe"]
+	if item.has("body"):
+		var body: Array = item["body"]
+		var stripe: Array = item.get("stripe", item["body"])
+		var panel := ColorRect.new()
+		panel.color = Color(body[0], body[1], body[2])
+		panel.custom_minimum_size = Vector2(90.0, 56.0)
+		panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var band := ColorRect.new()
+		band.color = Color(stripe[0], stripe[1], stripe[2])
+		band.anchor_right = 1.0
+		band.anchor_top = 0.5
+		band.anchor_bottom = 0.5
+		band.offset_top = -5.0
+		band.offset_bottom = 5.0
+		panel.add_child(band)
+		return panel
+	var colour: Array = item.get("colour", [0.5, 0.5, 0.5])
+	var accent: Array = item.get("accent", item.get("trim", colour))
 	var panel := ColorRect.new()
-	panel.color = Color(body[0], body[1], body[2])
+	panel.color = Color(colour[0], colour[1], colour[2])
 	panel.custom_minimum_size = Vector2(90.0, 56.0)
 	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var band := ColorRect.new()
-	band.color = Color(stripe[0], stripe[1], stripe[2])
+	band.color = Color(accent[0], accent[1], accent[2])
 	band.anchor_right = 1.0
 	band.anchor_top = 0.5
 	band.anchor_bottom = 0.5
-	band.offset_top = -5.0
-	band.offset_bottom = 5.0
+	band.offset_top = -7.0
+	band.offset_bottom = 7.0
 	panel.add_child(band)
 	return panel
 

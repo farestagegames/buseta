@@ -70,22 +70,22 @@
       "id": "double_tap",
       "name": "Friendly double tap",
       "file": "res://assets/audio/horn_double_tap.wav",
-      "cost": 600,
+      "cost": 200,
       "finish": true
     },
     {
       "id": "air",
       "name": "Air horn",
       "file": "res://assets/audio/horn_air.wav",
-      "cost": 1500,
-      "level": 3
+      "cost": 500,
+      "level": 2
     },
     {
       "id": "chiva",
       "name": "Chiva tune",
       "file": "res://assets/audio/horn_chiva.wav",
-      "cost": 2500,
-      "level": 5,
+      "cost": 900,
+      "level": 3,
       "finish": true
     }
   ],

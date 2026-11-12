@@ -469,7 +469,7 @@
     0.97
    ],
    "pattern": "waves",
-   "cost": 400
+   "cost": 150
   },
   {
    "id": "verde_manglar",
@@ -495,7 +495,7 @@
     0.5
    ],
    "pattern": "chevrons",
-   "cost": 400
+   "cost": 250
   },
   {
    "id": "naranja_amanecer",
@@ -521,7 +521,7 @@
     0.65
    ],
    "pattern": "sunburst",
-   "cost": 600
+   "cost": 400
   },
   {
    "id": "blanco_brisa",
@@ -547,7 +547,8 @@
     0.92
    ],
    "pattern": "waves",
-   "cost": 600
+   "cost": 550,
+   "level": 2
   },
   {
    "id": "tricolor_fiesta",
@@ -573,7 +574,8 @@
     0.6
    ],
    "pattern": "bands",
-   "cost": 800
+   "cost": 750,
+   "level": 2
   },
   {
    "id": "carnaval",
@@ -599,7 +601,8 @@
     0.15
    ],
    "pattern": "zigzag",
-   "cost": 900
+   "cost": 950,
+   "level": 3
   },
   {
    "id": "guacamaya",
@@ -625,7 +628,8 @@
     0.14
    ],
    "pattern": "diamonds",
-   "cost": 900
+   "cost": 1150,
+   "level": 3
   },
   {
    "id": "cumbia",
@@ -651,7 +655,8 @@
     0.2
    ],
    "pattern": "zigzag",
-   "cost": 1100
+   "cost": 1350,
+   "level": 4
   },
   {
    "id": "jardin",
@@ -677,7 +682,8 @@
     0.8
    ],
    "pattern": "flowers",
-   "cost": 1100
+   "cost": 1550,
+   "level": 4
   },
   {
    "id": "noche_de_carnaval",
@@ -703,7 +709,122 @@
     0.16
    ],
    "pattern": "diamonds",
-   "cost": 1300
+   "cost": 1750,
+   "level": 5
+  }
+ ],
+ "decorations": [
+  {
+   "id": "seat_sky",
+   "name": "Fundas cielo",
+   "cost": 0,
+   "kind": "seat_cover",
+   "colour": [
+    0.45,
+    0.72,
+    0.9
+   ],
+   "trim": [
+    0.95,
+    0.95,
+    0.92
+   ]
+  },
+  {
+   "id": "seat_palms",
+   "name": "Fundas palmeras",
+   "cost": 120,
+   "kind": "seat_cover",
+   "colour": [
+    0.18,
+    0.55,
+    0.35
+   ],
+   "trim": [
+    0.95,
+    0.86,
+    0.45
+   ]
+  },
+  {
+   "id": "dash_perrito",
+   "name": "Perrito de tablero",
+   "cost": 80,
+   "kind": "dash_toy",
+   "colour": [
+    0.82,
+    0.68,
+    0.48
+   ],
+   "accent": [
+    0.2,
+    0.15,
+    0.12
+   ]
+  },
+  {
+   "id": "dash_dado",
+   "name": "Dado de peluche",
+   "cost": 150,
+   "kind": "dash_toy",
+   "colour": [
+    0.95,
+    0.95,
+    0.92
+   ],
+   "accent": [
+    0.1,
+    0.1,
+    0.12
+   ]
+  },
+  {
+   "id": "charm_palma",
+   "name": "Dije de palma",
+   "cost": 60,
+   "kind": "mirror_charm",
+   "colour": [
+    0.2,
+    0.6,
+    0.32
+   ],
+   "accent": [
+    0.55,
+    0.38,
+    0.2
+   ]
+  },
+  {
+   "id": "pennant_sol",
+   "name": "Banderín del sol",
+   "cost": 100,
+   "kind": "pennant",
+   "colour": [
+    0.98,
+    0.82,
+    0.15
+   ],
+   "accent": [
+    0.1,
+    0.45,
+    0.25
+   ]
+  },
+  {
+   "id": "pennant_mar",
+   "name": "Banderín del mar",
+   "cost": 180,
+   "kind": "pennant",
+   "colour": [
+    0.15,
+    0.45,
+    0.85
+   ],
+   "accent": [
+    0.95,
+    0.95,
+    0.92
+   ]
   }
  ]
 }
