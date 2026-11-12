@@ -57,6 +57,9 @@ var building_count: int = 0
 ## Share of windows lit at this time of day. The level sets it before the lights come on.
 var window_share: float = 0.0
 var lamp_spots: Array[Dictionary] = [] ## position and yaw, for ObstacleField.
+## Each built landmark: kind, centre, reach, footprint (ground points it covers),
+## lowest (its lowest point, buried below the ground) and floor (where people stand).
+var landmarks: Array[Dictionary] = []
 
 var theme: CityTheme
 var _network: RoadNetwork
@@ -117,7 +120,7 @@ func build(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, ro
 	_add_mesh(_build_roads(_road_mesh, map_data, route), _wettable(_textured(TEXTURE_ASPHALT, Vector2(8.0, 8.0)), WET_ROAD), false)
 	_add_mesh(_pavements, _wettable(_textured(TEXTURE_PAVEMENT, Vector2(3.2, 3.2)), WET_PAVEMENT), false)
 	_add_mesh(_lines, _wettable(LowPolyBuilder.vertex_colour_material(), WET_LINES), false)
-	_add_mesh(_build_scenery(_scenery_mesh, route), LowPolyBuilder.vertex_colour_material())
+	_add_mesh(_build_scenery(_scenery_mesh, route, map_data), LowPolyBuilder.vertex_colour_material())
 	_add_mesh(_woodland, LowPolyBuilder.vertex_colour_material(), false)
 	_add_mesh(_flats, _facade("flats", TEXTURE_FLATS, Vector2(STOREY, STOREY)))
 	_add_mesh(_office, _facade("office", TEXTURE_OFFICE, Vector2(STOREY, STOREY)))
@@ -514,10 +517,11 @@ func _bump_warning(road_id: String, along: float, approach: float) -> void:
 	_signs.append({"spot": spot, "y": y, "yaw": placed["heading"]})
 
 
-func _build_scenery(b: LowPolyBuilder, route: RouteRunner) -> LowPolyBuilder:
+func _build_scenery(b: LowPolyBuilder, route: RouteRunner, map_data: Dictionary) -> LowPolyBuilder:
 	for stop in route.stops:
 		_shelter(b, stop)
 	_depot(b)
+	_build_landmarks(b, map_data)
 	for road: Dictionary in _network.roads.values():
 		_line_with_buildings(b, road, 0.0)
 	for road: Dictionary in _network.roads.values():
@@ -601,6 +605,208 @@ func _depot(b: LowPolyBuilder) -> void:
 	b.box(Vector3(centre.x, y + 3.5, centre.y - 13.05), Vector3(14.0, 7.0, 0.1), Color(0.2, 0.22, 0.26))
 	_add_solid(Vector3(centre.x, y + 5.0, centre.y), Vector3(60.0, 14.0, 26.0), 0.0)
 	_taken.append(Vector3(centre.x, centre.y, 42.0))
+
+
+## Landmarks come from the map's "landmarks" list, each at x, z with its front
+## turned towards the node named in "face". They go before the houses, so the
+## houses keep clear of them, and use no random numbers, so other towns stay the same.
+func _build_landmarks(b: LowPolyBuilder, map_data: Dictionary) -> void:
+	for entry: Dictionary in map_data.get("landmarks", []):
+		var centre := Vector2(float(entry["x"]), float(entry["z"]))
+		var facing := centre + Vector2.UP
+		if _network.nodes.has(entry.get("face", "")):
+			facing = _network.nodes[entry["face"]]["position"]
+		var forward := (facing - centre).normalized()
+		var heading := atan2(-forward.x, -forward.y)
+		match entry.get("kind", ""):
+			"church":
+				_church(b, centre, heading)
+			"mirador":
+				_mirador(b, centre, heading)
+
+
+## A point on a landmark's own grid: side to its right, ahead towards its front.
+func _local(centre: Vector2, heading: float, side: float, ahead: float) -> Vector2:
+	var forward := Vector2(-sin(heading), -cos(heading))
+	return centre + Vector2(-forward.y, forward.x) * side + forward * ahead
+
+
+## Ground points across a rectangle on a landmark's grid, corners and edges.
+func _footprint(centre: Vector2, heading: float, low: Vector2, high: Vector2) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in 5:
+		for j in 5:
+			points.append(_local(centre, heading, lerpf(low.x, high.x, i / 4.0), lerpf(low.y, high.y, j / 4.0)))
+	return points
+
+
+func _ground_range(points: PackedVector2Array) -> Vector2:
+	var range_y := Vector2(INF, -INF)
+	for point in points:
+		var y := _ground.terrain_height(point)
+		range_y = Vector2(minf(range_y.x, y), maxf(range_y.y, y))
+	return range_y
+
+
+## The parish church: whitewashed nave under a clay-tile roof, a bell tower with an
+## open arched belfry at the front left, and a stone forecourt. No cross on it.
+func _church(b: LowPolyBuilder, centre: Vector2, heading: float) -> void:
+	var white := Color(0.95, 0.94, 0.9)
+	var trim := Color(0.86, 0.72, 0.44)
+	var tile := Color(0.72, 0.36, 0.22)
+	var stone := Color(0.66, 0.64, 0.6)
+	var dark := Color(0.16, 0.14, 0.13)
+	var wood := Color(0.4, 0.24, 0.14)
+	var footprint := _footprint(centre, heading, Vector2(-8.5, -12.0), Vector2(8.5, 15.0))
+	var ground := _ground_range(footprint)
+	var base := ground.y + 0.3 ## The floor is level with the highest ground; walls run down the slope.
+	var below := base - ground.x + 1.2
+	var at := func(side: float, y: float, ahead: float) -> Vector3:
+		return _at(_local(centre, heading, side, ahead), base + y)
+	# Stone plinth and forecourt steps.
+	b.turned_box(at.call(0.0, -below / 2.0, 1.5), Vector3(17.0, below, 27.0), heading, stone)
+	for step in 3:
+		var tread := -0.15 - 0.3 * step
+		b.turned_box(at.call(2.5, tread - below / 2.0, 13.5 + 0.6 * step), Vector3(6.0 - step, below, 0.6), heading, stone.darkened(0.05 * step))
+	# Nave, banded at the foot and the eaves.
+	var nave_side := 2.5
+	b.turned_box(at.call(nave_side, 4.0, 0.0), Vector3(11.0, 8.0, 22.0), heading, white)
+	b.turned_box(at.call(nave_side, 0.4, 0.0), Vector3(11.2, 0.8, 22.2), heading, trim)
+	b.turned_box(at.call(nave_side, 7.8, 0.0), Vector3(11.4, 0.4, 22.4), heading, trim)
+	b.gable(at.call(nave_side, 8.0, 0.0), 12.4, 23.4, 3.6, heading, tile)
+	# Front: a gable end, pilasters, an arched door and a round window.
+	var front := 11.05 ## Just proud of the nave's front wall.
+	b.flag(at.call(nave_side - 6.0, 8.05, 11.75), at.call(nave_side + 6.0, 8.05, 11.75), at.call(nave_side, 11.45, 11.75), white) ## Whitewashed gable end.
+	for pilaster: float in [-3.6, 3.6]:
+		b.turned_box(at.call(nave_side + pilaster, 4.0, front + 0.1), Vector3(0.7, 8.0, 0.3), heading, trim)
+	b.turned_box(at.call(nave_side, 1.8, front + 0.06), Vector3(2.4, 3.6, 0.1), heading, wood)
+	b.turned_box(at.call(nave_side, 3.8, front + 0.06), Vector3(1.6, 0.5, 0.1), heading, wood)
+	b.turned_box(at.call(nave_side, 4.25, front + 0.06), Vector3(0.8, 0.4, 0.1), heading, wood)
+	b.turned_box(at.call(nave_side, 4.3, front + 0.12), Vector3(3.4, 0.3, 0.12), heading, trim)
+	b.turned_box(at.call(nave_side, 6.3, front + 0.06), Vector3(1.2, 1.2, 0.1), heading, dark)
+	b.turned_box(at.call(nave_side, 6.3, front + 0.06), Vector3(1.6, 0.6, 0.08), heading, dark)
+	b.turned_box(at.call(nave_side, 6.3, front + 0.06), Vector3(0.6, 1.6, 0.08), heading, dark)
+	# Tall arched windows down both sides.
+	for wall: float in [-5.53, 5.53]:
+		for ahead: float in [-7.0, -1.5, 4.0]:
+			b.turned_box(at.call(nave_side + wall, 4.0, ahead), Vector3(0.1, 2.8, 1.2), heading, dark)
+			b.turned_box(at.call(nave_side + wall, 5.55, ahead), Vector3(0.1, 0.3, 0.7), heading, dark)
+	# Bell tower: shaft, cornices, open belfry with a bell, and a tiled spire.
+	var tower := Vector2(-5.5, 8.5)
+	var shaft := 15.0
+	b.turned_box(at.call(tower.x, shaft / 2.0, tower.y), Vector3(5.0, shaft, 5.0), heading, white)
+	b.turned_box(at.call(tower.x, 0.4, tower.y), Vector3(5.2, 0.8, 5.2), heading, trim)
+	for band: float in [8.0, shaft]:
+		b.turned_box(at.call(tower.x, band, tower.y), Vector3(5.5, 0.4, 5.5), heading, trim)
+	for level: float in [3.5, 10.5]:
+		b.turned_box(at.call(tower.x, level, tower.y + 2.53), Vector3(0.8, 1.4, 0.1), heading, dark)
+	var belfry := shaft + 0.2
+	var open := 3.6
+	for corner_x: float in [-2.1, 2.1]:
+		for corner_z: float in [-2.1, 2.1]:
+			b.turned_box(at.call(tower.x + corner_x, belfry + open / 2.0, tower.y + corner_z), Vector3(0.8, open, 0.8), heading, white)
+	# Each opening's arch: haunches either side and a keystone band across the top.
+	for face in 4:
+		var turn := heading + PI / 2.0 * face
+		var outward := Vector2(-sin(turn), -cos(turn))
+		var face_centre := _local(centre, heading, tower.x, tower.y) + outward * 2.2
+		var across := Vector2(-outward.y, outward.x)
+		for side: float in [-1.0, 1.0]:
+			b.turned_box(_at(face_centre + across * side * 1.35, base + belfry + open - 0.55), Vector3(0.7, 0.5, 0.4), turn, white)
+			b.turned_box(_at(face_centre + across * side * 1.5, base + belfry + open - 0.95), Vector3(0.4, 0.4, 0.4), turn, white)
+		b.turned_box(_at(face_centre, base + belfry + open - 0.15), Vector3(3.6, 0.3, 0.4), turn, white)
+	b.turned_box(at.call(tower.x, belfry + 1.9, tower.y), Vector3(1.1, 1.2, 1.1), heading, Color(0.66, 0.5, 0.22))
+	b.turned_box(at.call(tower.x, belfry + 1.25, tower.y), Vector3(1.4, 0.2, 1.4), heading, Color(0.6, 0.45, 0.2))
+	b.turned_box(at.call(tower.x, belfry + 2.65, tower.y), Vector3(4.2, 0.25, 0.25), heading, wood)
+	b.turned_box(at.call(tower.x, belfry + open + 0.25, tower.y), Vector3(5.6, 0.5, 5.6), heading, trim)
+	b.pyramid(at.call(tower.x, belfry + open + 0.5, tower.y), 5.2, 4.2, heading, tile)
+	_add_solid(at.call(nave_side, 4.0, 0.0), Vector3(11.0, 14.0, 22.0), heading)
+	_add_solid(at.call(tower.x, shaft / 2.0, tower.y), Vector3(5.0, shaft + 6.0, 5.0), heading)
+	_record_landmark("church", centre, 16.5, footprint, base - below, base)
+
+
+## The mirador: an octagonal plank deck on posts, railed all round but for the
+## steps at the front, with benches looking out and a coin telescope.
+func _mirador(b: LowPolyBuilder, centre: Vector2, heading: float) -> void:
+	var timber := Color(0.5, 0.33, 0.2)
+	var plank := Color(0.62, 0.43, 0.26)
+	var plank_dark := Color(0.55, 0.37, 0.22)
+	var radius := 6.5
+	var sides := 8
+	var corners := PackedVector2Array()
+	for i in sides:
+		corners.append(centre + Vector2.RIGHT.rotated(-heading - PI / 2.0 + TAU * (i + 0.5) / sides) * radius)
+	var footprint := corners.duplicate()
+	footprint.append(centre)
+	var steps := _mirador_steps(centre, heading, radius)
+	footprint.append_array(steps)
+	var ground := _ground_range(footprint)
+	var floor_y := ground.y + 1.6
+	var lowest := ground.x - 0.6
+	for i in sides:
+		b.quad(_at(centre, floor_y), _at(corners[(i + 1) % sides], floor_y), _at(corners[i], floor_y), _at(corners[i], floor_y), plank_dark)
+	var inner := radius * cos(PI / sides)
+	var across := -inner + 0.25
+	var stripe := 0
+	while across < inner:
+		var half := sqrt(maxf(inner * inner - across * across, 0.0)) * 0.98
+		b.turned_box(_at(_local(centre, heading, across, 0.0), floor_y + 0.03), Vector3(0.44, 0.06, half * 2.0), heading, plank if stripe % 2 == 0 else plank.lightened(0.06))
+		across += 0.5
+		stripe += 1
+	for i in sides:
+		var a := corners[i]
+		var c := corners[(i + 1) % sides]
+		var middle := (a + c) / 2.0
+		var run := c - a
+		var yaw := atan2(run.x, run.y)
+		b.turned_box(_at(middle, floor_y - 0.18), Vector3(0.25, 0.36, run.length()), yaw, timber)
+		var post_height := floor_y + 1.1 - lowest
+		b.box(_at(a, lowest + post_height / 2.0), Vector3(0.3, post_height, 0.3), timber)
+		if i == sides - 1:
+			continue ## The front edge is open to the steps.
+		for rail: float in [0.55, 1.05]:
+			b.turned_box(_at(middle, floor_y + rail), Vector3(0.12, 0.12, run.length()), yaw, timber.lightened(0.08))
+		var bench := middle + (centre - middle).normalized() * 0.7
+		if i in [2, 3, 4]:
+			_bench(b, bench, yaw, floor_y, (middle - centre).normalized(), timber)
+	var mid_height := floor_y - 0.2 - lowest
+	b.box(_at(centre, lowest + mid_height / 2.0), Vector3(0.4, mid_height, 0.4), timber)
+	for i in 4:
+		var brace := centre.lerp(corners[i * 2], 0.5)
+		b.box(_at(brace, lowest + mid_height / 2.0), Vector3(0.25, mid_height, 0.25), timber.darkened(0.1))
+	for i in steps.size():
+		var foot := _ground.terrain_height(steps[i])
+		var tread_y := lerpf(floor_y, foot + 0.1, float(i + 1) / float(steps.size()))
+		var rise := tread_y - foot + 0.4
+		b.turned_box(_at(steps[i], tread_y - rise / 2.0), Vector3(2.4, rise, 0.6), heading, plank_dark)
+	var scope := _local(centre, heading, 0.0, -radius * 0.55)
+	b.box(_at(scope, floor_y + 0.6), Vector3(0.18, 1.2, 0.18), Color(0.3, 0.32, 0.34))
+	b.turned_box(_at(scope, floor_y + 1.3), Vector3(0.3, 0.3, 0.8), heading, Color(0.22, 0.42, 0.5))
+	_add_solid(_at(centre, (floor_y + lowest) / 2.0), Vector3(radius * 1.5, floor_y - lowest, radius * 1.5), heading)
+	_record_landmark("mirador", centre, radius + 3.0, footprint, lowest, floor_y)
+
+
+## Treads leading from the deck's open front edge down towards the road.
+func _mirador_steps(centre: Vector2, heading: float, radius: float) -> PackedVector2Array:
+	var steps := PackedVector2Array()
+	var edge := radius * cos(PI / 8.0)
+	for i in 4:
+		steps.append(_local(centre, heading, 0.0, edge + 0.3 + 0.6 * i))
+	return steps
+
+
+## A slatted bench facing out from the deck.
+func _bench(b: LowPolyBuilder, spot: Vector2, yaw: float, floor_y: float, outward: Vector2, timber: Color) -> void:
+	b.turned_box(_at(spot, floor_y + 0.45), Vector3(0.5, 0.08, 1.8), yaw, timber.lightened(0.12))
+	b.turned_box(_at(spot - outward * 0.24, floor_y + 0.75), Vector3(0.06, 0.4, 1.8), yaw, timber.lightened(0.12))
+	for end: float in [-0.75, 0.75]:
+		var leg := spot + Vector2(sin(yaw), cos(yaw)) * end
+		b.box(_at(leg, floor_y + 0.22), Vector3(0.1, 0.44, 0.1), timber)
+
+
+func _record_landmark(kind: String, centre: Vector2, reach: float, footprint: PackedVector2Array, lowest: float, floor_y: float) -> void:
+	_taken.append(Vector3(centre.x, centre.y, reach))
+	landmarks.append({"kind": kind, "centre": centre, "reach": reach, "footprint": footprint, "lowest": lowest, "floor": floor_y})
 
 
 func _line_with_buildings(b: LowPolyBuilder, road: Dictionary, set_back: float) -> void:

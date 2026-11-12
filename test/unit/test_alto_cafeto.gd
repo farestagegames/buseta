@@ -168,3 +168,67 @@ func test_the_intro_scene_sets_up_in_a_town_without_its_streets() -> void:
 	var spot: Vector3 = intro._road_point(network, ground, "market_street", 70.0)
 	assert_true(spot.is_finite())
 	intro.free()
+
+
+## Builds the whole town as a shift does, with the starter route's bays.
+func _built_town() -> Dictionary:
+	var route_data := MapLoader.read_json("res://data/packs/colombia/routes/cafeto_c0.json")
+	var network := RoadNetwork.from_data(map_data)
+	var route := RouteRunner.build(route_data, network, 7, map_data)
+	for stop in route.stops:
+		if stop.kind == RouteStop.Kind.BAY:
+			network.add_bay(stop.road, stop.along, stop.dir)
+	var ground := MapLoader.build_ground(map_data, network)
+	var city := CityBuilder.new()
+	add_child_autofree(city)
+	city.build(map_data, network, ground, route)
+	return {"city": city, "network": network, "ground": ground}
+
+
+func test_church_and_mirador_come_from_map_data() -> void:
+	var kinds := (map_data["landmarks"] as Array).map(func(entry: Dictionary) -> String: return entry["kind"])
+	assert_eq(kinds, ["church", "mirador"])
+	var town := _built_town()
+	var city: CityBuilder = town["city"]
+	assert_eq(city.landmarks.size(), 2, "Both landmarks build")
+	var network: RoadNetwork = town["network"]
+	var church: Dictionary = city.landmarks[0]
+	var mirador: Dictionary = city.landmarks[1]
+	assert_lt(church["centre"].distance_to(network.nodes["c"]["position"]), 60.0, "The church is on the Plaza")
+	assert_lt(mirador["centre"].distance_to(network.nodes["e"]["position"]), 45.0, "The mirador is at the top of the climb")
+
+
+func test_landmarks_stand_clear_of_roads_bays_and_the_plaza() -> void:
+	var town := _built_town()
+	var city: CityBuilder = town["city"]
+	var network: RoadNetwork = town["network"]
+	for landmark: Dictionary in city.landmarks:
+		for point: Vector2 in landmark["footprint"]:
+			assert_gt(network.edge_distance(point), GroundSurface.PAVEMENT_WIDTH, "%s at %s is off the asphalt and pavement" % [landmark["kind"], point])
+
+
+func test_landmarks_do_not_overlap_buildings() -> void:
+	var town := _built_town()
+	var city: CityBuilder = town["city"]
+	assert_gt(city.building_count, 40, "The town still has its houses")
+	for landmark: Dictionary in city.landmarks:
+		var centre: Vector2 = landmark["centre"]
+		for taken: Vector3 in city._taken:
+			var other := Vector2(taken.x, taken.y)
+			if other == centre:
+				continue
+			assert_gte(centre.distance_to(other), float(landmark["reach"]) + taken.z - 0.01, "%s clear of the building at %s" % [landmark["kind"], other])
+
+
+func test_landmarks_stand_on_the_terrain() -> void:
+	var town := _built_town()
+	var city: CityBuilder = town["city"]
+	var ground: GroundSurface = town["ground"]
+	for landmark: Dictionary in city.landmarks:
+		var kind: String = landmark["kind"]
+		for point: Vector2 in landmark["footprint"]:
+			var y := ground.terrain_height(point)
+			assert_lt(float(landmark["lowest"]), y, "%s reaches into the ground at %s" % [kind, point])
+			assert_gt(float(landmark["floor"]), y, "%s floor is above the ground at %s" % [kind, point])
+		var centre_y := ground.terrain_height(landmark["centre"])
+		assert_lt(float(landmark["floor"]) - centre_y, 4.0, "%s is not floating" % kind)

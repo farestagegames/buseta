@@ -178,6 +178,18 @@ func gable(centre: Vector3, width: float, length: float, rise: float, yaw: float
 	_facet(d, ridge_back, c, colour.darkened(0.05))
 
 
+## A square pyramid roof, as on a bell tower. centre is the middle of its base.
+func pyramid(centre: Vector3, width: float, rise: float, yaw: float, colour: Color) -> void:
+	var basis := Basis(Vector3.UP, yaw)
+	var half := width / 2.0
+	var tip := centre + Vector3.UP * rise
+	var corners: Array[Vector3] = [Vector3(-half, 0.0, -half), Vector3(half, 0.0, -half), Vector3(half, 0.0, half), Vector3(-half, 0.0, half)]
+	for i in 4:
+		var a := centre + basis * corners[i]
+		var b := centre + basis * corners[(i + 1) % 4]
+		_facet(b, tip, a, colour.darkened(0.06 * float(i % 2)))
+
+
 ## A cylinder lying along the X axis. Alternate hub segments make rolling visible.
 func wheel(centre: Vector3, radius: float, width: float, tyre: Color, hub: Color, sides: int = 12) -> void:
 	var half := width / 2.0

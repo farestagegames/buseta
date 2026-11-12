@@ -497,6 +497,20 @@
    "range": 26.0
   }
  ],
+ "landmarks": [
+  {
+   "kind": "church",
+   "x": 28,
+   "z": 95,
+   "face": "c"
+  },
+  {
+   "kind": "mirador",
+   "x": 183,
+   "z": -188,
+   "face": "e"
+  }
+ ],
  "theme": {
   "walls": [
    [
