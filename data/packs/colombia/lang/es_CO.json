@@ -1,5 +1,8 @@
 {
  "%d / %d": "%d / %d",
+ "%s · %d/%d": "%s · %d/%d",
+ "Tap the camera button to change the view.": "Toca el botón de la cámara para cambiar la vista.",
+ "Show indicator buttons": "Mostrar botones de direccional",
  "%d collision": "%d choque",
  "%d collisions": "%d choques",
  "%d emergency stop": "%d frenazo",

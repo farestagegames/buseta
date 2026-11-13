@@ -7,7 +7,7 @@ const STEPS: Array[Dictionary] = [
 	{"id": "pull_away", "focus": "go", "text": "Welcome, driver! Check the gear switch shows D, then hold GO to pull away. Press higher up for more power."},
 	{"id": "steer", "focus": "steer", "text": "Steer to stay in the right-hand lane."},
 	{"id": "brake", "focus": "brake", "text": "Now hold BRAKE to slow down. The longer you hold it, the harder it brakes."},
-	{"id": "view", "focus": "view", "text": "Tap VIEW to change the camera."},
+	{"id": "view", "focus": "view", "text": "Tap the camera button to change the view."},
 	{"id": "indicate", "focus": "indicator", "text": "You turn right ahead. Tap the right indicator to signal."},
 	{"id": "follow", "focus": "map", "text": "Follow the orange line on the map to the green beacon."},
 	{"id": "bay", "focus": "", "text": "Slow down, pull in to the kerb and stop beside the passengers."},
@@ -22,6 +22,8 @@ const FINISH_SECONDS := 6.0
 const BEACON_DISTANCE := 70.0
 
 var index: int = 0
+## Steps left out, such as signalling when the indicator buttons are hidden.
+var skipped: Array[String] = []
 
 var _step_time: float = 0.0
 
@@ -44,7 +46,7 @@ func update(state: Dictionary, dt: float) -> void:
 		index = STEPS.size() - 1
 		_step_time = 0.0
 		return
-	if _step_time >= MIN_STEP_SECONDS and _is_done(state):
+	if skipped.has(str(step()["id"])) or (_step_time >= MIN_STEP_SECONDS and _is_done(state)):
 		index += 1
 		_step_time = 0.0
 

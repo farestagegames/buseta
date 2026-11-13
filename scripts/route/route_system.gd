@@ -8,6 +8,11 @@ const STATUS_INTERVAL := 0.2
 const PASSENGER_SEED := 2024
 const INDICATOR_WINDOW := 70.0
 const HAIL_NOTICE_DISTANCE := 90.0
+## With the indicator buttons hidden, the bus signals a route turn by itself
+## this far before it.
+const AUTO_INDICATE_DISTANCE := 55.0
+## The HUD offers the doors this close to a stop, either way along the road.
+const NEAR_STOP_DISTANCE := 40.0
 ## After the police stop the bus, the shift ends this long later so the message is seen.
 const POLICE_STOP_SECONDS := 2.5
 const DODGER_SEED := 3131
@@ -46,6 +51,7 @@ var _status: Dictionary = {}
 var _network: RoadNetwork
 var _next_turn: int = 0
 var _indicated: bool = false
+var _auto_indicated: bool = false
 var _last_late: float = 0.0
 var _fare: int = 0
 var _fares: int = 0
@@ -147,11 +153,16 @@ func _check_indicator(data: BusTelemetry) -> void:
 	var ahead: float = float(turn["distance"]) - runner.progress
 	if ahead < INDICATOR_WINDOW and data.indicator_side == int(turn["side"]):
 		_indicated = true
+	elif ahead < AUTO_INDICATE_DISTANCE and ahead >= 0.0 and int(turn["side"]) != 0 and not _auto_indicated and not GameSettings.show_indicator_buttons:
+		_auto_indicated = true
+		GameEvents.indicator_toggle_requested.emit(int(turn["side"]))
 	if ahead < 0.0:
-		if int(turn["side"]) != 0 and not _indicated:
+		# With the buttons hidden the bus signals by itself, so nothing is missed.
+		if int(turn["side"]) != 0 and not _indicated and GameSettings.show_indicator_buttons:
 			GameEvents.indicator_missed.emit()
 		_next_turn += 1
 		_indicated = false
+		_auto_indicated = false
 
 
 ## Nothing stops an informal bus going past people, but they notice.
@@ -307,6 +318,7 @@ func _publish_status(data: BusTelemetry, centre: Vector2) -> void:
 	_status["clock"] = clock
 	_status["seconds_late"] = _running_lateness()
 	_status["speed_limit"] = _network.speed_limit_at(centre)
+	_status["near_stop"] = _near_stop(stop, centre)
 	GameEvents.route_status_updated.emit(_status)
 
 
@@ -329,6 +341,17 @@ func _running_lateness() -> float:
 	var due := schedule.due_times[runner.stop_index]
 	var overdue := timetable_clock() - due
 	return maxf(overdue, _last_late) if overdue > -ShiftSchedule.ON_TIME_EARLY else _last_late
+
+
+## In or approaching a stop bay, or people are flagging the bus down ahead, or
+## people are getting on or off: when the doors are worth a button.
+func _near_stop(stop: RouteStop, centre: Vector2) -> bool:
+	if session != null:
+		return true
+	var along := stop.offset_of(centre).x
+	if absf(along) <= NEAR_STOP_DISTANCE:
+		return true
+	return stop.kind == RouteStop.Kind.HAIL and along < 0.0 and -along < HAIL_NOTICE_DISTANCE
 
 
 func _prompt(stop: RouteStop, data: BusTelemetry, centre: Vector2) -> String:

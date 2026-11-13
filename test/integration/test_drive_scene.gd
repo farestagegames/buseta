@@ -265,6 +265,78 @@ func test_leaving_the_app_releases_held_pedals() -> void:
 
 func test_touch_targets_are_large_enough() -> void:
 	await wait_frames(2)
-	for button: TouchZone in [hud.throttle_pedal, hud.brake_pedal, hud.gear_switch, hud.wheel]:
+	for button: TouchZone in [hud.throttle_pedal, hud.brake_pedal, hud.wheel]:
 		assert_gte(button.size.x, 90.0)
 		assert_gte(button.size.y, 90.0)
+	# Every other control still takes a thumb: at least 48 px, and each half of
+	# the gear switch too.
+	for zone: TouchZone in hud.find_children("*", "TouchZone", true, false):
+		assert_gte(zone.size.x, 48.0, "%s wide enough" % zone.name)
+		assert_gte(zone.size.y, 48.0, "%s tall enough" % zone.name)
+	assert_gte(hud.gear_switch.size.x / 2.0, 48.0)
+
+
+func _status(near: bool, prompt: String = "") -> Dictionary:
+	return {"next_stop": "Parque Norte", "distance": 120.0, "turn": "", "onboard": 0, "fares": 0, "prompt": prompt,
+		"stop_position": Vector2.ZERO, "stop_number": 2, "stop_count": 8, "clock": 0.0, "seconds_late": 0.0,
+		"speed_limit": 30.0, "near_stop": near}
+
+
+func test_doors_button_shows_only_near_a_stop_or_with_the_doors_open() -> void:
+	await wait_frames(2)
+	GameEvents.route_status_updated.emit(_status(false))
+	assert_false(hud.doors_button_shown(), "Hidden between stops")
+	GameEvents.route_status_updated.emit(_status(true))
+	assert_true(hud.doors_button_shown(), "Shown at a stop")
+	GameEvents.route_status_updated.emit(_status(false))
+	GameEvents.door_toggle_requested.emit()
+	await wait_physics_frames(3)
+	assert_true(hud.doors_button_shown(), "Shown while the doors are open")
+
+
+func test_indicator_buttons_follow_the_setting() -> void:
+	var was := GameSettings.show_indicator_buttons
+	GameSettings.show_indicator_buttons = false
+	assert_false(hud.control_rect("indicator").has_area(), "Hidden by default")
+	GameSettings.show_indicator_buttons = true
+	await wait_frames(1)
+	assert_true(hud.control_rect("indicator").has_area())
+	GameSettings.show_indicator_buttons = was
+
+
+func test_stop_panel_is_one_line_with_a_toast_for_the_prompt() -> void:
+	await wait_frames(2)
+	GameEvents.route_status_updated.emit(_status(true, "Passengers boarding"))
+	assert_eq(hud.route_panel.line_text(), "Parque Norte · 2/8 · On time")
+	assert_lte(hud.route_panel.size.y, 48.0, "One line")
+	assert_true(hud.route_panel.toast_showing())
+	await wait_seconds(RoutePanel.TOAST_SECONDS + 0.2)
+	assert_false(hud.route_panel.toast_showing(), "The toast fades")
+
+
+func test_minimap_is_a_small_circle_that_grows_when_tapped() -> void:
+	await wait_frames(2)
+	hud.minimap.visible = true # The test scene has no map to show it.
+	assert_eq(hud.minimap.size.x, Minimap.SMALL)
+	var centre := hud.minimap.get_global_rect().get_center()
+	_touch(3, centre, true, hud.minimap)
+	_touch(3, centre, false, hud.minimap)
+	await wait_frames(1)
+	assert_eq(hud.minimap.size.x, Minimap.LARGE, "Grows on a tap")
+	var width := get_viewport().get_visible_rect().size.x
+	assert_lte(hud.minimap.get_global_rect().end.x, width, "Stays on screen")
+	hud.minimap.toggle_size()
+	await wait_frames(1)
+	assert_eq(hud.minimap.size.x, Minimap.SMALL)
+
+
+func test_one_pause_button_holds_the_camera_and_radio() -> void:
+	await wait_frames(2)
+	assert_false(hud.pause_strip.is_visible_in_tree())
+	assert_true(hud.control_rect("pause").has_area())
+	assert_true(hud.control_rect("view").has_area(), "A small camera button stays")
+	hud._open_settings()
+	assert_true(hud.pause_strip.is_visible_in_tree())
+	assert_true(hud.radio_button.is_visible_in_tree() or Country.pack.radio_stations().is_empty())
+	hud._close_settings()
+	assert_false(hud.pause_strip.is_visible_in_tree())

@@ -50,6 +50,13 @@ var show_performance: bool = false:
 		show_performance = value
 		changed.emit()
 
+## The on-screen indicator buttons. Off by default to keep the screen clear; the
+## bus then signals route turns by itself.
+var show_indicator_buttons: bool = false:
+	set(value):
+		show_indicator_buttons = value
+		changed.emit()
+
 
 ## A language code from Country.pack.languages(). Empty follows the phone's language.
 var language: String = "":
@@ -63,6 +70,7 @@ func to_dict() -> Dictionary:
 		"steering_mode": int(steering_mode), "sensitivity": sensitivity, "invert_tilt": invert_tilt,
 		"sound_volume": sound_volume, "graphics_level": graphics_quality, "language": language,
 		"show_performance": show_performance, "radio_volume": radio_volume, "radio_station": radio_station,
+		"show_indicator_buttons": show_indicator_buttons,
 	}
 
 
@@ -80,5 +88,6 @@ func apply_saved(saved: Dictionary) -> void:
 	language = str(saved.get("language", language))
 	radio_volume = float(saved.get("radio_volume", radio_volume))
 	radio_station = str(saved.get("radio_station", radio_station))
+	show_indicator_buttons = bool(saved.get("show_indicator_buttons", show_indicator_buttons))
 	set_block_signals(false)
 	changed.emit()

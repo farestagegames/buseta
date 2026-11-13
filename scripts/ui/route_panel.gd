@@ -1,20 +1,30 @@
 class_name RoutePanel
 extends Control
-## Next stop, distance, turn hint and what the driver should do now.
+## One line for the next stop, how far along the route the bus is and the
+## timetable ("Parque Norte · 2/8 · A tiempo"), and under it a short toast for
+## what the driver should do now or what is happening at the stop.
+
+## A toast fades this long after its text last changed.
+const TOAST_SECONDS := 2.6
+const TOAST_FADE := 0.4
+const TOAST_TOP := 46.0
+const TOAST_HEIGHT := 40.0
 
 var _line_one: String = ""
-var _line_two: String = ""
 var _prompt: String = ""
 var _time_status: String = ""
 var _late: bool = false
 var _signal: int = -1
+var _toast_left: float = 0.0
 var _style := StyleBoxFlat.new()
+var _toast_style := StyleBoxFlat.new()
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_style.bg_color = Color(0.08, 0.09, 0.12, 0.62)
+	_style.bg_color = Color(0.08, 0.09, 0.12, UiStyle.HUD_PANEL_ALPHA)
 	_style.set_corner_radius_all(14)
+	_toast_style.set_corner_radius_all(14)
 
 
 func _ready() -> void:
@@ -23,18 +33,34 @@ func _ready() -> void:
 
 
 func _on_status(status: Dictionary) -> void:
-	var one := tr("Next: %s  (%d m)") % [status["next_stop"], roundi(float(status["distance"]) / 10.0) * 10]
-	var two := tr("Stop %d of %d   On board: %d   %s") % [status["stop_number"], status["stop_count"], status["onboard"], Country.pack.money(status["fares"])]
+	var one := tr("%s · %d/%d") % [status["next_stop"], status["stop_number"], status["stop_count"]]
 	var prompt: String = status["prompt"] if status["prompt"] != "" else tr(status["turn"])
 	var late: float = status["seconds_late"]
 	var time_status := ShiftSchedule.status_text(late)
-	if one != _line_one or two != _line_two or prompt != _prompt or time_status != _time_status:
+	if prompt != _prompt:
+		_prompt = prompt
+		_toast_left = TOAST_SECONDS if prompt != "" else 0.0
+		queue_redraw()
+	if one != _line_one or time_status != _time_status:
 		_time_status = time_status
 		_late = not ShiftSchedule.is_on_time(late)
 		_line_one = one
-		_line_two = two
-		_prompt = prompt
 		queue_redraw()
+
+
+func _process(dt: float) -> void:
+	if _toast_left > 0.0:
+		_toast_left = maxf(_toast_left - dt, 0.0)
+		queue_redraw()
+
+
+## True while the prompt is on screen as a toast.
+func toast_showing() -> bool:
+	return _toast_left > 0.0 and _prompt != ""
+
+
+func line_text() -> String:
+	return "%s · %s" % [_line_one, _time_status] if _line_one != "" else ""
 
 
 func _on_signal(state: int, _distance: float) -> void:
@@ -52,18 +78,30 @@ func _draw() -> void:
 		return
 	draw_style_box(_style, Rect2(Vector2.ZERO, size))
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(0.0, 24.0), _line_one, HORIZONTAL_ALIGNMENT_CENTER, size.x,
-		UiStyle.fit_font_size(font, _line_one, 22, size.x - 28.0), Color.WHITE)
 	var time_colour := Color(1.0, 0.45, 0.35) if _late else Color(0.5, 0.95, 0.6)
-	var time_width := font.get_string_size(_time_status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-	var room := size.x - 28.0 - time_width - 16.0
-	draw_string(font, Vector2(14.0, 46.0), _line_two, HORIZONTAL_ALIGNMENT_LEFT, room,
-		UiStyle.fit_font_size(font, _line_two, 17, room), Color(1, 1, 1, 0.75))
-	draw_string(font, Vector2(0.0, 46.0), _time_status, HORIZONTAL_ALIGNMENT_RIGHT, size.x - 14.0, 18, time_colour)
+	var head := _line_one + " · "
+	var whole := head + _time_status
+	var font_size := UiStyle.fit_font_size(font, whole, 22, size.x - 28.0)
+	var head_width := font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var left := (size.x - font.get_string_size(whole, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x) / 2.0
+	var baseline := (size.y - font.get_height(font_size)) / 2.0 + font.get_ascent(font_size)
+	draw_string(font, Vector2(left, baseline), head, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
+	draw_string(font, Vector2(left + head_width, baseline), _time_status, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, time_colour)
 	if _signal >= 0:
-		_draw_signal(Vector2(size.x + 8.0, 4.0))
-	draw_string(font, Vector2(0.0, 74.0), _prompt, HORIZONTAL_ALIGNMENT_CENTER, size.x,
-		UiStyle.fit_font_size(font, _prompt, 24, size.x - 28.0), Color(0.98, 0.72, 0.15))
+		_draw_signal(Vector2(size.x + 8.0, 0.0))
+	if toast_showing():
+		_draw_toast(font)
+
+
+func _draw_toast(font: Font) -> void:
+	var alpha := clampf(_toast_left / TOAST_FADE, 0.0, 1.0)
+	var font_size := UiStyle.fit_font_size(font, _prompt, 24, size.x - 28.0)
+	var width := minf(font.get_string_size(_prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 32.0, size.x)
+	var area := Rect2((size.x - width) / 2.0, TOAST_TOP, width, TOAST_HEIGHT)
+	_toast_style.bg_color = Color(0.08, 0.09, 0.12, 0.7 * alpha)
+	draw_style_box(_toast_style, area)
+	var baseline := TOAST_TOP + (TOAST_HEIGHT - font.get_height(font_size)) / 2.0 + font.get_ascent(font_size)
+	draw_string(font, Vector2(0.0, baseline), _prompt, HORIZONTAL_ALIGNMENT_CENTER, size.x, font_size, Color(0.98, 0.72, 0.15, alpha))
 
 
 ## A small signal head beside the panel, because the real one can be hidden by

@@ -11,6 +11,8 @@ var in_shift: bool = false
 var _mode_buttons: Array[Button] = []
 var language_picker: OptionButton
 var cheat_row: Control
+## Shows the on-screen indicator buttons while driving.
+var indicator_toggle: CheckButton
 ## Ends the shift and shows the report. Only on the endless route.
 var end_shift_button: Button
 var _quality_buttons: Dictionary = {}
@@ -84,6 +86,15 @@ func _add_controls(box: Container) -> void:
 	invert.button_pressed = GameSettings.invert_tilt
 	invert.toggled.connect(func(on: bool) -> void: GameSettings.invert_tilt = on)
 	box.add_child(invert)
+
+	var indicators := CheckButton.new()
+	indicators.text = "Show indicator buttons"
+	indicators.add_theme_font_size_override("font_size", 22)
+	indicators.custom_minimum_size.y = 60
+	indicators.button_pressed = GameSettings.show_indicator_buttons
+	indicators.toggled.connect(func(on: bool) -> void: GameSettings.show_indicator_buttons = on)
+	box.add_child(indicators)
+	indicator_toggle = indicators
 
 	_volume_label = _label("", 22)
 	box.add_child(_volume_label)

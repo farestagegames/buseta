@@ -20,7 +20,7 @@ func _init() -> void:
 	_style.set_corner_radius_all(22)
 	_style.set_border_width_all(3)
 	_style.border_color = Color(1.0, 1.0, 1.0, 0.35)
-	_style.bg_color = Color(0.13, 0.15, 0.19, 0.72)
+	_style.bg_color = Color(0.13, 0.15, 0.19, UiStyle.HUD_PANEL_ALPHA)
 	_fill_style.set_corner_radius_all(20)
 
 

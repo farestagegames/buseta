@@ -714,7 +714,7 @@ func test_changing_language_updates_prompts_live() -> void:
 	GameSettings.language = "es_CO"
 	await wait_physics_frames(20)
 	var hud: DriveHud = scene.get_node("Hud")
-	assert_string_contains(hud.route_panel._line_one, "Próximo")
+	assert_string_contains(hud.route_panel.line_text(), "A tiempo")
 	GameSettings.language = "en"
 
 
@@ -929,3 +929,33 @@ func test_the_road_and_the_pavement_never_count_as_water_or_lost() -> void:
 func test_nearest_lane_pose_lands_on_the_asphalt() -> void:
 	var pose := scene.network.nearest_lane_pose(Vector2(-200.0, 200.0))
 	assert_lt(scene.network.edge_distance(pose["position"]), 0.0)
+
+
+func test_with_the_indicator_buttons_hidden_the_bus_signals_turns_itself() -> void:
+	var was := GameSettings.show_indicator_buttons
+	GameSettings.show_indicator_buttons = false
+	var runner := route_system.runner
+	var turn_index := -1
+	for i in runner.turns.size():
+		if int(runner.turns[i]["side"]) != 0:
+			turn_index = i
+			break
+	assert_gt(turn_index, -1, "The route has a turn")
+	route_system._next_turn = turn_index
+	var turn: Dictionary = runner.turns[turn_index]
+	var asked: Array[int] = []
+	var listen := func(side: int) -> void: asked.append(side)
+	GameEvents.indicator_toggle_requested.connect(listen)
+	var missed := [0]
+	var count := func() -> void: missed[0] += 1
+	GameEvents.indicator_missed.connect(count)
+	var data := BusTelemetry.new()
+	runner.progress = float(turn["distance"]) - RouteSystem.AUTO_INDICATE_DISTANCE + 5.0
+	route_system._check_indicator(data)
+	runner.progress = float(turn["distance"]) + 1.0
+	route_system._check_indicator(data)
+	GameEvents.indicator_toggle_requested.disconnect(listen)
+	GameEvents.indicator_missed.disconnect(count)
+	GameSettings.show_indicator_buttons = was
+	assert_eq(asked, [int(turn["side"])] as Array[int], "Signalled once, on the turn's side")
+	assert_eq(missed[0], 0, "Nothing held against the driver")

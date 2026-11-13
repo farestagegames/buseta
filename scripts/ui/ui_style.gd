@@ -2,6 +2,9 @@ class_name UiStyle
 extends RefCounted
 ## The game's look: one theme for every standard control.
 
+## How see-through the driving controls and readouts are, so the street shows.
+const HUD_PANEL_ALPHA := 0.4
+
 const INK := Color(0.09, 0.1, 0.13)
 const PANEL := Color(0.13, 0.15, 0.2)
 const CARD := Color(0.17, 0.2, 0.26)

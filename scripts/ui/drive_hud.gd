@@ -9,6 +9,11 @@ const GAP := 16.0
 const PERFORMANCE_WINDOW := 1.0
 ## How long the station name stays up after tuning.
 const STATION_SECONDS := 2.5
+## The pause and camera buttons in the top corner.
+const CORNER_BUTTON := 80.0
+const PAUSE_STRIP_WIDTH := 240.0
+## The drive and reverse switch, at the right end of the speed readout.
+const GEAR_SIZE := Vector2(124.0, 72.0)
 
 var wheel: SteeringWheelControl
 var throttle_pedal: PedalControl
@@ -32,11 +37,16 @@ var celebration_banner: CelebrationBanner
 var _controls: Control
 var _tilt_hint: Label
 var _view_button: TouchButton
+var _pause_button: TouchButton
+## Camera and radio while paused.
+var pause_strip: Control
+var _near_stop: bool = false
+var _doors_open: bool = false
 var _indicator_left: TouchButton
 var _indicator_right: TouchButton
 var _door_button: TouchButton
 var gear_switch: GearSwitch
-## Hidden when the country has no radio stations.
+## In the pause strip. Hidden when the country has no radio stations.
 var radio_button: TouchButton
 var station_label: Label
 var _station_timer: float = 0.0
@@ -72,6 +82,7 @@ func _ready() -> void:
 	gauge = HudGauge.new()
 	_place(gauge, Vector2(0.5, 0.0), Vector2(-190.0, 8.0), Vector2(380.0, 112.0))
 	_root.add_child(gauge)
+	_place(gear_switch, Vector2(0.5, 0.0), Vector2(190.0 + 8.0, 8.0 + (112.0 - GEAR_SIZE.y) / 2.0), GEAR_SIZE)
 
 	_frame_rate = Label.new()
 	_frame_rate.add_theme_font_size_override("font_size", 18)
@@ -81,11 +92,11 @@ func _ready() -> void:
 	_root.add_child(_frame_rate)
 
 	route_panel = RoutePanel.new()
-	_place(route_panel, Vector2(0.5, 0.0), Vector2(-280.0, 124.0), Vector2(560.0, 84.0))
+	_place(route_panel, Vector2(0.5, 0.0), Vector2(-280.0, 124.0), Vector2(560.0, 40.0))
 	_root.add_child(route_panel)
 
 	goals_hud = GoalsHud.new()
-	_place(goals_hud, Vector2(0.5, 0.0), Vector2(-280.0, 212.0), Vector2(560.0, 64.0))
+	_place(goals_hud, Vector2(0.5, 0.0), Vector2(-280.0, 216.0), Vector2(560.0, 64.0))
 	goals_hud.visible = false
 	_root.add_child(goals_hud)
 
@@ -103,7 +114,8 @@ func _ready() -> void:
 	_root.add_child(penalty_toast)
 
 	minimap = Minimap.new()
-	_place(minimap, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 8.0), Vector2(190.0, 190.0))
+	_place_minimap()
+	minimap.size_toggled.connect(_place_minimap.unbind(1))
 	_root.add_child(minimap)
 
 	arcade_clock = Label.new()
@@ -128,7 +140,7 @@ func _ready() -> void:
 	police_notice.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.06))
 	police_notice.add_theme_constant_override("outline_size", 6)
 	police_notice.visible = false
-	_place(police_notice, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 202.0), Vector2(190.0, 26.0))
+	_place(police_notice, Vector2(1.0, 0.0), Vector2(-EDGE - 190.0, 8.0 + Minimap.SMALL + 6.0), Vector2(190.0, 26.0))
 	_root.add_child(police_notice)
 	GameEvents.police_nearby.connect(func(near: bool) -> void: police_notice.visible = near)
 
@@ -147,6 +159,7 @@ func _ready() -> void:
 	settings_panel.layout_direction = Control.LAYOUT_DIRECTION_APPLICATION_LOCALE
 	_place(settings_panel, Vector2(0.5, 0.5), Vector2(-340.0, -340.0), Vector2(680.0, 680.0))
 	_root.add_child(settings_panel)
+	_build_pause_strip()
 
 	shift_panel = ShiftEndPanel.new()
 	shift_panel.visible = false
@@ -156,6 +169,7 @@ func _ready() -> void:
 	GameEvents.shift_rewards_ready.connect(_on_shift_report)
 
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
+	GameEvents.route_status_updated.connect(_on_route_status)
 	GameEvents.radio_tuned.connect(_on_radio_tuned)
 	GameSettings.changed.connect(_apply_mode)
 	_apply_mode()
@@ -227,23 +241,13 @@ func _build_pedals() -> void:
 
 
 func _build_buttons() -> void:
-	_view_button = _action_button("VIEW", Vector2(0.0, 0.0), Vector2(EDGE, EDGE), Vector2(130.0, 96.0))
+	# One pause button and the camera, which is used often while driving.
+	_pause_button = _action_button("MENU", Vector2(0.0, 0.0), Vector2(EDGE, EDGE), Vector2(CORNER_BUTTON, CORNER_BUTTON))
+	_pause_button.icon = "pause"
+	_pause_button.pressed_down.connect(_open_settings)
+	_view_button = _action_button("VIEW", Vector2(0.0, 0.0), Vector2(EDGE + CORNER_BUTTON + 12.0, EDGE), Vector2(CORNER_BUTTON, CORNER_BUTTON))
+	_view_button.icon = "camera"
 	_view_button.pressed_down.connect(GameEvents.camera_cycle_requested.emit)
-	var menu := _action_button("MENU", Vector2(0.0, 0.0), Vector2(EDGE + 146.0, EDGE), Vector2(130.0, 96.0))
-	menu.pressed_down.connect(_open_settings)
-	radio_button = _action_button("RADIO", Vector2(0.0, 0.0), Vector2(EDGE + 292.0, EDGE), Vector2(130.0, 96.0))
-	radio_button.pressed_down.connect(GameEvents.radio_cycle_requested.emit)
-	radio_button.visible = not Country.pack.radio_stations().is_empty()
-	station_label = Label.new()
-	# Station names are names, the same in every language.
-	station_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	station_label.add_theme_font_size_override("font_size", 22)
-	station_label.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.06))
-	station_label.add_theme_constant_override("outline_size", 6)
-	station_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	station_label.visible = false
-	_place(station_label, Vector2(0.0, 0.0), Vector2(EDGE, EDGE + 104.0), Vector2(320.0, 34.0))
-	_controls.add_child(station_label)
 
 	_indicator_left = _action_button("◀ IND", Vector2(0.0, 1.0), Vector2(EDGE, -EDGE - 320.0 - GAP - 96.0), Vector2(150.0, 96.0))
 	_indicator_right = _action_button("IND ▶", Vector2(0.0, 1.0), Vector2(EDGE + 166.0, -EDGE - 320.0 - GAP - 96.0), Vector2(150.0, 96.0))
@@ -253,15 +257,50 @@ func _build_buttons() -> void:
 	_indicator_right.pressed_down.connect(func() -> void: GameEvents.indicator_toggle_requested.emit(BusIndicators.TurnSide.RIGHT))
 
 	var above_pedals := -EDGE - 340.0 - GAP - 100.0
+	# Only near a stop or while the doors are open; it keeps its words, as the
+	# call to action at a stop.
 	_door_button = _action_button("DOORS", Vector2(1.0, 1.0), Vector2(-EDGE - 150.0, above_pedals), Vector2(150.0, 100.0))
 	_door_button.pressed_down.connect(GameEvents.door_toggle_requested.emit)
-	var horn := _action_button("HORN", Vector2(1.0, 1.0), Vector2(-EDGE - 150.0 - GAP - 200.0, above_pedals), Vector2(200.0, 100.0))
+	_door_button.visible = false
+	var horn := _action_button("HORN", Vector2(1.0, 1.0), Vector2(-EDGE - 150.0 - GAP - 200.0, -EDGE - 230.0 - GAP - 96.0), Vector2(200.0, 96.0))
+	# Kept in words: a drawn horn reads as a volume button.
 	horn.pressed_down.connect(func() -> void: GameEvents.horn_changed.emit(true))
 	horn.released.connect(func() -> void: GameEvents.horn_changed.emit(false))
 	gear_switch = GearSwitch.new()
-	_place(gear_switch, Vector2(1.0, 1.0), Vector2(-EDGE - 150.0 - GAP - 200.0, -EDGE - 230.0 - GAP - 94.0), Vector2(200.0, 94.0))
+	gear_switch.compact = true
 	gear_switch.gear_toggled.connect(GameEvents.gear_toggle_requested.emit)
 	_controls.add_child(gear_switch)
+
+
+## Camera and radio while paused, in a column beside the pause sheet.
+func _build_pause_strip() -> void:
+	pause_strip = Control.new()
+	pause_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pause_strip.visible = false
+	_place(pause_strip, Vector2(0.5, 0.5), Vector2(-340.0 - GAP - PAUSE_STRIP_WIDTH, -340.0), Vector2(PAUSE_STRIP_WIDTH, 680.0))
+	_root.add_child(pause_strip)
+	var camera := TouchButton.new()
+	camera.text = "VIEW"
+	_place(camera, Vector2.ZERO, Vector2.ZERO, Vector2(PAUSE_STRIP_WIDTH, 96.0))
+	camera.pressed_down.connect(GameEvents.camera_cycle_requested.emit)
+	pause_strip.add_child(camera)
+	radio_button = TouchButton.new()
+	radio_button.text = "RADIO"
+	_place(radio_button, Vector2.ZERO, Vector2(0.0, 96.0 + GAP), Vector2(PAUSE_STRIP_WIDTH, 96.0))
+	radio_button.pressed_down.connect(GameEvents.radio_cycle_requested.emit)
+	radio_button.visible = not Country.pack.radio_stations().is_empty()
+	pause_strip.add_child(radio_button)
+	station_label = Label.new()
+	# Station names are names, the same in every language.
+	station_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	station_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	station_label.add_theme_font_size_override("font_size", 22)
+	station_label.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.06))
+	station_label.add_theme_constant_override("outline_size", 6)
+	station_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	station_label.visible = false
+	_place(station_label, Vector2.ZERO, Vector2(0.0, 2.0 * (96.0 + GAP)), Vector2(PAUSE_STRIP_WIDTH, 34.0))
+	pause_strip.add_child(station_label)
 
 
 ## Shows the station for a moment after tuning, or that the radio is off. The
@@ -270,7 +309,7 @@ func _on_radio_tuned(station_name: String, frequency: String) -> void:
 	radio_button.lit = station_name != ""
 	station_label.text = "%s  %s" % [station_name, frequency] if station_name != "" else tr("RADIO OFF")
 	station_label.add_theme_font_size_override("font_size",
-		UiStyle.fit_font_size(station_label.get_theme_font("font"), station_label.text, 22, 320.0))
+		UiStyle.fit_font_size(station_label.get_theme_font("font"), station_label.text, 22, PAUSE_STRIP_WIDTH))
 	station_label.modulate.a = 1.0
 	station_label.visible = true
 	_station_timer = STATION_SECONDS
@@ -295,7 +334,15 @@ func _place(control: Control, anchor: Vector2, offset: Vector2, control_size: Ve
 	control.offset_bottom = offset.y + control_size.y
 
 
+## A small circle in the top corner, or a larger one after a tap.
+func _place_minimap() -> void:
+	var across := minimap.diameter()
+	_place(minimap, Vector2(1.0, 0.0), Vector2(-EDGE - across, 8.0), Vector2(across, across))
+
+
 func _apply_mode() -> void:
+	_indicator_left.visible = GameSettings.show_indicator_buttons
+	_indicator_right.visible = GameSettings.show_indicator_buttons
 	var mode := GameSettings.steering_mode
 	wheel.visible = mode == SteeringMapper.Mode.WHEEL
 	left_button.visible = mode == SteeringMapper.Mode.BUTTONS
@@ -309,12 +356,14 @@ func _open_settings() -> void:
 		return
 	_controls.visible = false
 	settings_panel.visible = true
+	pause_strip.visible = true
 	GameEvents.ui_pedals_changed.emit(0.0, 0.0)
 	get_tree().paused = true
 
 
 func _close_settings() -> void:
 	settings_panel.visible = false
+	pause_strip.visible = false
 	_controls.visible = true
 	get_tree().paused = false
 
@@ -332,8 +381,10 @@ func control_rect(focus: String) -> Rect2:
 			return wheel.get_global_rect() if GameSettings.steering_mode == SteeringMapper.Mode.WHEEL else Rect2()
 		"view":
 			return _view_button.get_global_rect()
+		"pause":
+			return _pause_button.get_global_rect()
 		"indicator":
-			return _indicator_right.get_global_rect()
+			return _indicator_right.get_global_rect() if _indicator_right.visible else Rect2()
 		"doors":
 			return _door_button.get_global_rect()
 		"gear":
@@ -362,6 +413,7 @@ func _notification(what: int) -> void:
 func _on_shift_report(report: Dictionary) -> void:
 	_controls.visible = false
 	settings_panel.visible = false
+	pause_strip.visible = false
 	for readout: Control in [gauge, route_panel, minimap, penalty_toast, _frame_rate]:
 		readout.visible = false
 		readout.process_mode = Node.PROCESS_MODE_DISABLED
@@ -379,8 +431,26 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	var door_lit := not data.doors_closed
 	if _door_button.lit != door_lit:
 		_door_button.lit = door_lit
+	_doors_open = door_lit
+	_show_doors()
 	if gear_switch.is_reverse != data.is_reverse:
 		gear_switch.is_reverse = data.is_reverse
+
+
+func _on_route_status(status: Dictionary) -> void:
+	_near_stop = bool(status.get("near_stop", false))
+	_show_doors()
+
+
+## The doors button shows near a stop or while the doors are open.
+func _show_doors() -> void:
+	var wanted := _near_stop or _doors_open
+	if _door_button.visible != wanted:
+		_door_button.visible = wanted
+
+
+func doors_button_shown() -> bool:
+	return _door_button.visible
 
 
 func _on_map_ready(_network: RoadNetwork, route: RouteRunner) -> void:

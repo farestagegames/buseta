@@ -15,7 +15,7 @@ var _style := StyleBoxFlat.new()
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_style.bg_color = Color(0.08, 0.09, 0.12, 0.68)
+	_style.bg_color = Color(0.08, 0.09, 0.12, UiStyle.HUD_PANEL_ALPHA)
 	_style.set_corner_radius_all(16)
 
 

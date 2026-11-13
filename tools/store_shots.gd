@@ -2,7 +2,8 @@ extends Node
 ## Developer tool: Play Store screenshots in Colombian Spanish. Not exported.
 ## Run windowed at the store size, then convert with tools/make_store_art.py:
 ##   Godot --path . --resolution 1920x1080 res://tools/store_shots.tscn
-## Saves raw PNGs to tools/screens/store/. ONLY=substring runs a subset.
+## Saves raw PNGs to tools/screens/store/. ONLY=substring runs a subset, and
+## PAUSED=1 adds a shot of the pause sheet after each drive shot.
 
 const SCENE := "res://scenes/main/city_shift.tscn"
 const MENU := "res://scenes/main/main_menu.tscn"
@@ -101,6 +102,13 @@ func _take(shot: Dictionary) -> void:
 		GameEvents.door_toggle_requested.emit()
 		await _seconds(2.6)
 	await _shot(shot["name"])
+	if OS.get_environment("PAUSED") != "":
+		# PAUSED=1 also saves the pause sheet over the same scene.
+		var hud: DriveHud = scene.get_node("Hud")
+		hud._open_settings()
+		await _frames(4)
+		await _shot(shot["name"] + "_pausa")
+		hud._close_settings()
 	scene.queue_free()
 	await _frames(3)
 

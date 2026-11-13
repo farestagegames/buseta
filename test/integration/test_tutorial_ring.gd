@@ -21,7 +21,13 @@ func before_all() -> void:
 	_saved_insets = UiStyle.test_insets_override
 
 
+func before_each() -> void:
+	# The indicator step only runs with the indicator buttons on screen.
+	GameSettings.show_indicator_buttons = true
+
+
 func after_each() -> void:
+	GameSettings.show_indicator_buttons = false
 	UiStyle.test_insets_override = _saved_insets
 	get_viewport().size = _saved_size
 	await wait_frames(2)
@@ -62,3 +68,17 @@ func _assert_rings_fit(size: Vector2i, insets: Vector4) -> void:
 func test_ring_wraps_focused_controls_on_phone_screens() -> void:
 	await _assert_rings_fit(Vector2i(2400, 1080), Vector4(80.0, 0.0, 0.0, 40.0))
 	await _assert_rings_fit(Vector2i(1600, 720), Vector4(60.0, 0.0, 0.0, 24.0))
+
+
+func test_hidden_indicator_buttons_have_no_ring_and_the_step_is_skipped() -> void:
+	GameSettings.show_indicator_buttons = false
+	var hud := DriveHud.new()
+	add_child_autofree(hud)
+	await wait_frames(2)
+	assert_false(hud.control_rect("indicator").has_area(), "No ring round hidden buttons")
+	var steps := TutorialScript.new()
+	steps.skipped.append("indicate")
+	while steps.step()["id"] != "indicate":
+		steps.index += 1
+	steps.update({"stop_index": 0}, 0.0)
+	assert_ne(steps.step()["id"], "indicate", "The step moves on by itself")

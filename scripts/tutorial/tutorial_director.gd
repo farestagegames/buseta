@@ -31,6 +31,10 @@ func setup(hud: DriveHud, route: RouteSystem, spec: BusSpec) -> void:
 
 func start() -> void:
 	active = true
+	# With the indicator buttons hidden the bus signals by itself.
+	script_steps.skipped.clear()
+	if not GameSettings.show_indicator_buttons:
+		script_steps.skipped.append("indicate")
 	_state["view_changes"] = 0
 	_show_step()
 

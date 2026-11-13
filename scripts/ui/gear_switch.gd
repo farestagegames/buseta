@@ -10,10 +10,13 @@ signal gear_toggled
 
 const DRIVE_COLOUR := Color(0.2, 0.75, 0.35, 0.95)
 const REVERSE_COLOUR := Color(0.98, 0.72, 0.15, 0.95)
-const OFF_COLOUR := Color(0.13, 0.15, 0.19, 0.72)
+const OFF_COLOUR := Color(0.13, 0.15, 0.19, UiStyle.HUD_PANEL_ALPHA)
 const TEXT := Color(0.97, 0.98, 1.0)
 const DIM_TEXT := Color(1.0, 1.0, 1.0, 0.45)
 const INK := Color(0.09, 0.1, 0.13)
+
+## Just the letters, for the small switch beside the speed readout.
+var compact: bool = false
 
 ## Set from the bus telemetry.
 var is_reverse: bool = false:
@@ -58,6 +61,10 @@ func _draw() -> void:
 			_halves[side].bg_color = entry[2]
 			draw_style_box(_halves[side], area)
 		var ink := INK if on else DIM_TEXT
+		if compact:
+			var baseline := (size.y - font.get_height(34)) / 2.0 + font.get_ascent(34)
+			draw_string(font, Vector2(area.position.x, baseline), entry[0], HORIZONTAL_ALIGNMENT_CENTER, area.size.x, 34, ink)
+			continue
 		draw_string(font, Vector2(area.position.x, size.y * 0.55), entry[0], HORIZONTAL_ALIGNMENT_CENTER, area.size.x, 40, ink)
 		draw_string(font, Vector2(area.position.x, size.y * 0.85), tr(entry[1]), HORIZONTAL_ALIGNMENT_CENTER, area.size.x, 15, ink)
 	draw_line(Vector2(width, 10.0), Vector2(width, size.y - 10.0), Color(1.0, 1.0, 1.0, 0.25), 2.0)
