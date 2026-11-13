@@ -32,14 +32,14 @@ static func add_face(b: LowPolyBuilder, head: Vector3, skin: Color) -> void:
 ## beads colours the tips of braids and the ties of a ponytail or plaits, and a
 ## fade blends from the hair into skin at the sides.
 static func add_hair(b: LowPolyBuilder, head: Vector3, style: String, colour: Color, beads: Color, skin := Color(0.5, 0.35, 0.25)) -> void:
-	var top := head + Vector3(0.0, 0.145, 0.01)
+	var top := head + Vector3(0.0, 0.145, 0.007)
 	var back := head + Vector3(0.0, 0.03, 0.115)
 	match style:
 		"short":
-			b.box(top, Vector3(0.23, 0.07, 0.25), colour)
+			b.box(top, Vector3(0.23, 0.07, 0.256), colour)
 			b.box(back, Vector3(0.23, 0.2, 0.05), colour)
 		"fade":
-			b.box(head + Vector3(0.0, 0.14, 0.005), Vector3(0.22, 0.05, 0.24), colour)
+			b.box(head + Vector3(0.0, 0.14, 0.002), Vector3(0.22, 0.05, 0.246), colour)
 			var faded := colour.lerp(skin, 0.45)
 			for side: float in [-1.0, 1.0]:
 				b.box(head + Vector3(side * 0.107, 0.07, 0.02), Vector3(0.008, 0.09, 0.19), faded)
@@ -50,27 +50,27 @@ static func add_hair(b: LowPolyBuilder, head: Vector3, style: String, colour: Co
 			for side: float in [-1.0, 1.0]:
 				b.box(head + Vector3(side * 0.125, -0.01, 0.03), Vector3(0.05, 0.3, 0.2), colour)
 		"bun":
-			b.box(top, Vector3(0.23, 0.07, 0.25), colour)
+			b.box(top, Vector3(0.23, 0.07, 0.256), colour)
 			b.box(back, Vector3(0.23, 0.2, 0.05), colour)
 			b.box(head + Vector3(0.0, 0.2, 0.08), Vector3(0.13, 0.12, 0.13), colour)
 		"ponytail":
-			b.box(top, Vector3(0.23, 0.07, 0.25), colour)
+			b.box(top, Vector3(0.23, 0.07, 0.256), colour)
 			b.box(back, Vector3(0.23, 0.2, 0.05), colour)
 			b.box(head + Vector3(0.0, -0.07, 0.16), Vector3(0.07, 0.26, 0.06), colour)
 			b.box(head + Vector3(0.0, 0.07, 0.15), Vector3(0.08, 0.04, 0.07), beads)
 		"plait":
-			b.box(top, Vector3(0.23, 0.07, 0.25), colour)
+			b.box(top, Vector3(0.23, 0.07, 0.256), colour)
 			b.box(back, Vector3(0.23, 0.22, 0.05), colour)
 			b.box(head + Vector3(0.0, -0.27, 0.15), Vector3(0.08, 0.42, 0.06), colour)
 		"plaits":
-			b.box(top, Vector3(0.23, 0.07, 0.25), colour)
+			b.box(top, Vector3(0.23, 0.07, 0.256), colour)
 			b.box(back, Vector3(0.23, 0.2, 0.05), colour)
 			for side: float in [-1.0, 1.0]:
 				b.box(head + Vector3(side * 0.118, -0.09, 0.05), Vector3(0.05, 0.28, 0.05), colour)
 				b.box(head + Vector3(side * 0.118, -0.24, 0.05), Vector3(0.055, 0.03, 0.055), beads)
 		"afro":
 			# Rounded by a smaller step on top, and down only as far as the temples.
-			b.box(head + Vector3(0.0, 0.15, 0.015), Vector3(0.27, 0.13, 0.27), colour)
+			b.box(head + Vector3(0.0, 0.15, 0.014), Vector3(0.27, 0.13, 0.272), colour)
 			b.box(head + Vector3(0.0, 0.232, 0.025), Vector3(0.21, 0.04, 0.21), colour)
 			b.box(head + Vector3(0.0, 0.03, 0.12), Vector3(0.25, 0.2, 0.08), colour)
 			for side: float in [-1.0, 1.0]:
@@ -84,7 +84,7 @@ static func add_hair(b: LowPolyBuilder, head: Vector3, style: String, colour: Co
 			b.box(head + Vector3(-0.08, 0.225, -0.03), Vector3(0.09, 0.05, 0.09), colour)
 			b.box(head + Vector3(0.07, 0.23, 0.05), Vector3(0.09, 0.05, 0.09), colour)
 		"long":
-			b.box(top, Vector3(0.235, 0.075, 0.255), colour)
+			b.box(top, Vector3(0.235, 0.075, 0.256), colour)
 			b.box(head + Vector3(0.0, -0.1, 0.145), Vector3(0.25, 0.5, 0.06), colour)
 			for side: float in [-1.0, 1.0]:
 				b.box(head + Vector3(side * 0.123, -0.06, 0.02), Vector3(0.04, 0.38, 0.19), colour)
@@ -100,10 +100,10 @@ static func add_hair(b: LowPolyBuilder, head: Vector3, style: String, colour: Co
 
 ## Rows braided close along the top, then braids to the shoulders with beaded tips.
 static func _add_braids(b: LowPolyBuilder, head: Vector3, colour: Color, beads: Color) -> void:
-	b.box(head + Vector3(0.0, 0.145, 0.01), Vector3(0.23, 0.065, 0.25), colour)
+	b.box(head + Vector3(0.0, 0.145, 0.007), Vector3(0.23, 0.065, 0.256), colour)
 	b.box(head + Vector3(0.0, 0.03, 0.115), Vector3(0.23, 0.2, 0.05), colour)
 	for x: float in [-0.075, -0.025, 0.025, 0.075]:
-		b.box(head + Vector3(x, 0.18, 0.01), Vector3(0.014, 0.01, 0.25), colour.lightened(0.2))
+		b.box(head + Vector3(x, 0.18, 0.007), Vector3(0.014, 0.01, 0.256), colour.lightened(0.2))
 	for side: float in [-1.0, 1.0]:
 		for z: float in [-0.02, 0.05]:
 			b.box(head + Vector3(side * 0.122, -0.01, z), Vector3(0.035, 0.28, 0.035), colour)

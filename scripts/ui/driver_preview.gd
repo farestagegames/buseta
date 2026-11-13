@@ -7,7 +7,7 @@ var _look: DriverLook
 
 
 func _ready() -> void:
-	build_stage(Vector3(0.0, 0.2, 2.9), 0.0, 30.0)
+	build_stage(Vector3(0.0, 0.2, 2.9), 0.0, 30.0, 0.2, 10.0)
 	_figure = MeshInstance3D.new()
 	_figure.rotation.y = PI # Figures face -Z, and the camera is on the +Z side.
 	pivot.add_child(_figure)

@@ -9,7 +9,7 @@ var stage: SubViewport
 
 
 ## Called by each kind of preview from its _ready.
-func build_stage(camera_position: Vector3, camera_tilt: float, camera_fov: float) -> void:
+func build_stage(camera_position: Vector3, camera_tilt: float, camera_fov: float, camera_near: float = 0.05, camera_far: float = 4000.0) -> void:
 	stretch = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stage = SubViewport.new()
@@ -26,6 +26,8 @@ func build_stage(camera_position: Vector3, camera_tilt: float, camera_fov: float
 	camera.position = camera_position
 	camera.rotation.x = deg_to_rad(camera_tilt)
 	camera.fov = camera_fov
+	camera.near = camera_near
+	camera.far = camera_far
 	stage.add_child(camera)
 	var sun := DirectionalLight3D.new()
 	sun.rotation = Vector3(deg_to_rad(-48.0), deg_to_rad(35.0), 0.0)

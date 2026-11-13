@@ -329,3 +329,89 @@ func test_greying_shows_in_the_moustache() -> void:
 	assert_true(look.greying)
 	assert_ne(look.beard_colour(), look.hair)
 	assert_true(_has_colour(DriverFigure.build_head(look), look.temple_colour()))
+
+
+## Ray-triangle intersection returning distance t, or -1.0 if no hit.
+func _ray_triangle_hit(ro: Vector3, rd: Vector3, v0: Vector3, v1: Vector3, v2: Vector3) -> float:
+	var edge1 := v1 - v0
+	var edge2 := v2 - v0
+	var h := rd.cross(edge2)
+	var a := edge1.dot(h)
+	if absf(a) < 1e-7:
+		return -1.0
+	var f := 1.0 / a
+	var s := ro - v0
+	var u := f * s.dot(h)
+	if u < 0.0 or u > 1.0:
+		return -1.0
+	var q := s.cross(edge1)
+	var v := f * rd.dot(q)
+	if v < 0.0 or u + v > 1.0:
+		return -1.0
+	var t := f * edge2.dot(q)
+	return t if t > 1e-5 else -1.0
+
+
+## Minimum distance from ray origin along ray direction to any hair/hat triangle on the head mesh.
+func _hair_surface_distance(mesh: ArrayMesh, skin_colour: Color, origin: Vector3, dir: Vector3) -> float:
+	if mesh.get_surface_count() == 0:
+		return -1.0
+	var arrays := mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+	var hit_dist := INF
+	for i in range(0, verts.size(), 3):
+		var c: Color = colors[i]
+		if _near(c, skin_colour) or _near(c, HeadParts.DARK):
+			continue
+		var t := _ray_triangle_hit(origin, dir, verts[i], verts[i + 1], verts[i + 2])
+		if t > 0.0 and t < hit_dist:
+			hit_dist = t
+	return hit_dist if hit_dist != INF else -1.0
+
+
+func test_every_driver_look_hair_sits_outside_skull_surface() -> void:
+	var origin := Vector3(0.0, 0.12, 0.0)
+	for look in _looks():
+		var mesh := DriverFigure.build_head(look)
+		for i in 16:
+			var theta := -0.65 + float(i) * (1.30 / 15.0)
+			var dir := Vector3(sin(theta), 0.0, -cos(theta)).normalized()
+			var skull_dist := 0.115 / cos(theta)
+			var hair_dist := _hair_surface_distance(mesh, look.skin, origin, dir)
+			assert_gt(hair_dist, 0.0, "%s has hair/headwear at angle %.2f" % [look.driver_name, theta])
+			var clearance_mm := (hair_dist - skull_dist) * 1000.0
+			assert_gte(clearance_mm, 3.0, "%s hair clearance at angle %.2f must be >= 3 mm (was %.1f mm)" % [look.driver_name, theta, clearance_mm])
+
+
+func test_every_hair_style_sits_outside_skull_surface() -> void:
+	var origin := Vector3(0.0, 0.12, 0.0)
+	for style: String in DriverLook.HAIR_STYLES:
+		if style == "bald":
+			continue
+		var look := DriverLook.new()
+		look.hair_style = style
+		var mesh := DriverFigure.build_head(look)
+		for i in 16:
+			var theta := -0.65 + float(i) * (1.30 / 15.0)
+			var dir := Vector3(sin(theta), 0.0, -cos(theta)).normalized()
+			var skull_dist := 0.115 / cos(theta)
+			var hair_dist := _hair_surface_distance(mesh, look.skin, origin, dir)
+			assert_gt(hair_dist, 0.0, "Style %s has hair at angle %.2f" % [style, theta])
+			var clearance_mm := (hair_dist - skull_dist) * 1000.0
+			assert_gte(clearance_mm, 3.0, "Style %s clearance at angle %.2f must be >= 3 mm (was %.1f mm)" % [style, theta, clearance_mm])
+
+
+func test_regression_hair_style_that_showed_glitch_sits_outside_skull() -> void:
+	var glitch_styles: Array[String] = ["short", "fade", "braids", "long"]
+	var origin := Vector3(0.0, 0.12, 0.0)
+	for style in glitch_styles:
+		var look := DriverLook.new()
+		look.hair_style = style
+		var mesh := DriverFigure.build_head(look)
+		var dir := Vector3(0.0, 0.0, -1.0)
+		var skull_dist := 0.115
+		var hair_dist := _hair_surface_distance(mesh, look.skin, origin, dir)
+		var clearance_mm := (hair_dist - skull_dist) * 1000.0
+		assert_gte(clearance_mm, 5.0, "Regression style %s must sit >= 5 mm outside skull (was %.1f mm)" % [style, clearance_mm])
+
