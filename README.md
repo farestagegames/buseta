@@ -76,11 +76,14 @@ odd car contact in its report is not always a problem with the route.
 
 ## Hidden cheats
 
-Test builds have cheats for skipping ahead. `Cheats.available()` is false in a
-release export, so a store build never offers them.
+The cheats are on in debug builds, and in release builds while the project setting
+`buseta/testing/cheats_in_release` is `true` (the default for now, so Play testers
+can try every setting and unlock without grinding). Before a public release, set it
+to `false` in `project.godot` — `tools/build_release.sh` warns while it is still on.
 
 - Main menu: tap the "Buseta Simulator: Colombia" title seven times, each within about a second
-  of the last, for coins, driver levels and unlocking everything.
+  of the last, for coins, driver levels, "Max level" (every time of day, Alto Cafeto
+  and the arcade) and unlocking everything.
 - During a shift: open MENU and tap the "Paused" title seven times for "Skip to next
   stop", "Finish shift" and "Downpour now". A finished shift pays out like a normal one.
 

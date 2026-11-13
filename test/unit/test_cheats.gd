@@ -8,6 +8,9 @@ var profile: PlayerProfile
 func before_each() -> void:
 	taps = Cheats.new()
 	profile = PlayerProfile.new()
+	# Each test starts with the release switch back at its shipped default, so a
+	# failed test never leaves it off for the ones after it.
+	ProjectSettings.set_setting(Cheats.RELEASE_SETTING, true)
 
 
 func _tap_times(count: int, gap: float, start: float = 0.0) -> bool:
@@ -48,11 +51,47 @@ func test_each_level_cheat_lands_on_the_start_of_a_level() -> void:
 	assert_eq(DriverLevel.level_for(profile.xp), 7)
 
 
+func test_release_cheats_follow_the_project_switch() -> void:
+	ProjectSettings.set_setting(Cheats.RELEASE_SETTING, true)
+	assert_true(Cheats.available_in(false), "Release cheats are on while the switch is on")
+	ProjectSettings.set_setting(Cheats.RELEASE_SETTING, false)
+	assert_false(Cheats.available_in(false), "Release cheats are off while the switch is off")
+	ProjectSettings.set_setting(Cheats.RELEASE_SETTING, true)
+
+
+func test_debug_cheats_ignore_the_switch() -> void:
+	ProjectSettings.set_setting(Cheats.RELEASE_SETTING, false)
+	assert_true(Cheats.available_in(true), "Debug cheats stay on with the switch off")
+	ProjectSettings.set_setting(Cheats.RELEASE_SETTING, true)
+
+
+func test_max_level_reaches_every_level_gate() -> void:
+	var catalog := Catalog.new()
+	var top := Cheats.top_level(catalog, Country.pack.horns(), Profile.times_of_day())
+	Cheats.set_level(profile, top)
+	var level := DriverLevel.level_for(profile.xp)
+	assert_eq(level, top)
+	for kind: String in Catalog.KINDS:
+		for item: Dictionary in catalog.items(kind):
+			assert_gte(level, int(item.get("level", 1)), "%s/%s reachable" % [kind, item["id"]])
+	for time: TimeOfDay in Profile.times_of_day():
+		assert_true(time.is_unlocked(level), "time %s unlocked" % time.id)
+	for horn: Dictionary in Country.pack.horns():
+		assert_gte(level, int(horn.get("level", 1)), "horn %s reachable" % horn["id"])
+
+
 func test_unlock_everything_owns_all_and_keeps_the_current_choices() -> void:
 	var catalog := Catalog.new()
-	Cheats.unlock_everything(profile, catalog)
-	Cheats.unlock_everything(profile, catalog)
-	for kind: String in [Catalog.ROUTES, Catalog.BUSES, Catalog.LIVERIES]:
+	Cheats.unlock_everything(profile, catalog, Country.pack.horns())
+	Cheats.unlock_everything(profile, catalog, Country.pack.horns())
+	for kind: String in Catalog.KINDS:
 		var owned: Array = profile.owned[kind]
 		assert_eq(owned.size(), catalog.items(kind).size(), "%s with no repeats" % kind)
+		for item: Dictionary in catalog.items(kind):
+			assert_true(owned.has(item["id"]), "%s owns %s" % [kind, item["id"]])
+	for horn: Dictionary in Country.pack.horns():
+		assert_true(profile.horns_owned.has(horn["id"]), "owns horn %s" % horn["id"])
+	for item: Dictionary in catalog.items(Catalog.ROUTES):
+		if catalog.requires(item) != "":
+			assert_true(catalog.requirement_met(item, profile), "%s requirement met" % item["id"])
 	assert_eq(profile.selected[Catalog.ROUTES], PlayerProfile.DEFAULT_ROUTE)

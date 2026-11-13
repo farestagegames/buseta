@@ -6,6 +6,10 @@
 cd "$(dirname "$0")/.." || exit 1
 LIMIT=$((150 * 1024 * 1024))
 OUT="$PWD/build/city-bus-shift-release.aab"
+if grep -qE 'testing/cheats_in_release[[:space:]]*=[[:space:]]*true' project.godot; then
+	echo "WARNING: buseta/testing/cheats_in_release is ON, so this release ships the hidden"
+	echo "         cheats to testers. Set it to false in project.godot before a public release."
+fi
 export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="${GODOT_ANDROID_KEYSTORE_RELEASE_PATH:-$HOME/Keys/city-bus-shift-upload.jks}"
 export GODOT_ANDROID_KEYSTORE_RELEASE_USER="${GODOT_ANDROID_KEYSTORE_RELEASE_USER:-upload}"
 if [ ! -f "$GODOT_ANDROID_KEYSTORE_RELEASE_PATH" ]; then

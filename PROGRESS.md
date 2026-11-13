@@ -44,6 +44,7 @@ on `overnight`, taken just before the game was refocused on Colombia. All work i
 | Launcher icons | Done | | Original buseta icon from `tools/make_icons.py`: adaptive layers, monochrome themed icon, legacy 192 px, `store/icon_512.png` for the listing. Not yet seen on a phone's home screen |
 | Store prep | Done | | Renamed "Buseta Simulator: Colombia" (privacy page must be re-uploaded to GitHub). Listing text es-419 and en-US, feature graphic, 8 Spanish screenshots, privacy policy (filled in, not yet hosted), Play Console form answers. All in `store/`. Target age 13+ confirmed. Owner to do: skim in-game slang, paste the privacy URL into Play Console (https://callenomad.github.io/city-bus-shift-privacy/) |
 | Play testing | In progress | | 0.1.0 (code 1) uploaded to Internal testing (11 Nov). Owner steps in `store/testing-plan.md`: add tester list, roll out, install from the opt-in link, check icon, menu title and a short drive; then a closed track via a Google Group for 12+ testers for 14 days, with es/en invite drafts. Still to do: re-upload the privacy page (old name), back up the upload key off this Mac |
+| Turn cheats off before public release | Todo | | Task 14 leaves `buseta/testing/cheats_in_release` true so Play testers get the hidden cheats; set it to false in `project.godot` before the public release (the release build warns while it is on) |
 
 ## Engagement batch and feedback fixes (12 Nov, in progress)
 

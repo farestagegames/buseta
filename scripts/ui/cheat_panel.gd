@@ -43,10 +43,12 @@ func _ready() -> void:
 	grid.add_child(_cheat("+" + Country.pack.money(10000), Cheats.add_coins.bind(10000)))
 	grid.add_child(_cheat("+1 level", Cheats.add_levels.bind(1)))
 	grid.add_child(_cheat("+5 levels", Cheats.add_levels.bind(5)))
+	grid.add_child(_cheat("Max level", func(profile: PlayerProfile) -> void:
+		Cheats.set_level(profile, Cheats.top_level(Profile.catalog, Country.pack.horns(), Profile.times_of_day()))))
 	column.add_child(grid)
-	var unlock := _button("Unlock all routes, buses and liveries")
+	var unlock := _button("Unlock all")
 	unlock.pressed.connect(_apply.bind(func(profile: PlayerProfile) -> void:
-		Cheats.unlock_everything(profile, Profile.catalog)))
+		Cheats.unlock_everything(profile, Profile.catalog, Country.pack.horns())))
 	column.add_child(unlock)
 	var close := _button("Close")
 	close.pressed.connect(queue_free)
