@@ -82,4 +82,12 @@ Fictional coffee-region town, small district (2 to 3 routes incl. a ~3 min start
 | 5 | District switcher on the Routes tab | Done | Doc task 6. Segmented row (64 px buttons) built dynamically from catalog towns, filters routes list by town. Locked town (< level 6) shows lock badge "🔒 Nivel 6", viewable but unplayable. Choice persists in profile (defaulting to selected route's town). TouchScroll drag-safe. Screenshots verified at 1280x720, 1560x720, and 1600x900. 4 new GUT tests |
 | 6 | Fog and mountain ambience | Done | Doc task 7. Dawn/morning fog x1.35 on Alto Cafeto via `CityTheme.fog_scale` and `TimeOfDay.fog_scale`; no sea layer on map (distance INF); city bed 4 dB quieter (-16 dB) via map ambience; rare motorbike one-shots kept; bird clusters valid. 4 new GUT tests. Dawn screenshots looked at on both maps |
 
+## Next: third map, Puerto Remanso (planned 13 Nov)
+
+Fictional Magdalena river port town, river levee and long causeway bridge, unlocks at driver level 8. Design doc by agy (Gemini) in `design/puerto-remanso.md`.
+
+| # | Task | State | Notes |
+| --- | --- | --- | --- |
+| 1 | Playable slice: map, starter route R0, level 8 unlock, menu | Done | `maps/puerto_remanso.json` (levee, elevated bridge, ferry ramp down to water, max grade 8.8%), `routes/remanso_r0.json` "Paseo Fluvial" (loop via levee and bridge, 3 goals, 3 stops), catalog level 8, Routes tab town switcher. Autopilot 4:38 (278 s), 3 stars, 100 score, 0 collisions, 0 stalls, 0 knocked props. 15 GUT tests in `test_puerto_remanso.gd`. |
+
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.

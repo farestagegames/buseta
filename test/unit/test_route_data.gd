@@ -2,7 +2,7 @@ extends GutTest
 ## Every route in the catalog has to be a shift that can be driven and scored.
 
 ## Each town's depot, where every timed route in it ends.
-const DEPOTS := {"Puerto Marisol": "Patio Central", "Alto Cafeto": "Patio Cafeto"}
+const DEPOTS := {"Puerto Marisol": "Patio Central", "Alto Cafeto": "Patio Cafeto", "Puerto Remanso": "Patio Fluvial"}
 
 var catalog: Catalog
 var map_data: Dictionary

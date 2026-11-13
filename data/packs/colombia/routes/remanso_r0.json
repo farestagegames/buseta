@@ -1,0 +1,35 @@
+{
+ "name": "Route R0: Paseo Fluvial",
+ "map": "maps/puerto_remanso.json",
+ "start": {
+  "road": "depot_road",
+  "along": 25,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {"road": "depot_road", "dir": 1},
+  {"road": "calle_bodegas", "dir": 1},
+  {"road": "avenida_fluvial", "dir": 1},
+  {"road": "carrera_mercado", "dir": 1},
+  {"road": "paseo_ribera", "dir": 1},
+  {"road": "puente_fluvial", "dir": 1},
+  {"road": "camino_garzas", "dir": 1},
+  {"road": "avenida_norte", "dir": 1},
+  {"road": "carrera_central", "dir": -1},
+  {"road": "avenida_fluvial", "dir": -1},
+  {"road": "calle_bodegas", "dir": -1},
+  {"road": "depot_road", "dir": -1}
+ ],
+ "stops": [
+  {"name": "Mercado Fluvial", "due": 75, "road": "carrera_mercado", "along": 52, "dir": 1, "waiting": 3},
+  {"name": "Puente Fluvial", "due": 145, "road": "puente_fluvial", "along": 70, "dir": 1, "waiting": 0},
+  {"name": "Patio Fluvial", "due": 290, "road": "depot_road", "along": 35, "dir": -1, "waiting": 0, "final": true}
+ ],
+ "service": "bays",
+ "goals": [
+  {"type": "finish_under", "value": 350},
+  {"type": "no_collisions"},
+  {"type": "no_fines"}
+ ]
+}

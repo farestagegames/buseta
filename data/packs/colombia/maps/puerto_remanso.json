@@ -1,0 +1,544 @@
+{
+ "name": "Puerto Remanso",
+ "traffic_share": 0.6,
+ "ambience": {
+  "city": {
+   "volume_db": -14
+  }
+ },
+ "nodes": [
+  {
+   "id": "depot",
+   "x": -200,
+   "z": 80,
+   "kind": "terminal",
+   "radius": 17
+  },
+  {
+   "id": "a",
+   "x": -130,
+   "z": 80,
+   "radius": 14
+  },
+  {
+   "id": "b",
+   "x": -40,
+   "z": 80,
+   "radius": 14
+  },
+  {
+   "id": "c",
+   "x": 60,
+   "z": 80,
+   "kind": "roundabout",
+   "radius": 20,
+   "island": 8
+  },
+  {
+   "id": "d",
+   "x": 160,
+   "z": 80,
+   "radius": 14
+  },
+  {
+   "id": "e",
+   "x": 230,
+   "z": 80,
+   "kind": "roundabout",
+   "radius": 18,
+   "island": 6
+  },
+  {
+   "id": "f",
+   "x": 160,
+   "z": -40,
+   "radius": 14
+  },
+  {
+   "id": "g",
+   "x": 160,
+   "z": -180,
+   "radius": 16
+  },
+  {
+   "id": "h",
+   "x": 60,
+   "z": -180,
+   "radius": 14
+  },
+  {
+   "id": "i",
+   "x": 60,
+   "z": -40,
+   "radius": 14
+  },
+  {
+   "id": "j",
+   "x": -40,
+   "z": -40,
+   "radius": 14
+  }
+ ],
+ "roads": [
+  {
+   "id": "depot_road",
+   "from": "depot",
+   "to": "a",
+   "speed_limit": 30,
+   "traffic": false,
+   "name": "Carrera del Patio"
+  },
+  {
+   "id": "calle_bodegas",
+   "from": "a",
+   "to": "b",
+   "speed_limit": 30,
+   "name": "Calle de las Bodegas"
+  },
+  {
+   "id": "carrera_muelle",
+   "from": "b",
+   "to": "j",
+   "speed_limit": 30,
+   "name": "Carrera del Muelle"
+  },
+  {
+   "id": "calle_talleres",
+   "from": "j",
+   "to": "i",
+   "speed_limit": 30,
+   "name": "Calle de los Talleres"
+  },
+  {
+   "id": "avenida_fluvial",
+   "from": "b",
+   "to": "c",
+   "speed_limit": 40,
+   "name": "Avenida Fluvial"
+  },
+  {
+   "id": "carrera_central",
+   "from": "c",
+   "to": "i",
+   "speed_limit": 40,
+   "name": "Carrera Central"
+  },
+  {
+   "id": "carrera_mercado",
+   "from": "c",
+   "to": "d",
+   "speed_limit": 30,
+   "name": "Carrera del Mercado"
+  },
+  {
+   "id": "rampa_ferry",
+   "from": "d",
+   "to": "e",
+   "speed_limit": 30,
+   "name": "Rampa del Ferry"
+  },
+  {
+   "id": "paseo_ribera",
+   "from": "d",
+   "to": "f",
+   "speed_limit": 40,
+   "name": "Paseo de la Ribera"
+  },
+  {
+   "id": "calle_puerto",
+   "from": "i",
+   "to": "f",
+   "speed_limit": 30,
+   "name": "Calle del Comercio"
+  },
+  {
+   "id": "puente_fluvial",
+   "from": "f",
+   "to": "g",
+   "speed_limit": 50,
+   "via": [
+    [
+     175,
+     -110
+    ]
+   ],
+   "name": "Puente Fluvial"
+  },
+  {
+   "id": "camino_garzas",
+   "from": "g",
+   "to": "h",
+   "speed_limit": 40,
+   "name": "Camino de las Garzas"
+  },
+  {
+   "id": "avenida_norte",
+   "from": "h",
+   "to": "i",
+   "speed_limit": 40,
+   "name": "Avenida del Norte"
+  }
+ ],
+ "hills": [
+  {
+   "x": 175,
+   "z": -110,
+   "radius": 170,
+   "height": 6.5
+  },
+  {
+   "x": 140,
+   "z": 20,
+   "radius": 180,
+   "height": 3.0
+  },
+  {
+   "x": 60,
+   "z": 80,
+   "radius": 160,
+   "height": 2.5
+  },
+  {
+   "x": 230,
+   "z": 80,
+   "radius": 120,
+   "height": -2.0
+  },
+  {
+   "x": -200,
+   "z": 80,
+   "radius": 120,
+   "height": 0.0
+  }
+ ],
+ "features": [
+  {
+   "type": "speed_bump",
+   "road": "carrera_mercado",
+   "along": 28
+  },
+  {
+   "type": "speed_bump",
+   "road": "avenida_norte",
+   "along": 40
+  },
+  {
+   "type": "speed_bump",
+   "road": "carrera_central",
+   "along": 90
+  },
+  {
+   "type": "speed_bump",
+   "road": "calle_talleres",
+   "along": 50
+  },
+  {
+   "type": "pothole",
+   "road": "calle_bodegas",
+   "along": 35,
+   "lateral": 1.5,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "calle_bodegas",
+   "along": 65,
+   "lateral": 2.0,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "paseo_ribera",
+   "along": 30,
+   "lateral": 1.6,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "paseo_ribera",
+   "along": 90,
+   "lateral": 2.2,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "camino_garzas",
+   "along": 40,
+   "lateral": 1.8,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "camino_garzas",
+   "along": 75,
+   "lateral": 2.0,
+   "dir": -1
+  },
+  {
+   "type": "pothole",
+   "road": "carrera_muelle",
+   "along": 50,
+   "lateral": 1.5,
+   "dir": 1
+  },
+  {
+   "type": "pothole",
+   "road": "carrera_muelle",
+   "along": 80,
+   "lateral": 2.1,
+   "dir": -1
+  }
+ ],
+ "parked_cars": [
+  {
+   "road": "carrera_muelle",
+   "along": 35,
+   "dir": 1
+  },
+  {
+   "road": "carrera_muelle",
+   "along": 90,
+   "dir": -1
+  },
+  {
+   "road": "calle_talleres",
+   "along": 40,
+   "dir": 1
+  },
+  {
+   "road": "calle_talleres",
+   "along": 80,
+   "dir": -1
+  },
+  {
+   "road": "calle_puerto",
+   "along": 50,
+   "dir": 1
+  }
+ ],
+ "knockables": [
+  {
+   "kind": "stall",
+   "road": "calle_puerto",
+   "along": 35,
+   "lateral": 5.2,
+   "dir": 1
+  },
+  {
+   "kind": "stall",
+   "road": "calle_puerto",
+   "along": 70,
+   "lateral": 5.2,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "calle_puerto",
+   "along": 50,
+   "lateral": 5.0,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "carrera_mercado",
+   "along": 50,
+   "lateral": 5.2,
+   "dir": -1
+  },
+  {
+   "kind": "bin",
+   "road": "carrera_mercado",
+   "along": 75,
+   "lateral": 5.0,
+   "dir": -1
+  },
+  {
+   "kind": "bin",
+   "road": "paseo_ribera",
+   "along": 45,
+   "lateral": 5.0,
+   "dir": 1
+  },
+  {
+   "kind": "bin",
+   "road": "paseo_ribera",
+   "along": 75,
+   "lateral": 5.0,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "calle_talleres",
+   "along": 35,
+   "lateral": 5.0,
+   "dir": 1
+  },
+  {
+   "kind": "crate",
+   "road": "calle_talleres",
+   "along": 65,
+   "lateral": 5.0,
+   "dir": -1
+  },
+  {
+   "kind": "crate",
+   "road": "calle_bodegas",
+   "along": 45,
+   "lateral": 5.0,
+   "dir": 1
+  },
+  {
+   "kind": "bin",
+   "road": "calle_bodegas",
+   "along": 60,
+   "lateral": 5.0,
+   "dir": -1
+  }
+ ],
+ "coast": {
+  "x": 200,
+  "beach": 30
+ },
+ "bird_clusters": [
+  {
+   "id": "ribera_manglares",
+   "x": 160.0,
+   "z": -40.0,
+   "perch": 5.0,
+   "flock": 4,
+   "range": 28.0
+  },
+  {
+   "id": "glorieta_ceiba",
+   "x": 60.0,
+   "z": 80.0,
+   "perch": 5.5,
+   "flock": 3,
+   "range": 30.0
+  },
+  {
+   "id": "isla_garzas",
+   "x": 160.0,
+   "z": -180.0,
+   "perch": 4.8,
+   "flock": 4,
+   "range": 32.0
+  }
+ ],
+ "theme": {
+  "walls": [
+   [
+    0.96,
+    0.95,
+    0.92
+   ],
+   [
+    0.94,
+    0.78,
+    0.25
+   ],
+   [
+    0.18,
+    0.65,
+    0.68
+   ],
+   [
+    0.88,
+    0.42,
+    0.28
+   ],
+   [
+    0.92,
+    0.82,
+    0.35
+   ],
+   [
+    0.75,
+    0.22,
+    0.22
+   ]
+  ],
+  "roofs": [
+   [
+    0.72,
+    0.38,
+    0.24
+   ],
+   [
+    0.65,
+    0.32,
+    0.2
+   ],
+   [
+    0.55,
+    0.58,
+    0.62
+   ],
+   [
+    0.78,
+    0.45,
+    0.28
+   ]
+  ],
+  "leaves": [
+   [
+    0.18,
+    0.52,
+    0.22
+   ],
+   [
+    0.22,
+    0.58,
+    0.26
+   ],
+   [
+    0.15,
+    0.44,
+    0.18
+   ]
+  ],
+  "grass_a": [
+   0.34,
+   0.55,
+   0.24
+  ],
+  "grass_b": [
+   0.4,
+   0.58,
+   0.26
+  ],
+  "sand": [
+   0.78,
+   0.72,
+   0.58
+  ],
+  "sea": [
+   0.14,
+   0.46,
+   0.44
+  ],
+  "palm_trunk": [
+   0.52,
+   0.42,
+   0.32
+  ],
+  "palm_leaf": [
+   0.22,
+   0.55,
+   0.2
+  ],
+  "palm_share": 0.35,
+  "house_share": 0.7,
+  "office_share": 0.0,
+  "lowest_storeys": 1,
+  "highest_storeys": 2,
+  "chimneys": false,
+  "bunting_every": 65,
+  "street_gap": 0.8,
+  "gap_low": 0.8,
+  "gap_high": 2.5,
+  "trees_on_pavement": true,
+  "width_low": 9,
+  "width_high": 16
+ }
+}

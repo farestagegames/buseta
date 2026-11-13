@@ -93,6 +93,14 @@
    "cost": 1200,
    "level": 6,
    "description": "A demanding mountain loop with steep climbs, narrow ridge crests and hairpin descents."
+  },
+  {
+   "id": "remanso_r0",
+   "name": "Route R0: Paseo Fluvial",
+   "file": "routes/remanso_r0.json",
+   "cost": 0,
+   "level": 8,
+   "description": "A scenic starter drive along the river promenade and over the grand river bridge of Puerto Remanso."
   }
  ],
  "buses": [
