@@ -140,19 +140,19 @@ func test_starter_bays_fit_between_the_junctions() -> void:
 				assert_gt(absf(float(car["along"]) - float(stop["along"])), 21.0, "remanso_r0: %s" % stop["name"])
 
 
-func test_puerto_remanso_opens_at_driver_level_eight() -> void:
+func test_puerto_remanso_opens_at_driver_level_ten() -> void:
 	var item := catalog.find(Catalog.ROUTES, "remanso_r0")
-	assert_eq(int(item["level"]), 8)
+	assert_eq(int(item["level"]), 10)
 	assert_eq(int(item["cost"]), 0)
 	var profile := PlayerProfile.new()
 	profile.grant_free_items(catalog)
 	assert_false(profile.can_play_route("remanso_r0", catalog), "Locked for a level 1 driver")
-	profile.xp = DriverLevel.xp_for_level(6)
-	assert_false(profile.can_play_route("remanso_r0", catalog), "Still locked at level 6")
-	profile.xp = DriverLevel.xp_for_level(8) - 1
-	assert_false(profile.can_play_route("remanso_r0", catalog))
 	profile.xp = DriverLevel.xp_for_level(8)
-	assert_true(profile.can_play_route("remanso_r0", catalog), "Open at level 8")
+	assert_false(profile.can_play_route("remanso_r0", catalog), "Still locked at level 8")
+	profile.xp = DriverLevel.xp_for_level(10) - 1
+	assert_false(profile.can_play_route("remanso_r0", catalog))
+	profile.xp = DriverLevel.xp_for_level(10)
+	assert_true(profile.can_play_route("remanso_r0", catalog), "Open at level 10")
 
 
 func test_routes_tab_groups_routes_including_puerto_remanso() -> void:
@@ -162,7 +162,7 @@ func test_routes_tab_groups_routes_including_puerto_remanso() -> void:
 	assert_eq(towns["remanso_r0"], "Puerto Remanso")
 
 
-func test_town_info_list_includes_puerto_remanso_with_level_eight() -> void:
+func test_town_info_list_includes_puerto_remanso_with_level_ten() -> void:
 	var towns := MainMenu.town_info_list(catalog.items(Catalog.ROUTES))
 	var remanso_info: Dictionary = {}
 	for t in towns:
@@ -170,7 +170,7 @@ func test_town_info_list_includes_puerto_remanso_with_level_eight() -> void:
 			remanso_info = t
 			break
 	assert_false(remanso_info.is_empty(), "Puerto Remanso in town list")
-	assert_eq(int(remanso_info["level"]), 8)
+	assert_eq(int(remanso_info["level"]), 10)
 
 
 func test_remanso_route_goals_score() -> void:

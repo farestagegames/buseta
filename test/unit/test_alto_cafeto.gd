@@ -226,13 +226,13 @@ func test_mountain_routes_c1_and_c2_load_with_goals_and_stops() -> void:
 func test_alto_cafeto_unlock_chain() -> void:
 	var profile := PlayerProfile.new()
 	profile.grant_free_items(catalog)
-	# Below level 6: locked
+	# Below level 5: locked
 	assert_false(profile.can_play_route("cafeto_c0", catalog))
 	assert_false(profile.can_play_route("cafeto_c1", catalog))
 	assert_false(profile.can_play_route("cafeto_c2", catalog))
-	# Reach level 6
-	profile.xp = DriverLevel.xp_for_level(6)
-	assert_true(profile.can_play_route("cafeto_c0", catalog), "C0 playable at level 6")
+	# Reach level 5
+	profile.xp = DriverLevel.xp_for_level(5)
+	assert_true(profile.can_play_route("cafeto_c0", catalog), "C0 playable at level 5")
 	assert_false(profile.can_play_route("cafeto_c1", catalog), "C1 locked until C0 complete")
 	assert_false(profile.can_play_route("cafeto_c2", catalog), "C2 locked until bought")
 	# Complete C0
@@ -245,7 +245,7 @@ func test_alto_cafeto_unlock_chain() -> void:
 	# Buy C2 for 1,200 coins
 	var c2_item := catalog.find(Catalog.ROUTES, "cafeto_c2")
 	assert_eq(int(c2_item["cost"]), 1200)
-	assert_eq(int(c2_item["level"]), 6)
+	assert_eq(int(c2_item["level"]), 5)
 	profile.coins = 1199
 	assert_false(profile.buy(Catalog.ROUTES, c2_item))
 	profile.coins = 1200
@@ -281,17 +281,17 @@ func test_mountain_routes_goals_score() -> void:
 	assert_eq(RouteGoals.stars_for(c2_data["goals"], c2_bad), 0)
 
 
-func test_alto_cafeto_opens_at_driver_level_six() -> void:
+func test_alto_cafeto_opens_at_driver_level_five() -> void:
 	var item := catalog.find(Catalog.ROUTES, "cafeto_c0")
-	assert_eq(int(item["level"]), 6)
+	assert_eq(int(item["level"]), 5)
 	assert_eq(int(item["cost"]), 0)
 	var profile := PlayerProfile.new()
 	profile.grant_free_items(catalog)
 	assert_false(profile.can_play_route("cafeto_c0", catalog), "Locked for a new driver")
-	profile.xp = DriverLevel.xp_for_level(6) - 1
+	profile.xp = DriverLevel.xp_for_level(5) - 1
 	assert_false(profile.can_play_route("cafeto_c0", catalog))
-	profile.xp = DriverLevel.xp_for_level(6)
-	assert_true(profile.can_play_route("cafeto_c0", catalog), "Open at level 6")
+	profile.xp = DriverLevel.xp_for_level(5)
+	assert_true(profile.can_play_route("cafeto_c0", catalog), "Open at level 5")
 
 
 func test_a_locked_town_route_falls_back_when_chosen() -> void:

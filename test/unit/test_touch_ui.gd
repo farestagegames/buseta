@@ -117,12 +117,16 @@ func test_routes_tab_district_filtering_and_lock_badge() -> void:
 	assert_gte(pm_btn.size.y, 48.0, "Buttons at least 48 px high")
 	assert_gte(ac_btn.size.y, 48.0, "Buttons at least 48 px high")
 
-	# Lock badge below level 6
+	# Lock badge below level 5
 	assert_null(pm_btn.find_child("LockBadge", true, false), "Puerto Marisol is not locked")
 	var lock_badge: Label = ac_btn.find_child("LockBadge", true, false)
-	assert_not_null(lock_badge, "Alto Cafeto has lock badge below level 6")
+	assert_not_null(lock_badge, "Alto Cafeto has lock badge below level 5")
 	assert_true(lock_badge.text.contains("🔒"), "Badge shows a lock")
-	assert_true(lock_badge.text.contains("Nivel 6"), "Badge shows Nivel 6 in Spanish")
+	assert_true(lock_badge.text.contains("Nivel 5"), "Badge shows Nivel 5 in Spanish")
+	var remanso_btn: Button = selector.find_child("TownPuertoRemanso", true, false)
+	assert_not_null(remanso_btn, "Puerto Remanso button exists")
+	var remanso_badge: Label = remanso_btn.find_child("LockBadge", true, false)
+	assert_true(remanso_badge != null and remanso_badge.text.contains("Nivel 10"), "Puerto Remanso badge shows its lowest route level, 10")
 
 	# Filtering Puerto Marisol
 	var labels := menu._content.find_children("*", "Label", true, false)
@@ -148,14 +152,14 @@ func test_routes_tab_district_filtering_and_lock_badge() -> void:
 	assert_false(Profile.select(Catalog.ROUTES, "cafeto_c0"))
 	assert_ne(Profile.data.selected[Catalog.ROUTES], "cafeto_c0")
 
-	# Reach level 6: badge disappears
-	Profile.data.xp = DriverLevel.xp_for_level(6)
+	# Reach level 5: badge disappears
+	Profile.data.xp = DriverLevel.xp_for_level(5)
 	menu.show_tab(1)
 	await wait_frames(2)
 	selector = menu.find_child("TownSelector", true, false)
 	ac_btn = selector.find_child("TownAltoCafeto", true, false)
-	assert_null(ac_btn.find_child("LockBadge", true, false), "Badge gone at level 6")
-	assert_true(Profile.data.can_play_route("cafeto_c0", Profile.catalog), "Playable at level 6")
+	assert_null(ac_btn.find_child("LockBadge", true, false), "Badge gone at level 5")
+	assert_true(Profile.data.can_play_route("cafeto_c0", Profile.catalog), "Playable at level 5")
 
 	GameSettings.language = was_lang
 

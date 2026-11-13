@@ -74,7 +74,7 @@
    "name": "Route C0: Vuelta al Pueblo",
    "file": "routes/cafeto_c0.json",
    "cost": 0,
-   "level": 6,
+   "level": 5,
    "description": "Up through the coffee groves to the Plaza and back, in the hill town of Alto Cafeto."
   },
   {
@@ -83,7 +83,7 @@
    "file": "routes/cafeto_c1.json",
    "cost": 0,
    "requires": "cafeto_c0",
-   "level": 6,
+   "level": 5,
    "description": "Climb through the market and up the ridge road to the town's highest panoramic viewpoint."
   },
   {
@@ -91,7 +91,7 @@
    "name": "Route C2: Circuito Las Lomas",
    "file": "routes/cafeto_c2.json",
    "cost": 1200,
-   "level": 6,
+   "level": 5,
    "description": "A demanding mountain loop with steep climbs, narrow ridge crests and hairpin descents."
   },
   {
@@ -99,7 +99,7 @@
    "name": "Route R0: Paseo Fluvial",
    "file": "routes/remanso_r0.json",
    "cost": 0,
-   "level": 8,
+   "level": 10,
    "description": "A scenic starter drive along the river promenade and over the grand river bridge of Puerto Remanso."
   }
  ],
