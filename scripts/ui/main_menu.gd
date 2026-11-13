@@ -842,7 +842,8 @@ func _career_tab() -> Control:
 			side.add_child(_text("Earned", 20, GOOD))
 		else:
 			var target := int(entry["target"])
-			side.add_child(_text(tr("%d / %d") % [mini(AchievementList.progress(Profile.data, entry), target), target], 20, MUTED))
+			var done := mini(AchievementList.progress(Profile.data, entry), target)
+			side.add_child(_text(achievement_progress_text(str(entry.get("stat", "")), done, target), 20, MUTED))
 			if AchievementList.reward_of(entry) > 0:
 				side.add_child(_text(Country.pack.money(AchievementList.reward_of(entry)), 20, ACCENT))
 		line.add_child(side)
@@ -890,3 +891,11 @@ func _wrapped(value: String, font_size: int, colour: Color) -> Label:
 	var label := _text(value, font_size, colour)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return label
+
+
+## "5 / 10", or for the fares stat, which counts coins, the same money the
+## description names: "$552.400 / $1.000.000".
+static func achievement_progress_text(stat: String, done: int, target: int) -> String:
+	if stat == "fares":
+		return "%s / %s" % [Country.pack.money(done), Country.pack.money(target)]
+	return TranslationServer.translate("%d / %d") % [done, target]

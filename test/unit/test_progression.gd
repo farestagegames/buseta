@@ -285,3 +285,8 @@ func test_old_star_save_is_migrated_to_three_stars() -> void:
 	assert_eq(int(old.stats["best_stars"]), 3)
 	assert_eq(int(old.best_stars.get("route_01", -1)), 2)
 	assert_eq(int(old.best_stars.get("route_02", -1)), 1)
+
+
+func test_fare_achievement_progress_reads_as_money_like_its_description() -> void:
+	assert_eq(MainMenu.achievement_progress_text("fares", 5524, 10000), "$552.400 / $1.000.000")
+	assert_eq(MainMenu.achievement_progress_text("shifts", 3, 10), "3 / 10")
