@@ -95,12 +95,28 @@
    "description": "A demanding mountain loop with steep climbs, narrow ridge crests and hairpin descents."
   },
   {
+   "id": "cafeto_libre",
+   "name": "Ruta Libre: Endless Cafeto",
+   "file": "routes/cafeto_libre.json",
+   "cost": 0,
+   "level": 5,
+   "description": "No end and no depot: roam the hills of Alto Cafeto picking up whoever flags you down, for as long as your passengers stay happy."
+  },
+  {
    "id": "remanso_r0",
    "name": "Route R0: Paseo Fluvial",
    "file": "routes/remanso_r0.json",
    "cost": 0,
    "level": 10,
    "description": "A scenic starter drive along the river promenade and over the grand river bridge of Puerto Remanso."
+  },
+  {
+   "id": "remanso_libre",
+   "name": "Ruta Libre: Endless Remanso",
+   "file": "routes/remanso_libre.json",
+   "cost": 0,
+   "level": 10,
+   "description": "No end and no depot: roam the river port of Puerto Remanso picking up whoever flags you down, for as long as your passengers stay happy."
   }
  ],
  "buses": [

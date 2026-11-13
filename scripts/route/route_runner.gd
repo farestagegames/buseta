@@ -276,15 +276,41 @@ func _add_stop(entry: Dictionary, network: RoadNetwork) -> void:
 	stop.position = placed["position"]
 	stop.heading = placed["heading"]
 	var previous := stops[stops.size() - 1].route_distance if not stops.is_empty() else 0.0
-	stop.route_distance = _distance_along_after(stop.position, previous)
+	stop.route_distance = _distance_along_after(stop.position, previous, stop.forward())
 	stops.append(stop)
 
 
-func _distance_along_after(point: Vector2, after: float) -> float:
+## Where a point falls along the route, past `after`. A route that drives one
+## street both ways passes the point twice: `facing` picks the pass going the
+## stop's way, and with none the nearest pass wins.
+func _distance_along_after(point: Vector2, after: float, facing: Vector2 = Vector2.ZERO) -> float:
+	if facing != Vector2.ZERO:
+		var found := _distance_along_after_facing(point, after, facing)
+		if found >= 0.0:
+			return found
 	var best := INF
 	var best_distance := 0.0
 	for i in polyline.size() - 1:
 		if distances[i + 1] < after:
+			continue
+		var closest := Geometry2D.get_closest_point_to_segment(point, polyline[i], polyline[i + 1])
+		var gap := point.distance_to(closest)
+		if gap < best - 0.001:
+			best = gap
+			best_distance = distances[i] + closest.distance_to(polyline[i])
+	return best_distance
+
+
+## As above, only on stretches heading within 90 degrees of `facing` and within
+## 12 m of the point; -1 when there are none.
+func _distance_along_after_facing(point: Vector2, after: float, facing: Vector2) -> float:
+	var best := 12.0
+	var best_distance := -1.0
+	for i in polyline.size() - 1:
+		if distances[i + 1] < after:
+			continue
+		var along := polyline[i + 1] - polyline[i]
+		if along.dot(facing) <= 0.0:
 			continue
 		var closest := Geometry2D.get_closest_point_to_segment(point, polyline[i], polyline[i + 1])
 		var gap := point.distance_to(closest)

@@ -88,3 +88,26 @@ func test_endless_passengers_ride_only_a_few_stops() -> void:
 
 func test_the_endless_route_validates() -> void:
 	assert_eq(Country.pack.validate(), [] as Array[String])
+
+
+func test_every_town_has_an_endless_route_that_plans_and_builds() -> void:
+	for id: String in ["libre", "cafeto_libre", "remanso_libre"]:
+		var item := Profile.catalog.find(Catalog.ROUTES, id)
+		assert_false(item.is_empty(), id)
+		var data := MapLoader.read_json(item["file"])
+		var town_map := MapLoader.read_map_of(data)
+		var roads := RoadNetwork.from_data(town_map, Country.pack.traffic_side, Country.pack.default_speed_limit())
+		var random := RandomNumberGenerator.new()
+		random.seed = 5
+		assert_eq(EndlessPlanner.walk(roads, "depot_road", 1, 40, random).size(), 40, id)
+		var runner := RouteRunner.build(data, roads, 5, town_map)
+		assert_true(runner.endless, id)
+		assert_gte(runner.stops.size(), 3, "%s opens with people to pick up" % id)
+
+
+func test_each_town_endless_route_opens_with_its_town() -> void:
+	assert_eq(int(Profile.catalog.find(Catalog.ROUTES, "cafeto_libre")["level"]), 5)
+	assert_eq(int(Profile.catalog.find(Catalog.ROUTES, "remanso_libre")["level"]), 10)
+	var towns := MainMenu.route_towns(Profile.catalog.items(Catalog.ROUTES))
+	assert_eq(towns["cafeto_libre"], "Alto Cafeto", "Listed under its own town")
+	assert_eq(towns["remanso_libre"], "Puerto Remanso")

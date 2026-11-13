@@ -20,7 +20,12 @@ static func fill(data: Dictionary, network: RoadNetwork, shift_seed: int, map_da
 	var stops: Array = data["stops"]
 	var filled: Array = []
 	var since_vendor: int = 0
+	# Small towns have short streets: a plan can stand people closer to the corners.
+	var clear_of_junctions := float(plan.get("clear_of_junctions", CLEAR_OF_JUNCTIONS))
+	# Metres driven since the last hail, carried over corners and U-turns.
+	var carry := INF
 	for leg: Dictionary in data["legs"]:
+		var last_on_leg := -1.0
 		var road: Dictionary = network.roads[leg["road"]]
 		var dir := int(leg["dir"])
 		var length: float = road["length"]
@@ -33,10 +38,11 @@ static func fill(data: Dictionary, network: RoadNetwork, shift_seed: int, map_da
 			copy["driven"] = _driven(float(stop["along"]), length, dir)
 			return copy)
 		if road.get("traffic", true):
-			var driven := CLEAR_OF_JUNCTIONS + random.randf_range(0.0, 40.0)
-			while driven < length - CLEAR_OF_JUNCTIONS:
+			var driven := clear_of_junctions + random.randf_range(0.0, 40.0)
+			while driven < length - clear_of_junctions:
 				var along := driven if dir > 0 else length - driven
-				if _is_clear(driven, taken) and _is_clear_of_street_things(along, leg["road"], dir, map_data):
+				var gap := carry + driven if last_on_leg < 0.0 else driven - last_on_leg
+				if gap >= CLEAR_OF_STOPS and _is_clear(driven, taken) and _is_clear_of_street_things(along, leg["road"], dir, map_data):
 					since_vendor += 1
 					var hail := {
 						"name": road.get("name", road["id"]), "road": leg["road"], "along": along, "dir": dir, "driven": driven,
@@ -47,7 +53,9 @@ static func fill(data: Dictionary, network: RoadNetwork, shift_seed: int, map_da
 						since_vendor = 0
 					entries.append(hail)
 					taken.append(driven)
+					last_on_leg = driven
 				driven += random.randf_range(float(spacing[0]), float(spacing[1]))
+		carry = length - last_on_leg if last_on_leg >= 0.0 else carry + length
 		entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["driven"]) < float(b["driven"]))
 		filled.append_array(entries)
 	if finish:

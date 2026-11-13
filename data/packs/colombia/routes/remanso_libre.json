@@ -1,0 +1,30 @@
+{
+ "name": "Ruta Libre del Río",
+ "map": "maps/puerto_remanso.json",
+ "service": "endless",
+ "start": {
+  "road": "depot_road",
+  "along": 25,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {
+   "road": "depot_road",
+   "dir": 1
+  }
+ ],
+ "hail": {
+  "spacing": [
+   90,
+   150
+  ],
+  "people": [
+   1,
+   3
+  ],
+  "vendor_every": 4,
+  "clear_of_junctions": 24
+ },
+ "stops": []
+}
