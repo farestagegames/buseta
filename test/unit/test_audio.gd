@@ -228,6 +228,15 @@ func test_the_colombian_motorbike_pass_is_rare_and_quiet() -> void:
 	assert_lte(float(layer.get("volume_db", 0.0)), -15.0, "Quiet enough not to read as a plane")
 
 
+func test_the_water_stays_under_the_street() -> void:
+	var sea := _colombia_layer("sea")
+	assert_lte(float(sea["volume_db"]), -15.0, "The sea no longer drowns the street")
+	var remanso: Dictionary = MapLoader.read_json("res://data/packs/colombia/maps/puerto_remanso.json")
+	var river: Dictionary = remanso["ambience"]["sea"]
+	assert_lt(float(river["volume_db"]), float(sea["volume_db"]), "A river is calmer than the sea")
+	assert_lt(float(river["far"]), float(sea["far"]), "and carries less far")
+
+
 func test_the_motorbike_scheduler_keeps_its_minimum_gap_over_ten_minutes() -> void:
 	var layer := _colombia_layer("motorbike")
 	var min_gap := float(layer["every"][0])

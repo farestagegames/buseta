@@ -4,6 +4,10 @@
  "ambience": {
   "city": {
    "volume_db": -14
+  },
+  "sea": {
+   "volume_db": -22,
+   "far": 120
   }
  },
  "nodes": [

@@ -194,7 +194,7 @@
       "rule": "sea",
       "near": 25,
       "far": 230,
-      "volume_db": -9,
+      "volume_db": -16,
       "radio_ducks_db": -9
     },
     {
