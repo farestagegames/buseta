@@ -58,6 +58,13 @@ var shift: float = 0.0
 var shift_target: float = 0.0
 var shift_rate: float = 0.0 ## Sideways speed this tick, for drawing it turned.
 var waiting: float = 0.0 ## Seconds stopped behind something it could pass.
+## Seconds stopped while giving way at a junction, so a mutual yield can be
+## broken by the driver who has waited longest.
+var yield_wait: float = 0.0
+## Seconds stopped for any reason. The deadlock breaker moves a car quietly to
+## another lane once this grows too long, unless it is just waiting for the bus
+## or a red light.
+var stuck_time: float = 0.0
 var honked: bool = false
 var honked_twice: bool = false
 var honk_cooldown: float = 0.0

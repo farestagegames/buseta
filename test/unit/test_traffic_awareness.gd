@@ -546,6 +546,41 @@ func test_a_car_kept_waiting_gives_one_short_toot() -> void:
 
 # --- Junctions ---
 
+## Two drivers turning across each other at a crossroads once waited on each
+## other for a long time. The tie-breaker lets the lower-indexed one go first.
+func test_two_left_turners_break_their_mutual_yield() -> void:
+	for side in SIDES:
+		_crossroads(side)
+		var across := -side
+		var northbound := _lane("south", "x")
+		var southbound := _lane("north", "x")
+		var a := _add(northbound, (flow.graph.lanes[northbound] as TrafficLane).length - 40.0, 10.0)
+		var b := _add(southbound, (flow.graph.lanes[southbound] as TrafficLane).length - 40.0, 10.0)
+		a.next_lane = _turn_link(northbound, across)
+		b.next_lane = _turn_link(southbound, across)
+		var entered_a := -1.0
+		var entered_b := -1.0
+		for i in int(14.0 / DT):
+			flow.time = 20.0 # Green for the north-south approaches.
+			_tick()
+			if (flow.graph.lanes[a.lane] as TrafficLane).is_link and entered_a < 0.0:
+				entered_a = i * DT
+			if (flow.graph.lanes[b.lane] as TrafficLane).is_link and entered_b < 0.0:
+				entered_b = i * DT
+		assert_gt(entered_a, 0.0, "Side %d: northbound left-turner never entered" % side)
+		assert_gt(entered_b, 0.0, "Side %d: southbound left-turner never entered" % side)
+		assert_lt(entered_a, 12.0, "Side %d: northbound left-turner took %.1f s" % [side, entered_a])
+		assert_lt(entered_b, 12.0, "Side %d: southbound left-turner took %.1f s" % [side, entered_b])
+
+
+## The link out of a lane whose turn matches across, or -1 when there is none.
+func _turn_link(lane_index: int, across: int) -> int:
+	for link_index: int in (flow.graph.lanes[lane_index] as TrafficLane).next:
+		if (flow.graph.lanes[link_index] as TrafficLane).turn == across:
+			return link_index
+	return -1
+
+
 func test_cars_wait_at_the_line_while_the_bus_blocks_the_junction() -> void:
 	for side in SIDES:
 		_crossroads(side)

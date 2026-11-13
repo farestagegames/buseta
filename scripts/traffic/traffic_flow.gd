@@ -69,6 +69,20 @@ const MOTO_HORN_SHARE := 0.5
 const CUT_IN_GAP := 6.0
 const CUT_IN_SPEED := 4.0
 const PROP_REFRESH := 0.25
+## A driver giving way at a junction this long grows impatient and takes the
+## turn once the way is clear of anyone actually moving.
+const YIELD_TIE := 4.0
+## Oncoming traffic at least this fast is clearly moving, so an impatient driver
+## still gives way to it.
+const YIELD_MOVING := 4.0
+## A car stopped this long is assumed stuck and quietly moved to a free spot on
+## another lane, unless it is waiting for the bus or a red light.
+const STUCK_SECONDS := 30.0
+## Closer than this to the bus, a stopped car counts as queued behind it and is
+## left alone.
+const STUCK_FAR := 60.0
+## No other vehicle may be within this many metres of the spot it is moved to.
+const STUCK_CLEAR := 30.0
 ## Over the centre line by more than this, a vehicle is checked by oncoming traffic.
 const INTRUDE_REACH := 0.3
 const ONCOMING_SWEEP_SECONDS := 1.0
@@ -144,6 +158,7 @@ var _blocker: TrafficBox = null
 var _blocker_span: Vector2 = Vector2.ZERO ## For a prop blocker: its span across the lane.
 var _blocker_end: float = 0.0 ## For a prop blocker: its far end, in lane metres.
 var _cap: float = INF
+var _yielding := false ## The agent being updated is giving way at a junction.
 
 
 func _init(lane_graph: LaneGraph, bus_spec: BusSpec, random_seed: int = 4242) -> void:
@@ -239,6 +254,7 @@ func step(dt: float) -> void:
 	_prepare(dt)
 	for i in agents.size():
 		_update_agent(i, dt)
+	_break_deadlocks()
 
 
 func _prepare(dt: float) -> void:
@@ -307,8 +323,9 @@ func _update_agent(index: int, dt: float) -> void:
 	_lead = 0.0
 	_blocker = null
 	_cap = INF
+	_yielding = false
 	_follow_traffic(index, agent, lane)
-	var line := _gap_to_stop(agent, lane)
+	var line := _gap_to_stop(agent, lane, index)
 	if line < _gap:
 		_gap = line
 		_lead = 0.0
@@ -338,6 +355,14 @@ func _update_agent(index: int, dt: float) -> void:
 			free = minf(free, TrafficAgent.approach_speed(pass_speed, to_bus))
 	agent.drive(minf(free * speed_share, _cap), _gap, _lead, dt, gap_scale)
 	agent.step_shift(dt)
+	if agent.speed < TrafficSense.STILL_SPEED:
+		agent.stuck_time += dt
+	else:
+		agent.stuck_time = 0.0
+	if _yielding and agent.speed < TrafficSense.STILL_SPEED:
+		agent.yield_wait += dt
+	else:
+		agent.yield_wait = 0.0
 	if agent.distance >= lane.length:
 		agent.distance -= lane.length
 		agent.lane = agent.next_lane
@@ -347,6 +372,79 @@ func _update_agent(index: int, dt: float) -> void:
 		if entered.is_link:
 			agent.shift_target = 0.0
 	_store(index)
+
+
+## The deadlock breaker: a car that has sat still for too long, far from the bus
+## and not at a red light, is quietly moved to a free spot on another lane so a
+## jam can never leave traffic stopped for good. Rare and off the player's view.
+func _break_deadlocks() -> void:
+	for i in agents.size():
+		var agent := agents[i]
+		if agent.stuck_time < STUCK_SECONDS:
+			continue
+		if bus_active and positions[i].distance_to(_bus_box.centre) < STUCK_FAR:
+			continue
+		if _at_red_line(i):
+			continue
+		if _relocate(i):
+			agent.stuck_time = 0.0
+
+
+## True when the car is stopped at a red light (a temporary, legitimate stop).
+func _at_red_line(index: int) -> bool:
+	var agent := agents[index]
+	var lane: TrafficLane = graph.lanes[agent.lane]
+	if lane.is_link or not plans.has(lane.end_node):
+		return false
+	return light_at(lane.end_node, lane.group) == TrafficLightPlan.Light.RED \
+		and lane.length - agent.distance < LOOK_AHEAD
+
+
+## Moves the car to a clear stretch of a different road lane. True on success.
+func _relocate(index: int) -> bool:
+	var agent := agents[index]
+	var candidates: Array[int] = []
+	for lane_index in graph.lanes.size():
+		var lane: TrafficLane = graph.lanes[lane_index]
+		if not lane.is_link and lane_index != agent.lane and lane.length > STUCK_CLEAR * 2.0:
+			candidates.append(lane_index)
+	if candidates.is_empty():
+		return false
+	# Seeded shuffle so the choice is stable run to run, without the global RNG.
+	for k in range(candidates.size() - 1, 0, -1):
+		var j := _random.randi_range(0, k)
+		var tmp: int = candidates[k]
+		candidates[k] = candidates[j]
+		candidates[j] = tmp
+	var bus_spot := _bus_box.centre if bus_active else Vector2(INF, INF)
+	for lane_index in candidates:
+		var lane: TrafficLane = graph.lanes[lane_index]
+		for _try in 4:
+			var distance := _random.randf_range(STUCK_CLEAR, lane.length - STUCK_CLEAR)
+			var spot := lane.point_at(distance)
+			if spot.distance_to(bus_spot) < STUCK_FAR:
+				continue
+			var clear := true
+			for other_index in agents.size():
+				if other_index != index and positions[other_index].distance_to(spot) < STUCK_CLEAR:
+					clear = false
+					break
+			if not clear:
+				continue
+			agent.lane = lane_index
+			agent.distance = distance
+			agent.speed = 0.0
+			agent.shift = 0.0
+			agent.shift_target = 0.0
+			agent.nudge = Vector2.ZERO
+			agent.nudge_velocity = Vector2.ZERO
+			agent.next_lane = -1
+			agent.stunned = 0.0
+			agent.yield_wait = 0.0
+			agent.passing_bus = false
+			_store(index)
+			return true
+	return false
 
 
 ## Metres to the stretch beside the bus where passing traffic goes slowly, as a
@@ -426,7 +524,7 @@ func _broken_down(other_index: int) -> TrafficBox:
 	return _leader_box
 
 
-func _gap_to_stop(agent: TrafficAgent, lane: TrafficLane) -> float:
+func _gap_to_stop(agent: TrafficAgent, lane: TrafficLane, index: int) -> float:
 	if lane.is_link:
 		return INF
 	var remaining := lane.length - agent.distance
@@ -439,9 +537,11 @@ func _gap_to_stop(agent: TrafficAgent, lane: TrafficLane) -> float:
 			return remaining
 		if light == TrafficLightPlan.Light.AMBER and remaining > agent.speed * agent.speed / (2.0 * AMBER_BRAKE):
 			return remaining
-		if _must_yield_turning(agent, lane, remaining):
+		if _must_yield_turning(agent, lane, remaining, index):
+			_yielding = true
 			return remaining
 	elif node["kind"] == "roundabout" and remaining < YIELD_DISTANCE and _ring_is_busy(lane):
+		_yielding = true
 		return remaining
 	if remaining < JUNCTION_LOOK and (_bus_in_junction(agent, node) or _passer_coming(agent)):
 		return remaining
@@ -468,13 +568,16 @@ func _passer_coming(agent: TrafficAgent) -> bool:
 	return false
 
 
-## Turns across the oncoming lane give way to traffic going straight on, and
-## to a bus coming the other way.
-func _must_yield_turning(agent: TrafficAgent, lane: TrafficLane, remaining: float) -> bool:
+## Turns across the oncoming lane give way to traffic coming the other way, and
+## to a bus coming the other way. Once a driver has waited a while with nobody
+## moving, they take the turn: they still give way to anyone clearly moving, and
+## in a left-versus-left standoff the lower-indexed driver goes first.
+func _must_yield_turning(agent: TrafficAgent, lane: TrafficLane, remaining: float, index: int) -> bool:
 	var across_traffic := -graph.network.traffic_side
 	if agent.next_lane < 0 or (graph.lanes[agent.next_lane] as TrafficLane).turn != across_traffic or remaining > YIELD_DISTANCE:
 		return false
 	var heading := lane.forward_at(lane.length - 0.1)
+	var impatient := agent.yield_wait > YIELD_TIE
 	for lane_index: int in graph.into_node[lane.end_node]:
 		var other_lane: TrafficLane = graph.lanes[lane_index]
 		if heading.dot(other_lane.forward_at(other_lane.length - 0.1)) > -0.7:
@@ -482,8 +585,20 @@ func _must_yield_turning(agent: TrafficAgent, lane: TrafficLane, remaining: floa
 		var other_index := _lane_head[lane_index]
 		while other_index >= 0:
 			var other: TrafficAgent = agents[other_index]
-			if other_lane.length - other.distance < ONCOMING_CLEARANCE and other.speed > 1.0:
-				return true
+			if other_lane.length - other.distance < ONCOMING_CLEARANCE:
+				if other.speed > YIELD_MOVING:
+					return true
+				if not impatient:
+					if other.speed > 1.0:
+						return true
+				else:
+					# Impatient: only a creeping straight-on driver still blocks the
+					# turn; a fellow left-turner gives way by index, so one of the
+					# two goes and the standoff clears.
+					if other.speed > 1.0 and not _turning_across(other, across_traffic):
+						return true
+					if _turning_across(other, across_traffic) and other_index < index:
+						return true
 			other_index = _lane_next[other_index]
 	if bus_active and bus_speed > 1.0 and _bus_box.forward.dot(heading) < -0.7:
 		var middle: Vector2 = graph.network.nodes[lane.end_node]["position"]
@@ -491,6 +606,11 @@ func _must_yield_turning(agent: TrafficAgent, lane: TrafficLane, remaining: floa
 		var ahead := (middle - nose).dot(_bus_box.forward)
 		return ahead > 0.0 and ahead < ONCOMING_CLEARANCE + float(graph.network.nodes[lane.end_node]["radius"])
 	return false
+
+
+## True when this vehicle's chosen turn crosses the oncoming lane.
+func _turning_across(agent: TrafficAgent, across_traffic: int) -> bool:
+	return agent.next_lane >= 0 and (graph.lanes[agent.next_lane] as TrafficLane).turn == across_traffic
 
 
 func _ring_is_busy(lane: TrafficLane) -> bool:
