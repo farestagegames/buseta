@@ -27,6 +27,8 @@ var _preview_note: Label
 var _preview_bus: Dictionary = {}
 var _preview_livery: Dictionary = {}
 var _preview_decoration: Dictionary = {}
+var _drivers_preview: DriverPreview
+var _drivers_note: Label
 var _frame: MarginContainer
 var _horn_preview: AudioStreamPlayer
 var _horn_preview_left: float = 0.0
@@ -685,11 +687,45 @@ func _drivers_tab() -> Control:
 	list.size_flags_stretch_ratio = 2.0
 	page.add_child(list)
 	for item: Dictionary in Profile.catalog.items(Catalog.DRIVERS):
-		list.get_child(0).add_child(_shop_row(Catalog.DRIVERS, item, item["bio"]))
-	var preview := DriverPreview.new()
-	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.add_child(preview)
+		list.get_child(0).add_child(_driver_row(item))
+	var side := VBoxContainer.new()
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(side)
+	_drivers_preview = DriverPreview.new()
+	_drivers_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	side.add_child(_drivers_preview)
+	_drivers_note = _wrapped("", 20, MUTED)
+	_drivers_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	side.add_child(_drivers_note)
+	show_driver_note(Profile.selected_item(Catalog.DRIVERS))
 	return page
+
+
+## Tapping a driver row shows them in the preview, owned or not, without buying.
+func _driver_row(item: Dictionary) -> Control:
+	var row := _shop_row(Catalog.DRIVERS, item, item["bio"])
+	TouchScroll.on_tap(row, try_on_driver.bind(item))
+	return row
+
+
+## Shows a driver on the stand and names them, without spending coins or selecting.
+func try_on_driver(item: Dictionary) -> void:
+	_drivers_preview.show_look(DriverLook.from_item(item))
+	show_driver_note(item)
+
+
+## Names the driver shown, with the price or level while they are not owned.
+func show_driver_note(item: Dictionary) -> void:
+	if Profile.data.owns(Catalog.DRIVERS, item["id"]):
+		_drivers_note.text = item["name"]
+		return
+	var level := DriverLevel.level_for(Profile.data.xp)
+	var detail := ""
+	if int(item.get("level", 1)) > level:
+		detail = tr("Level %d") % int(item["level"])
+	else:
+		detail = Country.pack.money(int(item.get("cost", 0)))
+	_drivers_note.text = tr("%s · %s") % [item["name"], detail]
 
 
 func _shop_row(kind: String, item: Dictionary, description: String) -> Control:

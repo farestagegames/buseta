@@ -208,6 +208,27 @@ func test_scrolling_over_a_garage_row_does_not_try_it_on() -> void:
 	assert_ne(menu._preview_note.text, shown, "A tap does")
 
 
+func test_scrolling_over_a_driver_row_does_not_try_it_on() -> void:
+	var list := await _open(MainMenu.DRIVERS_TAB)
+	var shown := menu._drivers_note.text
+	var rows := list.get_child(0)
+	var second: Control = rows.get_child(1)
+	var point := second.get_global_rect().position + Vector2(30.0, 20.0)
+	await _swipe(point, point + Vector2(0.0, -200.0))
+	assert_gt(list.scroll_vertical, 100)
+	assert_eq(menu._drivers_note.text, shown, "Scrolling past a driver does not show them")
+	assert_eq(Profile.data.coins, 100000, "A drag never buys")
+	await _settle(list)
+	list.scroll_vertical = 0
+	await wait_physics_frames(2)
+	second = rows.get_child(1)
+	var chosen: String = Profile.data.selected[Catalog.DRIVERS]
+	await _tap(second.get_global_rect().position + Vector2(30.0, 20.0))
+	assert_ne(menu._drivers_note.text, shown, "A tap shows the driver tapped")
+	assert_eq(Profile.data.coins, 100000, "A preview never spends")
+	assert_eq(Profile.data.selected[Catalog.DRIVERS], chosen, "A preview never selects")
+
+
 func test_buying_keeps_the_list_where_it_was() -> void:
 	var list := await _open(GARAGE_TAB)
 	list.scroll_vertical = 600

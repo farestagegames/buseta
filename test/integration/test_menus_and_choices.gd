@@ -128,6 +128,45 @@ func test_drivers_tab_lists_everyone() -> void:
 	assert_eq(rows.get_child_count(), Profile.catalog.items(Catalog.DRIVERS).size())
 
 
+func test_drivers_tab_tries_a_locked_driver_without_buying_it() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(MainMenu.DRIVERS_TAB)
+	await wait_frames(2)
+	var item := Profile.catalog.find(Catalog.DRIVERS, "fanny_mosquera")
+	menu.try_on_driver(item)
+	await wait_frames(1)
+	assert_eq(menu._drivers_preview.shown_look().driver_name, "Fanny Mosquera")
+	assert_eq(menu._drivers_note.text, "%s · %s" % [item["name"], Country.pack.money(int(item["cost"]))])
+	assert_false(Profile.data.owns(Catalog.DRIVERS, "fanny_mosquera"))
+	assert_ne(Profile.data.selected[Catalog.DRIVERS], "fanny_mosquera")
+	assert_eq(Profile.data.coins, 0, "Trying a driver never spends coins")
+
+
+func test_drivers_tab_buy_button_still_buys() -> void:
+	Profile.data.coins = 1000
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(MainMenu.DRIVERS_TAB)
+	await wait_frames(2)
+	var item := Profile.catalog.find(Catalog.DRIVERS, "fanny_mosquera")
+	menu._on_buy(Catalog.DRIVERS, "fanny_mosquera")
+	assert_eq(Profile.data.selected[Catalog.DRIVERS], "fanny_mosquera")
+	assert_eq(Profile.data.coins, 1000 - int(item["cost"]))
+
+
+func test_leaving_the_drivers_tab_returns_to_the_selected_driver() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(MainMenu.DRIVERS_TAB)
+	await wait_frames(2)
+	menu.try_on_driver(Profile.catalog.find(Catalog.DRIVERS, "fanny_mosquera"))
+	assert_eq(menu._drivers_preview.shown_look().driver_name, "Fanny Mosquera")
+	menu.show_tab(MainMenu.DRIVERS_TAB)
+	await wait_frames(2)
+	assert_eq(menu._drivers_preview.shown_look().driver_name, "Wilmer Pertuz")
+
+
 func test_home_shows_the_chosen_driver() -> void:
 	Profile.data.coins = 5000
 	Profile.buy(Catalog.DRIVERS, "yolima_uriana")

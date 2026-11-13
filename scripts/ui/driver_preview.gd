@@ -3,6 +3,7 @@ extends PreviewStage
 ## A slowly turning head and shoulders of one driver.
 
 var _figure: MeshInstance3D
+var _look: DriverLook
 
 
 func _ready() -> void:
@@ -14,7 +15,13 @@ func _ready() -> void:
 
 
 func show_look(look: DriverLook) -> void:
+	_look = look
 	_figure.mesh = DriverFigure.build_bust(look)
+
+
+## The driver on the stand now, so the menu can name them and tests can check.
+func shown_look() -> DriverLook:
+	return _look
 
 
 ## Only ever turns a little, as nobody needs to see the back of a head.

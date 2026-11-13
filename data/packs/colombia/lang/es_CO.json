@@ -42,6 +42,7 @@
  "%s: %s more, level %d": "%s: faltan %s, nivel %d",
  "%s: level %d": "%s: nivel %d",
  "%s: ready": "%s: listo",
+ "%s · %s": "%s · %s",
  "+%d XP": "+%d XP",
  "A fare dodger slipped on without paying": "Se coló uno sin pagar el pasaje",
  "A gentle ride past the roundabout and along the Malecón.": "Un paseo suave por la glorieta y el Malecón.",
