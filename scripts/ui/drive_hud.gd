@@ -12,7 +12,7 @@ const STATION_SECONDS := 2.5
 ## The pause and camera buttons in the top corner.
 const CORNER_BUTTON := 80.0
 const PAUSE_STRIP_WIDTH := 240.0
-## The drive and reverse switch, at the right end of the speed readout.
+## The drive and reverse switch, just above the horn on the right thumb's side.
 const GEAR_SIZE := Vector2(124.0, 72.0)
 
 var wheel: SteeringWheelControl
@@ -82,7 +82,6 @@ func _ready() -> void:
 	gauge = HudGauge.new()
 	_place(gauge, Vector2(0.5, 0.0), Vector2(-190.0, 8.0), Vector2(380.0, 112.0))
 	_root.add_child(gauge)
-	_place(gear_switch, Vector2(0.5, 0.0), Vector2(190.0 + 8.0, 8.0 + (112.0 - GEAR_SIZE.y) / 2.0), GEAR_SIZE)
 
 	_frame_rate = Label.new()
 	_frame_rate.add_theme_font_size_override("font_size", 18)
@@ -268,6 +267,9 @@ func _build_buttons() -> void:
 	horn.released.connect(func() -> void: GameEvents.horn_changed.emit(false))
 	gear_switch = GearSwitch.new()
 	gear_switch.compact = true
+	var horn_left := -EDGE - 150.0 - GAP - 200.0
+	_place(gear_switch, Vector2(1.0, 1.0), Vector2(horn_left + (200.0 - GEAR_SIZE.x) / 2.0,
+		-EDGE - 230.0 - GAP - 96.0 - GAP - GEAR_SIZE.y), GEAR_SIZE)
 	gear_switch.gear_toggled.connect(GameEvents.gear_toggle_requested.emit)
 	_controls.add_child(gear_switch)
 
