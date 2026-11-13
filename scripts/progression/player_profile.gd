@@ -46,6 +46,8 @@ var time_of_day: String = ""
 var difficulty: String = ""
 ## First-time celebrations already shown and rewarded (stable snake_case ids).
 var firsts: Array[String] = []
+## The town (district) picked on the Routes tab, or "" to follow the selected route.
+var town: String = ""
 
 
 
@@ -227,7 +229,7 @@ func to_dict() -> Dictionary:
 		"completed_routes": completed_routes,
 		"last_daily": last_daily, "daily_streak": daily_streak, "settings": settings, "intro_done": intro_done,
 		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day, "difficulty": difficulty,
-		"firsts": firsts,
+		"firsts": firsts, "town": town,
 	}
 
 
@@ -307,6 +309,8 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 		for id: Variant in saved_firsts:
 			if id is String and not profile.firsts.has(id):
 				profile.firsts.append(id)
+	var saved_town: Variant = saved.get("town")
+	profile.town = saved_town if saved_town is String else ""
 	var saved_version := int(_number(saved.get("version"), 0.0))
 	if saved_version < 2:
 		profile.stats["best_stars"] = RouteGoals.migrate_best_stars(int(profile.stats.get("best_stars", 0)))

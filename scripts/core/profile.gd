@@ -113,8 +113,66 @@ func select(kind: String, id: String) -> bool:
 		return false
 	if not data.select(kind, id):
 		return false
+	if kind == Catalog.ROUTES:
+		var item := catalog.find(Catalog.ROUTES, id)
+		var t := town_for_route(item)
+		if t != "":
+			data.town = t
 	save()
 	return true
+
+
+## The town currently chosen on the Routes tab. Defaults to the town of the selected route.
+func chosen_town() -> String:
+	var available := catalog_towns()
+	if data.town != "" and (available.is_empty() or available.has(data.town)):
+		return data.town
+	var default_town := town_for_route(selected_item(Catalog.ROUTES))
+	if default_town != "" and (available.is_empty() or available.has(default_town)):
+		return default_town
+	return available[0] if not available.is_empty() else ""
+
+
+func choose_town(town_name: String) -> void:
+	data.town = town_name
+	save()
+
+
+func catalog_towns() -> Array[String]:
+	var routes := catalog.items(Catalog.ROUTES)
+	var towns := MainMenu.route_towns(routes)
+	var list: Array[String] = []
+	for item: Dictionary in routes:
+		var town_name: String = towns.get(item.get("id", ""), "")
+		if town_name != "" and not list.has(town_name):
+			list.append(town_name)
+	return list
+
+
+func town_for_route(route_item: Dictionary) -> String:
+	if not route_item.has("file"):
+		return ""
+	var route_data := MapLoader.read_json(route_item["file"])
+	var map_path := str(route_data.get("map", ""))
+	if map_path == "":
+		return ""
+	return str(MapLoader.read_json(Country.pack.resolve(map_path)).get("name", ""))
+
+
+func town_lock_level(town_name: String) -> int:
+	var routes := catalog.items(Catalog.ROUTES)
+	var towns_map := MainMenu.route_towns(routes)
+	var min_level := 999999
+	var found := false
+	for item: Dictionary in routes:
+		if towns_map.get(item["id"], "") == town_name:
+			found = true
+			min_level = mini(min_level, int(item.get("level", 1)))
+	return min_level if found and min_level != 999999 else 1
+
+
+func is_town_locked(town_name: String) -> bool:
+	return town_lock_level(town_name) > DriverLevel.level_for(data.xp)
 
 
 func difficulties() -> Array[Difficulty]:

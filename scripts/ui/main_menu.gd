@@ -371,19 +371,90 @@ func _routes_tab() -> Control:
 	var routes := Profile.catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool:
 		return item != Profile.catalog.arcade_route()) # The arcade has its own button on Home.
 	var towns := route_towns(routes)
-	var distinct := {}
-	for town: String in towns.values():
-		distinct[town] = true
-	var headed := distinct.size() > 1
-	var last_town := ""
+	var town_list := town_info_list(routes)
+	var chosen_town := Profile.chosen_town()
+	if town_list.size() > 1:
+		list.get_child(0).add_child(_town_row(town_list, chosen_town))
 	for item: Dictionary in routes:
 		var town: String = towns.get(item["id"], "")
-		if headed and town != last_town:
-			var heading := _text(town, 28, ACCENT)
-			heading.name = "Town%s" % town.replace(" ", "")
-			list.get_child(0).add_child(heading)
-			last_town = town
+		if town_list.size() > 1 and town != chosen_town:
+			continue
 		list.get_child(0).add_child(_shop_row(Catalog.ROUTES, item, item.get("description", "")))
+	return list
+
+
+func _town_row(town_list: Array[Dictionary], chosen_town: String) -> Control:
+	var row := HBoxContainer.new()
+	row.name = "TownSelector"
+	row.add_theme_constant_override("separation", 10)
+	var player_level := DriverLevel.level_for(Profile.data.xp)
+	for town: Dictionary in town_list:
+		var town_name: String = town["name"]
+		var lock_level: int = int(town["level"])
+		var is_locked := lock_level > player_level
+		var button := _button(tr(town_name))
+		button.name = "Town%s" % town_name.replace(" ", "")
+		button.custom_minimum_size = Vector2(0.0, 64.0)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.toggle_mode = true
+		button.button_pressed = (town_name == chosen_town)
+		if is_locked:
+			button.tooltip_text = "🔒 %s" % (tr("Level %d") % lock_level)
+			var badge := _text("🔒 %s" % (tr("Level %d") % lock_level), 16, Color.WHITE)
+			badge.name = "LockBadge"
+			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var back := PanelContainer.new()
+			back.name = "LockBadgePanel"
+			back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var style := StyleBoxFlat.new()
+			style.bg_color = Color(0.12, 0.14, 0.18, 0.92)
+			style.set_corner_radius_all(8)
+			style.content_margin_left = 8.0
+			style.content_margin_right = 8.0
+			style.content_margin_top = 2.0
+			style.content_margin_bottom = 2.0
+			back.add_theme_stylebox_override("panel", style)
+			back.add_child(badge)
+			back.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+			back.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+			back.offset_left = -10.0
+			back.offset_top = 8.0
+			button.add_child(back)
+		button.pressed.connect(func() -> void:
+			var scroll := TouchScroll.find_list(button)
+			if scroll != null and scroll.taps_blocked():
+				button.button_pressed = (town_name == Profile.chosen_town())
+				return
+			if town_name == Profile.chosen_town():
+				button.button_pressed = true
+				return
+			Profile.choose_town(town_name)
+			show_tab(_current_tab)
+		)
+		row.add_child(button)
+	return row
+
+
+## Information about each town present in the routes catalog: name, lowest route level.
+## Preserves the order in which towns first appear in the routes list.
+static func town_info_list(routes: Array) -> Array[Dictionary]:
+	var towns_map := route_towns(routes)
+	var list: Array[Dictionary] = []
+	var index_by_name := {}
+	for item: Dictionary in routes:
+		var town_name: String = towns_map.get(item["id"], "")
+		if town_name == "":
+			continue
+		var route_level: int = int(item.get("level", 1))
+		if not index_by_name.has(town_name):
+			index_by_name[town_name] = list.size()
+			list.append({
+				"name": town_name,
+				"level": route_level,
+			})
+		else:
+			var idx: int = index_by_name[town_name]
+			list[idx]["level"] = mini(int(list[idx]["level"]), route_level)
 	return list
 
 
@@ -665,11 +736,14 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 	button.custom_minimum_size = Vector2(170.0, 72.0)
 	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var level := DriverLevel.level_for(Profile.data.xp)
+	var town_name := Profile.town_for_route(item) if kind == Catalog.ROUTES else ""
+	var town_level := Profile.town_lock_level(town_name) if town_name != "" else 1
+	var route_level := maxi(int(item.get("level", 1)), town_level) if kind == Catalog.ROUTES else int(item.get("level", 1))
 	if Profile.data.selected[kind] == id:
 		button.text = "Selected"
 		button.disabled = true
-	elif kind == Catalog.ROUTES and int(item.get("level", 1)) > level:
-		button.text = tr("Level %d") % int(item["level"])
+	elif kind == Catalog.ROUTES and route_level > level:
+		button.text = tr("Level %d") % route_level
 		button.disabled = true
 	elif Profile.data.owns(kind, id):
 		button.text = "Select"

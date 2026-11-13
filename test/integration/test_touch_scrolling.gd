@@ -263,6 +263,22 @@ func test_a_drag_from_a_switch_or_the_language_box_scrolls_without_changing_them
 	assert_eq(switch.button_pressed, was_on)
 
 
+func test_a_drag_from_a_town_button_scrolls_without_switching_town() -> void:
+	var list := await _open(1)
+	var selector: HBoxContainer = menu.find_child("TownSelector", true, false)
+	assert_not_null(selector, "TownSelector is in routes tab")
+	var ac_btn: Button = selector.find_child("TownAltoCafeto", true, false)
+	assert_not_null(ac_btn, "Alto Cafeto button exists")
+	assert_eq(Profile.chosen_town(), "Puerto Marisol")
+	assert_false(ac_btn.button_pressed)
+
+	var point := ac_btn.get_global_rect().get_center()
+	await _swipe(point, point + Vector2(0.0, -120.0))
+	assert_gt(list.scroll_vertical, 20, "List scrolled from drag on town button")
+	assert_eq(Profile.chosen_town(), "Puerto Marisol", "Drag did not switch town")
+	assert_false(ac_btn.button_pressed, "Button was not toggled by drag")
+
+
 func test_every_list_reaches_its_last_row_on_wide_and_narrow_phones() -> void:
 	for width: float in [1280.0, 1600.0]:
 		screen.size = Vector2i(int(width), 720)

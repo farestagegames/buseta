@@ -386,3 +386,32 @@ func test_the_arcade_button_text_fits_in_both_languages() -> void:
 			screen.queue_free()
 	GameSettings.language = was
 	Profile.data.best_scores.clear()
+
+
+func test_town_buttons_text_fits_in_both_languages() -> void:
+	Profile.data.grant_free_items(Profile.catalog)
+	Profile.data.xp = 0 # Locked Alto Cafeto
+	var was := GameSettings.language
+	for width: int in [1280, 1560, 1600]:
+		for language: String in ["es_CO", "en"]:
+			GameSettings.language = language
+			var screen := SubViewport.new()
+			screen.size = Vector2i(width, 720)
+			add_child_autofree(screen)
+			var menu: MainMenu = MENU.instantiate()
+			screen.add_child(menu)
+			menu.show_tab(1)
+			await wait_frames(3)
+			var selector: HBoxContainer = menu.find_child("TownSelector", true, false)
+			assert_not_null(selector, "TownSelector exists at %d in %s" % [width, language])
+			var pm_btn: Button = selector.find_child("TownPuertoMarisol", true, false)
+			var ac_btn: Button = selector.find_child("TownAltoCafeto", true, false)
+			assert_not_null(pm_btn)
+			assert_not_null(ac_btn)
+			assert_true(Rect2(Vector2.ZERO, Vector2(screen.size)).encloses(pm_btn.get_global_rect()))
+			assert_true(Rect2(Vector2.ZERO, Vector2(screen.size)).encloses(ac_btn.get_global_rect()))
+			var badge: Label = ac_btn.find_child("LockBadge", true, false)
+			assert_not_null(badge)
+			assert_true(ac_btn.get_global_rect().encloses(badge.get_global_rect()), "Badge inside button at %d in %s" % [width, language])
+			screen.queue_free()
+	GameSettings.language = was

@@ -1,6 +1,8 @@
 extends GutTest
 ## The pieces behind finger-friendly menus.
 
+const MENU := preload("res://scenes/main/main_menu.tscn")
+
 
 func test_insets_clear_a_notch_on_the_left() -> void:
 	# A 2400 x 1080 phone with an 80 px notch, shown at 1600 x 720.
@@ -90,3 +92,94 @@ func test_slider_value_follows_the_finger_across_the_track() -> void:
 	assert_almost_eq(slider.value_at(slider.size.x - grab / 2.0), 2.0, 0.001)
 	assert_almost_eq(slider.value_at(slider.size.x / 2.0), 1.25, 0.001)
 	assert_almost_eq(slider.value_at(-50.0), 0.5, 0.001, "Clamped")
+
+
+func test_routes_tab_district_filtering_and_lock_badge() -> void:
+	Profile.load_from("user://test_save_touch_ui.json")
+	Profile.data = PlayerProfile.new()
+	Profile.data.intro_done = true
+	Profile.data.grant_free_items(Profile.catalog)
+	Profile.data.xp = 0 # Level 1 driver
+	var was_lang := GameSettings.language
+	GameSettings.language = "es_CO"
+
+	var menu: MainMenu = autofree(MENU.instantiate())
+	add_child(menu)
+	menu.show_tab(1)
+	await wait_frames(2)
+
+	var selector: HBoxContainer = menu.find_child("TownSelector", true, false)
+	assert_not_null(selector, "TownSelector segmented row exists on Routes tab")
+	var pm_btn: Button = selector.find_child("TownPuertoMarisol", true, false)
+	var ac_btn: Button = selector.find_child("TownAltoCafeto", true, false)
+	assert_not_null(pm_btn, "Puerto Marisol button exists")
+	assert_not_null(ac_btn, "Alto Cafeto button exists")
+	assert_gte(pm_btn.size.y, 48.0, "Buttons at least 48 px high")
+	assert_gte(ac_btn.size.y, 48.0, "Buttons at least 48 px high")
+
+	# Lock badge below level 6
+	assert_null(pm_btn.find_child("LockBadge", true, false), "Puerto Marisol is not locked")
+	var lock_badge: Label = ac_btn.find_child("LockBadge", true, false)
+	assert_not_null(lock_badge, "Alto Cafeto has lock badge below level 6")
+	assert_true(lock_badge.text.contains("🔒"), "Badge shows a lock")
+	assert_true(lock_badge.text.contains("Nivel 6"), "Badge shows Nivel 6 in Spanish")
+
+	# Filtering Puerto Marisol
+	var labels := menu._content.find_children("*", "Label", true, false)
+	var label_texts: Array[String] = []
+	for l: Label in labels:
+		label_texts.append(l.text)
+	assert_true(label_texts.any(func(t: String) -> bool: return t.contains("Vuelta a la Costa") or t.contains("Route 1") or t.contains("Ruta 1")))
+	assert_false(label_texts.any(func(t: String) -> bool: return t.contains("Vuelta al Pueblo")))
+
+	# View locked town
+	ac_btn.pressed.emit()
+	await wait_frames(2)
+	assert_eq(Profile.chosen_town(), "Alto Cafeto")
+	labels = menu._content.find_children("*", "Label", true, false)
+	label_texts = []
+	for l: Label in labels:
+		label_texts.append(l.text)
+	assert_true(label_texts.any(func(t: String) -> bool: return t.contains("Vuelta al Pueblo")), "Alto Cafeto routes can be viewed")
+	assert_false(label_texts.any(func(t: String) -> bool: return t.contains("Vuelta a la Costa") or t.contains("Ruta 1")), "Puerto Marisol routes filtered out")
+
+	# Locked routes cannot be played
+	assert_false(Profile.data.can_play_route("cafeto_c0", Profile.catalog))
+	assert_false(Profile.select(Catalog.ROUTES, "cafeto_c0"))
+	assert_ne(Profile.data.selected[Catalog.ROUTES], "cafeto_c0")
+
+	# Reach level 6: badge disappears
+	Profile.data.xp = DriverLevel.xp_for_level(6)
+	menu.show_tab(1)
+	await wait_frames(2)
+	selector = menu.find_child("TownSelector", true, false)
+	ac_btn = selector.find_child("TownAltoCafeto", true, false)
+	assert_null(ac_btn.find_child("LockBadge", true, false), "Badge gone at level 6")
+	assert_true(Profile.data.can_play_route("cafeto_c0", Profile.catalog), "Playable at level 6")
+
+	GameSettings.language = was_lang
+
+
+func test_chosen_town_persists_in_profile() -> void:
+	var profile := PlayerProfile.new()
+	profile.grant_free_items(Profile.catalog)
+	# Old save with no town key
+	var old_save := {
+		"coins": 500,
+		"selected": {Catalog.ROUTES: "starter_a"}
+	}
+	var loaded := PlayerProfile.from_dict(old_save)
+	assert_eq(loaded.town, "", "Old save has empty town")
+	Profile.data = loaded
+	assert_eq(Profile.chosen_town(), "Puerto Marisol", "Defaults to town of selected route")
+
+	# Explicitly choose Alto Cafeto
+	Profile.choose_town("Alto Cafeto")
+	assert_eq(Profile.chosen_town(), "Alto Cafeto")
+	assert_eq(Profile.data.town, "Alto Cafeto")
+
+	# Saves and loads back
+	var dict := Profile.data.to_dict()
+	assert_eq(dict["town"], "Alto Cafeto")
+	var restored := PlayerProfile.from_dict(dict)
+	assert_eq(restored.town, "Alto Cafeto")
