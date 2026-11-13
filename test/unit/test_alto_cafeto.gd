@@ -116,16 +116,95 @@ func test_starter_route_is_a_short_out_and_back_to_the_plaza() -> void:
 
 func test_starter_bays_fit_between_the_junctions() -> void:
 	var network := RoadNetwork.from_data(map_data)
-	var data := MapLoader.read_json(catalog.find(Catalog.ROUTES, "cafeto_c0")["file"])
-	for stop: Dictionary in data["stops"]:
-		if stop.get("final", false):
-			continue
-		var road: Dictionary = network.roads[stop["road"]]
-		var reach := RoadNetwork.BAY_LENGTH / 2.0 + RoadNetwork.BAY_TAPER
-		var start_clear := float(network.nodes[road["from"]]["radius"])
-		var end_clear := float(road["length"]) - float(network.nodes[road["to"]]["radius"])
-		assert_gt(float(stop["along"]) - reach, start_clear, stop["name"])
-		assert_lt(float(stop["along"]) + reach, end_clear, stop["name"])
+	for route_id: String in ["cafeto_c0", "cafeto_c1", "cafeto_c2"]:
+		var data := MapLoader.read_json(catalog.find(Catalog.ROUTES, route_id)["file"])
+		for stop: Dictionary in data["stops"]:
+			if stop.get("final", false):
+				continue
+			var road: Dictionary = network.roads[stop["road"]]
+			var reach := RoadNetwork.BAY_LENGTH / 2.0 + RoadNetwork.BAY_TAPER
+			var start_clear := float(network.nodes[road["from"]]["radius"])
+			var end_clear := float(road["length"]) - float(network.nodes[road["to"]]["radius"])
+			assert_gt(float(stop["along"]) - reach, start_clear, "%s: %s" % [route_id, stop["name"]])
+			assert_lt(float(stop["along"]) + reach, end_clear, "%s: %s" % [route_id, stop["name"]])
+			for car: Dictionary in map_data["parked_cars"]:
+				if car["road"] == stop["road"] and int(car["dir"]) == int(stop["dir"]):
+					assert_gt(absf(float(car["along"]) - float(stop["along"])), 21.0, "%s: %s" % [route_id, stop["name"]])
+
+
+func test_mountain_routes_c1_and_c2_load_with_goals_and_stops() -> void:
+	for route_id: String in ["cafeto_c1", "cafeto_c2"]:
+		var item := catalog.find(Catalog.ROUTES, route_id)
+		assert_false(item.is_empty(), route_id)
+		var data := MapLoader.read_json(item["file"])
+		assert_eq(data["map"], "maps/alto_cafeto.json", route_id)
+		var goals: Array = data["goals"]
+		assert_eq(goals.size(), 3, "%s goals count" % route_id)
+		assert_eq(goals[0]["type"], "finish_under", "%s has time goal" % route_id)
+		assert_gt(int(goals[0]["value"]), 450, "%s finish_under reasonable" % route_id)
+		var runner := RouteRunner.build(data, RoadNetwork.from_data(map_data), 7, map_data)
+		assert_eq(runner.stops.size(), 6, "%s stops count" % route_id)
+		assert_eq(runner.stops[runner.stops.size() - 1].stop_name, "Patio Cafeto")
+		assert_true(runner.stops[runner.stops.size() - 1].is_final)
+		assert_gt(runner.stops[runner.stops.size() - 1].route_distance, 1500.0)
+
+
+func test_alto_cafeto_unlock_chain() -> void:
+	var profile := PlayerProfile.new()
+	profile.grant_free_items(catalog)
+	# Below level 6: locked
+	assert_false(profile.can_play_route("cafeto_c0", catalog))
+	assert_false(profile.can_play_route("cafeto_c1", catalog))
+	assert_false(profile.can_play_route("cafeto_c2", catalog))
+	# Reach level 6
+	profile.xp = DriverLevel.xp_for_level(6)
+	assert_true(profile.can_play_route("cafeto_c0", catalog), "C0 playable at level 6")
+	assert_false(profile.can_play_route("cafeto_c1", catalog), "C1 locked until C0 complete")
+	assert_false(profile.can_play_route("cafeto_c2", catalog), "C2 locked until bought")
+	# Complete C0
+	(profile.completed_routes as Array).append("cafeto_c0")
+	var unlocked := catalog.unlocked_by("cafeto_c0", profile)
+	assert_eq(unlocked.size(), 1)
+	assert_eq(unlocked[0]["id"], "cafeto_c1")
+	(profile.owned[Catalog.ROUTES] as Array).append("cafeto_c1")
+	assert_true(profile.can_play_route("cafeto_c1", catalog), "C1 playable after C0 completed")
+	# Buy C2 for 1,200 coins
+	var c2_item := catalog.find(Catalog.ROUTES, "cafeto_c2")
+	assert_eq(int(c2_item["cost"]), 1200)
+	assert_eq(int(c2_item["level"]), 6)
+	profile.coins = 1199
+	assert_false(profile.buy(Catalog.ROUTES, c2_item))
+	profile.coins = 1200
+	assert_true(profile.buy(Catalog.ROUTES, c2_item))
+	assert_true(profile.can_play_route("cafeto_c2", catalog), "C2 playable after purchase")
+
+
+func test_mountain_routes_goals_score() -> void:
+	var c1_data := MapLoader.read_json(catalog.find(Catalog.ROUTES, "cafeto_c1")["file"])
+	var c1_good := {
+		"time": 460.0,
+		"counts": {"knocked": 0, "vendors": 2},
+	}
+	assert_eq(RouteGoals.stars_for(c1_data["goals"], c1_good), 3)
+	var c1_bad := {
+		"time": 580.0,
+		"counts": {"knocked": 1, "vendors": 1},
+	}
+	assert_eq(RouteGoals.stars_for(c1_data["goals"], c1_bad), 0)
+
+	var c2_data := MapLoader.read_json(catalog.find(Catalog.ROUTES, "cafeto_c2")["file"])
+	var c2_good := {
+		"time": 540.0,
+		"counts": {"missed_stops": 0},
+		"categories": {"satisfaction": 88.0},
+	}
+	assert_eq(RouteGoals.stars_for(c2_data["goals"], c2_good), 3)
+	var c2_bad := {
+		"time": 680.0,
+		"counts": {"missed_stops": 1},
+		"categories": {"satisfaction": 70.0},
+	}
+	assert_eq(RouteGoals.stars_for(c2_data["goals"], c2_bad), 0)
 
 
 func test_alto_cafeto_opens_at_driver_level_six() -> void:
@@ -153,6 +232,8 @@ func test_routes_tab_groups_routes_by_town() -> void:
 	var towns := MainMenu.route_towns(catalog.items(Catalog.ROUTES))
 	assert_eq(towns["starter_a"], "Puerto Marisol")
 	assert_eq(towns["cafeto_c0"], "Alto Cafeto")
+	assert_eq(towns["cafeto_c1"], "Alto Cafeto")
+	assert_eq(towns["cafeto_c2"], "Alto Cafeto")
 
 
 func test_the_small_town_runs_less_traffic_than_the_city() -> void:

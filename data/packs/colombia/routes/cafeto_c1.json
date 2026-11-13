@@ -1,0 +1,38 @@
+{
+ "name": "Route C1: Ruta del Mirador",
+ "map": "maps/alto_cafeto.json",
+ "start": {
+  "road": "depot_road",
+  "along": 26,
+  "lateral": 1.9,
+  "dir": 1
+ },
+ "legs": [
+  {"road": "depot_road", "dir": 1},
+  {"road": "subida_cafetal", "dir": 1},
+  {"road": "curva_cafe", "dir": 1},
+  {"road": "calle_real", "dir": 1},
+  {"road": "carrera_comercio", "dir": 1},
+  {"road": "camino_mirador", "dir": 1},
+  {"road": "calle_las_lomas", "dir": 1},
+  {"road": "bajada_guayacanes", "dir": 1},
+  {"road": "carrera_colina", "dir": 1},
+  {"road": "curva_cafe", "dir": -1},
+  {"road": "subida_cafetal", "dir": -1},
+  {"road": "depot_road", "dir": -1}
+ ],
+ "stops": [
+  {"name": "Entrada Real", "due": 30, "road": "subida_cafetal", "along": 58, "dir": 1, "waiting": 3},
+  {"name": "Plaza Principal", "due": 120, "road": "calle_real", "along": 62, "dir": 1, "waiting": 5, "vendor": true},
+  {"name": "Mercado Campesino", "due": 180, "road": "carrera_comercio", "along": 84, "dir": 1, "waiting": 4},
+  {"name": "Mirador de las Lomas", "due": 240, "road": "camino_mirador", "along": 160, "dir": 1, "waiting": 3, "vendor": true},
+  {"name": "Barrio Alto", "due": 300, "road": "calle_las_lomas", "along": 60, "dir": 1, "waiting": 0},
+  {"name": "Patio Cafeto", "due": 480, "road": "depot_road", "along": 42, "dir": -1, "waiting": 0, "final": true}
+ ],
+ "service": "bays",
+ "goals": [
+  {"type": "finish_under", "value": 570},
+  {"type": "no_knocked"},
+  {"type": "vendors", "value": 2}
+ ]
+}

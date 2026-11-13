@@ -76,6 +76,23 @@
    "cost": 0,
    "level": 6,
    "description": "Up through the coffee groves to the Plaza and back, in the hill town of Alto Cafeto."
+  },
+  {
+   "id": "cafeto_c1",
+   "name": "Route C1: Ruta del Mirador",
+   "file": "routes/cafeto_c1.json",
+   "cost": 0,
+   "requires": "cafeto_c0",
+   "level": 6,
+   "description": "Climb through the market and up the ridge road to the town's highest panoramic viewpoint."
+  },
+  {
+   "id": "cafeto_c2",
+   "name": "Route C2: Circuito Las Lomas",
+   "file": "routes/cafeto_c2.json",
+   "cost": 1200,
+   "level": 6,
+   "description": "A demanding mountain loop with steep climbs, narrow ridge crests and hairpin descents."
   }
  ],
  "buses": [
