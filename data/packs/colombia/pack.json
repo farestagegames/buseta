@@ -218,10 +218,10 @@
       "file": "res://assets/audio/ambience/motorbike_pass.wav",
       "rule": "always",
       "every": [
-        6,
-        16
+        35,
+        80
       ],
-      "volume_db": -12
+      "volume_db": -15
     },
     {
       "id": "vendor_bell",

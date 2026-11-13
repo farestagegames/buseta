@@ -221,6 +221,35 @@ func test_a_one_shot_out_of_earshot_waits_for_its_next_turn() -> void:
 	assert_eq(mixer.update(2.5).size(), 1)
 
 
+func test_the_colombian_motorbike_pass_is_rare_and_quiet() -> void:
+	var layer := _colombia_layer("motorbike")
+	var every: Array = layer["every"]
+	assert_gte(float(every[0]), 30.0, "At least 30 s between passes")
+	assert_lte(float(layer.get("volume_db", 0.0)), -15.0, "Quiet enough not to read as a plane")
+
+
+func test_the_motorbike_scheduler_keeps_its_minimum_gap_over_ten_minutes() -> void:
+	var layer := _colombia_layer("motorbike")
+	var min_gap := float(layer["every"][0])
+	var mixer := AmbienceMixer.new([layer], 7)
+	var times: Array[float] = []
+	var clock := 0.0
+	while clock < 600.0:
+		clock += 0.01
+		if not mixer.update(0.01).is_empty():
+			times.append(clock)
+	assert_gt(times.size(), 4, "A few passes over ten minutes")
+	for i in range(1, times.size()):
+		assert_gte(times[i] - times[i - 1], min_gap, "Never twice within its minimum gap")
+
+
+func _colombia_layer(id: String) -> Dictionary:
+	for layer: Dictionary in CountryPack.read(COLOMBIA).ambience_layers():
+		if layer["id"] == id:
+			return layer
+	return {}
+
+
 func test_bad_ambience_data_is_reported() -> void:
 	assert_eq(AmbienceMixer.check([_layer("sea"), _layer("calm")]), [] as Array[String])
 	assert_true(AmbienceMixer.check([_layer("sea"), _layer("sea")]).has("Ambience has sea twice"))
