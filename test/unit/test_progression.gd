@@ -125,13 +125,16 @@ func test_missing_save_reads_empty() -> void:
 
 func test_level_rises_with_xp() -> void:
 	assert_eq(DriverLevel.level_for(0), 1)
-	assert_eq(DriverLevel.level_for(149), 1)
-	assert_eq(DriverLevel.level_for(150), 2)
+	assert_eq(DriverLevel.level_for(119), 1)
+	assert_eq(DriverLevel.level_for(120), 2)
+	var expected := {2: 120, 3: 300, 4: 540, 5: 840, 6: 1200, 8: 2100, 10: 3240}
+	for level: int in expected:
+		assert_eq(DriverLevel.xp_for_level(level), expected[level], "XP for level %d" % level)
 	assert_gt(DriverLevel.xp_for_level(5) - DriverLevel.xp_for_level(4), DriverLevel.xp_for_level(3) - DriverLevel.xp_for_level(2))
 
 
 func test_level_progress_is_a_share() -> void:
-	assert_almost_eq(DriverLevel.progress(75), 0.5, 0.001)
+	assert_almost_eq(DriverLevel.progress(60), 0.5, 0.001)
 
 
 func test_shift_pays_coins_xp_and_stats() -> void:
@@ -200,7 +203,7 @@ func test_best_score_only_rises() -> void:
 
 
 func test_level_up_is_reported() -> void:
-	profile.xp = 140
+	profile.xp = 110 # Just under level 2 at 120.
 	var rewards := ShiftRewards.apply(profile, _report(), "route_01", "2026-11-06", [{"id": "x", "text": "x", "min_stars": 3}], [])
 	assert_true(rewards["levelled_up"])
 

@@ -1,14 +1,16 @@
 class_name DriverLevel
 extends RefCounted
-## XP to level conversion. Each level asks for a little more than the last.
+## XP to level conversion. Each level asks for a little more than the last:
+## reaching a level takes LINEAR_XP * s + SQUARE_XP * s * s, with s levels above
+## the first (level 2 at 120, 5 at 840, 10 at 3240).
 
-const FIRST_LEVEL_XP := 150
-const STEP_XP := 75
+const LINEAR_XP := 90
+const SQUARE_XP := 30
 
 
 static func xp_for_level(level: int) -> int:
 	var steps := level - 1
-	return steps * FIRST_LEVEL_XP + STEP_XP * steps * (steps - 1) / 2
+	return LINEAR_XP * steps + SQUARE_XP * steps * steps
 
 
 static func level_for(xp: int) -> int:
