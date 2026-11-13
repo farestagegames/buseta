@@ -305,6 +305,29 @@ func _mesh_for(kind: String) -> LowPolyBuilder:
 			for z: float in [-1.35, 1.35]:
 				for x: float in [-0.85, 0.85]:
 					b.box(Vector3(x, 0.32, z), Vector3(0.24, 0.64, 0.64), tyre)
+		"jeep":
+			# A Willys-style utility jeep ("yipao"). The body is white so it takes
+			# the batch's instance colour, as the sedan does.
+			var glass := Color(0.12, 0.16, 0.2)
+			var tyre := Color(0.05, 0.05, 0.06)
+			var canopy := Color(0.95, 0.48, 0.12)
+			var sack := Color(0.62, 0.42, 0.24)
+			b.box(Vector3(0.0, 0.55, -0.15), Vector3(1.7, 0.5, 2.7), Color.WHITE)
+			b.box(Vector3(0.0, 0.74, 1.6), Vector3(1.6, 0.2, 0.9), Color.WHITE)
+			b.box(Vector3(0.0, 0.62, 2.12), Vector3(1.5, 0.42, 0.06), Color(0.85, 0.85, 0.86))
+			b.box(Vector3(0.0, 0.34, 2.24), Vector3(1.7, 0.16, 0.08), tyre)
+			b.box(Vector3(0.0, 1.06, 0.7), Vector3(1.4, 0.5, 0.06), glass)
+			for x: float in [-0.7, 0.7]:
+				b.box(Vector3(x, 1.0, 0.45), Vector3(0.06, 0.7, 0.06), tyre)
+			b.box(Vector3(0.0, 1.36, 0.45), Vector3(1.46, 0.06, 0.06), tyre)
+			b.box(Vector3(0.0, 1.28, -0.7), Vector3(1.5, 0.07, 1.5), canopy)
+			b.box(Vector3(0.0, 1.0, -1.42), Vector3(1.46, 0.5, 0.07), canopy)
+			b.box(Vector3(-0.42, 0.88, -0.75), Vector3(0.5, 0.34, 0.44), sack)
+			b.box(Vector3(0.44, 0.88, -0.45), Vector3(0.5, 0.34, 0.44), sack)
+			b.box(Vector3(0.0, 0.85, -1.58), Vector3(0.6, 0.6, 0.14), tyre)
+			for z: float in [-1.35, 1.35]:
+				for x: float in [-0.85, 0.85]:
+					b.box(Vector3(x, 0.32, z), Vector3(0.24, 0.64, 0.64), tyre)
 		"stall":
 			# White parts take the stall's own colour from the batch.
 			b.box(Vector3(0.0, 0.62, 0.0), Vector3(1.6, 0.56, 0.86), Color(0.72, 0.56, 0.36))

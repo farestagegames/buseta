@@ -1,6 +1,9 @@
 {
  "name": "Alto Cafeto",
  "traffic_share": 0.55,
+ "vehicle_mix": {
+  "jeep": 0.4
+ },
  "nodes": [
   {
    "id": "depot",

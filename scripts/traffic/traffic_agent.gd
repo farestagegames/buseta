@@ -50,6 +50,7 @@ var stunned: float = 0.0 ## Seconds it stays stopped after being hit.
 var nudge: Vector2 = Vector2.ZERO ## Offset from being shoved by the bus.
 var nudge_velocity: Vector2 = Vector2.ZERO
 var is_moto: bool = false
+var is_jeep: bool = false ## Drawn as a Willys jeep rather than a sedan. Still a car to the traffic.
 var batch_index: int = 0 ## This vehicle's place in its drawn batch.
 ## Metres moved towards the kerb from where it normally rides. Negative is
 ## towards the centre line, as when passing something.

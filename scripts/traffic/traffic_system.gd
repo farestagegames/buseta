@@ -29,6 +29,8 @@ const LAMP_SHADER := preload("res://assets/shaders/vehicle_lamps.gdshader")
 const MOTO_COLOURS: Array[Color] = [
 	Color(0.85, 0.15, 0.12), Color(0.12, 0.2, 0.55), Color(0.12, 0.12, 0.14), Color(0.9, 0.9, 0.92), Color(0.15, 0.55, 0.3),
 ]
+## Fixed seed for picking which cars become jeeps, so a run looks the same again.
+const JEEP_SEED := 731
 
 var flow: TrafficFlow
 var graph: LaneGraph:
@@ -79,7 +81,9 @@ var _trailer_heading: float:
 var _batch: MultiMesh
 var _lamp_material := ShaderMaterial.new()
 var _moto_batch: MultiMesh
+var _jeep_batch: MultiMesh
 var _car_colours: Array[Color] = []
+var _jeep_share := 0.0
 var _lamps: MultiMesh
 var _approaches: Array[Dictionary] = [] ## lane, node, group, line, forward.
 var _previous_side: Dictionary = {} ## Approach index to sign of bus nose position.
@@ -97,12 +101,24 @@ static func map_traffic_share(map_data: Dictionary) -> float:
 	return clampf(float(share), 0.1, 2.0) if (share is float or share is int) else 1.0
 
 
+## Share of the map's cars drawn as Willys jeeps, from its "vehicle_mix". Zero
+## when the field is missing, so a map without one keeps its plain sedans.
+static func vehicle_jeep_share(map_data: Dictionary) -> float:
+	var mix: Variant = map_data.get("vehicle_mix", {})
+	if mix is Dictionary:
+		var jeep: Variant = (mix as Dictionary).get("jeep", 0.0)
+		if jeep is float or jeep is int:
+			return clampf(float(jeep), 0.0, 1.0)
+	return 0.0
+
+
 ## density is the time of day's share of the usual traffic. A small town scales it
 ## down by its map's traffic_share, so its fewer streets are not twice as busy.
 func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, spec: BusSpec, density: float = 1.0) -> void:
 	density *= map_traffic_share(map_data)
 	_ground = ground
 	_car_colours = CityTheme.from_data(map_data).car_colours
+	_jeep_share = vehicle_jeep_share(map_data)
 	flow = TrafficFlow.new(LaneGraph.build(network, map_data), spec)
 	flow.horn_sounded.connect(func(spot: Vector2, kind: int) -> void: GameEvents.traffic_horn.emit(spot, kind))
 	_build_signals()
@@ -269,16 +285,71 @@ func _check_red_lights() -> void:
 func _build_car_batch() -> void:
 	var field := ObstacleField.new()
 	var moto_total := agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto).size()
+	var car_total := agents.size() - moto_total
+	var jeep_total := 0
+	if _jeep_share > 0.0 and car_total > 0:
+		jeep_total = clampi(roundi(float(car_total) * _jeep_share), 0, car_total)
+	var plain_total := car_total - jeep_total
 	_lamp_material.shader = LAMP_SHADER
-	_batch = _vehicle_batch(field._mesh_for("car"), agents.size() - moto_total, _lamps_for(false))
+	_batch = _vehicle_batch(field._mesh_for("car"), plain_total, _lamps_for(false))
+	_jeep_batch = _vehicle_batch(field._mesh_for("jeep"), jeep_total, _lamps_for_jeep()) if jeep_total > 0 else null
 	_moto_batch = _vehicle_batch(field._mesh_for("moto"), moto_total, _lamps_for(true))
 	field.free()
+	# Which cars are jeeps is decided once, with its own seed, so the town's
+	# spawn sequence is never touched and a map without a mix stays unchanged.
+	var jeep_lookup := {}
+	if jeep_total > 0:
+		for slot: int in _jeep_slots(car_total, jeep_total):
+			jeep_lookup[slot] = true
+	var car_slot := 0
+	var car_index := 0
+	var jeep_index := 0
 	for i in agents.size():
 		var agent := agents[i]
-		var colours := MOTO_COLOURS if agent.is_moto else _car_colours
-		var batch := _moto_batch if agent.is_moto else _batch
+		var batch: MultiMesh
+		var colours: Array[Color]
+		if agent.is_moto:
+			batch = _moto_batch
+			colours = MOTO_COLOURS
+		else:
+			agent.is_jeep = jeep_lookup.has(car_slot)
+			car_slot += 1
+			if agent.is_jeep:
+				agent.batch_index = jeep_index
+				jeep_index += 1
+				batch = _jeep_batch
+			else:
+				agent.batch_index = car_index
+				car_index += 1
+				batch = _batch
+			colours = _car_colours
 		batch.set_instance_color(agent.batch_index, colours[agent.batch_index % colours.size()])
 		_write_car(i, agent)
+
+
+## The batch this vehicle is drawn in: cars, jeeps and motorbikes each have one.
+func _batch_for(agent: TrafficAgent) -> MultiMesh:
+	if agent.is_moto:
+		return _moto_batch
+	if agent.is_jeep:
+		return _jeep_batch
+	return _batch
+
+
+## The car slots (their index among the cars, 0..car_total-1) that become jeeps,
+## spread by a seeded shuffle so they are not all bunched in one lane.
+static func _jeep_slots(car_total: int, jeep_total: int) -> Array[int]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = JEEP_SEED
+	var slots: Array[int] = []
+	for k in car_total:
+		slots.append(k)
+	for k in range(car_total - 1, 0, -1):
+		var j := rng.randi_range(0, k)
+		var tmp: int = slots[k]
+		slots[k] = slots[j]
+		slots[j] = tmp
+	return slots.slice(0, jeep_total)
 
 
 ## Head and tail lamps, as a second part of the vehicle's mesh. One extra draw for
@@ -292,6 +363,15 @@ func _lamps_for(moto: bool) -> LowPolyBuilder:
 	for x: float in [-0.62, 0.62]:
 		b.box(Vector3(x, 0.66, -2.16), Vector3(0.34, 0.14, 0.04), Color.WHITE)
 		b.box(Vector3(x, 0.7, 2.16), Vector3(0.3, 0.12, 0.04), Color.WHITE)
+	return b
+
+
+## The jeep's round headlights and small tail lamps, as the car's lamps are.
+func _lamps_for_jeep() -> LowPolyBuilder:
+	var b := LowPolyBuilder.new()
+	for x: float in [-0.55, 0.55]:
+		b.box(Vector3(x, 0.62, -1.5), Vector3(0.2, 0.12, 0.04), Color.WHITE)
+		b.box(Vector3(x, 0.62, 2.22), Vector3(0.2, 0.14, 0.05), Color.WHITE)
 	return b
 
 
@@ -324,7 +404,7 @@ func _write_car(index: int, agent: TrafficAgent) -> void:
 	var kerb := Vector2(-forward.y, forward.x) * float(graph.network.traffic_side)
 	var facing := (forward * maxf(agent.speed, 1.5) + kerb * agent.shift_rate).normalized()
 	var basis := Basis(Vector3.UP, RoadNetwork.heading_of(facing)) * Basis(Vector3.RIGHT, pitch)
-	var batch := _moto_batch if agent.is_moto else _batch
+	var batch := _batch_for(agent)
 	var placed := Transform3D(basis, Vector3(spot.x, height, spot.y))
 	if index == police_index:
 		# The patrol car is drawn on its own, and its plain copy is hidden.

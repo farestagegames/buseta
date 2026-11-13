@@ -73,7 +73,7 @@ Fictional coffee-region town, small district (2 to 3 routes incl. a ~3 min start
 | --- | --- | --- | --- |
 | 1 | Playable slice: map, starter route C0, level 6 unlock, menu | Done | `maps/alto_cafeto.json` (doc layout ×1.4, retuned hills, max grade 11.1%), `routes/cafeto_c0.json` "Vuelta al Pueblo" (out and back, U-turn at the Plaza roundabout, 3 goals), catalog level 6, Routes tab grouped under town headings. Autopilot 4:11, no stall, 1 slow moto bump at the El Cafetal bay exit. Plain houses and normal traffic for now. Not checked on a phone or by menu screenshot |
 | 2 | Church and mirador landmarks | Done | Map `landmarks` list (kind, x, z, face node). Church south of the Plaza roundabout facing it: whitewashed nave, clay-tile gable, bell tower with open arched belfry and bell, tiled spire, no cross. Mirador 34 m north of node `e`: octagonal plank deck on posts, rails, 3 benches, coin telescope, steps towards the road. Both in the scenery batch (draw calls unchanged), clear of roads/bays/pavement, houses keep clear. 4 GUT tests. Screenshots looked at |
-| 3 | Willys jeep traffic | Next | Doc task 4 |
+| 3 | Willys jeep traffic | Done | | Doc task 4. `vehicle_mix: {"jeep": 0.4}` on the map, jeeps in one extra MultiMesh, seeded; Puerto Marisol unchanged. Screenshot captured, not seen on a phone |
 | 4 | Routes C1 Mirador and C2 Las Lomas | | Doc task 5. Doc's stop "along" values need re-placing for the ×1.4 scale and 52 m bays |
 | 5 | District switcher on the Routes tab | | Doc task 6, once there are 3 routes |
 | 6 | Fog and mountain ambience | | Doc task 7 |

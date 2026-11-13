@@ -326,3 +326,146 @@ from 16 angles around the head and assert the hair surface sits at least a few
 millimetres outside the skull surface; include a regression case for the style that
 showed the glitch. Take a screenshot of the Drivers tab at three angles and look at it.
 ```
+
+## Owner feedback (12 Nov, night)
+
+Run 12 to 16 one at a time, in order, like the others. 12 and 16 both touch
+`scripts/traffic/`, so never run them together.
+
+## 12. Willys jeeps in Alto Cafeto traffic
+
+Difficulty: Medium. Strong model for the mesh and batch code, light model for map data.
+
+```
+Feature (Alto Cafeto doc task 4, `design/alto-cafeto.md` section 6 "Task 4"): the
+mountain town's traffic should include Willys-style utility jeeps ("yipaos") in
+place of some sedans.
+
+- Add a low-poly jeep in `scripts/world/obstacle_field.gd` next to the car mesh
+  (`_mesh_for("car")`): flat bonnet, round headlights, rear spare tyre, roll bar,
+  colourful rear canopy, maybe a few plantain bunches or coffee sacks in the back.
+  Same footprint class as a car (fits `TrafficAgent` CAR_HALF_LENGTH/WIDTH or adds
+  its own half extents if longer). Original design, no brand badges or names.
+- Traffic (`scripts/traffic/traffic_system.gd`, the car batch, around
+  `_build_car_batch()`) reads an optional map field, e.g. `"vehicle_mix": {"jeep": 0.4}`,
+  and turns that share of cars into jeeps, seeded so a run is repeatable. Set it
+  in `data/packs/colombia/maps/alto_cafeto.json` only. Jeeps use one extra
+  MultiMesh at most (one draw call), no per-frame allocations, and keep working
+  with the patrol car, hits, honks, lights and LOW quality.
+- Puerto Marisol must not change at all: no `vehicle_mix`, same cars, same random
+  sequence (don't draw extra random numbers when the field is missing).
+
+Tests (GUT, `test/unit/test_traffic.gd` or a new file): Alto Cafeto spawns some jeeps
+and roughly the configured share; Puerto Marisol spawns none and its car layout is
+identical to before; the jeep mesh builds with sane extents (within the car footprint
+or its declared one). Take a screenshot of Alto Cafeto traffic and look at it.
+```
+
+## 13. Carrera Express: a tighter time scramble
+
+Difficulty: Medium. Strong model for the rules, light model for data and strings.
+
+```
+Owner feedback: the arcade mode, Carrera Express, is now too easy. Owner's choice:
+make it a tighter time scramble, not difficulty settings. Its rules are in
+`scripts/arcade/arcade_run.gd` / `arcade_system.gd` and
+`data/packs/colombia/routes/arcade.json`; its last tuning is in DECISIONS.md (75 s
+start, +22 s per arch, -2 s per crash, 3.4 m boost pads, handling 1.3).
+
+- The clock tightens over the run: each arch adds less time than the last (e.g.
+  start around +20 s and drop by about 1 s per arch to a floor near +9 s), and
+  crashes cost more (about -4 s). Start time around 60 to 65 s. Keep the wider pads
+  and handling help so it stays fair, not punishing.
+- A few more obstacles appear as the run goes on (cones/barrier sets from the
+  existing knockable kinds on the course ahead, more of them every few arches),
+  placed in the lane but always leaving a clear way through, never on a pad or
+  under an arch.
+- Put every number in data (arcade.json) so it can be tuned without code. Show the
+  arch bonus in the existing "+N s" pop so the player sees it shrinking. Scoring
+  stays checkpoints; existing best scores are kept.
+- Aim: a decent driver reaches about 10 to 14 arches; the run should feel frantic by
+  arch 8. Use the autopilot or a scripted run to check the numbers and report them.
+
+Tests: arch bonus shrinks per arch and stops at the floor; crash penalty applied;
+obstacle count grows with arches and none sits on a pad, an arch or blocks the
+whole road; normal shifts unchanged. Record the new tuning in DECISIONS.md.
+```
+
+## 14. Cheats back on for testers (temporary)
+
+Difficulty: Small. Light model is fine.
+
+```
+The hidden cheats still exist (`scripts/progression/cheats.gd`, `scripts/ui/cheat_panel.gd`,
+seven taps on the menu title; seven taps on the pause title for skip stop / finish
+shift in `scripts/ui/settings_panel.gd`), but `Cheats.available()` is
+`OS.is_debug_build()`, so Play testers on the release build never get them. The owner
+wants testers to try every setting and unlock without grinding, for now.
+
+- Add ONE switch that turns cheats on in release builds too, e.g. a project setting
+  `buseta/testing/cheats_in_release` (default true for now) read by
+  `Cheats.available()` (still always on in debug builds). One line to flip back.
+- Make sure the panel reaches everything: add "Max level" (unlocks every time of day,
+  Alto Cafeto's level 6, the arcade's level 2) and check "Unlock all" covers every
+  catalog kind including decorations, horns, drivers and routes with `requires`.
+- `tools/build_release.sh` prints a clear warning when the switch is on.
+- README "Hidden cheats" section: say how to turn them off before release.
+- Record it in DECISIONS.md and add a row "Turn cheats off before public release"
+  to PROGRESS.md.
+
+Tests: with the switch on, `Cheats.available()` is true in a non-debug check (make the
+release check injectable); off, it is false outside debug; "Max level" and "Unlock
+all" leave nothing locked by level or ownership.
+```
+
+## 15. A recurring ambient noise is too frequent
+
+Difficulty: Small. Light model is fine.
+
+```
+Owner feedback: a recurring background noise plays too often; it is hard to tell
+whether it is a plane or a vehicle. Diagnosis (done): it is the "motorbike" one-shot
+ambience layer in `data/packs/colombia/pack.json` (`motorbike_pass.wav`, made by
+`tools/sound_kit/ambience.py`): a 3.2 s buzz with a falling Doppler note, rule
+"always", not positional, played every 6 to 16 s. With no bike in sight it reads as
+a passing plane or an unseen vehicle, and it also plays in Alto Cafeto.
+
+- Make it rarer: `every` about [35, 80] s, and a little quieter (about -15 dB).
+- Don't play it within ~10 s of a real traffic moto passing near the bus if that is
+  easy to know; otherwise skip this point.
+- Leave the other layers alone. Don't regenerate the wav (no `tools/sound_kit` run
+  needed); never commit `tools/sound_kit/__pycache__`.
+
+Tests: the pack's motorbike layer gap is at least 30 s; the mixer's one-shot
+scheduler never plays it twice within its minimum gap over a simulated 10 minutes.
+```
+
+## 16. Smarter traffic: find and fix the dumbest stuck behaviour
+
+Difficulty: Medium to Hard. Strong model.
+
+```
+Owner feedback: make traffic cars smarter. The traffic AI is in `scripts/traffic/`
+(`traffic_flow.gd` rules: junction and roundabout yielding, passing a stopped bus,
+waiting; `traffic_agent.gd` driving; `traffic_sense.gd`). Agents are spawned once and
+never recycled, and there is no deadlock breaker, so a mutual yield at a junction or
+a jam on a roundabout can leave cars stopped for good.
+
+1. Measure first: write a headless soak test (GUT, no rendering) that runs the
+   traffic system on Puerto Marisol and Alto Cafeto at the highest traffic count for
+   5+ simulated minutes, with the bus parked in a few awkward spots (in a junction, at
+   a roundabout entry, in a stop bay), and logs every agent stopped for over 20 s
+   while not at a red light and not queued behind the bus. Report what you find.
+2. Fix the one or two worst causes, for example:
+   - a tie-breaker so two or more cars yielding to each other never wait forever
+     (e.g. after a few seconds with nobody moving, the one with priority by lane or
+     index goes);
+   - a car stuck over ~30 s that is out of the camera's view and over ~60 m from the
+     bus is quietly moved to a free spot on another lane.
+   Keep the existing behaviour tests passing (`test/unit/test_traffic*.gd`). Seeded,
+   no per-frame allocations.
+
+Tests: the soak test asserts no agent is stuck over 30 s (outside red lights and
+queues behind the bus); a unit test builds the deadlock case and shows it clears.
+State in DECISIONS.md what was found and changed.
+```
