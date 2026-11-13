@@ -45,7 +45,10 @@ static func list_for(pack_data: Dictionary, theme: CityTheme = null) -> Array[Ti
 	if entries is Array:
 		for entry: Variant in entries:
 			if entry is Dictionary and (entry as Dictionary).has("id"):
-				times.append(from_data(entry))
+				var time := from_data(entry)
+				if theme != null and (time.id == "madrugada" or time.id == "manana"):
+					time.fog_scale *= theme.fog_scale
+				times.append(time)
 	if times.is_empty():
 		times.append(from_theme(theme if theme != null else CityTheme.new()))
 	return times
@@ -78,6 +81,7 @@ static func from_theme(theme: CityTheme) -> TimeOfDay:
 	time.sky_top = theme.sky_top
 	time.sky_horizon = theme.sky_horizon
 	time.fog = theme.fog
+	time.fog_scale = theme.fog_scale
 	time.ambient = theme.ambient
 	time.ambient_energy = theme.ambient_energy
 	time.sun_colour = theme.sun_colour

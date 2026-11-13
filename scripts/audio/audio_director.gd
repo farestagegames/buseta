@@ -156,10 +156,23 @@ func use_horn(item: Dictionary) -> void:
 
 
 ## Where the sea starts and where the stalls and stops are, for the street sounds.
-func setup_street(coast_x: float, stalls: PackedVector2Array, stops: PackedVector2Array) -> void:
+func setup_street(coast_x: float, stalls: PackedVector2Array, stops: PackedVector2Array, map_data: Dictionary = {}) -> void:
 	_coast_x = coast_x
 	_stalls = stalls
 	_stops = stops
+	_apply_map_ambience(map_data)
+
+
+func _apply_map_ambience(map_data: Dictionary) -> void:
+	var overrides: Variant = map_data.get("ambience", map_data.get("theme", {}).get("ambience", {}))
+	if overrides is Dictionary and mixer != null:
+		for layer: Dictionary in mixer.layers:
+			var layer_id: String = str(layer.get("id", ""))
+			if overrides.has(layer_id):
+				var layer_overrides: Variant = overrides[layer_id]
+				if layer_overrides is Dictionary:
+					for key: String in layer_overrides:
+						layer[key] = layer_overrides[key]
 
 
 func play_effect(key: String, volume_db: float) -> void:
@@ -289,7 +302,8 @@ func _on_horn(is_pressed: bool) -> void:
 # --- Street ambience ---
 
 func _build_street() -> void:
-	mixer = AmbienceMixer.new(Country.pack.ambience_layers(), randi())
+	# A copy, so a map's ambience overrides never leak into the pack or the next shift.
+	mixer = AmbienceMixer.new(Country.pack.ambience_layers().duplicate(true), randi())
 	for layer: Dictionary in mixer.layers:
 		if AmbienceMixer.is_one_shot(layer):
 			_shot_streams[layer["id"]] = load(Country.pack.resolve(layer["file"]))

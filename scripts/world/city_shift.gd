@@ -155,7 +155,7 @@ func _ready() -> void:
 	bird_ambience.name = "BirdAmbience"
 	add_child(bird_ambience)
 	bird_ambience.setup(map_data, ground, time_of_day, hail_seed + 101)
-	_setup_audio()
+	_setup_audio(map_data)
 	_setup_weather(hail_seed)
 	GameEvents.map_ready.emit(network, route)
 	_tutorial.setup(_hud, _route_system, _bus.spec)
@@ -165,7 +165,7 @@ func _ready() -> void:
 
 
 ## The player's horn, and where the sea, stalls and stops are for the street sounds.
-func _setup_audio() -> void:
+func _setup_audio(map_data: Dictionary = {}) -> void:
 	var audio: AudioDirector = $AudioDirector
 	audio.use_horn(Profile.horn_for(chosen_bus_item()))
 	var stalls := PackedVector2Array()
@@ -175,7 +175,7 @@ func _setup_audio() -> void:
 	var stops := PackedVector2Array()
 	for stop in route.stops:
 		stops.append(stop.position)
-	audio.setup_street(ground.coast_x, stalls, stops)
+	audio.setup_street(ground.coast_x, stalls, stops, map_data)
 
 
 ## The time of day and this shift's weather, planned from its seed so the same

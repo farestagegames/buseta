@@ -31,6 +31,7 @@ var width_high: float = 24.0
 var sky_top := Color(0.38, 0.58, 0.82)
 var sky_horizon := Color(0.8, 0.85, 0.88)
 var fog := Color(0.78, 0.83, 0.87)
+var fog_scale: float = 1.0 ## Scale for morning/dawn fog on this map.
 var ambient := Color(0.72, 0.74, 0.78)
 var ambient_energy: float = 0.62
 var sun_colour := Color(1.0, 0.97, 0.9)
@@ -59,4 +60,5 @@ static func from_data(map_data: Dictionary) -> CityTheme:
 	theme.highest_storeys = int(data.get("highest_storeys", theme.highest_storeys))
 	theme.chimneys = data.get("chimneys", theme.chimneys)
 	theme.trees_on_pavement = data.get("trees_on_pavement", theme.trees_on_pavement)
+	theme.fog_scale = float(data.get("fog_scale", map_data.get("fog_scale", theme.fog_scale)))
 	return theme

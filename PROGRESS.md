@@ -80,6 +80,6 @@ Fictional coffee-region town, small district (2 to 3 routes incl. a ~3 min start
 | 3 | Willys jeep traffic | Done | | Doc task 4. `vehicle_mix: {"jeep": 0.4}` on the map, jeeps in one extra MultiMesh, seeded; Puerto Marisol unchanged. Screenshot captured, not seen on a phone |
 | 4 | Routes C1 Mirador and C2 Las Lomas | Done | Doc task 5. Added `cafeto_c1.json` (Mirador loop, 570 s goal, 2 vendors) and `cafeto_c2.json` (Circuito Las Lomas figure-8, 660 s goal, 1200 coins). Stops re-placed for x1.4 scale with 52 m clear bays avoiding parked cars and obstacles. Autopilot tested: 0 missed stops, 0 stalls, 0 jolts. Gated at level 6. 5 new GUT tests. Not checked on a phone |
 | 5 | District switcher on the Routes tab | Done | Doc task 6. Segmented row (64 px buttons) built dynamically from catalog towns, filters routes list by town. Locked town (< level 6) shows lock badge "🔒 Nivel 6", viewable but unplayable. Choice persists in profile (defaulting to selected route's town). TouchScroll drag-safe. Screenshots verified at 1280x720, 1560x720, and 1600x900. 4 new GUT tests |
-| 6 | Fog and mountain ambience | | Doc task 7 |
+| 6 | Fog and mountain ambience | Done | Doc task 7. Dawn/morning fog x1.35 on Alto Cafeto via `CityTheme.fog_scale` and `TimeOfDay.fog_scale`; no sea layer on map (distance INF); city bed 4 dB quieter (-16 dB) via map ambience; rare motorbike one-shots kept; bird clusters valid. 4 new GUT tests. Dawn screenshots looked at on both maps |
 
 Dropped by the pivot: the boost/arcade level and the old map expansion. See DECISIONS.md.

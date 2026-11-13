@@ -87,9 +87,83 @@ func test_props_stand_on_the_pavement() -> void:
 
 func test_bird_clusters_are_valid_and_inside_the_town() -> void:
 	assert_eq(MapLoader.check_bird_clusters(map_data["bird_clusters"]), [] as Array[String])
+	var cluster_ids: Array = (map_data["bird_clusters"] as Array).map(func(c: Dictionary) -> String: return c["id"])
+	assert_true(cluster_ids.has("cafetal_entrada"), "Bird cluster exists near coffee grove entrance")
+	assert_true(cluster_ids.has("mirador_canopy"), "Bird cluster exists near mirador")
+	assert_true(cluster_ids.has("plaza_aromas"), "Bird cluster exists near plaza")
 	for cluster: Dictionary in map_data["bird_clusters"]:
 		assert_lt(absf(float(cluster["x"])), 300.0, cluster["id"])
 		assert_lt(absf(float(cluster["z"])), 300.0, cluster["id"])
+
+
+func test_fog_scale_is_1_35_at_dawn_and_morning_and_unchanged_elsewhere() -> void:
+	var puerto_map := MapLoader.read_json("res://data/packs/colombia/maps/puerto_marisol.json")
+	var alto_theme := CityTheme.from_data(map_data)
+	var puerto_theme := CityTheme.from_data(puerto_map)
+	assert_almost_eq(alto_theme.fog_scale, 1.35, 0.001)
+	assert_almost_eq(puerto_theme.fog_scale, 1.0, 0.001)
+
+	var alto_times := TimeOfDay.list_for(Country.pack.data, alto_theme)
+	var puerto_times := TimeOfDay.list_for(Country.pack.data, puerto_theme)
+
+	var alto_by_id := {}
+	for t in alto_times:
+		alto_by_id[t.id] = t
+	var puerto_by_id := {}
+	for t in puerto_times:
+		puerto_by_id[t.id] = t
+
+	# Dawn and morning are scaled by 1.35x on Alto Cafeto
+	assert_almost_eq(alto_by_id["madrugada"].fog_scale, puerto_by_id["madrugada"].fog_scale * 1.35, 0.001)
+	assert_almost_eq(alto_by_id["manana"].fog_scale, puerto_by_id["manana"].fog_scale * 1.35, 0.001)
+	assert_almost_eq(alto_by_id["madrugada"].fog_scale, 2.16, 0.001)
+	assert_almost_eq(alto_by_id["manana"].fog_scale, 1.35, 0.001)
+
+	# Midday, sunset, and night are unchanged on Alto Cafeto
+	assert_almost_eq(alto_by_id["mediodia"].fog_scale, puerto_by_id["mediodia"].fog_scale, 0.001)
+	assert_almost_eq(alto_by_id["atardecer"].fog_scale, puerto_by_id["atardecer"].fog_scale, 0.001)
+	assert_almost_eq(alto_by_id["noche"].fog_scale, puerto_by_id["noche"].fog_scale, 0.001)
+
+	# Puerto Marisol is unchanged from the pack values
+	assert_almost_eq(puerto_by_id["madrugada"].fog_scale, 1.6, 0.001)
+	assert_almost_eq(puerto_by_id["manana"].fog_scale, 1.0, 0.001)
+	assert_almost_eq(puerto_by_id["mediodia"].fog_scale, 1.0, 0.001)
+	assert_almost_eq(puerto_by_id["atardecer"].fog_scale, 1.2, 0.001)
+	assert_almost_eq(puerto_by_id["noche"].fog_scale, 1.0, 0.001)
+
+
+func test_no_sea_layer_on_alto_cafeto_map() -> void:
+	assert_false(map_data.has("coast"))
+	var ground := MapLoader.build_ground(map_data, RoadNetwork.from_data(map_data))
+	assert_eq(ground.coast_x, GroundSurface.NO_COAST)
+	assert_eq(AmbienceMixer.distance_to_sea(0.0, ground.coast_x), INF)
+	var sea_layer := {"id": "sea", "rule": "sea", "near": 25.0, "far": 230.0, "volume_db": -9.0}
+	var mixer := AmbienceMixer.new([sea_layer])
+	mixer.sea_distance = AmbienceMixer.distance_to_sea(0.0, ground.coast_x)
+	assert_eq(mixer.gain(sea_layer), 0.0, "Sea is silent without a coast")
+	assert_eq(mixer.volume_db(sea_layer), AmbienceMixer.SILENT_DB)
+
+
+func test_alto_cafeto_has_quieter_street_bed() -> void:
+	var alto_overrides: Dictionary = map_data.get("ambience", {})
+	assert_true(alto_overrides.has("city"), "Alto Cafeto defines ambience override for city bed")
+	assert_lt(float(alto_overrides["city"]["volume_db"]), -12.0, "Street bed is quieter than Puerto Marisol (-12 dB)")
+	assert_almost_eq(float(alto_overrides["city"]["volume_db"]), -16.0, 0.001)
+
+
+func test_motorbike_ambience_remains_rare() -> void:
+	var layers := Country.pack.ambience_layers()
+	var moto_layer: Dictionary = {}
+	for layer: Dictionary in layers:
+		if layer.get("id") == "motorbike":
+			moto_layer = layer
+			break
+	assert_false(moto_layer.is_empty(), "Motorbike layer exists")
+	var every: Array = moto_layer.get("every", [])
+	assert_eq(every.size(), 2)
+	assert_gte(float(every[0]), 30.0, "Shortest interval is at least 30s")
+	assert_gte(float(every[1]), 70.0, "Longest interval is at least 70s")
+	assert_lte(float(moto_layer.get("volume_db", 0.0)), -15.0, "Motorbike volume is subtle")
 
 
 func test_theme_is_a_hill_town_without_palms() -> void:
@@ -313,3 +387,17 @@ func test_landmarks_stand_on_the_terrain() -> void:
 			assert_gt(float(landmark["floor"]), y, "%s floor is above the ground at %s" % [kind, point])
 		var centre_y := ground.terrain_height(landmark["centre"])
 		assert_lt(float(landmark["floor"]) - centre_y, 4.0, "%s is not floating" % kind)
+
+
+func test_map_ambience_override_does_not_leak_into_the_pack() -> void:
+	var director := AudioDirector.new()
+	add_child_autofree(director)
+	director.setup_street(0.0, PackedVector2Array(), PackedVector2Array(), map_data)
+	var local_db := 0.0
+	for layer: Dictionary in director.mixer.layers:
+		if layer["id"] == "city":
+			local_db = float(layer["volume_db"])
+	assert_almost_eq(local_db, -16.0, 0.001, "the shift's street bed is quieter")
+	for layer: Dictionary in Country.pack.ambience_layers():
+		if layer["id"] == "city":
+			assert_ne(float(layer["volume_db"]), -16.0, "the pack's own street bed is untouched")
