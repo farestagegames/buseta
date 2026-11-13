@@ -14,5 +14,33 @@
    "dir": 1
   }
  ],
- "stops": []
+ "stops": [],
+ "arcade": {
+  "start_seconds": 62.0,
+  "checkpoint_seconds": 20.0,
+  "checkpoint_decay": 1.0,
+  "checkpoint_floor": 9.0,
+  "crash_seconds": 4.0,
+  "first_checkpoint": 180.0,
+  "checkpoint_spacing": 150.0,
+  "first_boost": 330.0,
+  "boost_spacing": 420.0,
+  "boost_seconds": 3.0,
+  "boost_reach": 3.4,
+  "handling": 1.3,
+  "obstacles": {
+   "kinds": ["cone", "barrier"],
+   "first_arch": 2,
+   "every_arches": 3,
+   "sets_per_batch": 2,
+   "cone_count": 3,
+   "cone_spacing": 3.0,
+   "lateral_min": 2.2,
+   "lateral_max": 3.2,
+   "arch_clearance": 24.0,
+   "pad_clearance": 26.0,
+   "set_spacing": 90.0,
+   "min_gap_after_bus": 90.0
+  }
+ }
 }

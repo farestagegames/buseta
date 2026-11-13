@@ -90,9 +90,33 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 
 
 func _add_prop(kind: String, ground_position: Vector2, yaw: float) -> void:
+	props.append(KnockableProp.new(kind, _start_for(ground_position), KINDS[kind]["radius"], yaw))
+
+
+func _start_for(ground_position: Vector2) -> Vector3:
 	var height := _ground.height_at(ground_position) + 0.1
-	var start := Vector3(ground_position.x, height, ground_position.y)
-	props.append(KnockableProp.new(kind, start, KINDS[kind]["radius"], yaw))
+	return Vector3(ground_position.x, height, ground_position.y)
+
+
+## Adds knockable props while a run is live (the arcade's growing obstacle sets),
+## growing the existing batch for their kind. Each entry is
+## {kind: String, position: Vector2, yaw: float}.
+func add_live_props(entries: Array) -> void:
+	for entry: Dictionary in entries:
+		var kind: String = entry["kind"]
+		if not _batches.has(kind):
+			_make_batch(kind, 0)
+		var prop := KnockableProp.new(kind, _start_for(entry["position"]), KINDS[kind]["radius"], float(entry.get("yaw", 0.0)))
+		props.append(prop)
+		var multi: MultiMesh = _batches[kind]
+		var index := multi.instance_count
+		multi.instance_count = index + 1
+		_indices[prop] = index
+		if kind == "car":
+			multi.set_instance_color(index, _parked_colours[index % _parked_colours.size()])
+		elif kind == "stall":
+			multi.set_instance_color(index, STALL_COLOURS[index % STALL_COLOURS.size()])
+		_write_transform(prop)
 
 
 func _physics_process(dt: float) -> void:
@@ -186,23 +210,10 @@ func _build_batches() -> void:
 	var counts := {}
 	for prop in props:
 		counts[prop.kind] = int(counts.get(prop.kind, 0)) + 1
-	var material := LowPolyBuilder.vertex_colour_material()
 	_glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_glow.albedo_color = GLOW_OFF
 	for kind: String in counts:
-		var multi := MultiMesh.new()
-		multi.transform_format = MultiMesh.TRANSFORM_3D
-		multi.use_colors = kind == "car" or kind == "stall"
-		var mesh := _mesh_for(kind).build(material)
-		_bulbs_for(kind).build_into(mesh, _glow)
-		multi.mesh = mesh
-		multi.instance_count = counts[kind]
-		_batches[kind] = multi
-		var instance := MultiMeshInstance3D.new()
-		instance.multimesh = multi
-		instance.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-		instance.custom_aabb = AABB(Vector3(-2000.0, -200.0, -2000.0), Vector3(4000.0, 400.0, 4000.0))
-		add_child(instance)
+		_make_batch(kind, counts[kind])
 	var next := {}
 	for prop in props:
 		var index: int = next.get(prop.kind, 0)
@@ -213,6 +224,24 @@ func _build_batches() -> void:
 		elif prop.kind == "stall":
 			(_batches["stall"] as MultiMesh).set_instance_color(index, STALL_COLOURS[index % STALL_COLOURS.size()])
 		_write_transform(prop)
+
+
+## Builds one batch for a kind, empty or with `count` instances ready to fill.
+func _make_batch(kind: String, count: int) -> void:
+	var material := LowPolyBuilder.vertex_colour_material()
+	var multi := MultiMesh.new()
+	multi.transform_format = MultiMesh.TRANSFORM_3D
+	multi.use_colors = kind == "car" or kind == "stall"
+	var mesh := _mesh_for(kind).build(material)
+	_bulbs_for(kind).build_into(mesh, _glow)
+	multi.mesh = mesh
+	multi.instance_count = count
+	_batches[kind] = multi
+	var instance := MultiMeshInstance3D.new()
+	instance.multimesh = multi
+	instance.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	instance.custom_aabb = AABB(Vector3(-2000.0, -200.0, -2000.0), Vector3(4000.0, 400.0, 4000.0))
+	add_child(instance)
 
 
 ## The part of a lamp or stall that glows after dark.

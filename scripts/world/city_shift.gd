@@ -144,8 +144,8 @@ func _ready() -> void:
 	if is_arcade:
 		arcade = ArcadeSystem.new()
 		add_child(arcade)
-		arcade.setup(route, network, ground, hail_seed)
-		_bus.model.handling = ArcadeRun.HANDLING
+		arcade.setup(route, network, ground, hail_seed, _obstacles, _traffic, route_data)
+		_bus.model.handling = arcade.run.handling
 	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)
 	if arcade != null:

@@ -2,7 +2,7 @@ class_name ArcadeSystem
 extends Node
 ## Runs the arcade mode in the city: a course that keeps growing, a checkpoint
 ## arch to drive through, boost pads on the road, and the clock. ArcadeRun holds
-## the rules; this node draws and reports.
+## the rules; this node draws, reports and lays the tightening obstacles.
 
 ## More course is planned when the bus is this close to its end.
 const EXTEND_WHEN := 900.0
@@ -17,18 +17,27 @@ var runner: RouteRunner
 
 var _network: RoadNetwork
 var _ground: GroundSurface
+var _obstacles: ObstacleField
+var _traffic: TrafficSystem
+var _config: Dictionary = {}
 var _random := RandomNumberGenerator.new()
 var _arch: Node3D
 var _pads: MultiMeshInstance3D
 var _bus_spot := Vector2.ZERO
 var _boosting: float = 0.0
 var _status_timer: float = 0.0
+var _sets_placed: int = 0
+var _obstacle_cursor: float = 0.0
 
 
-func setup(route: RouteRunner, network: RoadNetwork, ground: GroundSurface, random_seed: int) -> void:
+func setup(route: RouteRunner, network: RoadNetwork, ground: GroundSurface, random_seed: int, obstacles: ObstacleField, traffic: TrafficSystem, route_data: Dictionary) -> void:
 	runner = route
 	_network = network
 	_ground = ground
+	_obstacles = obstacles
+	_traffic = traffic
+	_config = route_data.get("arcade", {})
+	run.configure(_config)
 	_random.seed = random_seed
 	run.plan_to(runner.length())
 	_build_arch()
@@ -37,7 +46,7 @@ func setup(route: RouteRunner, network: RoadNetwork, ground: GroundSurface, rand
 	GameEvents.bus_collided.connect(func(impact: float) -> void:
 		if impact >= ScoreKeeper.LOST_COLLISION_SPEED:
 			run.crash()
-			GameEvents.penalty_shown.emit(tr("Crash: -%d s") % roundi(ArcadeRun.CRASH_SECONDS)))
+			GameEvents.penalty_shown.emit(tr("Crash: -%d s") % roundi(run.crash_seconds)))
 
 
 func _on_telemetry(data: BusTelemetry) -> void:
@@ -54,11 +63,12 @@ func _on_telemetry(data: BusTelemetry) -> void:
 	for event in run.update(runner.progress, runner.distance_from_line(rear), dt):
 		match event:
 			"checkpoint":
-				GameEvents.hint_shown.emit(tr("Checkpoint: +%d s") % roundi(ArcadeRun.CHECKPOINT_SECONDS))
+				GameEvents.hint_shown.emit(tr("Checkpoint: +%d s") % roundi(run.last_bonus))
 				_place_arch()
+				_refresh_obstacles()
 			"boost":
-				_boosting = ArcadeRun.BOOST_SECONDS
-				GameEvents.boost_started.emit(ArcadeRun.BOOST_SECONDS)
+				_boosting = run.boost_seconds
+				GameEvents.boost_started.emit(run.boost_seconds)
 				_fill_pads()
 			"finished":
 				_finish()
@@ -69,6 +79,35 @@ func _on_telemetry(data: BusTelemetry) -> void:
 		var next := run.next_checkpoint()
 		var spot: Vector2 = runner.point_at(next)["position"] if next != INF else rear
 		GameEvents.arcade_status.emit(run.seconds_left, run.checkpoints_passed + 1, maxf(next - runner.progress, 0.0), spot, _boosting > 0.0)
+
+
+## More obstacles as the run goes on: every few arches a couple of new cone or
+## barrier sets appear on the course ahead, clear of pads and arches.
+func _refresh_obstacles() -> void:
+	var obstacles_config: Dictionary = _config.get("obstacles", {})
+	var target := ArcadeObstacles.set_count(run.checkpoints_passed, obstacles_config)
+	if _sets_placed >= target:
+		return
+	var start := maxf(_obstacle_cursor, runner.progress + float(obstacles_config.get("min_gap_after_bus", 90.0)))
+	var placements := ArcadeObstacles.place_sets(start, target - _sets_placed, run.checkpoints, run.boosts, obstacles_config)
+	_obstacles.add_live_props(_world_placements(placements))
+	_traffic.watch_props(_obstacles.props)
+	_sets_placed = target
+	var spacing := float(obstacles_config.get("set_spacing", 90.0))
+	for placement: Dictionary in placements:
+		_obstacle_cursor = maxf(_obstacle_cursor, float(placement["distance"]) + spacing)
+
+
+## Route-distance placements to world positions on the kerb side of the lane.
+func _world_placements(placements: Array) -> Array:
+	var out: Array = []
+	for placement: Dictionary in placements:
+		var placed := runner.point_at(float(placement["distance"]))
+		var forward: Vector2 = placed["forward"]
+		var right := Vector2(-forward.y, forward.x) * float(_network.traffic_side)
+		var spot: Vector2 = placed["position"] + right * float(placement["lateral"])
+		out.append({"kind": placement["kind"], "position": spot, "yaw": RoadNetwork.heading_of(forward)})
+	return out
 
 
 func _extend() -> void:
