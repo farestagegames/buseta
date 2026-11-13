@@ -48,6 +48,8 @@ var _door_glance: float = 0.0
 var _door_position: Vector3 = Vector3.ZERO
 var _follow_height: float = 0.0
 var _blocked: float = 0.0 ## 0 clear, 1 fully moved for a wall, eased.
+## The driver's side mirror, seen only in cockpit view.
+var wing_mirror: WingMirror
 
 
 func _ready() -> void:
@@ -56,12 +58,24 @@ func _ready() -> void:
 	_bus = get_node(target_path) as BusController
 	_visual = _bus.get_node("Visual") as BusVisual
 	_follow_heading = _bus.rotation.y
+	_build_wing_mirror()
 	GameEvents.camera_cycle_requested.connect(next_view)
 	_follow_height = _bus.global_position.y
 	GameEvents.bus_telemetry_updated.connect(_on_telemetry)
 	GameEvents.bus_relocate_requested.connect(_snap_to_bus.unbind(2))
 	GameEvents.reset_requested.connect(_snap_to_bus.call_deferred)
 	_announce_view.call_deferred() # After every listener in the scene is ready.
+
+
+## Under the HUD, so menus and panels cover it.
+func _build_wing_mirror() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 0
+	add_child(layer)
+	wing_mirror = WingMirror.new()
+	wing_mirror.source = _visual.wing_mirror_anchor
+	wing_mirror.on_left = _bus.spec.driver_seat_x <= 0.0
+	layer.add_child(wing_mirror)
 
 
 func _on_telemetry(data: BusTelemetry) -> void:

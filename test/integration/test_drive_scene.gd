@@ -108,6 +108,38 @@ func test_cockpit_camera_sits_inside_the_bus() -> void:
 	assert_between(local.y, 1.0, bus.spec.body_height)
 
 
+func test_wing_mirror_shows_only_in_cockpit_view() -> void:
+	var mirror := camera.wing_mirror
+	await wait_frames(1)
+	assert_false(mirror.visible, "No mirror in a follow view")
+	assert_eq(mirror.viewport.render_target_update_mode, SubViewport.UPDATE_DISABLED, "Not rendering outside the cockpit")
+	while camera.view_name() != "Cockpit":
+		GameEvents.camera_cycle_requested.emit()
+	await wait_frames(3)
+	assert_true(mirror.visible)
+	assert_true(mirror.picture.flip_h, "Flipped like a real mirror")
+	assert_lte(mirror.viewport.size.x * mirror.viewport.size.y, 256 * 144, "A small render")
+	GameEvents.camera_cycle_requested.emit()
+	await wait_frames(1)
+	assert_false(mirror.visible)
+	assert_eq(mirror.viewport.render_target_update_mode, SubViewport.UPDATE_DISABLED)
+
+
+func test_wing_mirror_looks_back_from_the_drivers_side() -> void:
+	var mirror := camera.wing_mirror
+	await wait_frames(1) # After the rig announces its first view.
+	mirror.set_active(true)
+	await wait_frames(2)
+	var local := bus.global_transform.affine_inverse() * mirror.camera.global_transform
+	var side := signf(bus.spec.driver_seat_x)
+	assert_gt(local.origin.x * side, bus.spec.body_width / 2.0, "Outside the body on the driver's side")
+	var looking := -local.basis.z
+	assert_gt(looking.z, 0.9, "Looking back down the bus")
+	assert_gt(looking.x * side, 0.0, "Turned out, away from the body")
+	assert_eq(mirror.on_left, side < 0.0)
+	mirror.set_active(false)
+
+
 func test_door_camera_stays_clear_of_a_wall_beside_the_bus() -> void:
 	var side := float(bus.spec.door_side)
 	var wall := StaticBody3D.new()

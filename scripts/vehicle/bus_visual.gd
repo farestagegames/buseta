@@ -29,6 +29,14 @@ const MIRROR_GLASS_FRONT := 0.0245
 ## A reflection is a little dimmer than the face itself.
 const MIRROR_TINT := Color(0.88, 0.88, 0.9)
 
+## The wing mirror's eye: out from the body, up and back from the front, and
+## turned out and down from straight back.
+const WING_MIRROR_OUT := 0.27
+const WING_MIRROR_HEIGHT := 2.12
+const WING_MIRROR_BACK := 0.26
+const WING_MIRROR_YAW := deg_to_rad(9.0)
+const WING_MIRROR_PITCH := deg_to_rad(4.0)
+
 const DARK := Color(0.1, 0.1, 0.12)
 const TRIM := Color(0.26, 0.27, 0.3)
 const SEAT := Color(0.15, 0.25, 0.5)
@@ -60,6 +68,8 @@ var driver_look: DriverLook
 var decoration: Dictionary = {}
 var _decoration_mesh: MeshInstance3D
 var cockpit_anchor: Node3D
+## Where the driver's wing mirror sees from, looking back down the bus's side.
+var wing_mirror_anchor: Node3D
 var cabin: CabinLayout
 
 var _body: Node3D
@@ -331,7 +341,7 @@ func _build_shell() -> void:
 	for side: float in [-1.0, 1.0]:
 		var mirror_z := _front_z + 0.15
 		b.box(Vector3(side * (_half_width + 0.14), 2.3, mirror_z), Vector3(0.3, 0.04, 0.04), DARK)
-		b.box(Vector3(side * (_half_width + 0.27), 2.12, mirror_z), Vector3(0.05, 0.36, 0.17), DARK)
+		b.box(Vector3(side * (_half_width + WING_MIRROR_OUT), WING_MIRROR_HEIGHT, mirror_z), Vector3(0.05, 0.36, 0.17), DARK)
 
 	_add_seats(b, _door_far_z + 0.5, _rear_z - 0.8, SEAT, true)
 	_add_style_details(b)
@@ -701,6 +711,9 @@ func _build_cockpit() -> void:
 	cockpit_anchor = Node3D.new()
 	cockpit_anchor.position = Vector3(x, 2.0, _cab_z + 1.6)
 	_body.add_child(cockpit_anchor)
+	wing_mirror_anchor = Node3D.new()
+	wing_mirror_anchor.transform = wing_mirror_transform(signf(spec.driver_seat_x), _half_width, _front_z)
+	_body.add_child(wing_mirror_anchor)
 
 
 func _build_wheels() -> void:
@@ -879,6 +892,14 @@ func _build_interior_mirror() -> void:
 	_mirror_face.material_override = reflection
 	_mirror_face.transform = Transform3D(Basis.IDENTITY, Vector3(x, y, z)) * mirror_face_transform(spec.door_side)
 	_body.add_child(_mirror_face)
+
+
+## The driver's wing mirror glass, just behind it and looking back past the
+## bus's side, turned out a little so the side shows only at the inner edge.
+static func wing_mirror_transform(side: float, half_width: float, front_z: float) -> Transform3D:
+	var spot := Vector3(side * (half_width + WING_MIRROR_OUT), WING_MIRROR_HEIGHT, front_z + WING_MIRROR_BACK)
+	var look := Vector3(side * sin(WING_MIRROR_YAW), -sin(WING_MIRROR_PITCH), cos(WING_MIRROR_YAW))
+	return Transform3D(Basis.looking_at(look, Vector3.UP), spot)
 
 
 ## The face from the middle of the mirror: scaled down, squashed flat and turned
