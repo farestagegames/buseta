@@ -959,3 +959,27 @@ func test_with_the_indicator_buttons_hidden_the_bus_signals_turns_itself() -> vo
 	GameSettings.show_indicator_buttons = was
 	assert_eq(asked, [int(turn["side"])] as Array[int], "Signalled once, on the turn's side")
 	assert_eq(missed[0], 0, "Nothing held against the driver")
+
+
+func test_watching_the_door_from_the_cab_stops_fare_dodgers() -> void:
+	var dodged := [0]
+	var paid := [0]
+	var count_dodge := func() -> void: dodged[0] += 1
+	var count_paid := func(_amount: int) -> void: paid[0] += 1
+	GameEvents.fare_dodged.connect(count_dodge)
+	GameEvents.fare_collected.connect(count_paid)
+	route_system.dodger_chance = 0.5
+	GameEvents.camera_view_changed.emit("Close")
+	for i in 20:
+		route_system._on_boarded()
+	var dodged_from_outside: int = dodged[0]
+	GameEvents.camera_view_changed.emit("Cockpit")
+	dodged[0] = 0
+	paid[0] = 0
+	for i in 20:
+		route_system._on_boarded()
+	GameEvents.fare_dodged.disconnect(count_dodge)
+	GameEvents.fare_collected.disconnect(count_paid)
+	assert_gt(dodged_from_outside, 0, "Someone slips on with the camera outside")
+	assert_eq(dodged[0], 0, "Nobody slips past the driver in the cab")
+	assert_eq(paid[0], 20, "Everyone pays")

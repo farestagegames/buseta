@@ -227,7 +227,7 @@ func _on_police_ended_run(reason: String) -> void:
 
 func _on_fare_dodged() -> void:
 	score.add_dodger()
-	GameEvents.penalty_shown.emit("A fare dodger slipped on without paying")
+	GameEvents.penalty_shown.emit("A fare dodger slipped on: watch the door from the cab")
 
 
 func _on_vendor_boarded() -> void:

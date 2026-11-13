@@ -62,6 +62,9 @@ var _vendor_stop: int = -1
 var rain_slack: float = 0.0
 ## Chance each boarding passenger slips on without paying, from the difficulty.
 var dodger_chance: float = 0.0
+## In the cab the driver turns to the doorway while people board, so nobody
+## slips past without paying.
+var watching_door: bool = false
 ## The endless route's hail settings and map, set by CityShift, for planning more road.
 var endless_plan: Dictionary = {}
 var endless_map: Dictionary = {}
@@ -92,6 +95,7 @@ func setup(route: RouteRunner, spec: BusSpec, network: RoadNetwork, fare: int = 
 	GameEvents.skip_stop_requested.connect(skip_to_next_stop)
 	GameEvents.finish_shift_requested.connect(finish_now)
 	GameEvents.penalty_shown.connect(_on_penalty_shown)
+	GameEvents.camera_view_changed.connect(func(view: String) -> void: watching_door = view == "Cockpit")
 	GameEvents.police_ended_run.connect(func(_reason: String) -> void:
 		get_tree().create_timer(POLICE_STOP_SECONDS).timeout.connect(finish_now))
 	_dodgers.seed = DODGER_SEED
@@ -220,7 +224,10 @@ func _on_alighted() -> void:
 
 func _on_boarded() -> void:
 	ledger.board_one(_session_stop)
-	if _fare > 0 and dodger_chance > 0.0 and _dodgers.randf() < dodger_chance:
+	var dodging := _fare > 0 and dodger_chance > 0.0 and _dodgers.randf() < dodger_chance
+	if dodging and watching_door:
+		GameEvents.hint_shown.emit("You saw them: they paid the fare")
+	if dodging and not watching_door:
 		GameEvents.fare_dodged.emit()
 	else:
 		_fares += _fare
