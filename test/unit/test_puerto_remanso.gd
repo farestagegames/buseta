@@ -189,3 +189,17 @@ func test_remanso_route_goals_score() -> void:
 
 func test_traffic_share_is_relaxed_for_river_port() -> void:
 	assert_almost_eq(TrafficSystem.map_traffic_share(map_data), 0.6, 0.001)
+
+
+func test_the_ferry_landing_road_and_kerbs_are_not_water_but_the_river_is() -> void:
+	var network := RoadNetwork.from_data(map_data)
+	var ground := MapLoader.build_ground(map_data, network)
+	for road: Dictionary in network.roads.values():
+		var length := float(road["length"])
+		var along := 0.0
+		while along <= length:
+			for lateral: float in [0.0, RoadNetwork.ROAD_HALF_WIDTH + 1.0, -RoadNetwork.ROAD_HALF_WIDTH - 1.0]:
+				var point: Vector2 = network.sample(road["id"], along, lateral)["position"]
+				assert_false(MapGuard.in_water(ground, network, point), "%s at %.0f m" % [road["id"], along])
+			along += 10.0
+	assert_true(MapGuard.in_water(ground, network, Vector2(300.0, 80.0)), "Out in the Magdalena")

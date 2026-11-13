@@ -133,6 +133,36 @@ func edge_distance(point: Vector2) -> float:
 	return nearest
 
 
+## Metres from this point to the nearest asphalt, however far away (edge_distance
+## only looks a few metres out). Walks every piece of road, so call it a few times
+## a second at most.
+func distance_to_road(point: Vector2) -> float:
+	var nearest := INF
+	for capsule: Dictionary in _capsules:
+		var closest := Geometry2D.get_closest_point_to_segment(point, capsule["a"], capsule["b"])
+		nearest = minf(nearest, point.distance_to(closest) - float(capsule["radius"]))
+	return nearest
+
+
+## The middle of the nearest lane, heading along its road, for putting a lost bus back.
+func nearest_lane_pose(point: Vector2) -> Dictionary:
+	var best: Dictionary = {}
+	var nearest := INF
+	for capsule: Dictionary in _capsules:
+		if str(capsule["road"]) == "":
+			continue
+		var closest := Geometry2D.get_closest_point_to_segment(point, capsule["a"], capsule["b"])
+		var distance := point.distance_to(closest)
+		if distance < nearest:
+			nearest = distance
+			best = {"on": closest, "a": capsule["a"], "b": capsule["b"]}
+	if best.is_empty():
+		return {"position": point, "heading": 0.0}
+	var forward: Vector2 = (best["b"] - best["a"]).normalized()
+	var kerb := Vector2(-forward.y, forward.x) * float(traffic_side)
+	return {"position": best["on"] + kerb * LANE_WIDTH / 2.0, "heading": heading_of(forward)}
+
+
 ## Speed limit in km/h at this point. Off any road, the town default applies.
 func speed_limit_at(point: Vector2) -> float:
 	var key := _cell_key(int(floor(point.x / CELL_SIZE)), int(floor(point.y / CELL_SIZE)))

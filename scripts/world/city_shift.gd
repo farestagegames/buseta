@@ -29,6 +29,7 @@ var police: PoliceSystem
 const ARCADE_WEATHER_SECONDS := 300.0
 ## The arcade mode, when the chosen route is the arcade course; null otherwise.
 var arcade: ArcadeSystem
+var map_guard: MapGuard
 @onready var _hud: DriveHud = $Hud
 @onready var _camera: Camera3D = $CameraRig
 @onready var _street_life: StreetLife = $StreetLife
@@ -146,6 +147,10 @@ func _ready() -> void:
 		add_child(arcade)
 		arcade.setup(route, network, ground, hail_seed, _obstacles, _traffic, route_data)
 		_bus.model.handling = arcade.run.handling
+	map_guard = MapGuard.new()
+	map_guard.name = "MapGuard"
+	add_child(map_guard)
+	map_guard.setup(_bus, ground, network, not is_arcade)
 	_crowd.setup(route, ground, _bus.get_node("Visual"))
 	_beacon.setup(ground)
 	if arcade != null:

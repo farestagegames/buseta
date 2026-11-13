@@ -891,3 +891,41 @@ func test_a_motorbike_stops_the_bus_instead_of_passing_through_even_at_boost_spe
 			assert_almost_eq(hits[0], speed * TrafficSystem.MOTO_LOSS_SHARE, 0.01, "The bus loses speed")
 			assert_lt(bus.model.speed, speed - 1.0, "The bus slows at %.1f m/s" % speed)
 	GameEvents.obstacle_hit.disconnect(on_hit)
+
+
+func test_driving_into_the_sea_puts_the_bus_back_on_the_road() -> void:
+	var guard: MapGuard = scene.map_guard
+	var hints: Array[String] = []
+	GameEvents.hint_shown.connect(func(text: String) -> void: hints.append(text))
+	var sea := Vector2(620.0, -100.0)
+	assert_true(MapGuard.in_water(scene.ground, scene.network, sea), "Far east of Puerto Marisol is the sea")
+	GameEvents.bus_relocate_requested.emit(sea, -PI / 2.0)
+	await wait_seconds(0.8)
+	var edge := scene.network.edge_distance(Vector2(bus.global_position.x, bus.global_position.z))
+	assert_lt(edge, 0.0, "Back on the road straight away")
+	assert_eq(guard.rescues, 1)
+	assert_has(hints, "Back on the road")
+
+
+func test_a_bus_far_off_the_map_is_brought_back_after_a_moment() -> void:
+	var lost := Vector2(-200.0, 200.0)
+	assert_gt(scene.network.distance_to_road(lost), MapGuard.FAR_FROM_ROAD)
+	GameEvents.bus_relocate_requested.emit(lost, 1.0)
+	await wait_seconds(0.6)
+	assert_eq(scene.map_guard.rescues, 0, "A short wander is allowed")
+	await wait_seconds(MapGuard.FAR_SECONDS + 0.6)
+	var edge := scene.network.edge_distance(Vector2(bus.global_position.x, bus.global_position.z))
+	assert_lt(edge, 0.0, "Then it is back on the road")
+	assert_eq(scene.map_guard.rescues, 1)
+
+
+func test_the_road_and_the_pavement_never_count_as_water_or_lost() -> void:
+	for road: Dictionary in scene.network.roads.values():
+		var middle: Vector2 = scene.network.sample(road["id"], float(road["length"]) / 2.0)["position"]
+		assert_false(MapGuard.in_water(scene.ground, scene.network, middle), "Road %s" % road["id"])
+		assert_lt(scene.network.distance_to_road(middle), 0.0)
+
+
+func test_nearest_lane_pose_lands_on_the_asphalt() -> void:
+	var pose := scene.network.nearest_lane_pose(Vector2(-200.0, 200.0))
+	assert_lt(scene.network.edge_distance(pose["position"]), 0.0)
