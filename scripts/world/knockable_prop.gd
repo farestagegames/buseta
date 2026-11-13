@@ -37,6 +37,12 @@ var heavy: bool = false
 var cooldown: float = 0.0
 var tips_over: bool = false
 var tip_angle: float = 0.0
+var road: String = ""
+var along: float = 0.0
+var lateral: float = 0.0
+var dir: int = 0
+var forward: Vector2 = Vector2.ZERO
+var vendor: RefCounted = null
 
 var _contact_timer: float = 0.0
 var _tip_axis: Vector3 = Vector3.RIGHT
@@ -61,6 +67,12 @@ func tip(away: Vector2) -> void:
 	_tip_axis = Vector3(-fall.y, 0.0, fall.x).normalized() * -1.0
 	_tip_rate = 0.8
 	state = State.FLYING
+	if vendor != null and vendor.has_method("on_stall_knocked"):
+		vendor.on_stall_knocked()
+
+
+func is_knocked() -> bool:
+	return state != State.STANDING or tip_angle > 0.0
 
 
 func basis() -> Basis:
@@ -81,6 +93,8 @@ func hit(bus_velocity: Vector2, away: Vector2) -> void:
 	velocity = Vector3(push.x, clampf(speed * 0.5, MIN_LIFT, MAX_LIFT), push.y)
 	spin = Vector3(push.y, 0.0, -push.x) * 0.9
 	state = State.FLYING
+	if vendor != null and vendor.has_method("on_stall_knocked"):
+		vendor.on_stall_knocked()
 
 
 ## A shove from the bus, for props too heavy to throw.
@@ -94,6 +108,8 @@ func shove(bus_velocity: Vector2, away: Vector2) -> void:
 	state = State.FLYING
 	cooldown = HEAVY_HIT_COOLDOWN
 	_contact_timer = CONTACT_WINDOW
+	if vendor != null and vendor.has_method("on_stall_knocked"):
+		vendor.on_stall_knocked()
 
 
 func update(dt: float, ground_height: float) -> void:

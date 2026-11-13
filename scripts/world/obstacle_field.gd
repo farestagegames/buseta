@@ -41,6 +41,7 @@ const GLOW_OFF := Color(0.78, 0.78, 0.74)
 const GLOW_ON := Color(1.0, 0.86, 0.58)
 
 var props: Array[KnockableProp] = []
+var vendors: Array = []
 
 var _ground: GroundSurface
 var _spec: BusSpec
@@ -70,6 +71,12 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 	for entry: Dictionary in map_data.get("knockables", []):
 		var placed: Dictionary = network.sample(entry["road"], entry["along"], entry["lateral"], entry["dir"])
 		_add_prop(entry["kind"], placed["position"], placed["heading"])
+		var prop: KnockableProp = props[props.size() - 1]
+		prop.road = str(entry.get("road", ""))
+		prop.along = float(entry.get("along", 0.0))
+		prop.lateral = float(entry.get("lateral", 0.0))
+		prop.dir = int(entry.get("dir", 0))
+		prop.forward = placed["forward"]
 	for line: Dictionary in map_data.get("cone_lines", []):
 		var along: float = line["from"]
 		while along <= float(line["to"]):
@@ -91,6 +98,10 @@ func setup(map_data: Dictionary, network: RoadNetwork, ground: GroundSurface, sp
 
 func _add_prop(kind: String, ground_position: Vector2, yaw: float) -> void:
 	props.append(KnockableProp.new(kind, _start_for(ground_position), KINDS[kind]["radius"], yaw))
+
+
+func stalls() -> Array[KnockableProp]:
+	return props.filter(func(prop: KnockableProp) -> bool: return prop.kind == "stall")
 
 
 func _start_for(ground_position: Vector2) -> Vector3:
@@ -127,6 +138,8 @@ func _physics_process(dt: float) -> void:
 		if prop.is_moving() or prop.cooldown > 0.0 or prop.in_contact():
 			prop.update(dt, _ground.height_at(Vector2(prop.position.x, prop.position.z)) + 0.1)
 			_write_transform(prop)
+			if prop.vendor != null and not prop.vendor.stepped_back and prop.is_knocked():
+				prop.vendor.step_back()
 			if _pool_of.has(prop) and (prop.state != KnockableProp.State.STANDING or prop.tip_angle > 0.0):
 				# A knocked lamp or stall no longer lights the street.
 				_pools.set_instance_transform(_pool_of[prop], Transform3D(Basis().scaled(Vector3.ZERO), prop.position))

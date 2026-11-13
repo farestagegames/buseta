@@ -748,6 +748,32 @@ func test_people_on_the_pavement_are_the_passengers_looks() -> void:
 	assert_eq(life._batches.size(), 3, "Clothes, skin and hair")
 
 
+func test_every_stall_has_a_vendor_in_city_shift() -> void:
+	var life: StreetLife = scene.get_node("StreetLife")
+	var obstacles: ObstacleField = scene.get_node("Obstacles")
+	var stalls := obstacles.stalls()
+	assert_gt(stalls.size(), 0)
+	assert_eq(life.vendors.size(), stalls.size())
+	for stall in stalls:
+		assert_not_null(stall.vendor)
+		var vendor: StreetLife.Vendor = stall.vendor
+		assert_true(vendor.is_on_pavement(scene.network))
+		assert_false(vendor.is_in_road(scene.network))
+		assert_false(vendor.is_inside_stall(stall))
+		assert_lte(vendor.position().distance_to(Vector2(stall.position.x, stall.position.z)), 2.0)
+
+
+func test_knocking_a_stall_steps_the_vendor_back_in_city_shift() -> void:
+	var obstacles: ObstacleField = scene.get_node("Obstacles")
+	var stall: KnockableProp = obstacles.stalls()[0]
+	var vendor: StreetLife.Vendor = stall.vendor
+	assert_false(vendor.stepped_back)
+	stall.hit(Vector2(5.0, 0.0), Vector2(1.0, 0.0))
+	assert_true(vendor.stepped_back)
+	assert_false(vendor.is_in_road(scene.network))
+	assert_false(vendor.is_inside_stall(stall))
+
+
 func test_hitting_a_motorbike_counts_as_a_collision() -> void:
 	var traffic: TrafficSystem = scene.traffic_for_tools()
 	var moto: TrafficAgent = traffic.agents.filter(func(agent: TrafficAgent) -> bool: return agent.is_moto)[0]

@@ -118,8 +118,8 @@ func _ready() -> void:
 
 	_city.window_share = time_of_day.windows
 	_city.build(map_data, network, ground, route)
-	_street_life.setup(network, ground, route, time_of_day.pedestrians)
 	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)
+	_street_life.setup(network, ground, route, time_of_day.pedestrians, _obstacles)
 	_bus.start_at(ground, route.start_position, route.start_heading)
 	var is_arcade: bool = route_data.get("service", "") == "arcade"
 	if not is_arcade:
