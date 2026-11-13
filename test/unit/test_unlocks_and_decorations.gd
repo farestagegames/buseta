@@ -90,6 +90,25 @@ func test_next_unlock_picks_the_cheapest_reachable_item() -> void:
 		assert_lte(best_cost, int(item.get("cost", 0)))
 
 
+func test_next_unlock_moves_on_from_an_affordable_item_the_player_skips() -> void:
+	# With enough coins for the palm charm, the line names something still to earn
+	# instead of saying the charm is ready for ever.
+	Profile.data.coins = 60
+	var next := Profile.next_unlock()
+	assert_false(next.is_empty())
+	assert_ne(str(next["id"]), "charm_palma")
+	assert_true(int(next["coins_missing"]) > 0 or int(next["levels_missing"]) > 0)
+
+
+func test_next_unlock_shows_a_ready_item_when_everything_left_is_affordable() -> void:
+	Profile.data.coins = 100000000
+	Profile.data.xp = DriverLevel.xp_for_level(50)
+	var next := Profile.next_unlock()
+	assert_false(next.is_empty())
+	assert_eq(int(next["coins_missing"]), 0)
+	assert_eq(int(next["levels_missing"]), 0)
+
+
 func test_ten_starter_level_shifts_unlock_at_least_five_items() -> void:
 	var owned_before := _count_owned()
 	var day := "2026-11-01"

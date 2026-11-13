@@ -4,7 +4,8 @@ extends RefCounted
 ## Used on the main menu and exposed for the results screen.
 
 
-## The cheapest reachable item not yet owned: routes, buses, liveries, drivers,
+## The cheapest reachable item not yet owned and not yet affordable (falling back to
+## the cheapest affordable one when everything left is in reach): routes, buses, liveries, drivers,
 ## cab decorations and horns. Reachable means any route prerequisite is met and the
 ## item is not tied to a route the player cannot choose (route-only buses). Returns
 ## an empty dictionary if there is nothing left to unlock.
@@ -26,10 +27,20 @@ static func next(profile: PlayerProfile, catalog: Catalog, pack: CountryPack) ->
 		if profile.owns_horn(id):
 			continue
 		candidates.append(_candidate(profile, level, "horn", item, str(item.get("name", id))))
+	# Aim at the next thing still to earn. Something already affordable stays in the
+	# shop, but would otherwise sit on the line for ever if the player never wants it.
+	var ready: Dictionary = {}
 	for candidate: Dictionary in candidates:
-		if best.is_empty() or _closer(candidate, best):
+		if _is_ready(candidate):
+			if ready.is_empty() or _closer(candidate, ready):
+				ready = candidate
+		elif best.is_empty() or _closer(candidate, best):
 			best = candidate
-	return best
+	return best if not best.is_empty() else ready
+
+
+static func _is_ready(candidate: Dictionary) -> bool:
+	return int(candidate["coins_missing"]) == 0 and int(candidate["levels_missing"]) == 0
 
 
 static func _candidate(profile: PlayerProfile, level: int, kind: String, item: Dictionary, name: String) -> Dictionary:
