@@ -5,7 +5,7 @@ Paste each block into Play Console > Release > Release notes (max 500 characters
 ```
 <es-419>
 - Nuevo pueblo: Puerto Remanso, puerto sobre el río con puente y malecón (nivel 10).
-- Alto Cafeto ahora abre en el nivel 5, con dos rutas nuevas y yipaos en la vía.
+- Alto Cafeto abre en el nivel 5, con dos rutas nuevas y yipaos en la vía.
 - Subes de nivel más rápido.
 - Espejo retrovisor en la cabina, y desde ahí nadie se cuela sin pagar.
 - Pantalla de manejo más limpia: un botón de pausa, PUERTAS solo en las paradas y un mapa que crece al tocarlo.
