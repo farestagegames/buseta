@@ -345,6 +345,14 @@ static func vertex_colour_material() -> StandardMaterial3D:
 	return material
 
 
+## Vertex-coloured material with a gentle sky-tinted rim on side faces, for the
+## town's static scenery and woodland.
+static func rim_material() -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://assets/shaders/rim_scenery.gdshader")
+	return material
+
+
 func _triangle(a: Vector3, b: Vector3, c: Vector3, normal: Vector3, colour: Color) -> void:
 	if not clip.has_volume():
 		_emit(a, b, c, normal, colour)
