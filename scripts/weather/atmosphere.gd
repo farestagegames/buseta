@@ -8,6 +8,13 @@ extends RefCounted
 const DAY_HORIZON_LUMA := 0.85
 ## Clouds this thick hide the sun's shadows, which also saves drawing them.
 const OVERCAST := 0.6
+## The toy-town grade: a warmer sun, and shade filled from the sky's own colour
+## rather than flat grey, so shadowed walls stay coloured. Each is a share of the
+## way from the time of day's own value.
+const WARM_SUN := Color(1.0, 0.86, 0.68)
+const SUN_WARMTH := 0.18
+const SKY_FILL := 0.4
+const FILL_BOOST := 1.18
 
 var sky_top := Color.WHITE
 var sky_horizon := Color.WHITE
@@ -43,7 +50,16 @@ static func mix(time: TimeOfDay, settings: RainSettings, cloud: float, rain: flo
 	air.sun_rotation = sun_rotation_for(time.sun_from, time.sun_elevation)
 	air.shadows = time.shadows and cloud < OVERCAST
 	air.shadow_strength = clampf(1.0 - cloud / OVERCAST, 0.0, 1.0)
+	air._grade()
 	return air
+
+
+func _grade() -> void:
+	sun_colour = sun_colour.lerp(WARM_SUN, SUN_WARMTH)
+	var fill := ambient.lerp(sky_top, SKY_FILL)
+	fill.a = 1.0
+	ambient = fill
+	ambient_energy *= FILL_BOOST
 
 
 ## The sun shines from compass degrees sun_from (0 north, 90 east, where north is
