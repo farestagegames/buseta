@@ -15,6 +15,9 @@ var uv_base_height: float = 0.0
 ## When set, everything is trimmed to it and anything wholly outside is left out,
 ## as for a face seen in a small mirror.
 var clip := AABB()
+## Set above zero, box() and turned_box() darken their bottom corners by this
+## share, a baked contact shade that grounds walls, posts and trunks for free.
+var bottom_shade: float = 0.0
 
 
 func _init() -> void:
@@ -36,8 +39,7 @@ func box(centre: Vector3, size: Vector3, colour: Color) -> void:
 		var b := centre + (normal + u - v) * half
 		var c := centre + (normal + u + v) * half
 		var d := centre + (normal - u + v) * half
-		_triangle(a, c, b, normal, colour)
-		_triangle(a, d, c, normal, colour)
+		_quad_faces(a, b, c, d, normal, colour, centre.y)
 
 
 ## A box turned around the vertical axis. yaw follows bus heading.
@@ -52,8 +54,20 @@ func turned_box(centre: Vector3, size: Vector3, yaw: float, colour: Color) -> vo
 		var c := centre + basis * ((normal + u + v) * half)
 		var d := centre + basis * ((normal - u + v) * half)
 		var facing := basis * normal
-		_triangle(a, c, b, facing, colour)
-		_triangle(a, d, c, facing, colour)
+		_quad_faces(a, b, c, d, facing, colour, centre.y)
+
+
+## Two triangles of a box face, shading the corners below the middle when
+## bottom_shade is set.
+func _quad_faces(a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3, colour: Color, middle: float) -> void:
+	if bottom_shade <= 0.0 or clip.has_volume():
+		_triangle(a, c, b, normal, colour)
+		_triangle(a, d, c, normal, colour)
+		return
+	var low := colour.darkened(bottom_shade)
+	var shade := func(p: Vector3) -> Color: return low if p.y < middle - 0.001 else colour
+	_emit_coloured(a, c, b, normal, shade.call(a), shade.call(c), shade.call(b))
+	_emit_coloured(a, d, c, normal, shade.call(a), shade.call(d), shade.call(c))
 
 
 ## A flat-shaded quad facing up. Corners run anticlockwise seen from above.
@@ -289,6 +303,18 @@ func _emit(a: Vector3, b: Vector3, c: Vector3, normal: Vector3, colour: Color) -
 		surface.set_normal(normal)
 		surface.set_uv(_world_uv(point, normal))
 		surface.add_vertex(point)
+
+
+func _emit_coloured(a: Vector3, b: Vector3, c: Vector3, normal: Vector3, colour_a: Color, colour_b: Color, colour_c: Color) -> void:
+	_has_geometry = true
+	var surface := _surface_for((a + b + c) / 3.0)
+	var colours: Array[Color] = [colour_a, colour_b, colour_c]
+	var points: Array[Vector3] = [a, b, c]
+	for i in 3:
+		surface.set_color(colours[i])
+		surface.set_normal(normal)
+		surface.set_uv(_world_uv(points[i], normal))
+		surface.add_vertex(points[i])
 
 
 ## A triangle facing up with its own colour at each corner.

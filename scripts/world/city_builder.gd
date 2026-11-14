@@ -52,6 +52,9 @@ const WET_LINES := {"tint": Color(0.8, 0.8, 0.82), "roughness": 0.4}
 const SHELTER_GLOW := Color(0.62, 0.56, 0.42)
 ## Share of windows people switch on per unit of lamp light, as under storm clouds.
 const STORM_WINDOWS := 0.35
+## Baked contact shade: how much darker a wall or trunk is at its foot than at its top.
+const WALL_GROUND_SHADE := 0.38
+const TRUNK_GROUND_SHADE := 0.45
 
 var building_count: int = 0
 ## Share of windows lit at this time of day. The level sets it before the lights come on.
@@ -919,7 +922,9 @@ func _walls(facade: LowPolyBuilder, centre: Vector2, size: Vector3, heading: flo
 	facade.uv_base_height = base + size.y
 	var depth_below := 1.2
 	colour.a = _window_random.randf()
+	facade.bottom_shade = WALL_GROUND_SHADE
 	facade.turned_box(_at(centre, base + (size.y - depth_below) / 2.0), Vector3(size.x, size.y + depth_below, size.z), heading, colour)
+	facade.bottom_shade = 0.0
 
 
 ## A slab with a low wall across the front of the first floor, for the heat.
@@ -1015,7 +1020,9 @@ func _tree(b: LowPolyBuilder, spot: Vector2, solid: bool) -> void:
 	var y := _ground.terrain_height(spot)
 	var scale := _random.randf_range(0.8, 1.35)
 	var colour := _pick(theme.leaves)
+	b.bottom_shade = TRUNK_GROUND_SHADE
 	b.box(Vector3(spot.x, y + 1.4 * scale, spot.y), Vector3(0.32, 2.8, 0.32) * scale, Color(0.32, 0.24, 0.18))
+	b.bottom_shade = 0.0
 	b.blob(Vector3(spot.x, y + 4.0 * scale, spot.y), Vector3(2.3, 2.2, 2.3) * scale, colour, _random)
 	b.blob(Vector3(spot.x + 0.9, y + 5.4 * scale, spot.y - 0.5), Vector3(1.5, 1.5, 1.5) * scale, colour.lightened(0.08), _random)
 	if solid:
