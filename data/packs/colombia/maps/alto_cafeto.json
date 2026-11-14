@@ -505,6 +505,26 @@
    "range": 26.0
   }
  ],
+ "market_day": {
+  "chance": 0.5,
+  "people": 1.4,
+  "knockables": [
+   {"kind": "stall", "road": "calle_real", "along": 28, "lateral": 5.0, "dir": -1},
+   {"kind": "crate", "road": "calle_real", "along": 32, "lateral": 4.6, "dir": -1},
+   {"kind": "stall", "road": "calle_real", "along": 14, "lateral": 5.0, "dir": -1},
+   {"kind": "crate", "road": "calle_real", "along": 18, "lateral": 4.6, "dir": -1},
+   {"kind": "stall", "road": "calle_real", "along": 42, "lateral": 5.0, "dir": -1},
+   {"kind": "crate", "road": "calle_real", "along": 46, "lateral": 4.6, "dir": -1},
+   {"kind": "stall", "road": "calle_real", "along": 95, "lateral": 5.0, "dir": 1},
+   {"kind": "crate", "road": "calle_real", "along": 99, "lateral": 4.6, "dir": 1},
+   {"kind": "stall", "road": "carrera_parroquia", "along": 30, "lateral": 5.0, "dir": -1},
+   {"kind": "crate", "road": "carrera_parroquia", "along": 34, "lateral": 4.6, "dir": -1},
+   {"kind": "stall", "road": "carrera_parroquia", "along": 55, "lateral": 5.0, "dir": -1},
+   {"kind": "crate", "road": "carrera_parroquia", "along": 59, "lateral": 4.6, "dir": -1},
+   {"kind": "stall", "road": "carrera_parroquia", "along": 30, "lateral": 5.0, "dir": 1},
+   {"kind": "crate", "road": "carrera_parroquia", "along": 34, "lateral": 4.6, "dir": 1}
+  ]
+ },
  "landmarks": [
   {
    "kind": "church",

@@ -9,6 +9,10 @@ const SKY_HAZE := 0.15 ## Keeps the sky blue however thick the distance haze is.
 ## Sets where people flag the bus down and the weather. Tests and tools fix it, and
 ## play leaves it at -1 so each shift is different.
 static var shift_seed: int = -1
+## Seconds into a market-day shift before the market is mentioned.
+const MARKET_HINT_DELAY := 4.0
+## This shift's town has its market out (see MarketDay).
+var market_day: bool = false
 ## Tests and tools can choose the time of day by its pack id, and force the rain
 ## with WeatherPlan.FORCE_RAIN or FORCE_DRY. Play leaves both alone.
 static var forced_time: String = ""
@@ -104,9 +108,11 @@ static func _colour(values: Array) -> Color:
 
 func _ready() -> void:
 	var route_data := MapLoader.read_json(Profile.shift_route()["file"])
-	var map_data := MapLoader.read_map_of(route_data)
-	network = RoadNetwork.from_data(map_data, Country.pack.traffic_side, Country.pack.default_speed_limit())
 	var hail_seed := shift_seed if shift_seed >= 0 else randi()
+	var town_map := MapLoader.read_map_of(route_data)
+	market_day = MarketDay.is_on(town_map, hail_seed) and route_data.get("service", "") != "arcade"
+	var map_data := MarketDay.apply(town_map, market_day)
+	network = RoadNetwork.from_data(map_data, Country.pack.traffic_side, Country.pack.default_speed_limit())
 	time_of_day = chosen_time(TimeOfDay.list_for(Country.pack.data, CityTheme.from_data(map_data)))
 	route = RouteRunner.build(route_data, network, hail_seed, map_data)
 	for stop in route.stops:
@@ -120,7 +126,7 @@ func _ready() -> void:
 	_city.window_share = time_of_day.windows
 	_city.build(map_data, network, ground, route)
 	_obstacles.setup(map_data, network, ground, _bus.spec, _city.lamp_spots)
-	_street_life.setup(network, ground, route, time_of_day.pedestrians, _obstacles)
+	_street_life.setup(network, ground, route, time_of_day.pedestrians * MarketDay.people(map_data, market_day), _obstacles)
 	_bus.start_at(ground, route.start_position, route.start_heading)
 	var is_arcade: bool = route_data.get("service", "") == "arcade"
 	if not is_arcade:
@@ -167,6 +173,9 @@ func _ready() -> void:
 	_intro.setup(network, ground, _bus, _camera)
 	if not Profile.data.intro_done:
 		_begin_first_shift.call_deferred()
+	elif market_day:
+		get_tree().create_timer(MARKET_HINT_DELAY).timeout.connect(func() -> void:
+			GameEvents.hint_shown.emit(tr("Market day at the Plaza: mind the stalls and the shoppers")))
 
 
 ## The player's horn, and where the sea, stalls and stops are for the street sounds.
