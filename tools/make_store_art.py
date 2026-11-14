@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Draws the Google Play feature graphic and converts store screenshots.
 
-The feature graphic (store/feature_graphic_1024x500.png) is a buseta on a
+The feature graphic (store/feature_graphic_1024x500.png), also saved at twice the
+size as the title screen (assets/textures/title_art.png), is a buseta on a
 coastal street in Puerto Marisol at sunrise, with the title in hand-drawn block
 letters. It reuses the palette and buseta from tools/make_icons.py, and draws the
 lettering itself, so there are no fonts or third-party licences involved.
@@ -23,6 +24,7 @@ import make_icons as icons  # noqa: E402  (palette and the buseta drawing)
 ROOT = Path(__file__).resolve().parent.parent
 STORE = ROOT / "store"
 RAW = ROOT / "tools" / "screens" / "store"
+TITLE_ART = ROOT / "assets" / "textures" / "title_art.png"
 W, H = 1024, 500
 K = 3  # supersampling for the feature graphic
 
@@ -254,6 +256,8 @@ def feature_graphic():
     d.rounded_rectangle(k(sx, 306, sx + 70, 316), radius=3 * K, fill=icons.ORANGE, outline=icons.INK, width=2 * K)
     out = img.resize((W, H), Image.LANCZOS).convert("RGB")
     out.save(STORE / "feature_graphic_1024x500.png", optimize=True)
+    # The same art at twice the size is the game's title screen.
+    img.resize((W * 2, H * 2), Image.LANCZOS).convert("RGB").save(TITLE_ART, optimize=True)
     return out
 
 
