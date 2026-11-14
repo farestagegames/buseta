@@ -203,3 +203,21 @@ func test_the_ferry_landing_road_and_kerbs_are_not_water_but_the_river_is() -> v
 				assert_false(MapGuard.in_water(ground, network, point), "%s at %.0f m" % [road["id"], along])
 			along += 10.0
 	assert_true(MapGuard.in_water(ground, network, Vector2(300.0, 80.0)), "Out in the Magdalena")
+
+
+func test_the_ferry_is_moored_off_the_ramp_on_the_river() -> void:
+	var remanso := MapLoader.read_json("res://data/packs/colombia/maps/puerto_remanso.json")
+	var route_data := MapLoader.read_json("res://data/packs/colombia/routes/remanso_r0.json")
+	var network := RoadNetwork.from_data(remanso)
+	var route := RouteRunner.build(route_data, network, 7, remanso)
+	var ground := MapLoader.build_ground(remanso, network)
+	var city := CityBuilder.new()
+	add_child_autofree(city)
+	city.build(remanso, network, ground, route)
+	var ferries := city.landmarks.filter(func(entry: Dictionary) -> bool: return entry["kind"] == "ferry")
+	assert_eq(ferries.size(), 1, "The ferry builds")
+	var ferry: Dictionary = ferries[0]
+	assert_lt(ferry["centre"].distance_to(network.nodes["e"]["position"]), 40.0, "At the end of the Rampa del Ferry")
+	assert_lt(ground.terrain_height(ferry["centre"]), GroundSurface.SEA_LEVEL, "Afloat on the river")
+	for point: Vector2 in ferry["footprint"]:
+		assert_gt(network.edge_distance(point), 0.5, "The hull at %s is off the road" % point)

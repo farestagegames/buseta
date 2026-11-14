@@ -399,6 +399,14 @@
    "dir": -1
   }
  ],
+ "landmarks": [
+  {
+   "kind": "ferry",
+   "x": 264,
+   "z": 80,
+   "face": "e"
+  }
+ ],
  "coast": {
   "x": 200,
   "beach": 30

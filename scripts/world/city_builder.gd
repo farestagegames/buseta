@@ -630,6 +630,8 @@ func _build_landmarks(b: LowPolyBuilder, map_data: Dictionary) -> void:
 				_church(b, centre, heading)
 			"mirador":
 				_mirador(b, centre, heading)
+			"ferry":
+				_ferry(b, centre, heading)
 
 
 ## A point on a landmark's own grid: side to its right, ahead towards its front.
@@ -791,6 +793,51 @@ func _mirador(b: LowPolyBuilder, centre: Vector2, heading: float) -> void:
 	b.turned_box(_at(scope, floor_y + 1.3), Vector3(0.3, 0.3, 0.8), heading, Color(0.22, 0.42, 0.5))
 	_add_solid(_at(centre, (floor_y + lowest) / 2.0), Vector3(radius * 1.5, floor_y - lowest, radius * 1.5), heading)
 	_record_landmark("mirador", centre, radius + 3.0, footprint, lowest, floor_y)
+
+
+## The river ferry moored off the end of the ramp, its bow ramp let down
+## towards the shore: a flat steel barge with a wheelhouse at the stern, two
+## trucks' worth of cargo, rails along the sides and a canoe tied alongside.
+func _ferry(b: LowPolyBuilder, centre: Vector2, heading: float) -> void:
+	var hull := Color(0.2, 0.36, 0.44)
+	var deck := Color(0.46, 0.45, 0.42)
+	var trim := Color(0.86, 0.72, 0.2)
+	var width := 9.0
+	var length := 22.0
+	var water := GroundSurface.SEA_LEVEL
+	var deck_y := water + 0.9
+	b.turned_box(_at(centre, water + 0.1), Vector3(width, 1.6, length), heading, hull)
+	b.turned_box(_at(centre, deck_y + 0.03), Vector3(width - 0.4, 0.06, length - 0.4), heading, deck)
+	for side: float in [-1.0, 1.0]:
+		b.turned_box(_at(_local(centre, heading, side * (width / 2.0 - 0.1), 0.0), deck_y + 0.2), Vector3(0.2, 0.4, length), heading, trim)
+		b.turned_box(_at(_local(centre, heading, side * (width / 2.0 - 0.1), -1.0), deck_y + 1.0), Vector3(0.08, 0.08, length - 4.0), heading, Color(0.85, 0.86, 0.84))
+		for post in 5:
+			var ahead := lerpf(-length / 2.0 + 2.0, length / 2.0 - 4.0, post / 4.0)
+			b.turned_box(_at(_local(centre, heading, side * (width / 2.0 - 0.1), ahead), deck_y + 0.5), Vector3(0.1, 1.0, 0.1), heading, Color(0.85, 0.86, 0.84))
+	# The bow ramp, let down onto the slipway.
+	var bow := _local(centre, heading, 0.0, length / 2.0 + 1.6)
+	b.turned_box(_at(bow, deck_y - 0.25), Vector3(width - 1.6, 0.15, 3.4), heading, trim.darkened(0.2))
+	# Wheelhouse at the stern, to one side.
+	var house := _local(centre, heading, -width / 2.0 + 2.0, -length / 2.0 + 2.4)
+	b.turned_box(_at(house, deck_y + 1.3), Vector3(3.0, 2.6, 3.2), heading, Color(0.93, 0.92, 0.86))
+	b.turned_box(_at(house, deck_y + 2.2), Vector3(3.06, 0.7, 3.26), heading, Color(0.25, 0.45, 0.6))
+	b.turned_box(_at(house, deck_y + 2.7), Vector3(3.5, 0.2, 3.7), heading, Color(0.75, 0.2, 0.18))
+	b.box(_at(_local(centre, heading, -width / 2.0 + 3.0, -length / 2.0 + 1.2), deck_y + 3.5), Vector3(0.3, 1.4, 0.3), Color(0.2, 0.2, 0.22))
+	# Cargo: a covered truck bed and stacked plantain sacks.
+	var cargo := _local(centre, heading, 1.6, 1.0)
+	b.turned_box(_at(cargo, deck_y + 1.1), Vector3(2.4, 2.2, 5.5), heading, Color(0.3, 0.55, 0.32))
+	b.turned_box(_at(_local(centre, heading, 1.6, 4.6), deck_y + 0.8), Vector3(2.3, 1.6, 1.8), heading, Color(0.82, 0.32, 0.22))
+	for i in 3:
+		b.turned_box(_at(_local(centre, heading, -2.0, 2.0 + i * 1.1), deck_y + 0.35), Vector3(1.0, 0.7, 0.9), heading, Color(0.7, 0.58, 0.36).darkened(0.05 * i))
+	# A long wooden canoe tied alongside.
+	var canoe := _local(centre, heading, width / 2.0 + 1.4, -3.0)
+	b.turned_box(_at(canoe, water + 0.15), Vector3(1.1, 0.5, 8.0), heading, Color(0.45, 0.28, 0.16))
+	b.turned_box(_at(canoe, water + 0.42), Vector3(0.9, 0.06, 7.0), heading, Color(0.6, 0.42, 0.25))
+	b.turned_box(_at(_local(centre, heading, width / 2.0 + 1.4, -6.6), water + 0.6), Vector3(0.4, 0.5, 0.5), heading, Color(0.2, 0.2, 0.22))
+	# The hull only: the let-down ramp reaches the slipway on purpose.
+	var corners := _footprint(centre, heading, Vector2(-width / 2.0, -length / 2.0), Vector2(width / 2.0, length / 2.0))
+	_add_solid(_at(centre, deck_y), Vector3(width, 2.4, length), heading)
+	_record_landmark("ferry", centre, length / 2.0 + 4.0, corners, water - 0.7, deck_y)
 
 
 ## Treads leading from the deck's open front edge down towards the road.
