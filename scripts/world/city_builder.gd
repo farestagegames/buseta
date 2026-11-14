@@ -854,8 +854,12 @@ func _try_building(b: LowPolyBuilder, centre: Vector2, heading: float, width: fl
 
 func _house(b: LowPolyBuilder, centre: Vector2, heading: float, width: float, depth: float, base: float) -> void:
 	var size := Vector3(minf(depth, 11.0), STOREY * 2.0, minf(width, 15.0))
-	_walls(_flats, centre, size, heading, base, _pick(theme.walls))
-	b.gable(_at(centre, base + size.y), size.x + 0.7, size.z + 0.7, 3.2, heading, _pick(theme.roofs))
+	var wall := _pick(theme.walls)
+	_walls(_flats, centre, size, heading, base, wall)
+	_trims(b, centre, heading, size, base, wall, 2, false)
+	var roof := _pick(theme.roofs)
+	b.turned_box(_at(centre, base + size.y + 0.08), Vector3(size.x + 0.9, 0.16, size.z + 0.9), heading, roof.darkened(0.3))
+	b.gable(_at(centre, base + size.y + 0.16), size.x + 0.7, size.z + 0.7, 3.2, heading, roof)
 	if theme.chimneys:
 		var chimney := centre + Vector2(-sin(heading), -cos(heading)) * size.z * 0.3
 		b.turned_box(_at(chimney, base + size.y + 2.4), Vector3(0.7, 2.2, 0.7), heading, Color(0.5, 0.35, 0.3))
@@ -869,8 +873,11 @@ func _block(b: LowPolyBuilder, facade: LowPolyBuilder, centre: Vector2, heading:
 	if facade == _office:
 		wall = wall.lerp(Color.WHITE, 0.6)
 	_walls(facade, centre, size, heading, base, wall)
+	_trims(b, centre, heading, size, base, wall, storeys, true)
 	var parapet := wall.darkened(0.25)
-	b.turned_box(_at(centre, base + height + 0.25), Vector3(depth + 0.3, 0.5, width + 0.3), heading, parapet)
+	b.turned_box(_at(centre, base + height + 0.2), Vector3(depth + 0.7, 0.24, width + 0.7), heading, wall.lightened(0.3))
+	b.turned_box(_at(centre, base + height + 0.5), Vector3(depth + 0.3, 0.6, width + 0.3), heading, parapet)
+	b.turned_box(_at(centre, base + height + 0.82), Vector3(depth + 0.42, 0.1, width + 0.42), heading, parapet.lightened(0.2))
 	b.turned_box(_at(centre, base + height + 0.52), Vector3(depth - 0.4, 0.06, width - 0.4), heading, Color(0.3, 0.3, 0.32))
 	for i in _random.randi_range(1, 3):
 		var unit := centre + Vector2(_random.randf_range(-3.0, 3.0), _random.randf_range(-3.0, 3.0))
@@ -883,6 +890,27 @@ func _block(b: LowPolyBuilder, facade: LowPolyBuilder, centre: Vector2, heading:
 	if on_street and storeys > 1:
 		_balcony(b, centre, heading, size, base, to_road, wall)
 	_add_solid(_at(centre, base + height / 2.0), size + Vector3(0.0, 6.0, 0.0), heading)
+
+
+## Chunky toy trims on a building: a darker plinth at street level, a ledge at
+## each storey line and square pilasters at the corners (blocks only). They take
+## no random numbers, so the town's layout never changes.
+func _trims(b: LowPolyBuilder, centre: Vector2, heading: float, size: Vector3, base: float, wall: Color, storeys: int, pilasters: bool) -> void:
+	var plinth := wall.darkened(0.32)
+	plinth.a = 1.0
+	b.turned_box(_at(centre, base + 0.2), Vector3(size.x + 0.24, 1.4, size.z + 0.24), heading, plinth)
+	var ledge := wall.lightened(0.28)
+	ledge.a = 1.0
+	for storey in range(1, storeys):
+		b.turned_box(_at(centre, base + STOREY * storey - 0.06), Vector3(size.x + 0.22, 0.16, size.z + 0.22), heading, ledge)
+	if not pilasters:
+		return
+	var post := wall.darkened(0.1)
+	post.a = 1.0
+	for side: float in [-0.5, 0.5]:
+		for ahead: float in [-0.5, 0.5]:
+			var corner := _local(centre, heading, (size.x - 0.3) * side, (size.z - 0.3) * ahead)
+			b.turned_box(_at(corner, base + size.y / 2.0 - 0.3), Vector3(0.62, size.y + 0.6, 0.62), heading, post)
 
 
 ## Walls run a metre below the lowest corner, so they never float on a slope.

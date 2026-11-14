@@ -13,19 +13,29 @@ uniform float roughness_value : hint_range(0.0, 1.0) = 0.9;
 uniform float night : hint_range(0.0, 1.0) = 0.0; // How bright lit windows are.
 uniform float lit_share : hint_range(0.0, 1.0) = 0.0; // Share of windows lit.
 uniform vec3 warm_light : source_color = vec3(1.0, 0.78, 0.46);
+uniform vec3 frame_colour : source_color = vec3(0.96, 0.94, 0.88);
+uniform float frame_width = 0.045; // Share of a tile.
+uniform float sill_depth = 0.04;
 uniform vec3 cool_light : source_color = vec3(0.72, 0.84, 1.0);
 
 void fragment() {
 	vec2 uv = UV / tile_metres;
 	vec3 base = texture(albedo_texture, uv).rgb;
-	ALBEDO = base * COLOR.rgb;
+	vec2 pane_uv = uv * vec2(panes, 1.0);
+	vec2 inside = fract(pane_uv);
+	float in_box = step(window_box.x, inside.x) * step(inside.x, window_box.z)
+		* step(window_box.y, inside.y) * step(inside.y, window_box.w);
+	// A chunky light frame round each pane and a deeper sill under it.
+	vec4 outer = window_box + vec4(-frame_width, -frame_width, frame_width, frame_width + sill_depth);
+	float in_frame = step(outer.x, inside.x) * step(inside.x, outer.z)
+		* step(outer.y, inside.y) * step(inside.y, outer.w) * (1.0 - in_box);
+	float sill = in_frame * step(window_box.w + frame_width * 0.5, inside.y);
+	vec3 wall = base * COLOR.rgb;
+	vec3 trim = mix(wall, frame_colour, 0.78);
+	ALBEDO = mix(wall, trim * (1.0 - 0.18 * sill), in_frame);
 	ROUGHNESS = roughness_value;
 	if (night > 0.0) {
-		vec2 pane_uv = uv * vec2(panes, 1.0);
 		vec2 cell = floor(pane_uv);
-		vec2 inside = fract(pane_uv);
-		float in_box = step(window_box.x, inside.x) * step(inside.x, window_box.z)
-			* step(window_box.y, inside.y) * step(inside.y, window_box.w);
 		float roll = fract(sin(dot(cell, vec2(12.9898, 78.233)) + COLOR.a * 91.7) * 43758.5453);
 		float lit = step(roll, lit_share * (0.4 + 1.2 * COLOR.a));
 		float colour_roll = fract(roll * 7.31);
