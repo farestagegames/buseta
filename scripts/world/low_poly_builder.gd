@@ -145,23 +145,104 @@ func flag(a: Vector3, b: Vector3, c: Vector3, colour: Color) -> void:
 	_facet(a, c, b, colour)
 
 
-## A palm: a leaning trunk in two lengths, and a crown of drooping fronds.
+## A palm: a thick ringed trunk curving with its lean, a cluster of coconuts and
+## a crown of drooping two-tone fronds. Draws four numbers per frond from random,
+## as it always has, so the town layout around it stays the same.
 func palm(base: Vector3, height: float, lean: Vector2, trunk: Color, leaf: Color, random: RandomNumberGenerator) -> void:
-	var middle := base + Vector3(lean.x * 0.35, height * 0.55, lean.y * 0.35)
 	var top := base + Vector3(lean.x, height, lean.y)
-	_post(base, middle, 0.21, 0.16, trunk)
-	_post(middle, top, 0.16, 0.12, trunk.lightened(0.08))
+	var rings := 6
+	var ring_dark := trunk.darkened(0.16)
+	for i in rings:
+		var t0 := float(i) / float(rings)
+		var t1 := float(i + 1) / float(rings)
+		var wide := lerpf(0.3, 0.19, t0)
+		var narrow := lerpf(0.3, 0.19, t1) * 0.86
+		var colour := trunk.lightened(0.08 * t0) if i % 2 == 0 else ring_dark.lightened(0.08 * t0)
+		_round_post(_palm_point(base, height, lean, t0), _palm_point(base, height, lean, t1), wide, narrow, colour)
+	var turn := atan2(lean.y, lean.x)
+	for i in 3:
+		var angle := turn + TAU * float(i) / 3.0
+		var nut := top + Vector3(cos(angle) * 0.24, -0.32, sin(angle) * 0.24)
+		_nut(nut, 0.17, Color(0.4, 0.3, 0.13) if i != 1 else Color(0.46, 0.44, 0.16))
 	var fronds := 7
 	for i in fronds:
 		var angle := TAU * float(i) / float(fronds) + random.randf_range(-0.2, 0.2)
 		var out := Vector3(cos(angle), 0.0, sin(angle))
-		var across := Vector3(-out.z, 0.0, out.x) * 0.42
+		var across := Vector3(-out.z, 0.0, out.x) * 0.5
 		var reach := random.randf_range(2.5, 3.3)
-		var bend := top + out * reach * 0.55 + Vector3.UP * 0.5
+		var bend := top + out * reach * 0.5 + Vector3.UP * 0.55
 		var tip := top + out * reach + Vector3.DOWN * random.randf_range(0.7, 1.3)
+		var droop := bend.lerp(tip, 0.5) + Vector3.UP * 0.12
 		var shade := leaf.darkened(random.randf_range(0.0, 0.22))
-		flag(top, bend + across, bend - across, shade)
-		flag(bend + across, tip, bend - across, shade.lightened(0.06))
+		var under := shade.darkened(0.3)
+		_two_tone(top, bend + across, bend - across, shade, under)
+		_two_tone(bend + across, droop + across * 0.6, bend - across, shade.lightened(0.05), under)
+		_two_tone(bend - across, droop + across * 0.6, droop - across * 0.6, shade.lightened(0.05), under)
+		_two_tone(droop + across * 0.6, tip, droop - across * 0.6, shade.lightened(0.1), under)
+
+
+## A point up a palm trunk, which rises straight and bends into its lean.
+static func _palm_point(base: Vector3, height: float, lean: Vector2, t: float) -> Vector3:
+	var bend := t * t
+	return base + Vector3(lean.x * bend, height * t, lean.y * bend)
+
+
+## A flat piece with a lit top face and a darker underside.
+func _two_tone(a: Vector3, b: Vector3, c: Vector3, top: Color, under: Color) -> void:
+	var normal := (c - a).cross(b - a).normalized()
+	if normal.y >= 0.0:
+		_facet(a, b, c, top)
+		_facet(a, c, b, under)
+	else:
+		_facet(a, b, c, under)
+		_facet(a, c, b, top)
+
+
+## A small eight-faced lump, such as a coconut.
+func _nut(centre: Vector3, radius: float, colour: Color) -> void:
+	var up := centre + Vector3.UP * radius
+	var down := centre + Vector3.DOWN * radius
+	var ring: Array[Vector3] = [centre + Vector3.RIGHT * radius, centre + Vector3.BACK * radius,
+		centre + Vector3.LEFT * radius, centre + Vector3.FORWARD * radius]
+	for i in 4:
+		var a := ring[i]
+		var b := ring[(i + 1) % 4]
+		_facet(up, a, b, colour.lightened(0.08))
+		_facet(down, b, a, colour.darkened(0.2))
+
+
+## A faceted tree crown of three stacked tiers, each a wide rim with a lit cone
+## above and a shaded cone below, smaller tiers higher up. Draws eighteen numbers
+## from random, the same as blob(), so swapping one for the other keeps layouts.
+func crown(centre: Vector3, size: Vector3, colour: Color, random: RandomNumberGenerator) -> void:
+	var sides := 6
+	var tiers: Array[Vector4] = [ ## Rim height, rim radius, rise, drop; all shares of size.
+		Vector4(-0.35, 1.0, 0.6, 0.55), Vector4(0.15, 0.8, 0.55, 0.35), Vector4(0.62, 0.5, 0.53, 0.3)]
+	for k in tiers.size():
+		var tier := tiers[k]
+		var rim: Array[Vector3] = []
+		for i in sides:
+			var angle := TAU * (float(i) + 0.5 * float(k)) / sides
+			var reach := tier.y * random.randf_range(0.88, 1.12)
+			rim.append(centre + Vector3(cos(angle) * reach * size.x, tier.x * size.y, sin(angle) * reach * size.z))
+		var apex := centre + Vector3.UP * (tier.x + tier.z) * size.y
+		var foot := centre + Vector3.UP * (tier.x - tier.w) * size.y
+		var lit := colour.lightened(0.07 * float(k))
+		var shaded := colour.darkened(0.3)
+		for i in sides:
+			var j := (i + 1) % sides
+			_facet(apex, rim[i], rim[j], lit if i % 2 == 0 else lit.darkened(0.06))
+			_facet(foot, rim[j], rim[i], shaded)
+
+
+## A tapering six-sided post, rounder than _post, for palm trunks.
+func _round_post(from: Vector3, to: Vector3, wide: float, narrow: float, colour: Color) -> void:
+	var sides := 6
+	for i in sides:
+		var a := Vector3(cos(TAU * i / sides), 0.0, sin(TAU * i / sides))
+		var b := Vector3(cos(TAU * (i + 1) / sides), 0.0, sin(TAU * (i + 1) / sides))
+		_facet(from + a * wide, from + b * wide, to + b * narrow, colour)
+		_facet(from + a * wide, to + b * narrow, to + a * narrow, colour)
 
 
 ## A four-sided tapering post from one point to another.

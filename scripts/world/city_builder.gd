@@ -1074,8 +1074,8 @@ func _tree(b: LowPolyBuilder, spot: Vector2, solid: bool) -> void:
 	b.bottom_shade = TRUNK_GROUND_SHADE
 	b.box(Vector3(spot.x, y + 1.4 * scale, spot.y), Vector3(0.32, 2.8, 0.32) * scale, Color(0.32, 0.24, 0.18))
 	b.bottom_shade = 0.0
-	b.blob(Vector3(spot.x, y + 4.0 * scale, spot.y), Vector3(2.3, 2.2, 2.3) * scale, colour, _random)
-	b.blob(Vector3(spot.x + 0.9, y + 5.4 * scale, spot.y - 0.5), Vector3(1.5, 1.5, 1.5) * scale, colour.lightened(0.08), _random)
+	b.crown(Vector3(spot.x, y + 4.0 * scale, spot.y), Vector3(2.3, 2.2, 2.3) * scale, colour, _random)
+	b.crown(Vector3(spot.x + 0.9, y + 5.0 * scale, spot.y - 0.5), Vector3(1.5, 1.5, 1.5) * scale, colour.lightened(0.08), _random)
 	if solid:
 		_add_solid(Vector3(spot.x, y + 2.0, spot.y), Vector3(0.5, 6.0, 0.5), 0.0)
 
