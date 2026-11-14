@@ -29,7 +29,8 @@ const ASPHALT := Color(0.34, 0.34, 0.36)
 const ASPHALT_PATCH := Color(0.27, 0.27, 0.29)
 const BUSWAY := Color(0.62, 0.3, 0.24) ## Dedicated bus lanes are painted red.
 const PAVEMENT := Color(0.62, 0.61, 0.59)
-const KERB := Color(0.72, 0.71, 0.68)
+const KERB := Color(0.86, 0.85, 0.8)
+const GUTTER := Color(0.22, 0.22, 0.24) ## A dark line where the road meets the kerb, as if it stood proud.
 const LINE := Color(0.92, 0.92, 0.88)
 const YELLOW := Color(0.95, 0.78, 0.18)
 const TANK_BLUE := Color(0.16, 0.28, 0.48)
@@ -327,7 +328,10 @@ func _build_roads(b: LowPolyBuilder, map_data: Dictionary, route: RouteRunner) -
 			_build_island(position, island)
 	for road: Dictionary in _network.roads.values():
 		_ribbon(_pavements, road, -PAVEMENT_OUTER, PAVEMENT_OUTER, LIFT_PAVEMENT, PAVEMENT)
-		_ribbon(_lines, road, -RoadNetwork.ROAD_HALF_WIDTH - 0.2, RoadNetwork.ROAD_HALF_WIDTH + 0.2, LIFT_KERB, KERB)
+		_ribbon(_lines, road, -RoadNetwork.ROAD_HALF_WIDTH - 0.35, RoadNetwork.ROAD_HALF_WIDTH + 0.35, LIFT_KERB, KERB)
+		for side: float in [-1.0, 1.0]:
+			var edge := RoadNetwork.ROAD_HALF_WIDTH * side
+			_ribbon(b, road, minf(edge, edge - 0.18 * side), maxf(edge, edge - 0.18 * side), LIFT_ROAD + 0.006, GUTTER)
 		var surface := BUSWAY if road["busway"] else ASPHALT
 		_ribbon(b, road, -RoadNetwork.ROAD_HALF_WIDTH, RoadNetwork.ROAD_HALF_WIDTH, LIFT_ROAD, surface)
 		_road_wear(b, road)
@@ -390,12 +394,12 @@ func _markings(road: Dictionary) -> void:
 	var along := start_gap + 6.0
 	var length: float = road["length"]
 	while along < length - end_gap - 6.0:
-		_strip(_lines, road["id"], along, along + 3.0, -0.07, 0.07, LINE)
+		_strip(_lines, road["id"], along, along + 3.0, -0.11, 0.11, LINE)
 		along += 7.0
 	for lateral: float in [-3.5, 3.5]:
 		var at := start_gap
 		while at < length - end_gap:
-			_strip(_lines, road["id"], at, minf(at + 6.0, length - end_gap), lateral - 0.06, lateral + 0.06, LINE)
+			_strip(_lines, road["id"], at, minf(at + 6.0, length - end_gap), lateral - 0.09, lateral + 0.09, LINE)
 			at += 6.0
 
 
@@ -453,7 +457,7 @@ func _bay(b: LowPolyBuilder, stop: RouteStop) -> void:
 	_taper(b, stop.road, to, to + RoadNetwork.BAY_TAPER, inner, outer)
 	_strip(_pavements, stop.road, from, to, minf(outer, walk), maxf(outer, walk), PAVEMENT, LIFT_PAVEMENT + 0.005)
 	var kerb := (edge + depth + 0.1) * side
-	_strip(_lines, stop.road, from, to, kerb - 0.15, kerb + 0.15, KERB, LIFT_BAY + 0.005)
+	_strip(_lines, stop.road, from, to, kerb - 0.2, kerb + 0.2, YELLOW, LIFT_BAY + 0.005)
 	# Painted bus box with zigzag entry lines.
 	var line := (edge + depth - 0.25) * side
 	_strip(_lines, stop.road, from + 1.0, to - 1.0, line - 0.09, line + 0.09, YELLOW)
