@@ -195,14 +195,17 @@ func _pavement(network: RoadNetwork, road: Dictionary, side: float, route: Route
 func _build_batch(random: RandomNumberGenerator) -> void:
 	var clothes := LowPolyBuilder.new()
 	clothes.box(Vector3(0.0, 1.22, 0.0), Vector3(0.42, 0.62, 0.24), Color.WHITE)
-	clothes.box(Vector3(0.0, 0.46, 0.0), Vector3(0.36, 0.9, 0.2), Color(0.28, 0.28, 0.3))
+	clothes.box(Vector3(0.0, 0.48, 0.0), Vector3(0.36, 0.86, 0.2), Color(0.28, 0.28, 0.3))
+	# Chunky shoes, dark whatever the top's colour, poking out in front.
+	for side: float in [-0.1, 0.1]:
+		clothes.box(Vector3(side, 0.05, -0.04), Vector3(0.15, 0.1, 0.3), Color(0.07, 0.07, 0.08))
 	var skin := LowPolyBuilder.new()
-	skin.box(Vector3(0.0, 1.66, 0.0), Vector3(0.22, 0.24, 0.22), Color.WHITE)
+	skin.box(Vector3(0.0, 1.69, 0.0), Vector3(0.3, 0.3, 0.28), Color.WHITE)
 	for side: float in [-0.25, 0.25]:
-		skin.box(Vector3(side, 0.95, 0.0), Vector3(0.08, 0.11, 0.09), Color.WHITE)
+		skin.box(Vector3(side, 0.95, 0.0), Vector3(0.1, 0.12, 0.1), Color.WHITE)
 	var hair := LowPolyBuilder.new()
-	hair.box(Vector3(0.0, 1.8, 0.01), Vector3(0.24, 0.06, 0.24), Color.WHITE)
-	hair.box(Vector3(0.0, 1.71, 0.1), Vector3(0.24, 0.17, 0.05), Color.WHITE)
+	hair.box(Vector3(0.0, 1.87, 0.01), Vector3(0.32, 0.07, 0.3), Color.WHITE)
+	hair.box(Vector3(0.0, 1.76, 0.13), Vector3(0.32, 0.2, 0.05), Color.WHITE)
 	var material := LowPolyBuilder.vertex_colour_material()
 	for builder: LowPolyBuilder in [clothes, skin, hair]:
 		_batches.append(_batch_of(builder, material))

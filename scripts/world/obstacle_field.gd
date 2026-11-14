@@ -339,14 +339,27 @@ func _mesh_for(kind: String) -> LowPolyBuilder:
 		"car":
 			var glass := Color(0.12, 0.16, 0.2)
 			var tyre := Color(0.05, 0.05, 0.06)
+			var trim := Color(0.2, 0.2, 0.22)
 			b.box(Vector3(0.0, 0.55, 0.0), Vector3(1.8, 0.55, 4.3), Color.WHITE)
+			# A shoulder lip along the waist and a raised bonnet and boot lid.
+			b.box(Vector3(0.0, 0.8, 0.0), Vector3(1.86, 0.07, 4.0), Color.WHITE)
+			b.box(Vector3(0.0, 0.85, -1.55), Vector3(1.56, 0.06, 1.0), Color.WHITE)
+			b.box(Vector3(0.0, 0.85, 1.85), Vector3(1.56, 0.06, 0.5), Color.WHITE)
+			# A window band split by body-coloured pillars, under a stepped roof.
 			b.box(Vector3(0.0, 1.05, 0.25), Vector3(1.6, 0.5, 2.3), glass)
-			b.box(Vector3(0.0, 1.32, 0.25), Vector3(1.5, 0.06, 2.1), Color.WHITE)
-			b.box(Vector3(0.0, 0.34, 2.17), Vector3(1.82, 0.2, 0.08), tyre)
-			b.box(Vector3(0.0, 0.34, -2.17), Vector3(1.82, 0.2, 0.08), tyre)
+			for z: float in [-0.88, 0.3, 1.38]:
+				b.box(Vector3(0.0, 1.05, z), Vector3(1.64, 0.46, 0.12), Color.WHITE)
+			b.box(Vector3(0.0, 1.33, 0.25), Vector3(1.62, 0.08, 2.2), Color.WHITE)
+			b.box(Vector3(0.0, 1.4, 0.25), Vector3(1.34, 0.07, 1.8), Color.WHITE)
+			# Chunky wrap-round bumpers.
+			for end: float in [-1.0, 1.0]:
+				b.box(Vector3(0.0, 0.38, 2.15 * end), Vector3(1.88, 0.26, 0.12), trim)
+			# Dark wheel arches over tyres with light hubs.
 			for z: float in [-1.35, 1.35]:
 				for x: float in [-0.85, 0.85]:
 					b.box(Vector3(x, 0.32, z), Vector3(0.24, 0.64, 0.64), tyre)
+					b.box(Vector3(x, 0.32, z), Vector3(0.26, 0.24, 0.24), Color(0.7, 0.7, 0.72))
+					b.box(Vector3(signf(x) * 0.91, 0.7, z), Vector3(0.06, 0.1, 0.86), trim)
 		"jeep":
 			# A Willys-style utility jeep ("yipao"). The body is white so it takes
 			# the batch's instance colour, as the sedan does.
@@ -367,9 +380,14 @@ func _mesh_for(kind: String) -> LowPolyBuilder:
 			b.box(Vector3(-0.42, 0.88, -0.75), Vector3(0.5, 0.34, 0.44), sack)
 			b.box(Vector3(0.44, 0.88, -0.45), Vector3(0.5, 0.34, 0.44), sack)
 			b.box(Vector3(0.0, 0.85, -1.58), Vector3(0.6, 0.6, 0.14), tyre)
+			b.box(Vector3(0.0, 0.85, -1.66), Vector3(0.24, 0.24, 0.04), Color(0.7, 0.7, 0.72))
+			b.box(Vector3(0.0, 0.36, -1.52), Vector3(1.74, 0.2, 0.12), tyre)
+			# Flat flared wings over each wheel and light hubs.
 			for z: float in [-1.35, 1.35]:
 				for x: float in [-0.85, 0.85]:
 					b.box(Vector3(x, 0.32, z), Vector3(0.24, 0.64, 0.64), tyre)
+					b.box(Vector3(x, 0.32, z), Vector3(0.26, 0.24, 0.24), Color(0.7, 0.7, 0.72))
+					b.box(Vector3(signf(x) * 0.8, 0.7, z), Vector3(0.32, 0.06, 0.86), Color.WHITE)
 		"stall":
 			# White parts take the stall's own colour from the batch.
 			b.box(Vector3(0.0, 0.62, 0.0), Vector3(1.6, 0.56, 0.86), Color(0.72, 0.56, 0.36))
