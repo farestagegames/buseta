@@ -125,6 +125,20 @@ func test_wing_mirror_shows_only_in_cockpit_view() -> void:
 	assert_eq(mirror.viewport.render_target_update_mode, SubViewport.UPDATE_DISABLED)
 
 
+func test_wing_mirror_stops_for_good_when_the_shift_ends() -> void:
+	var mirror := camera.wing_mirror
+	await wait_frames(1)
+	mirror.set_active(true)
+	await wait_frames(2)
+	assert_true(mirror.is_active())
+	mirror._on_shift_completed() # What GameEvents.shift_completed runs.
+	assert_false(mirror.is_active(), "Off at the end of the shift")
+	assert_false(mirror.visible)
+	assert_eq(mirror.viewport.render_target_update_mode, SubViewport.UPDATE_DISABLED, "No more mirror renders")
+	GameEvents.camera_view_changed.emit("Cockpit")
+	assert_false(mirror.is_active(), "A view change does not turn it back on")
+
+
 func test_wing_mirror_looks_back_from_the_drivers_side() -> void:
 	var mirror := camera.wing_mirror
 	await wait_frames(1) # After the rig announces its first view.

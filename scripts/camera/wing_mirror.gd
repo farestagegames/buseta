@@ -25,6 +25,8 @@ var camera: Camera3D
 var picture: TextureRect
 var _frame: int = 0
 var _active: bool = false
+## Set when the shift ends: the mirror stays off from then on.
+var _shift_over: bool = false
 
 
 func _init() -> void:
@@ -72,6 +74,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	GameEvents.camera_view_changed.connect(_on_view_changed)
+	GameEvents.shift_completed.connect(_on_shift_completed.unbind(1))
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 
@@ -84,8 +87,20 @@ func _on_view_changed(view_name: String) -> void:
 	set_active(view_name == "Cockpit")
 
 
+## The mirror is a second render of the whole city. When the shift ends it stops
+## for good, so nothing renders it while the results show and the scene is
+## freed (tester report on 0.1.5: cockpit picture froze, then the app closed).
+func _on_shift_completed() -> void:
+	_shift_over = true
+	set_active(false)
+
+
+func _exit_tree() -> void:
+	viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+
+
 func set_active(on: bool) -> void:
-	_active = on and source != null
+	_active = on and not _shift_over and is_instance_valid(source)
 	visible = _active
 	_frame = 0
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE if _active else SubViewport.UPDATE_DISABLED
