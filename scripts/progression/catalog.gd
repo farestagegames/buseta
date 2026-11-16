@@ -8,6 +8,9 @@ const LIVERIES := "liveries"
 const DRIVERS := "drivers"
 const DECORATIONS := "decorations"
 const KINDS := [ROUTES, BUSES, LIVERIES, DRIVERS, DECORATIONS]
+## Routes taken out of the game (Puerto Remanso, 16 Nov) but kept on disk with
+## their maps: never listed, unlocked or played, only read by tests and tools.
+const ARCHIVED := "archived_routes"
 
 var data: Dictionary
 
@@ -18,7 +21,7 @@ func _init(catalog_data: Dictionary = {}) -> void:
 		data = catalog_data
 		return
 	data = MapLoader.read_json(Country.pack.content_path("catalog"))
-	for kind: String in KINDS:
+	for kind: String in KINDS + [ARCHIVED]:
 		for item: Dictionary in data.get(kind, []):
 			if item.has("file"):
 				item["file"] = Country.pack.resolve(item["file"])
@@ -30,6 +33,14 @@ func items(kind: String) -> Array:
 
 func find(kind: String, id: String) -> Dictionary:
 	for item: Dictionary in items(kind):
+		if item["id"] == id:
+			return item
+	return {}
+
+
+## An archived route by id, or {}.
+func find_archived(id: String) -> Dictionary:
+	for item: Dictionary in data.get(ARCHIVED, []):
 		if item["id"] == id:
 			return item
 	return {}

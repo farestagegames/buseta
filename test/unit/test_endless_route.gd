@@ -91,7 +91,7 @@ func test_the_endless_route_validates() -> void:
 
 
 func test_every_town_has_an_endless_route_that_plans_and_builds() -> void:
-	for id: String in ["libre", "cafeto_libre", "remanso_libre"]:
+	for id: String in ["libre", "cafeto_libre"]:
 		var item := Profile.catalog.find(Catalog.ROUTES, id)
 		assert_false(item.is_empty(), id)
 		var data := MapLoader.read_json(item["file"])
@@ -107,7 +107,6 @@ func test_every_town_has_an_endless_route_that_plans_and_builds() -> void:
 
 func test_each_town_endless_route_opens_with_its_town() -> void:
 	assert_eq(int(Profile.catalog.find(Catalog.ROUTES, "cafeto_libre")["level"]), 5)
-	assert_eq(int(Profile.catalog.find(Catalog.ROUTES, "remanso_libre")["level"]), 10)
 	var towns := MainMenu.route_towns(Profile.catalog.items(Catalog.ROUTES))
 	assert_eq(towns["cafeto_libre"], "Alto Cafeto", "Listed under its own town")
-	assert_eq(towns["remanso_libre"], "Puerto Remanso")
+	assert_false(towns.has("remanso_libre"), "Puerto Remanso is archived")

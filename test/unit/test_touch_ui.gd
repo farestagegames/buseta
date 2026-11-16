@@ -123,10 +123,7 @@ func test_routes_tab_district_filtering_and_lock_badge() -> void:
 	assert_not_null(lock_badge, "Alto Cafeto has lock badge below level 5")
 	assert_true(lock_badge.text.contains("🔒"), "Badge shows a lock")
 	assert_true(lock_badge.text.contains("Nivel 5"), "Badge shows Nivel 5 in Spanish")
-	var remanso_btn: Button = selector.find_child("TownPuertoRemanso", true, false)
-	assert_not_null(remanso_btn, "Puerto Remanso button exists")
-	var remanso_badge: Label = remanso_btn.find_child("LockBadge", true, false)
-	assert_true(remanso_badge != null and remanso_badge.text.contains("Nivel 10"), "Puerto Remanso badge shows its lowest route level, 10")
+	assert_null(selector.find_child("TownPuertoRemanso", true, false), "Puerto Remanso is archived")
 
 	# Filtering Puerto Marisol
 	var labels := menu._content.find_children("*", "Label", true, false)

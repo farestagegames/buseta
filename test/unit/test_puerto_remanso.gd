@@ -108,7 +108,7 @@ func test_bird_clusters_are_valid_and_inside_the_town() -> void:
 
 
 func test_starter_route_loads_with_three_goals_and_stops() -> void:
-	var item := catalog.find(Catalog.ROUTES, "remanso_r0")
+	var item := catalog.find_archived("remanso_r0")
 	assert_false(item.is_empty())
 	var data := MapLoader.read_json(item["file"])
 	assert_eq(data["map"], "maps/puerto_remanso.json")
@@ -125,7 +125,7 @@ func test_starter_route_loads_with_three_goals_and_stops() -> void:
 
 func test_starter_bays_fit_between_the_junctions() -> void:
 	var network := RoadNetwork.from_data(map_data)
-	var data := MapLoader.read_json(catalog.find(Catalog.ROUTES, "remanso_r0")["file"])
+	var data := MapLoader.read_json(catalog.find_archived("remanso_r0")["file"])
 	for stop: Dictionary in data["stops"]:
 		if stop.get("final", false):
 			continue
@@ -140,41 +140,23 @@ func test_starter_bays_fit_between_the_junctions() -> void:
 				assert_gt(absf(float(car["along"]) - float(stop["along"])), 21.0, "remanso_r0: %s" % stop["name"])
 
 
-func test_puerto_remanso_opens_at_driver_level_ten() -> void:
-	var item := catalog.find(Catalog.ROUTES, "remanso_r0")
-	assert_eq(int(item["level"]), 10)
-	assert_eq(int(item["cost"]), 0)
-	var profile := PlayerProfile.new()
-	profile.grant_free_items(catalog)
-	assert_false(profile.can_play_route("remanso_r0", catalog), "Locked for a level 1 driver")
-	profile.xp = DriverLevel.xp_for_level(8)
-	assert_false(profile.can_play_route("remanso_r0", catalog), "Still locked at level 8")
-	profile.xp = DriverLevel.xp_for_level(10) - 1
-	assert_false(profile.can_play_route("remanso_r0", catalog))
-	profile.xp = DriverLevel.xp_for_level(10)
-	assert_true(profile.can_play_route("remanso_r0", catalog), "Open at level 10")
-
-
-func test_routes_tab_groups_routes_including_puerto_remanso() -> void:
+func test_puerto_remanso_is_archived_out_of_the_game() -> void:
+	for id: String in ["remanso_r0", "remanso_libre"]:
+		assert_true(catalog.find(Catalog.ROUTES, id).is_empty(), "%s is not a playable route" % id)
+		assert_false(catalog.find_archived(id).is_empty(), "%s is kept in the archive" % id)
+		assert_true(FileAccess.file_exists(catalog.find_archived(id)["file"]), "%s keeps its file" % id)
+	for town: Dictionary in MainMenu.town_info_list(catalog.items(Catalog.ROUTES)):
+		assert_ne(town["name"], "Puerto Remanso", "No town tab for Puerto Remanso")
 	var towns := MainMenu.route_towns(catalog.items(Catalog.ROUTES))
 	assert_eq(towns["starter_a"], "Puerto Marisol")
 	assert_eq(towns["cafeto_c0"], "Alto Cafeto")
-	assert_eq(towns["remanso_r0"], "Puerto Remanso")
-
-
-func test_town_info_list_includes_puerto_remanso_with_level_ten() -> void:
-	var towns := MainMenu.town_info_list(catalog.items(Catalog.ROUTES))
-	var remanso_info: Dictionary = {}
-	for t in towns:
-		if t["name"] == "Puerto Remanso":
-			remanso_info = t
-			break
-	assert_false(remanso_info.is_empty(), "Puerto Remanso in town list")
-	assert_eq(int(remanso_info["level"]), 10)
+	var profile := PlayerProfile.new()
+	profile.xp = DriverLevel.xp_for_level(20)
+	assert_false(profile.can_play_route("remanso_r0", catalog))
 
 
 func test_remanso_route_goals_score() -> void:
-	var data := MapLoader.read_json(catalog.find(Catalog.ROUTES, "remanso_r0")["file"])
+	var data := MapLoader.read_json(catalog.find_archived("remanso_r0")["file"])
 	var good := {
 		"time": 155.0,
 		"counts": {"collisions": 0, "fines": 0},
