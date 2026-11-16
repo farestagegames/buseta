@@ -246,6 +246,14 @@ func test_gear_switch_picks_the_half_that_is_tapped() -> void:
 	assert_false(hud.gear_switch.is_reverse)
 
 
+func test_gear_switch_is_as_wide_as_the_brake() -> void:
+	await wait_frames(2)
+	var gear := hud.gear_switch.get_global_rect()
+	var brake := hud.brake_pedal.get_global_rect()
+	assert_almost_eq(gear.size.x, brake.size.x, 0.5, "D/R spans the same width as FRENO")
+	assert_almost_eq(gear.position.x, brake.position.x, 0.5, "and lines up with it")
+
+
 func test_changing_gear_while_moving_explains_why_not() -> void:
 	watch_signals(GameEvents)
 	bus.model.speed = 6.0

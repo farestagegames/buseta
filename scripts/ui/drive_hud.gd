@@ -13,7 +13,7 @@ const STATION_SECONDS := 2.5
 const CORNER_BUTTON := 80.0
 const PAUSE_STRIP_WIDTH := 240.0
 ## The drive and reverse switch, just above the horn on the right thumb's side.
-const GEAR_SIZE := Vector2(124.0, 72.0)
+const GEAR_SIZE := Vector2(200.0, 72.0)
 ## The route's goals checklist, on the left under the pause and camera buttons.
 const GOALS_SIZE := Vector2(300.0, 64.0)
 const GOALS_TOP := EDGE + CORNER_BUTTON + 12.0
