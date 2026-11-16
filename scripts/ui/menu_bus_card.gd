@@ -30,6 +30,10 @@ const BAR_HEIGHT := 10
 const BAR_RADIUS := 5
 const DOT_SIZE := 16
 const DOT_RING_WIDTH := 2
+## Inner margins, so the name, icons and bars keep clear of the outline.
+const PAD_X := 18.0
+const PAD_TOP := 14.0
+const PAD_BOTTOM := 16.0
 
 ## Speed stat: map max_drive_accel (m/s²) to 0..1. Range observed in buses: 1.3..1.85.
 const SPEED_MIN := 1.0
@@ -63,6 +67,10 @@ func _init() -> void:
 	panel.shadow_size = SHADOW_SIZE
 	panel.shadow_offset = SHADOW_OFFSET
 	panel.shadow_color = CARD_SHADOW
+	panel.content_margin_left = PAD_X
+	panel.content_margin_right = PAD_X
+	panel.content_margin_top = PAD_TOP
+	panel.content_margin_bottom = PAD_BOTTOM
 	add_theme_stylebox_override("panel", panel)
 	custom_minimum_size.x = MIN_WIDTH
 

@@ -105,8 +105,18 @@ func test_icon_control_has_correct_size_and_mouse_filter() -> void:
 	assert_true(vbox is VBoxContainer)
 	var icon := vbox.get_child(0)
 	assert_true(icon is Control)
-	assert_eq(icon.custom_minimum_size, Vector2(36, 36))
+	assert_eq(icon.custom_minimum_size, MenuTabBar.ICON_SIZE)
 	assert_eq(icon.mouse_filter, Control.MOUSE_FILTER_IGNORE)
+
+
+func test_tabs_keep_clear_of_the_bar_and_button_edges() -> void:
+	var panel := tab_bar.get_theme_stylebox("panel") as StyleBoxFlat
+	assert_gt(panel.content_margin_left, float(MenuTabBar.BAR_OUTLINE_WIDTH), "Tabs clear of the bar's outline")
+	assert_gt(panel.content_margin_top, float(MenuTabBar.BAR_OUTLINE_WIDTH))
+	var vbox := tab_bar.button_at(0).get_child(0) as Control
+	assert_gt(vbox.offset_top, 0.0, "Space over the icon")
+	assert_lt(vbox.offset_bottom, 0.0, "Space under the label")
+	assert_gte(MenuTabBar.BUTTON_MIN_SIZE.y, 48.0, "Still a thumb-sized target")
 
 func test_label_is_uppercase() -> void:
 	var btn := tab_bar.button_at(0)

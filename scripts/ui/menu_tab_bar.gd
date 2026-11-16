@@ -19,9 +19,14 @@ const BAR_SHADOW_SIZE := 6
 const BAR_SHADOW_OFFSET := Vector2(0, 4)
 const ACTIVE_RADIUS := 16
 const ACTIVE_OUTLINE_WIDTH := 3
-const BUTTON_MIN_SIZE := Vector2(120, 64)
-const ICON_SIZE := Vector2(36, 36)
-const LABEL_FONT_SIZE := 20
+const BUTTON_MIN_SIZE := Vector2(120, 68)
+const ICON_SIZE := Vector2(30, 30)
+const LABEL_FONT_SIZE := 18
+## Space between the bar's outline and the tabs, and inside each tab.
+const BAR_PAD_X := 12.0
+const BAR_PAD_Y := 6.0
+const TAB_PAD_TOP := 5.0
+const TAB_PAD_BOTTOM := 7.0
 const BOUNCE_SCALE := 0.92
 const BOUNCE_DURATION := 0.18
 
@@ -52,16 +57,16 @@ func _init() -> void:
 	panel.shadow_size = BAR_SHADOW_SIZE
 	panel.shadow_offset = BAR_SHADOW_OFFSET
 	panel.shadow_color = BAR_SHADOW
+	# A PanelContainer places its child by these margins, not by the child's offsets.
+	panel.content_margin_left = BAR_PAD_X
+	panel.content_margin_right = BAR_PAD_X
+	panel.content_margin_top = BAR_PAD_Y
+	panel.content_margin_bottom = BAR_PAD_Y
 	add_theme_stylebox_override("panel", panel)
 
 	# Horizontal container for tabs
 	_hbox = HBoxContainer.new()
-	_hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_hbox.offset_left = 12
-	_hbox.offset_right = -12
-	_hbox.offset_top = 6
-	_hbox.offset_bottom = -6
-	_hbox.set_h_grow_direction(Control.GROW_DIRECTION_BOTH)
+	_hbox.add_theme_constant_override("separation", 6)
 	add_child(_hbox)
 
 func setup(items: Array) -> void:
@@ -95,9 +100,11 @@ func _make_button(item: Dictionary, index: int) -> Button:
 	# Icon on top of the label, in a box that fills the button. A tab without an
 	# icon keeps an empty slot so every label sits at the same height.
 	var vbox := VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.offset_top = TAB_PAD_TOP
+	vbox.offset_bottom = -TAB_PAD_BOTTOM
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 2)
+	vbox.add_theme_constant_override("separation", 0)
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var icon: Control = item.get("icon", null)
 	if icon == null:

@@ -39,7 +39,7 @@ func _init() -> void:
 
 
 ## The white card box used by every piece of the new menu.
-static func card_box(fill: Color = CARD_BG, radius: int = 18, margin: int = 12) -> StyleBoxFlat:
+static func card_box(fill: Color = CARD_BG, radius: int = 18, margin: int = 14) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
 	box.set_corner_radius_all(radius)

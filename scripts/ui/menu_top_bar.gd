@@ -21,6 +21,9 @@ const OUTLINE_WIDTH := 3
 const SHADOW_SIZE := 6
 const SHADOW_OFFSET := Vector2(0, 4)
 const PILL_HEIGHT := 52.0
+## Inner margins of every pill, measured from the outer edge (the outline is inside).
+const PILL_PAD_X := 14.0
+const PILL_PAD_Y := 6.0
 const DRIVER_MIN_WIDTH := 160.0
 const ICON_BUTTON_SIZE := Vector2(52.0, 52.0)
 const ICON_SIZE := 30.0
@@ -203,14 +206,14 @@ func _build_driver_pill() -> Button:
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	var row := HBoxContainer.new()
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	row.offset_left = 8.0
-	row.offset_right = -12.0
-	row.offset_top = 4.0
-	row.offset_bottom = -4.0
+	row.offset_left = PILL_PAD_X - 4.0
+	row.offset_right = -PILL_PAD_X
+	row.offset_top = PILL_PAD_Y
+	row.offset_bottom = -PILL_PAD_Y
 	row.add_theme_constant_override("separation", 8)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(row)
-	_driver_badge = DriverBadge.new(DriverLook.new(), 40.0)
+	_driver_badge = DriverBadge.new(DriverLook.new(), 36.0)
 	_driver_badge.name = "DriverBadge"
 	row.add_child(_driver_badge)
 	_driver_name_label = Label.new()
@@ -330,10 +333,10 @@ func _pill_style(bg: Color = CARD_BG) -> StyleBoxFlat:
 	box.shadow_color = SHADOW
 	box.shadow_size = SHADOW_SIZE
 	box.shadow_offset = SHADOW_OFFSET
-	box.content_margin_left = 12.0
-	box.content_margin_right = 14.0
-	box.content_margin_top = 4.0
-	box.content_margin_bottom = 4.0
+	box.content_margin_left = PILL_PAD_X
+	box.content_margin_right = PILL_PAD_X
+	box.content_margin_top = PILL_PAD_Y
+	box.content_margin_bottom = PILL_PAD_Y
 	return box
 
 
