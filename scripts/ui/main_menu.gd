@@ -42,6 +42,7 @@ func _ready() -> void:
 	backing.color = BACKGROUND
 	backing.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(backing)
+	add_child(MenuBackdrop.new())
 
 	_frame = MarginContainer.new()
 	_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
