@@ -14,6 +14,9 @@ const CORNER_BUTTON := 80.0
 const PAUSE_STRIP_WIDTH := 240.0
 ## The drive and reverse switch, just above the horn on the right thumb's side.
 const GEAR_SIZE := Vector2(124.0, 72.0)
+## The route's goals checklist, on the left under the pause and camera buttons.
+const GOALS_SIZE := Vector2(300.0, 64.0)
+const GOALS_TOP := EDGE + CORNER_BUTTON + 12.0
 
 var wheel: SteeringWheelControl
 var throttle_pedal: PedalControl
@@ -95,7 +98,7 @@ func _ready() -> void:
 	_root.add_child(route_panel)
 
 	goals_hud = GoalsHud.new()
-	_place(goals_hud, Vector2(0.5, 0.0), Vector2(-280.0, 216.0), Vector2(560.0, 64.0))
+	_place(goals_hud, Vector2(0.0, 0.0), Vector2(EDGE, GOALS_TOP), GOALS_SIZE)
 	goals_hud.visible = false
 	_root.add_child(goals_hud)
 

@@ -9,7 +9,8 @@ const RENDER_SIZE := Vector2i(192, 112)
 const SCREEN_SIZE := Vector2(208.0, 120.0)
 const FRAME := 5.0
 const EDGE := 24.0
-const TOP := 140.0 ## Clear of the radio station name under the top buttons.
+## Below the top buttons and the route goals checklist under them (DriveHud).
+const TOP := 188.0
 const FOV := 30.0
 const NEAR := 0.05
 const FAR := 160.0

@@ -276,6 +276,18 @@ func test_touch_targets_are_large_enough() -> void:
 	assert_gte(hud.gear_switch.size.x / 2.0, 48.0)
 
 
+func test_goals_checklist_sits_left_under_the_pause_and_camera_buttons() -> void:
+	await wait_frames(2)
+	var goals := hud.goals_hud.get_global_rect()
+	var pause := hud._pause_button.get_global_rect()
+	var view := hud._view_button.get_global_rect()
+	assert_almost_eq(goals.position.x, pause.position.x, 0.5, "Lined up with the pause button")
+	assert_gt(goals.position.y, maxf(pause.end.y, view.end.y), "Below the top buttons")
+	assert_lt(goals.end.x, hud.get_viewport().get_visible_rect().size.x / 2.0, "On the left half")
+	assert_false(goals.intersects(hud.gauge.get_global_rect()), "Clear of the speed readout")
+	assert_lte(goals.end.y, WingMirror.TOP, "The cockpit mirror sits below it")
+
+
 func _status(near: bool, prompt: String = "") -> Dictionary:
 	return {"next_stop": "Parque Norte", "distance": 120.0, "turn": "", "onboard": 0, "fares": 0, "prompt": prompt,
 		"stop_position": Vector2.ZERO, "stop_number": 2, "stop_count": 8, "clock": 0.0, "seconds_late": 0.0,
