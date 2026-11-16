@@ -378,13 +378,15 @@ func test_minimap_is_a_small_circle_that_grows_when_tapped() -> void:
 	assert_eq(hud.minimap.size.x, Minimap.SMALL)
 
 
-func test_one_pause_button_holds_the_camera_and_radio() -> void:
+func test_one_pause_button_holds_the_radio_and_the_camera_stays_on_top() -> void:
 	await wait_frames(2)
 	assert_false(hud.pause_strip.is_visible_in_tree())
 	assert_true(hud.control_rect("pause").has_area())
 	assert_true(hud.control_rect("view").has_area(), "A small camera button stays")
 	hud._open_settings()
 	assert_true(hud.pause_strip.is_visible_in_tree())
+	for button: TouchButton in hud.pause_strip.find_children("*", "TouchButton", true, false):
+		assert_ne(button.text, "VIEW", "No change-view button in the pause column")
 	assert_true(hud.radio_button.is_visible_in_tree() or Country.pack.radio_stations().is_empty())
 	hud._close_settings()
 	assert_false(hud.pause_strip.is_visible_in_tree())

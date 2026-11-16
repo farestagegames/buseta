@@ -47,7 +47,7 @@ var force_drive_controls: bool = false:
 var _tilt_hint: Label
 var _view_button: TouchButton
 var _pause_button: TouchButton
-## Camera and radio while paused.
+## The radio while paused; the view is changed from the top camera icon.
 var pause_strip: Control
 var _near_stop: bool = false
 var _doors_open: bool = false
@@ -283,21 +283,17 @@ func _build_buttons() -> void:
 	_controls.add_child(gear_switch)
 
 
-## Camera and radio while paused, in a column beside the pause sheet.
+## The radio and its station while paused, in a column beside the pause sheet.
+## No camera here (owner, 16 Nov): the top camera icon changes the view.
 func _build_pause_strip() -> void:
 	pause_strip = Control.new()
 	pause_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_strip.visible = false
 	_place(pause_strip, Vector2(0.5, 0.5), Vector2(-340.0 - GAP - PAUSE_STRIP_WIDTH, -340.0), Vector2(PAUSE_STRIP_WIDTH, 680.0))
 	_root.add_child(pause_strip)
-	var camera := TouchButton.new()
-	camera.text = "VIEW"
-	_place(camera, Vector2.ZERO, Vector2.ZERO, Vector2(PAUSE_STRIP_WIDTH, 96.0))
-	camera.pressed_down.connect(GameEvents.camera_cycle_requested.emit)
-	pause_strip.add_child(camera)
 	radio_button = TouchButton.new()
 	radio_button.text = "RADIO"
-	_place(radio_button, Vector2.ZERO, Vector2(0.0, 96.0 + GAP), Vector2(PAUSE_STRIP_WIDTH, 96.0))
+	_place(radio_button, Vector2.ZERO, Vector2.ZERO, Vector2(PAUSE_STRIP_WIDTH, 96.0))
 	radio_button.pressed_down.connect(GameEvents.radio_cycle_requested.emit)
 	radio_button.visible = not Country.pack.radio_stations().is_empty()
 	pause_strip.add_child(radio_button)
@@ -310,7 +306,7 @@ func _build_pause_strip() -> void:
 	station_label.add_theme_constant_override("outline_size", 6)
 	station_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	station_label.visible = false
-	_place(station_label, Vector2.ZERO, Vector2(0.0, 2.0 * (96.0 + GAP)), Vector2(PAUSE_STRIP_WIDTH, 34.0))
+	_place(station_label, Vector2.ZERO, Vector2(0.0, 96.0 + GAP), Vector2(PAUSE_STRIP_WIDTH, 34.0))
 	pause_strip.add_child(station_label)
 
 
