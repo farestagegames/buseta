@@ -78,6 +78,8 @@ var _keep: float = 1.0 ## 1 where traffic keeps right, -1 where it keeps left.
 var _sea_material: StandardMaterial3D
 var _ground: GroundSurface
 var _random := RandomNumberGenerator.new()
+## Pieces of farmland placed between the streets and the woodland, for tests.
+var countryside_count: int = 0
 var _solid: StaticBody3D
 var _taken: Array[Vector3] = [] ## x, z, radius of placed buildings.
 var _height_of: Callable
@@ -572,6 +574,8 @@ func _build_scenery(b: LowPolyBuilder, route: RouteRunner, map_data: Dictionary)
 		_line_with_bunting(road)
 	_tree_line(b)
 	_beach_palms(b)
+	if map_data.has("countryside"):
+		countryside_count = _countryside(b, map_data["countryside"])
 	for sign_data: Dictionary in _signs:
 		var spot: Vector2 = sign_data["spot"]
 		var y: float = sign_data["y"]
@@ -1175,3 +1179,108 @@ func _is_free(spot: Vector2, radius: float) -> bool:
 			return false
 	return true
 
+
+## Farmland on the empty grass between the streets and the woodland ring (Alto
+## Cafeto): coffee rows, banana clumps and small fincas with a shed and a fence.
+## Its own seeded random, drawn after every layout draw, so the town keeps its
+## layout; pieces only go where the scenery, woodland and flats batches already
+## have a chunk, so no draw calls are added. Returns how many pieces were placed.
+func _countryside(b: LowPolyBuilder, setup: Dictionary) -> int:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(setup.get("seed", 4409))
+	var cell := float(setup.get("cell", 15.0))
+	var clear := float(setup.get("clear_of_roads", 8.0))
+	var finca_share := float(setup.get("finca", 0.08))
+	var coffee_share := float(setup.get("coffee", 0.5))
+	var banana_share := float(setup.get("banana", 0.17))
+	var area := _town_edges().grow(float(setup.get("reach", 70.0)))
+	var placed := 0
+	var z := area.position.y
+	while z < area.end.y:
+		var x := area.position.x
+		while x < area.end.x:
+			var spot := Vector2(x + rng.randf_range(-4.0, 4.0), z + rng.randf_range(-4.0, 4.0))
+			var roll := rng.randf()
+			var heading := rng.randf_range(-PI, PI)
+			x += cell
+			if not countryside_spot_ok(_network.edge_distance(spot), _ground.beach_share(spot), clear) or not _clear_of_stops(spot):
+				continue
+			if roll < finca_share:
+				if _network.edge_distance(spot) > clear + 5.0 and _is_free(spot, 9.0) and b.covers(spot, 9.0) and _flats.covers(spot, 5.0):
+					_finca(b, spot, heading, rng)
+					placed += 1
+			elif roll < finca_share + coffee_share:
+				if _is_free(spot, 6.0) and b.covers(spot, 6.0):
+					_coffee_rows(b, spot, heading, rng)
+					placed += 1
+			elif roll < finca_share + coffee_share + banana_share:
+				if _is_free(spot, 3.0) and _woodland.covers(spot, 3.0):
+					_banana_clump(spot, rng)
+					placed += 1
+		z += cell
+	return placed
+
+
+## Farmland keeps off the roads, their pavements and the beach.
+static func countryside_spot_ok(edge_distance: float, beach_share: float, clear: float) -> bool:
+	return edge_distance >= clear and beach_share <= 0.0
+
+
+## Three or four rows of dark, glossy coffee bushes, some showing red cherries.
+func _coffee_rows(b: LowPolyBuilder, centre: Vector2, heading: float, rng: RandomNumberGenerator) -> void:
+	_taken.append(Vector3(centre.x, centre.y, 6.0))
+	var forward := Vector2(-sin(heading), -cos(heading))
+	var right := Vector2(-forward.y, forward.x)
+	var rows := rng.randi_range(3, 4)
+	var leaf := Color(0.12, 0.3, 0.13)
+	for row in rows:
+		var across := (float(row) - (rows - 1) / 2.0) * 2.3
+		for i in 5:
+			var spot := centre + right * across + forward * (float(i) - 2.0) * 1.9
+			var y := _ground.terrain_height(spot)
+			var shade := leaf.lightened(rng.randf_range(0.0, 0.12))
+			b.turned_box(Vector3(spot.x, y + 0.6, spot.y), Vector3(1.3, 1.2, 1.3), heading, shade)
+			b.turned_box(Vector3(spot.x, y + 1.35, spot.y), Vector3(0.8, 0.5, 0.8), heading, shade.lightened(0.08))
+			if rng.randf() < 0.3:
+				b.box(Vector3(spot.x + 0.45, y + 0.9, spot.y + 0.3), Vector3(0.22, 0.22, 0.22), Color(0.72, 0.1, 0.1))
+
+
+## A clump of short banana plants, the shade crop between the coffee.
+func _banana_clump(spot: Vector2, rng: RandomNumberGenerator) -> void:
+	_taken.append(Vector3(spot.x, spot.y, 3.0))
+	for i in rng.randi_range(2, 3):
+		var at := spot + Vector2(rng.randf_range(-1.6, 1.6), rng.randf_range(-1.6, 1.6))
+		var lean := Vector2(rng.randf_range(-0.4, 0.4), rng.randf_range(-0.4, 0.4))
+		_woodland.palm(Vector3(at.x, _ground.terrain_height(at), at.y), rng.randf_range(3.2, 4.6), lean,
+			Color(0.42, 0.5, 0.24), Color(0.36, 0.66, 0.2), rng)
+
+
+## A small farmhouse with a tin-roofed shed and a post-and-rail fence in front.
+func _finca(b: LowPolyBuilder, centre: Vector2, heading: float, rng: RandomNumberGenerator) -> void:
+	_taken.append(Vector3(centre.x, centre.y, 9.0))
+	var forward := Vector2(-sin(heading), -cos(heading))
+	var right := Vector2(-forward.y, forward.x)
+	var size := Vector3(6.5, STOREY, 9.0)
+	var lowest := INF
+	for corner: Vector2 in [centre + right * 3.3 + forward * 4.5, centre - right * 3.3 + forward * 4.5,
+			centre + right * 3.3 - forward * 4.5, centre - right * 3.3 - forward * 4.5]:
+		lowest = minf(lowest, _ground.terrain_height(corner))
+	var wall: Color = theme.walls[rng.randi_range(0, theme.walls.size() - 1)]
+	var roof: Color = theme.roofs[rng.randi_range(0, theme.roofs.size() - 1)]
+	_walls(_flats, centre, size, heading, lowest, wall)
+	b.turned_box(_at(centre, lowest + size.y + 0.08), Vector3(size.x + 1.4, 0.16, size.z + 1.4), heading, roof.darkened(0.3))
+	b.gable(_at(centre, lowest + size.y + 0.16), size.x + 1.2, size.z + 1.2, 2.4, heading, roof)
+	_add_solid(_at(centre, lowest + size.y / 2.0), size + Vector3(0.0, 4.0, 0.0), heading)
+	var shed := centre + right * 6.2 - forward * 2.0
+	var shed_y := _ground.terrain_height(shed)
+	b.turned_box(_at(shed, shed_y + 1.1), Vector3(3.2, 2.2, 3.6), heading, Color(0.5, 0.36, 0.24))
+	b.turned_box(_at(shed, shed_y + 2.3), Vector3(3.8, 0.12, 4.2), heading, Color(0.62, 0.64, 0.66))
+	var timber := Color(0.4, 0.3, 0.2)
+	for i in 7:
+		var post := centre - right * 4.8 + forward * (float(i) - 3.0) * 2.0
+		var post_y := _ground.terrain_height(post)
+		b.turned_box(_at(post, post_y + 0.55), Vector3(0.14, 1.1, 0.14), heading, timber)
+	var rail := centre - right * 4.8
+	var rail_y := _ground.terrain_height(rail)
+	for height: float in [0.5, 0.95]:
+		b.turned_box(_at(rail, rail_y + height), Vector3(0.08, 0.08, 12.2), heading, timber)

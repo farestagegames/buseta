@@ -539,6 +539,15 @@
    "face": "e"
   }
  ],
+ "countryside": {
+  "seed": 4409,
+  "cell": 15,
+  "reach": 70,
+  "clear_of_roads": 8,
+  "finca": 0.08,
+  "coffee": 0.5,
+  "banana": 0.17
+ },
  "theme": {
   "walls": [
    [

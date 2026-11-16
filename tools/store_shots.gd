@@ -11,6 +11,9 @@ const SPOTS := {
 	"market": ["market_street", 50.0, 1.9, 1],
 	"malecon": ["river_road", 290.0, 1.9, -1],
 	"high": ["high_street", 100.0, 1.9, 1],
+	"cafeto_real": ["calle_real", 40.0, 1.9, 1],
+	"cafeto_lomas": ["calle_las_lomas", 100.0, 1.9, 1],
+	"cafeto_colina": ["carrera_colina", 60.0, 1.9, 1],
 }
 
 var dir := ProjectSettings.globalize_path("res://tools/screens/store/")
@@ -25,6 +28,11 @@ var shots := [
 	{"name": "05_aguacero", "route": "route_01", "bus": "city_12", "time": "noche", "rain": true, "view": "Close", "spot": "stop"},
 	{"name": "06_cabina", "route": "route_01", "bus": "buseta_8", "time": "atardecer", "rain": true, "view": "Cockpit", "spot": "market"},
 	{"name": "07_carrera", "route": "arcade", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "arcade"},
+	# Not store shots: checks of the newer towns. "aerial" looks down from that
+	# many metres up and back, to see how much of the ground is built on.
+	{"name": "11_cafeto_aereo", "route": "cafeto_c0", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "cafeto_real", "aerial": 90.0},
+	{"name": "12_cafeto_lomas", "route": "cafeto_c0", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "cafeto_lomas"},
+	{"name": "13_cafeto_colina_aereo", "route": "cafeto_c0", "bus": "buseta_8", "time": "manana", "rain": false, "view": "Far", "spot": "cafeto_colina", "aerial": 70.0},
 ]
 
 
@@ -98,6 +106,17 @@ func _take(shot: Dictionary) -> void:
 		weather.start_downpour(true)
 		weather.clock.wetness = 1.0
 	await _seconds(1.8)
+	if shot.has("aerial"):
+		var up := float(shot["aerial"])
+		var eye := Camera3D.new()
+		eye.far = 900.0
+		scene.add_child(eye)
+		var at := bus.global_position
+		var back := bus.global_transform.basis.z.normalized()
+		eye.global_position = at + back * up * 0.9 + Vector3.UP * up
+		eye.look_at(at - back * up * 0.6, Vector3.UP)
+		eye.make_current()
+		await _seconds(0.5)
 	if spot == "board":
 		GameEvents.door_toggle_requested.emit()
 		await _seconds(2.6)

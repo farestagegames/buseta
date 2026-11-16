@@ -419,6 +419,18 @@ func _emit_shaded(a: Vector3, b: Vector3, c: Vector3, colour_a: Color, colour_b:
 		surface.add_vertex(points[i])
 
 
+## True when everything within reach of a ground spot would land in cells that
+## already hold geometry, so adding it there costs no new mesh (draw call).
+func covers(spot: Vector2, reach: float) -> bool:
+	if chunk_size <= 0.0:
+		return true
+	for corner: Vector2 in [spot + Vector2(-reach, -reach), spot + Vector2(reach, -reach),
+			spot + Vector2(-reach, reach), spot + Vector2(reach, reach)]:
+		if not _chunks.has(Vector2i(int(floor(corner.x / chunk_size)), int(floor(corner.y / chunk_size)))):
+			return false
+	return true
+
+
 func _surface_for(point: Vector3) -> SurfaceTool:
 	if chunk_size <= 0.0:
 		return _surface

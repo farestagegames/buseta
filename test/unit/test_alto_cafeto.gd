@@ -326,17 +326,20 @@ func test_the_intro_scene_sets_up_in_a_town_without_its_streets() -> void:
 
 
 ## Builds the whole town as a shift does, with the starter route's bays.
-func _built_town() -> Dictionary:
+func _built_town(setup: Dictionary = {}) -> Dictionary:
+	var town_map := map_data.duplicate(true)
+	if setup.get("countryside_off", false):
+		town_map.erase("countryside")
 	var route_data := MapLoader.read_json("res://data/packs/colombia/routes/cafeto_c0.json")
-	var network := RoadNetwork.from_data(map_data)
-	var route := RouteRunner.build(route_data, network, 7, map_data)
+	var network := RoadNetwork.from_data(town_map)
+	var route := RouteRunner.build(route_data, network, 7, town_map)
 	for stop in route.stops:
 		if stop.kind == RouteStop.Kind.BAY:
 			network.add_bay(stop.road, stop.along, stop.dir)
-	var ground := MapLoader.build_ground(map_data, network)
+	var ground := MapLoader.build_ground(town_map, network)
 	var city := CityBuilder.new()
 	add_child_autofree(city)
-	city.build(map_data, network, ground, route)
+	city.build(town_map, network, ground, route)
 	return {"city": city, "network": network, "ground": ground}
 
 
@@ -401,3 +404,14 @@ func test_map_ambience_override_does_not_leak_into_the_pack() -> void:
 	for layer: Dictionary in Country.pack.ambience_layers():
 		if layer["id"] == "city":
 			assert_ne(float(layer["volume_db"]), -16.0, "the pack's own street bed is untouched")
+
+
+func test_the_empty_grass_gets_farmland_clear_of_the_roads() -> void:
+	var town := _built_town()
+	var city: CityBuilder = town["city"]
+	var network: RoadNetwork = town["network"]
+	assert_gt(city.countryside_count, 30, "Coffee rows, banana clumps and fincas fill the hillsides")
+	assert_gt(city.building_count, 40, "The town keeps its houses")
+	var meshes := city.find_children("*", "MeshInstance3D", true, false).size()
+	var plain := _built_town({"countryside_off": true})
+	assert_eq((plain["city"] as Node).find_children("*", "MeshInstance3D", true, false).size(), meshes, "No new draw calls")
