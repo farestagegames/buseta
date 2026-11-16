@@ -154,6 +154,10 @@ func _menus() -> void:
 	menu.show_tab(1)
 	await _seconds(0.6)
 	await _shot("10_rutas")
+	for tab: Array in [[3, "10b_chofer"], [4, "10c_logros"], [5, "10d_ajustes"]]:
+		menu.show_tab(tab[0])
+		await _seconds(0.6)
+		await _shot(tab[1])
 	# Home with Alto Cafeto picked on the Routes tab: its own Carrera Express.
 	Profile.data.town = "Alto Cafeto"
 	menu.show_tab(0)

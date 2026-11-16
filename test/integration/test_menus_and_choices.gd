@@ -175,7 +175,7 @@ func test_home_shows_the_chosen_driver() -> void:
 	add_child_autofree(menu)
 	await wait_frames(2)
 	var labels := menu.find_children("*", "Label", true, false)
-	assert_true(labels.any(func(label: Label) -> bool: return label.text == "Yolima Uriana"))
+	assert_true(labels.any(func(label: Label) -> bool: return label.text == MenuTopBar.short_name("Yolima Uriana")), "The driver pill names her")
 
 
 func test_chosen_driver_sits_in_the_bus() -> void:
@@ -474,3 +474,53 @@ func test_town_buttons_text_fits_in_both_languages() -> void:
 			assert_true(ac_btn.get_global_rect().encloses(badge.get_global_rect()), "Badge inside button at %d in %s" % [width, language])
 			screen.queue_free()
 	GameSettings.language = was
+
+
+func test_the_side_arrows_change_the_chosen_bus_and_the_stage() -> void:
+	Profile.data.coins = 100000
+	Profile.data.xp = 100000
+	Profile.buy(Catalog.BUSES, "midi_10")
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	var before: String = Profile.data.selected[Catalog.BUSES]
+	menu.cycle_bus(1)
+	assert_ne(Profile.data.selected[Catalog.BUSES], before, "The arrow selects the next owned bus")
+	assert_eq(menu._stage.shown_spec().resource_path, "", "The stage shows a fresh copy")
+	menu.cycle_bus(-1)
+	assert_eq(Profile.data.selected[Catalog.BUSES], before, "And back")
+
+
+func test_the_stage_stops_rendering_behind_a_full_sheet() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	assert_false(menu._stage.paused, "Home shows the stage")
+	menu.show_tab(1)
+	assert_true(menu._stage.paused, "Routes covers it")
+	menu.show_tab(MainMenu.GARAGE_TAB)
+	assert_false(menu._stage.paused, "The garage tries buses on it")
+	menu.show_tab(0)
+	assert_false(menu._stage.paused)
+
+
+func test_the_gear_opens_settings_and_the_sound_button_mutes() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	menu._on_icon_pressed("gear")
+	assert_true(menu._content.get_child(0) is SettingsPanel)
+	var volume := GameSettings.sound_volume
+	menu.toggle_mute()
+	assert_eq(GameSettings.sound_volume, 0.0)
+	menu.toggle_mute()
+	assert_eq(GameSettings.sound_volume, volume)
+
+
+func test_every_home_button_is_big_enough_for_a_thumb() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(3)
+	for button: Button in menu.find_children("*", "Button", true, false):
+		if button.is_visible_in_tree():
+			assert_gte(minf(button.size.x, button.size.y), 48.0, button.name)

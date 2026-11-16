@@ -1,9 +1,13 @@
 class_name MainMenu
 extends Control
-## Home, Routes, Garage, Drivers, Career and Settings. Built in code from the
+## Home, Routes, Garage, Driver, Achievements and Settings, laid out like the
+## owner's prototype: the chosen bus turns on a full-screen stage, a top bar holds
+## the level, money, driver and icon buttons, a bus card sits top left, and a
+## bottom tab bar opens each tab as a sheet over the stage. Built in code from the
 ## catalog, so new routes, buses, liveries and drivers appear without changes here.
 
 const SHIFT_SCENE := "res://scenes/main/city_shift.tscn"
+const GARAGE_TAB := 2
 const DRIVERS_TAB := 3
 const SETTINGS_TAB := 5
 const BACKGROUND := UiStyle.INK
@@ -13,6 +17,20 @@ const GOOD := UiStyle.GOOD
 const MUTED := UiStyle.MUTED
 ## Space between the screen edge and the menu, in view pixels.
 const EDGE := 22
+## The dark sheet a tab opens over the stage.
+const SHEET := Color(0.09, 0.1, 0.13, 0.94)
+const SHEET_OUTLINE := Color("#22242D")
+## Tab labels on the bottom bar, in tab order (Settings is the gear).
+const TAB_LABELS := ["Home", "Routes", "Garage", "Crew", "Achievements"]
+const TAB_ICONS := ["home", "routes", "garage", "driver", "trophy"]
+## Each tab icon's own cartoon colour, like the stat bars.
+const TAB_COLOURS := [Color("#FF7A1A"), Color("#4D96FF"), Color("#6BCB77"), Color("#FF5C5C"), Color("#FFC733")]
+## How far the stage slides left in the Garage, as a share of its width, so the
+## bus stays in view beside the list.
+const GARAGE_STAGE_SHIFT := 0.24
+## How far a new tab's sheet slides up as it fades in, and for how long.
+const SLIDE_PIXELS := 24.0
+const SLIDE_SECONDS := 0.25
 
 var _content: Control
 var _coins_label: Label
@@ -22,7 +40,7 @@ var _tabs: Array[Button] = []
 var _current_tab: int = 0
 var _shown_locale: String = ""
 var _cheat_taps := Cheats.new()
-var _garage_preview: BusPreview
+var _garage_preview: TurntableStage
 var _preview_note: Label
 var _preview_bus: Dictionary = {}
 var _preview_livery: Dictionary = {}
@@ -33,6 +51,15 @@ var _frame: MarginContainer
 var _horn_preview: AudioStreamPlayer
 var _horn_preview_left: float = 0.0
 var _horn_preview_db: float = AudioDirector.BUS_HORN_DB
+var _stage: TurntableStage
+var _top_bar: MenuTopBar
+var _tab_bar: MenuTabBar
+var _bus_card: MenuBusCard
+var _shift_button: MenuShiftButton
+var _arrows: Array[Button] = []
+var _volume_before_mute: float = 0.7
+var _slide: Tween
+var _sheet_panel: PanelContainer
 
 
 func _ready() -> void:
@@ -42,24 +69,40 @@ func _ready() -> void:
 	backing.color = BACKGROUND
 	backing.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(backing)
-	add_child(MenuBackdrop.new())
+	_stage = TurntableStage.new()
+	_stage.name = "BusStage"
+	_stage.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_stage)
+	_garage_preview = _stage
 
 	_frame = MarginContainer.new()
 	_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_frame)
 	fit_to_screen(UiStyle.screen_insets(get_viewport_rect().size))
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 14)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_theme_constant_override("separation", 12)
 	_frame.add_child(column)
 	column.add_child(_header())
-	var body := HBoxContainer.new()
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 18)
-	column.add_child(body)
-	body.add_child(_navigation())
+	var middle := Control.new()
+	middle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(middle)
+	_bus_card = MenuBusCard.new()
+	_bus_card.name = "BusCard"
+	_bus_card.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	middle.add_child(_bus_card)
+	for side in [-1, 1]:
+		middle.add_child(_arrow(side))
+	_sheet_panel = PanelContainer.new()
+	_sheet_panel.name = "TabSheet"
+	_sheet_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	middle.add_child(_sheet_panel)
 	_content = MarginContainer.new()
-	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_child(_content)
+	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sheet_panel.add_child(_content)
+	column.add_child(_bottom_row())
 	GameSettings.changed.connect(_on_settings_changed)
 	_horn_preview = AudioStreamPlayer.new()
 	_horn_preview.volume_db = AudioDirector.BUS_HORN_DB
@@ -90,8 +133,11 @@ func fit_to_screen(insets: Vector4) -> void:
 
 ## A language change re-reads every formatted line.
 func _on_settings_changed() -> void:
+	if _top_bar != null:
+		_top_bar.set_muted(GameSettings.sound_volume <= 0.0)
 	if TranslationServer.get_locale() != _shown_locale:
 		_shown_locale = TranslationServer.get_locale()
+		_rebuild_tab_bar()
 		_refresh_header()
 		if _current_tab != SETTINGS_TAB:
 			show_tab(_current_tab)
@@ -101,33 +147,80 @@ func show_tab(index: int) -> void:
 	# Redrawing the same tab, after buying or selecting, keeps the list where it was.
 	var offset := 0
 	var old_list := TouchScroll.first_in(_content)
-	if index == _current_tab and old_list != null:
+	var same := index == _current_tab
+	if same and old_list != null:
 		offset = old_list.scroll_vertical
 	_current_tab = index
-	for i in _tabs.size():
-		_tabs[i].button_pressed = i == index
+	if index < TAB_LABELS.size():
+		_tab_bar.select(index, false)
 	for child in _content.get_children():
 		_content.remove_child(child)
 		child.queue_free()
+	var page: Control
+	if index == 0 or index == GARAGE_TAB:
+		_show_chosen_bus()
 	match index:
 		0:
-			_content.add_child(_home_tab())
+			page = _home_tab()
 		1:
-			_content.add_child(_routes_tab())
-		2:
-			_content.add_child(_garage_tab())
+			page = _routes_tab()
+		GARAGE_TAB:
+			page = _garage_tab()
 		DRIVERS_TAB:
-			_content.add_child(_drivers_tab())
+			page = _drivers_tab()
 		4:
-			_content.add_child(_career_tab())
+			page = _career_tab()
 		_:
 			var settings := SettingsPanel.new()
 			settings.tutorial_requested.connect(func() -> void: show_tab(0))
-			_content.add_child(settings)
+			page = settings
+	_content.add_child(page)
+	# The stage only renders while it shows: Home and the Garage, where the bus is
+	# tried on. Behind a full sheet it would cost the phone's GPU for nothing.
+	var stage_shows := index == 0 or index == GARAGE_TAB
+	_stage.paused = not stage_shows
+	_shift_stage(GARAGE_STAGE_SHIFT if index == GARAGE_TAB else 0.0)
+	# Home and the Garage float over the stage; the other tabs sit in one sheet.
+	if stage_shows:
+		_sheet_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		_sheet_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	else:
+		_sheet_panel.add_theme_stylebox_override("panel", sheet_box())
+		_sheet_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_bus_card.visible = stage_shows
+	for arrow in _arrows:
+		arrow.visible = index == 0
+	if not same:
+		_slide_in(_sheet_panel)
 	var list := TouchScroll.first_in(_content)
 	if list != null:
 		list.restore_offset(offset)
 	_refresh_header()
+
+
+## Slides the stage sideways by a share of the screen width.
+func _shift_stage(share: float) -> void:
+	var target := -share * get_viewport_rect().size.x
+	if is_equal_approx(_stage.offset_left, target):
+		return
+	var tween := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_stage, "offset_left", target, SLIDE_SECONDS)
+	tween.tween_property(_stage, "offset_right", target, SLIDE_SECONDS)
+
+
+## A new tab's page rises a little and fades in.
+func _slide_in(page: Control) -> void:
+	if _slide != null and _slide.is_valid():
+		_slide.kill()
+	# Offsets rather than position: setting the position of an anchored control
+	# before it is laid out would fix its width at its smallest.
+	page.modulate.a = 0.0
+	page.offset_top = SLIDE_PIXELS
+	page.offset_bottom = SLIDE_PIXELS
+	_slide = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_slide.tween_property(page, "modulate:a", 1.0, SLIDE_SECONDS)
+	_slide.tween_property(page, "offset_top", 0.0, SLIDE_SECONDS)
+	_slide.tween_property(page, "offset_bottom", 0.0, SLIDE_SECONDS)
 
 
 func _notification(what: int) -> void:
@@ -140,27 +233,43 @@ func _notification(what: int) -> void:
 
 
 func _header() -> Control:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 22)
-	# The game's name stays the same in every language, as it does on the phone.
-	var title := _text(ProjectSettings.get_setting("application/config/name"), 36, Color.WHITE)
-	title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_top_bar = MenuTopBar.new()
+	_top_bar.name = "TopBar"
+	_level_label = _top_bar.level_label
+	_level_bar = _top_bar.level_bar
+	_coins_label = _top_bar.coins_label
 	if Cheats.available():
-		title.mouse_filter = Control.MOUSE_FILTER_STOP
-		title.gui_input.connect(_on_title_input)
-	row.add_child(title)
-	_level_label = _text("", 24, Color.WHITE)
-	row.add_child(_level_label)
-	_level_bar = ProgressBar.new()
-	_level_bar.show_percentage = false
-	_level_bar.custom_minimum_size = Vector2(160.0, 18.0)
-	_level_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_level_bar.max_value = 1.0
-	row.add_child(_level_bar)
-	_coins_label = _text("", 28, ACCENT)
-	row.add_child(_coins_label)
-	return row
+		_top_bar.title_label.gui_input.connect(_on_title_input)
+	_top_bar.driver_pressed.connect(show_tab.bind(DRIVERS_TAB))
+	_top_bar.icon_pressed.connect(_on_icon_pressed)
+	_top_bar.set_muted(GameSettings.sound_volume <= 0.0)
+	return _top_bar
+
+
+func _on_icon_pressed(icon_name: String) -> void:
+	match icon_name:
+		"horn":
+			preview_horn({})
+		"gear":
+			show_tab(SETTINGS_TAB if _current_tab != SETTINGS_TAB else 0)
+		"camera":
+			_stage.cycle_view()
+		"sound":
+			toggle_mute()
+		"fullscreen":
+			var full := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+
+## The sound button silences the game, and a second tap brings back the volume
+## it had.
+func toggle_mute() -> void:
+	if GameSettings.sound_volume > 0.0:
+		_volume_before_mute = GameSettings.sound_volume
+		GameSettings.sound_volume = 0.0
+	else:
+		GameSettings.sound_volume = _volume_before_mute if _volume_before_mute > 0.0 else 0.7
+	Profile.save()
 
 
 func _on_title_input(event: InputEvent) -> void:
@@ -182,97 +291,199 @@ func _on_cheat_used() -> void:
 
 func _refresh_header() -> void:
 	var xp := Profile.data.xp
-	_level_label.text = tr("Level %d") % DriverLevel.level_for(xp)
-	_level_bar.value = DriverLevel.progress(xp)
-	_coins_label.text = Country.pack.money(Profile.data.coins)
+	var driver := Profile.selected_item(Catalog.DRIVERS)
+	_top_bar.refresh(DriverLevel.level_for(xp), DriverLevel.progress(xp), Country.pack.money(Profile.data.coins),
+		str(driver.get("name", "")), CityShift.chosen_look())
 
 
-func _navigation() -> Control:
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 10)
-	column.add_theme_constant_override("separation", 8)
-	column.custom_minimum_size.x = 200.0
-	var names := ["Home", "Routes", "Garage", "Drivers", "Career", "Settings"]
-	for i in names.size():
-		var tab := _button(names[i])
-		tab.toggle_mode = true
-		tab.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		tab.pressed.connect(show_tab.bind(i))
-		column.add_child(tab)
-		_tabs.append(tab)
-	return column
+## The tab bar, centred in the room left of the big orange TURNO button.
+func _bottom_row() -> Control:
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 16)
+	row.add_child(_spacer())
+	_tab_bar = MenuTabBar.new()
+	_tab_bar.name = "TabBar"
+	_tab_bar.size_flags_vertical = Control.SIZE_SHRINK_END
+	_tab_bar.tab_selected.connect(show_tab)
+	row.add_child(_tab_bar)
+	_rebuild_tab_bar()
+	row.add_child(_spacer())
+	_shift_button = MenuShiftButton.new()
+	_shift_button.name = "ShiftButton"
+	_shift_button.size_flags_vertical = Control.SIZE_SHRINK_END
+	_shift_button.pressed.connect(_start_shift)
+	_shift_button.set_pulsing(true)
+	row.add_child(_shift_button)
+	return row
+
+
+func _spacer() -> Control:
+	var spacer := Control.new()
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return spacer
+
+
+func _rebuild_tab_bar() -> void:
+	var items := []
+	for i in TAB_LABELS.size():
+		var icon := MenuIcon.new()
+		icon.icon = TAB_ICONS[i]
+		icon.colour = TAB_COLOURS[i]
+		items.append({"label": TAB_LABELS[i], "icon": icon})
+	_tab_bar.setup(items)
+	_tab_bar.select(mini(_current_tab, TAB_LABELS.size() - 1), false)
+	_tabs.clear()
+	for i in TAB_LABELS.size():
+		_tabs.append(_tab_bar.button_at(i))
+
+
+## A big yellow arrow at the side of the stage that changes to the next owned bus.
+func _arrow(side: int) -> Button:
+	var button := Button.new()
+	button.name = "NextBus" if side > 0 else "PreviousBus"
+	button.focus_mode = Control.FOCUS_NONE
+	button.custom_minimum_size = Vector2(56.0, 80.0)
+	var box := MenuHomeDrawer.card_box(Color("#FFC733"), 16, 6)
+	button.add_theme_stylebox_override("normal", box)
+	button.add_theme_stylebox_override("hover", box)
+	button.add_theme_stylebox_override("pressed", MenuHomeDrawer.card_box(Color("#E8AE1C"), 16, 6))
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	var icon := MenuIcon.new()
+	icon.icon = "arrow_right" if side > 0 else "arrow_left"
+	icon.colour = Color("#22242D")
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icon.offset_left = 8.0
+	icon.offset_right = -8.0
+	button.add_child(icon)
+	var preset := Control.PRESET_CENTER_RIGHT if side > 0 else Control.PRESET_CENTER_LEFT
+	button.set_anchors_and_offsets_preset(preset, Control.PRESET_MODE_MINSIZE)
+	button.grow_horizontal = Control.GROW_DIRECTION_BEGIN if side > 0 else Control.GROW_DIRECTION_END
+	button.grow_vertical = Control.GROW_DIRECTION_BOTH
+	button.pressed.connect(cycle_bus.bind(side))
+	_arrows.append(button)
+	return button
+
+
+## The owned buses the arrows go through, in catalog order.
+static func owned_buses() -> Array[Dictionary]:
+	var buses: Array[Dictionary] = []
+	for item: Dictionary in Profile.catalog.items(Catalog.BUSES):
+		if not item.get("route_only", false) and Profile.data.owns(Catalog.BUSES, item["id"]):
+			buses.append(item)
+	return buses
+
+
+## Selects the next (or previous) owned bus and shows it on the stage.
+func cycle_bus(step: int) -> void:
+	var buses := owned_buses()
+	if buses.size() < 2:
+		_stage.bump()
+		return
+	var chosen: String = Profile.data.selected[Catalog.BUSES]
+	var at := 0
+	for i in buses.size():
+		if buses[i]["id"] == chosen:
+			at = i
+	Profile.select(Catalog.BUSES, buses[posmod(at + step, buses.size())]["id"])
+	_show_chosen_bus()
+	_stage.bump()
+
+
+## The chosen bus on the stage and on the card.
+func _show_chosen_bus() -> void:
+	var bus := Profile.selected_item(Catalog.BUSES)
+	var livery := Profile.selected_item(Catalog.LIVERIES)
+	var spec := CityShift.spec_for(bus, livery)
+	_stage.show_spec(spec, Profile.selected_item(Catalog.DECORATIONS))
+	_preview_bus = bus
+	var dots: Array[Color] = []
+	var chosen_dot := -1
+	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
+		if not Profile.data.owns(Catalog.LIVERIES, item["id"]):
+			continue
+		if item["id"] == livery.get("id", ""):
+			chosen_dot = dots.size()
+		var body: Array = item["body"]
+		dots.append(Color(body[0], body[1], body[2]))
+	_bus_card.show_bus(str(bus["name"]), tr(bus_category(bus)), MenuBusCard.stats_for(spec), dots.slice(0, 6), chosen_dot)
+
+
+## A one-word kind of bus for the card's tag, from its size.
+static func bus_category(bus: Dictionary) -> String:
+	var spec := load(Country.pack.resolve(bus["file"])) as BusSpec if bus.has("file") else null
+	if spec == null:
+		return "Buseta"
+	if spec.body_style == "chiva":
+		return "Chiva"
+	var length := spec.full_length()
+	if length > 15.0:
+		return "Articulated"
+	if length > 10.5:
+		return "Bus"
+	if length > 8.5:
+		return "Midibus"
+	return "Buseta"
+
+
+## A tab's content in a dark rounded sheet over the stage.
+func _sheet(inner: Control) -> Control:
+	var sheet := PanelContainer.new()
+	sheet.add_theme_stylebox_override("panel", sheet_box())
+	sheet.add_child(inner)
+	return sheet
+
+
+static func sheet_box() -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = SHEET
+	box.set_corner_radius_all(22)
+	box.set_border_width_all(3)
+	box.border_color = SHEET_OUTLINE
+	box.shadow_color = Color(0.0, 0.0, 0.0, 0.3)
+	box.shadow_size = 8
+	box.shadow_offset = Vector2(0.0, 4.0)
+	box.set_content_margin_all(16)
+	return box
 
 
 func _home_tab() -> Control:
-	var page := HBoxContainer.new()
-	page.add_theme_constant_override("separation", 16)
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 12)
-	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.size_flags_stretch_ratio = 1.15
-	page.add_child(column)
-	var side := VBoxContainer.new()
-	side.add_theme_constant_override("separation", 12)
-	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.add_child(side)
-	var preview := BusPreview.new()
-	preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	side.add_child(preview)
-	var route := Profile.selected_item(Catalog.ROUTES)
-	var bus := Profile.selected_item(Catalog.BUSES)
-	var livery := Profile.selected_item(Catalog.LIVERIES)
-	var card := _card()
-	var crew := HBoxContainer.new()
-	crew.add_theme_constant_override("separation", 14)
-	crew.add_child(_driver_button())
-	var lines := VBoxContainer.new()
-	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lines.add_child(_wrapped(route["name"], 28, Color.WHITE))
-	lines.add_child(_text("%s, %s" % [bus["name"], tr(livery["name"])], 22, MUTED))
-	lines.add_child(_text(Profile.selected_item(Catalog.DRIVERS)["name"], 22, MUTED))
-	lines.add_child(_text(tr("Time: %s") % tr(Profile.chosen_time().name), 22, MUTED))
-	var best: int = Profile.data.best_scores.get(route["id"], -1)
-	lines.add_child(_text(tr("Best score: %d") % best if best >= 0 else tr("Not driven yet"), 22, MUTED))
-	crew.add_child(lines)
-	card.add_child(crew)
-	column.add_child(card)
-
-	var daily_card := _card()
-	var daily_lines := VBoxContainer.new()
+	var page := Control.new()
+	page.name = "HomePage"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var drawer := MenuHomeDrawer.new()
+	drawer.name = "HomeDrawer"
+	drawer.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE)
+	drawer.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	drawer.offset_right = -72.0 # clear of the side arrow
+	drawer.offset_left = drawer.offset_right - MenuHomeDrawer.WIDTH
+	page.add_child(drawer)
+	var arcade := _arcade_button()
+	if arcade != null:
+		drawer.add_arcade(arcade)
 	var today := DailyChallenge.today_key()
 	var challenge := DailyChallenge.for_date(today, DailyChallenge.load_list(), Profile.data)
 	var done := Profile.data.last_daily == today
 	# A run carries on if yesterday's challenge was done.
 	var alive := done or Profile.data.last_daily == DailyChallenge.day_before(today)
 	var streak := Profile.data.daily_streak if alive else 0
-	daily_lines.add_child(_text("Daily challenge", 22, ACCENT))
-	daily_lines.add_child(_wrapped(challenge["text"], 24, Color.WHITE))
-	var next_reward := DailyChallenge.reward_for(streak + 1)
-	daily_lines.add_child(_text(tr("Done today") if done else tr("Reward: %s") % Country.pack.money(next_reward), 20, GOOD if done else MUTED))
+	var detail := tr("Done today") if done else tr("Reward: %s") % Country.pack.money(DailyChallenge.reward_for(streak + 1))
 	if streak > 0:
-		daily_lines.add_child(_text(tr("%d-day streak") % streak, 20, ACCENT))
-	daily_card.add_child(daily_lines)
-	column.add_child(daily_card)
+		detail += " · " + tr("%d-day streak") % streak
+	drawer.set_daily(tr("Daily challenge"), tr(challenge["text"]), detail, done)
+	drawer.set_next_unlock(next_unlock_text(Profile.next_unlock()))
 
-	var next_card := _card()
-	var next_lines := VBoxContainer.new()
-	next_lines.add_child(_text("Next unlock", 22, ACCENT))
-	var next := Profile.next_unlock()
-	if next.is_empty():
-		next_lines.add_child(_wrapped(tr("All unlocked"), 24, Color.WHITE))
-	else:
-		next_lines.add_child(_wrapped(next_unlock_text(next), 24, Color.WHITE))
-	next_card.add_child(next_lines)
-	column.add_child(next_card)
-
-	var start := _button("Start shift")
-	start.custom_minimum_size.y = 110.0
-	start.add_theme_font_size_override("font_size", 38)
-	start.pressed.connect(_start_shift)
-	side.add_child(start)
-	var arcade := _arcade_button()
-	if arcade != null:
-		side.add_child(arcade)
+	var route := Profile.selected_item(Catalog.ROUTES)
+	var chip := MenuRouteChip.new()
+	chip.name = "RouteChip"
+	var best: int = Profile.data.best_scores.get(route["id"], -1)
+	chip.show_route(tr(route["name"]), tr(Profile.chosen_time().name), tr("Best score: %d") % best if best >= 0 else tr("Not driven yet"))
+	chip.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE)
+	chip.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	chip.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	chip.pressed.connect(show_tab.bind(1))
+	page.add_child(chip)
 	return page
 
 
@@ -352,18 +563,6 @@ static func next_unlock_text(info: Dictionary) -> String:
 	if levels_missing > 0:
 		return TranslationServer.translate("%s: level %d") % [name, int(info.get("level", 1))]
 	return TranslationServer.translate("%s: %s more") % [name, Country.pack.money(coins_missing)]
-
-
-## Today's driver. Tapping the portrait goes to the choice of drivers.
-func _driver_button() -> Control:
-	var button := Button.new()
-	button.custom_minimum_size = Vector2(112.0, 112.0)
-	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	button.pressed.connect(show_tab.bind(DRIVERS_TAB))
-	var badge := DriverBadge.new(CityShift.chosen_look(), 96.0)
-	badge.position = Vector2(8.0, 8.0)
-	button.add_child(badge)
-	return button
 
 
 func _start_shift() -> void:
@@ -550,21 +749,26 @@ func _on_choose_time(time: TimeOfDay) -> void:
 
 
 func _garage_tab() -> Control:
+	# The bus on the stage is the preview: the list sits in a sheet on the right.
 	var page := HBoxContainer.new()
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_theme_constant_override("separation", 16)
+	var side := VBoxContainer.new()
+	side.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	side.alignment = BoxContainer.ALIGNMENT_END
+	page.add_child(side)
 	var list := _list()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.size_flags_stretch_ratio = 1.5
-	page.add_child(list)
-	var side := VBoxContainer.new()
-	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.add_child(side)
-	_garage_preview = BusPreview.new()
-	_garage_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	side.add_child(_garage_preview)
-	_preview_note = _wrapped("Tap a bus, paint or decoration to try it", 20, MUTED)
+	var sheet := _sheet(list)
+	sheet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sheet.size_flags_stretch_ratio = 1.25
+	page.add_child(sheet)
+	_preview_note = _wrapped("Tap a bus, paint or decoration to try it", 20, Color.WHITE)
 	_preview_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	side.add_child(_preview_note)
+	var note_back := _sheet(_preview_note)
+	note_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	side.add_child(note_back)
 	_preview_bus = Profile.selected_item(Catalog.BUSES)
 	_preview_livery = Profile.selected_item(Catalog.LIVERIES)
 	_preview_decoration = Profile.selected_item(Catalog.DECORATIONS)
@@ -641,7 +845,8 @@ func _horn_button(item: Dictionary) -> Button:
 func preview_horn(item: Dictionary) -> void:
 	if item.is_empty():
 		item = Country.pack.bus_horn(_preview_bus)
-	_preview_note.text = tr(item["name"])
+	if is_instance_valid(_preview_note):
+		_preview_note.text = tr(item["name"])
 	_horn_preview.stream = load(Country.pack.resolve(item["file"]))
 	_horn_preview_db = AudioDirector.BUS_HORN_DB + float(item.get("volume_db", 0.0))
 	_horn_preview.volume_db = _horn_preview_db

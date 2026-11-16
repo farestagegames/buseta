@@ -32,7 +32,7 @@ func _tap(control: Control, times: int) -> void:
 
 
 func _title_of(menu: MainMenu) -> Label:
-	return menu._frame.get_child(0).get_child(0).get_child(0)
+	return menu._top_bar.title_label
 
 
 func _cheat_panels(menu: MainMenu) -> int:
