@@ -211,7 +211,7 @@
       "id": "rain",
       "file": "res://assets/audio/ambience/rain.wav",
       "rule": "rain",
-      "volume_db": -7
+      "volume_db": -17
     },
     {
       "id": "motorbike",

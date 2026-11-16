@@ -3,6 +3,8 @@ extends Node
 ## without any button needing to know about it.
 
 const TAP := "res://assets/audio/tap.wav"
+## The whole mix sits this far under the volume slider (owner: still very loud).
+const MASTER_HEADROOM_DB := -6.0
 
 var _player: AudioStreamPlayer
 
@@ -20,7 +22,7 @@ func _ready() -> void:
 
 
 func _apply_volume() -> void:
-	AudioServer.set_bus_volume_db(0, linear_to_db(GameSettings.sound_volume))
+	AudioServer.set_bus_volume_db(0, linear_to_db(GameSettings.sound_volume) + MASTER_HEADROOM_DB)
 	AudioServer.set_bus_mute(0, GameSettings.sound_volume <= 0.0)
 	SoundBuses.set_radio_volume(GameSettings.radio_volume)
 

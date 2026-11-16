@@ -421,7 +421,7 @@ func test_driver_hides_only_from_the_cockpit() -> void:
 
 func test_volume_setting_reaches_the_audio_bus() -> void:
 	GameSettings.sound_volume = 0.5
-	assert_almost_eq(AudioServer.get_bus_volume_db(0), linear_to_db(0.5), 0.01)
+	assert_almost_eq(AudioServer.get_bus_volume_db(0), linear_to_db(0.5) + UiAudio.MASTER_HEADROOM_DB, 0.01)
 	GameSettings.sound_volume = 0.7
 
 
