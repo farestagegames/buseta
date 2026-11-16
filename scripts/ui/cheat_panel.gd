@@ -35,16 +35,22 @@ func _ready() -> void:
 	_status.add_theme_color_override("font_color", UiStyle.ACCENT)
 	column.add_child(_status)
 
+	# Each add has its take-away beside it, to undo it or test a poorer driver.
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 4
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
-	grid.add_child(_cheat("+" + Country.pack.money(1000), Cheats.add_coins.bind(1000)))
-	grid.add_child(_cheat("+" + Country.pack.money(10000), Cheats.add_coins.bind(10000)))
+	for amount: int in [1000, 10000]:
+		grid.add_child(_cheat("+" + Country.pack.money(amount), Cheats.add_coins.bind(amount)))
+		grid.add_child(_cheat("-" + Country.pack.money(amount), Cheats.add_coins.bind(-amount)))
 	grid.add_child(_cheat("+1 level", Cheats.add_levels.bind(1)))
+	grid.add_child(_cheat("-1 level", Cheats.add_levels.bind(-1)))
 	grid.add_child(_cheat("+5 levels", Cheats.add_levels.bind(5)))
+	grid.add_child(_cheat("-5 levels", Cheats.add_levels.bind(-5)))
 	grid.add_child(_cheat("Max level", func(profile: PlayerProfile) -> void:
 		Cheats.set_level(profile, Cheats.top_level(Profile.catalog, Country.pack.horns(), Profile.times_of_day()))))
+	grid.add_child(_cheat("Level 1", Cheats.set_level.bind(1)))
+	grid.add_child(_cheat("No money", func(profile: PlayerProfile) -> void: profile.coins = 0))
 	column.add_child(grid)
 	var unlock := _button("Unlock all")
 	unlock.pressed.connect(_apply.bind(func(profile: PlayerProfile) -> void:
@@ -58,7 +64,7 @@ func _ready() -> void:
 
 func _cheat(text: String, action: Callable) -> Button:
 	var button := _button(text)
-	button.custom_minimum_size.x = 300.0
+	button.custom_minimum_size.x = 210.0
 	button.pressed.connect(_apply.bind(action))
 	return button
 

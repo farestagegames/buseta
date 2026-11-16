@@ -51,6 +51,34 @@ func test_each_level_cheat_lands_on_the_start_of_a_level() -> void:
 	assert_eq(DriverLevel.level_for(profile.xp), 7)
 
 
+func test_money_can_be_taken_away_but_not_below_none() -> void:
+	profile.coins = 12000
+	Cheats.add_coins(profile, -10000)
+	assert_eq(profile.coins, 2000)
+	Cheats.add_coins(profile, -10000)
+	assert_eq(profile.coins, 0)
+
+
+func test_levels_can_be_taken_away_down_to_level_one() -> void:
+	Cheats.set_level(profile, 8)
+	profile.xp += 50 # Part way along level 8.
+	Cheats.add_levels(profile, -1)
+	assert_eq(DriverLevel.level_for(profile.xp), 7)
+	assert_eq(DriverLevel.progress(profile.xp), 0.0, "At the start of the level")
+	Cheats.add_levels(profile, -5)
+	assert_eq(DriverLevel.level_for(profile.xp), 2)
+	Cheats.add_levels(profile, -5)
+	assert_eq(profile.xp, 0, "Never below level 1")
+	assert_eq(DriverLevel.level_for(profile.xp), 1)
+
+
+func test_taking_levels_undoes_adding_them() -> void:
+	Cheats.add_levels(profile, 5)
+	Cheats.add_levels(profile, -5)
+	assert_eq(DriverLevel.level_for(profile.xp), 1)
+	assert_eq(profile.xp, 0)
+
+
 func test_release_cheats_follow_the_project_switch() -> void:
 	ProjectSettings.set_setting(Cheats.RELEASE_SETTING, true)
 	assert_true(Cheats.available_in(false), "Release cheats are on while the switch is on")

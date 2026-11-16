@@ -26,12 +26,15 @@ static func available_in(debug: bool) -> bool:
 	return debug or ProjectSettings.get_setting(RELEASE_SETTING, false)
 
 
+## A negative amount takes money away, down to none.
 static func add_coins(profile: PlayerProfile, amount: int) -> void:
-	profile.coins += amount
+	profile.coins = maxi(profile.coins + amount, 0)
 
 
+## A negative count takes levels away, down to the start of level 1. Either way the
+## driver lands at the start of the new level's XP bar. Things already bought stay.
 static func add_levels(profile: PlayerProfile, levels: int) -> void:
-	profile.xp = DriverLevel.xp_for_level(DriverLevel.level_for(profile.xp) + levels)
+	profile.xp = DriverLevel.xp_for_level(maxi(DriverLevel.level_for(profile.xp) + levels, 1))
 
 
 ## Sets the driver straight to a level, at the start of that level's XP bar.
