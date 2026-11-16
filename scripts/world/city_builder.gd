@@ -9,6 +9,13 @@ const ZEBRA_GAP := 1.2 ## From the edge of a junction to its zebra crossing.
 const MAP_MARGIN := 160.0
 const PAVEMENT_OUTER := RoadNetwork.ROAD_HALF_WIDTH + GroundSurface.PAVEMENT_WIDTH
 
+## Speed bump warnings: how far ahead, the least that still warns, and how far
+## the post keeps from junctions and from any asphalt.
+const BUMP_WARNING_DISTANCE := 30.0
+const BUMP_WARNING_MIN := 8.0
+const SIGN_JUNCTION_CLEARANCE := 6.0 ## The painted bars run 5 m on from the post.
+const SIGN_ROAD_CLEARANCE := 0.4
+
 const LIFT_PAVEMENT := 0.07
 const LIFT_ROAD := 0.1
 const LIFT_JUNCTION := 0.11
@@ -503,7 +510,9 @@ func _feature_visual(feature: Dictionary) -> void:
 		for lateral in range(-3, 4, 2):
 			_strip(_lines, feature["road"], along - 0.46, along + 0.46, lateral - 0.4, lateral + 0.4, Color(0.1, 0.1, 0.1), LIFT_LINE + 0.06)
 		for warning: float in [-1.0, 1.0]:
-			_bump_warning(feature["road"], along + warning * 30.0, warning)
+			var at := bump_warning_along(_network, feature["road"], along, warning)
+			if not is_nan(at):
+				_bump_warning(feature["road"], at, warning)
 	else:
 		var placed: Dictionary = _network.sample(feature["road"], feature["along"], feature["lateral"], feature["dir"])
 		_lines.disc(placed["position"], MapLoader.POTHOLE_RADIUS, LIFT_LINE, _height_of, Color(0.09, 0.09, 0.1), 9)
@@ -518,10 +527,35 @@ func _bump_warning(road_id: String, along: float, approach: float) -> void:
 		var low := minf(0.15 * side, 3.4 * side)
 		var high := maxf(0.15 * side, 3.4 * side)
 		_strip(_lines, road_id, at, at + 0.5, low, high, YELLOW)
-	var placed: Dictionary = _network.sample(road_id, along, (RoadNetwork.ROAD_HALF_WIDTH + 0.9) * side)
+	var placed := bump_sign_pose(_network, road_id, along, side)
+	if placed.is_empty():
+		return
 	var spot: Vector2 = placed["position"]
 	var y := _ground.terrain_height(spot)
 	_signs.append({"spot": spot, "y": y, "yaw": placed["heading"]})
+
+
+## Where along the road a bump's warning goes, BUMP_WARNING_DISTANCE before it,
+## pulled back so it stays on its own road clear of the junctions at each end
+## (a short road used to put it past the end, out in the next road). NAN when the
+## road is too short to warn ahead of the bump at all.
+static func bump_warning_along(network: RoadNetwork, road_id: String, bump_along: float, approach: float) -> float:
+	var road: Dictionary = network.roads[road_id]
+	var low := float(network.nodes[road["from"]]["radius"]) + SIGN_JUNCTION_CLEARANCE
+	var high := float(road["length"]) - float(network.nodes[road["to"]]["radius"]) - SIGN_JUNCTION_CLEARANCE
+	var at := clampf(bump_along + approach * BUMP_WARNING_DISTANCE, low, high)
+	if low > high or absf(at - bump_along) < BUMP_WARNING_MIN:
+		return NAN
+	return at
+
+
+## The warning sign's post beside the road, or empty when that spot would be on
+## asphalt (another road, a junction or a bay), so a sign never stands in the road.
+static func bump_sign_pose(network: RoadNetwork, road_id: String, along: float, side: float) -> Dictionary:
+	var placed: Dictionary = network.sample(road_id, along, (RoadNetwork.ROAD_HALF_WIDTH + 0.9) * side)
+	if network.edge_distance(placed["position"]) < SIGN_ROAD_CLEARANCE:
+		return {}
+	return placed
 
 
 func _build_scenery(b: LowPolyBuilder, route: RouteRunner, map_data: Dictionary) -> LowPolyBuilder:
@@ -1140,3 +1174,4 @@ func _is_free(spot: Vector2, radius: float) -> bool:
 		if spot.distance_to(Vector2(other.x, other.y)) < radius + other.z:
 			return false
 	return true
+
