@@ -35,6 +35,8 @@ var last_daily: String = "" ## Date key of the last daily challenge completed.
 ## Daily challenges completed on days in a row, ending on last_daily.
 var daily_streak: int = 0
 var intro_done: bool = false ## The opening scene and tutorial have been seen.
+## The title screen has sent a brand-new player straight into the tutorial shift.
+var first_launch_done: bool = false
 var settings: Dictionary = {}
 ## Horns bought or given free. Horns are pack data, not catalog items.
 var horns_owned: Array[String] = []
@@ -228,6 +230,7 @@ func to_dict() -> Dictionary:
 		"stats": stats, "achievements": achievements, "best_scores": best_scores, "best_stars": best_stars,
 		"completed_routes": completed_routes,
 		"last_daily": last_daily, "daily_streak": daily_streak, "settings": settings, "intro_done": intro_done,
+		"first_launch_done": first_launch_done,
 		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day, "difficulty": difficulty,
 		"firsts": firsts, "town": town,
 	}
@@ -287,6 +290,7 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 	profile.last_daily = daily if daily is String else ""
 	profile.daily_streak = maxi(int(_number(saved.get("daily_streak"), 0.0)), 0)
 	profile.intro_done = saved.get("intro_done") == true
+	profile.first_launch_done = saved.get("first_launch_done") == true
 	var saved_settings: Variant = saved.get("settings")
 	profile.settings = saved_settings if saved_settings is Dictionary else {}
 	# Saves from before horns could be chosen have neither field: every bus keeps

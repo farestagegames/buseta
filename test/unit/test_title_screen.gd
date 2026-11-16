@@ -33,6 +33,42 @@ func test_a_tap_a_key_or_a_button_starts_once() -> void:
 		assert_signal_emit_count(title, "started", 1, str(event))
 
 
+func test_only_a_brand_new_player_goes_straight_to_the_tutorial() -> void:
+	var script: GDScript = load("res://scripts/ui/title_screen.gd")
+	var fresh := PlayerProfile.new()
+	assert_true(script.goes_to_tutorial(fresh))
+	var launched := PlayerProfile.new()
+	launched.first_launch_done = true
+	assert_false(script.goes_to_tutorial(launched), "Only the first launch")
+	var tutored := PlayerProfile.new()
+	tutored.intro_done = true
+	assert_false(script.goes_to_tutorial(tutored))
+	var played := PlayerProfile.new()
+	played.xp = 40
+	assert_false(script.goes_to_tutorial(played), "An older save with progress keeps the menu")
+
+
+func test_the_first_launch_flag_is_saved() -> void:
+	var profile := PlayerProfile.new()
+	assert_false(PlayerProfile.from_dict(profile.to_dict()).first_launch_done)
+	profile.first_launch_done = true
+	assert_true(PlayerProfile.from_dict(profile.to_dict()).first_launch_done)
+
+
+func test_the_first_tap_opens_the_tutorial_shift_then_the_menu() -> void:
+	var kept := Profile.data
+	Profile.data = PlayerProfile.new()
+	var first := _title()
+	first._input(_tap())
+	assert_eq(first.next_scene, "res://scenes/main/city_shift.tscn")
+	assert_true(Profile.data.first_launch_done)
+	var second := _title()
+	second._input(_tap())
+	assert_eq(second.next_scene, "res://scenes/main/main_menu.tscn")
+	Profile.data = kept
+	Profile.save()
+
+
 func test_the_game_opens_on_the_title_screen() -> void:
 	assert_eq(ProjectSettings.get_setting("application/run/main_scene"), "res://scenes/main/title_screen.tscn")
 

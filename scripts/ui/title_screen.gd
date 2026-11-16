@@ -1,10 +1,12 @@
 extends Control
 ## The title screen: the store's feature graphic, full screen, and a pulsing
-## "tap to start". Any tap, click, key or gamepad button opens the main menu.
+## "tap to start". Any tap, click, key or gamepad button opens the main menu,
+## except on the very first launch, which goes straight into the tutorial shift.
 ## Narrower screens than the art show all of it, with the sky and the road
 ## carried on above and below; wider screens crop a little sky and road.
 
 const MENU_SCENE := "res://scenes/main/main_menu.tscn"
+const SHIFT_SCENE := "res://scenes/main/city_shift.tscn"
 const ART := preload("res://assets/textures/title_art.png")
 ## Top of the sky and the asphalt in the art, for the bands on narrow screens.
 const SKY := Color8(24, 150, 196)
@@ -15,6 +17,8 @@ signal started
 
 ## Off in tests, so starting does not swap the running scene.
 var change_scene: bool = true
+## The scene starting opened, for tests.
+var next_scene: String = ""
 var art: TextureRect
 var prompt: Label
 var _leaving: bool = false
@@ -99,5 +103,19 @@ func open_menu() -> void:
 		return
 	_leaving = true
 	started.emit()
+	var scene := MENU_SCENE
+	if goes_to_tutorial(Profile.data):
+		Profile.data.first_launch_done = true
+		Profile.route_override = ""
+		Profile.save()
+		scene = SHIFT_SCENE
+	next_scene = scene
 	if change_scene:
-		get_tree().change_scene_to_file.call_deferred(MENU_SCENE)
+		get_tree().change_scene_to_file.call_deferred(scene)
+
+
+## Only a brand-new player skips the menu, once: the tutorial shift then plays,
+## since city_shift opens with it until intro_done. Every later launch, and any
+## save with progress, goes to the menu.
+static func goes_to_tutorial(profile: PlayerProfile) -> bool:
+	return not profile.first_launch_done and not profile.intro_done and profile.xp == 0
