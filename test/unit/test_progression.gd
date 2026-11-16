@@ -265,6 +265,20 @@ func test_settings_round_trip_and_ignore_bad_values() -> void:
 	GameSettings.apply_saved(saved)
 
 
+func test_hidden_driving_controls_survive_saving() -> void:
+	var saved := GameSettings.to_dict()
+	assert_true(bool(saved["show_drive_controls"]), "Shown by default")
+	GameSettings.show_drive_controls = false
+	var stored: Dictionary = JSON.parse_string(JSON.stringify(GameSettings.to_dict()))
+	GameSettings.apply_saved(saved)
+	assert_true(GameSettings.show_drive_controls)
+	GameSettings.apply_saved(stored)
+	assert_false(GameSettings.show_drive_controls, "Read back from the save")
+	GameSettings.apply_saved({})
+	assert_false(GameSettings.show_drive_controls, "A save without the key keeps the value")
+	GameSettings.apply_saved(saved)
+
+
 func test_tutorial_flag_survives_saving() -> void:
 	profile.intro_done = true
 	assert_true(PlayerProfile.from_dict(JSON.parse_string(JSON.stringify(profile.to_dict()))).intro_done)

@@ -314,6 +314,34 @@ func test_doors_button_shows_only_near_a_stop_or_with_the_doors_open() -> void:
 	assert_true(hud.doors_button_shown(), "Shown while the doors are open")
 
 
+func test_driving_controls_hide_with_the_setting() -> void:
+	var was := GameSettings.show_drive_controls
+	await wait_frames(2)
+	assert_true(hud.drive_controls_shown(), "Shown by default")
+	GameSettings.show_drive_controls = false
+	await wait_frames(1)
+	assert_false(hud.throttle_pedal.is_visible_in_tree(), "No pedals")
+	assert_false(hud.brake_pedal.is_visible_in_tree())
+	assert_false(hud.wheel.is_visible_in_tree(), "No wheel")
+	assert_false(hud.left_button.is_visible_in_tree() or hud.right_button.is_visible_in_tree())
+	assert_false(hud.gear_switch.is_visible_in_tree(), "No D/R")
+	assert_true(hud.control_rect("pause").has_area(), "Pause stays")
+	assert_true(hud._view_button.is_visible_in_tree(), "The camera stays")
+	GameEvents.route_status_updated.emit(_status(true))
+	assert_true(hud.doors_button_shown(), "PUERTAS still comes at a stop")
+	# Input routed around the HUD (keyboard, gamepad) still drives.
+	GameEvents.ui_pedals_changed.emit(1.0, 0.0)
+	await wait_physics_frames(30)
+	GameEvents.ui_pedals_changed.emit(0.0, 0.0)
+	assert_gt(bus.model.speed, 0.1, "The bus still drives with the controls hidden")
+	hud.force_drive_controls = true
+	assert_true(hud.throttle_pedal.is_visible_in_tree(), "The tutorial brings them back")
+	hud.force_drive_controls = false
+	GameSettings.show_drive_controls = was
+	await wait_frames(1)
+	assert_true(hud.throttle_pedal.is_visible_in_tree())
+
+
 func test_indicator_buttons_follow_the_setting() -> void:
 	var was := GameSettings.show_indicator_buttons
 	GameSettings.show_indicator_buttons = false

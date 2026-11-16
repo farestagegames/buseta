@@ -57,6 +57,14 @@ var show_indicator_buttons: bool = false:
 		show_indicator_buttons = value
 		changed.emit()
 
+## The on-screen wheel (or steer buttons), pedals and D/R switch. A player who
+## drives by keyboard or gamepad, or wants the screen, can hide them; pause,
+## camera, PUERTAS and PITO stay.
+var show_drive_controls: bool = true:
+	set(value):
+		show_drive_controls = value
+		changed.emit()
+
 
 ## A language code from Country.pack.languages(). Empty follows the phone's language.
 var language: String = "":
@@ -70,7 +78,7 @@ func to_dict() -> Dictionary:
 		"steering_mode": int(steering_mode), "sensitivity": sensitivity, "invert_tilt": invert_tilt,
 		"sound_volume": sound_volume, "graphics_level": graphics_quality, "language": language,
 		"show_performance": show_performance, "radio_volume": radio_volume, "radio_station": radio_station,
-		"show_indicator_buttons": show_indicator_buttons,
+		"show_indicator_buttons": show_indicator_buttons, "show_drive_controls": show_drive_controls,
 	}
 
 
@@ -89,5 +97,6 @@ func apply_saved(saved: Dictionary) -> void:
 	radio_volume = float(saved.get("radio_volume", radio_volume))
 	radio_station = str(saved.get("radio_station", radio_station))
 	show_indicator_buttons = bool(saved.get("show_indicator_buttons", show_indicator_buttons))
+	show_drive_controls = bool(saved.get("show_drive_controls", show_drive_controls))
 	set_block_signals(false)
 	changed.emit()

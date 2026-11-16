@@ -34,6 +34,8 @@ var shots := [
 	{"name": "12_cafeto_lomas", "route": "cafeto_c0", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "cafeto_lomas"},
 	{"name": "13_cafeto_colina_aereo", "route": "cafeto_c0", "bus": "buseta_8", "time": "manana", "rain": false, "view": "Far", "spot": "cafeto_colina", "aerial": 70.0},
 	{"name": "14_cafeto_carrera", "route": "arcade_cafeto", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "arcade"},
+	# "hide_controls" drives with the on-screen wheel, pedals and D/R hidden.
+	{"name": "15_sin_controles", "route": "route_01", "bus": "buseta_8", "time": "manana", "rain": false, "view": "Close", "spot": "malecon", "hide_controls": true},
 ]
 
 
@@ -77,6 +79,8 @@ func _take(shot: Dictionary) -> void:
 	_own(Catalog.BUSES, shot["bus"])
 	CityShift.forced_time = shot["time"]
 	CityShift.forced_rain = WeatherPlan.FORCE_RAIN if shot["rain"] else WeatherPlan.FORCE_DRY
+	var showed_controls := GameSettings.show_drive_controls
+	GameSettings.show_drive_controls = not shot.get("hide_controls", false)
 	var scene: CityShift = load(SCENE).instantiate()
 	add_child(scene)
 	await _seconds(1.0)
@@ -129,6 +133,7 @@ func _take(shot: Dictionary) -> void:
 		await _frames(4)
 		await _shot(shot["name"] + "_pausa")
 		hud._close_settings()
+	GameSettings.show_drive_controls = showed_controls
 	scene.queue_free()
 	await _frames(3)
 

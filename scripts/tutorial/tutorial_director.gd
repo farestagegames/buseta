@@ -31,6 +31,8 @@ func setup(hud: DriveHud, route: RouteSystem, spec: BusSpec) -> void:
 
 func start() -> void:
 	active = true
+	# It points at the wheel and pedals, so they show even when hidden.
+	_hud.force_drive_controls = true
 	# With the indicator buttons hidden the bus signals by itself.
 	script_steps.skipped.clear()
 	if not GameSettings.show_indicator_buttons:
@@ -44,6 +46,7 @@ func finish() -> void:
 	if not active:
 		return
 	active = false
+	_hud.force_drive_controls = false
 	_hud.tutorial_panel.hide_panel()
 	finished.emit()
 
