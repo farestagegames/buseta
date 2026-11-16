@@ -221,3 +221,47 @@ func test_normal_routes_carry_no_arcade_tuning() -> void:
 		var route: Dictionary = MapLoader.read_json(item["file"])
 		assert_false(route.has("arcade"), "%s should carry no arcade tuning" % item["id"])
 		assert_ne(str(route.get("service", "")), "arcade")
+
+
+## Each town has its own Carrera Express, found by the town's (map's) name.
+func test_each_town_has_its_own_arcade() -> void:
+	var catalog := Catalog.new()
+	var marisol := catalog.arcade_route("Puerto Marisol")
+	var cafeto := catalog.arcade_route("Alto Cafeto")
+	assert_eq(marisol.get("id", ""), "arcade")
+	assert_eq(cafeto.get("id", ""), "arcade_cafeto")
+	assert_eq(catalog.arcade_route().get("id", ""), "arcade", "No town means Puerto Marisol's")
+	assert_true(catalog.arcade_route("Puerto Remanso").is_empty(), "An archived town has none")
+	var route: Dictionary = MapLoader.read_json(cafeto["file"])
+	assert_eq(str(route["service"]), "arcade")
+	assert_string_contains(str(route["map"]), "alto_cafeto")
+	assert_true(route.has("arcade"), "Its tuning lives in its own file")
+	assert_gte(int(cafeto.get("level", 1)), Profile.town_lock_level("Alto Cafeto"), "Not open before the town")
+
+
+func test_arcade_flags_are_kept_per_town() -> void:
+	var catalog := Catalog.new()
+	var profile := PlayerProfile.new()
+	var cafeto := catalog.arcade_route("Alto Cafeto")
+	profile.xp = DriverLevel.xp_for_level(int(cafeto["level"])) - 1
+	assert_true(profile.arcade_unlocked(catalog, "Puerto Marisol"))
+	assert_false(profile.arcade_unlocked(catalog, "Alto Cafeto"), "Opens with its town")
+	profile.xp = DriverLevel.xp_for_level(int(cafeto["level"]))
+	assert_true(profile.arcade_unlocked(catalog, "Alto Cafeto"))
+	profile.best_scores["arcade"] = 4
+	assert_true(profile.arcade_tried(catalog, "Puerto Marisol"))
+	assert_false(profile.arcade_tried(catalog, "Alto Cafeto"), "Racing one town's arcade leaves the other new")
+	profile.grant_free_items(catalog)
+	profile.selected[Catalog.ROUTES] = "arcade_cafeto"
+	profile.repair_choices(catalog)
+	assert_ne(profile.selected[Catalog.ROUTES], "arcade_cafeto", "No arcade stays the chosen route")
+
+
+func test_next_unlock_never_names_an_arcade() -> void:
+	var catalog := Catalog.new()
+	var profile := PlayerProfile.new()
+	profile.xp = DriverLevel.xp_for_level(5)
+	profile.coins = 100000000
+	profile.owned[Catalog.ROUTES] = []
+	var next := UnlockProgress.next(profile, catalog, Country.pack)
+	assert_false(str(next.get("id", "")).begins_with("arcade"), "Arcades open by level, not by unlock")

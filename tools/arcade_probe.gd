@@ -2,7 +2,8 @@ extends Node
 ## Developer tool: drives the arcade course (Carrera Express) like a decent driver
 ## and reports how many arches it reaches under the current tuning, so the numbers
 ## can be checked without a phone. Run with tools/arcade_probe.sh. Not exported.
-## PROBE_CRUISE overrides the cruise speed in m/s (default 14).
+## PROBE_CRUISE overrides the cruise speed in m/s (default 16); PROBE_ROUTE picks
+## the arcade by id (arcade_cafeto), default Puerto Marisol's.
 
 const SCENE := "res://scenes/main/city_shift.tscn"
 const MAX_SECONDS := 600.0
@@ -39,7 +40,11 @@ func _ready() -> void:
 		_cruise = chosen.to_float()
 	Profile.load_from("user://arcade_probe_save.json")
 	Profile.data.intro_done = true
+	# PROBE_ROUTE picks a town's arcade by id (arcade_cafeto); default Puerto Marisol's.
 	var arcade_id: String = Profile.catalog.arcade_route()["id"]
+	var picked := OS.get_environment("PROBE_ROUTE")
+	if picked != "" and Catalog.is_arcade(Profile.catalog.find(Catalog.ROUTES, picked)):
+		arcade_id = picked
 	(Profile.data.owned[Catalog.ROUTES] as Array).append(arcade_id)
 	Profile.data.select(Catalog.ROUTES, arcade_id)
 	CityShift.forced_rain = WeatherPlan.FORCE_DRY
@@ -62,7 +67,10 @@ func _ready() -> void:
 			_arches = int(summary["arcade"]["checkpoints"])
 			_distance = float(summary["arcade"]["distance"])
 			_report("FINISHED"))
-	GameEvents.bus_collided.connect(func(_speed: float) -> void: _crashes += 1)
+	GameEvents.bus_collided.connect(func(speed: float) -> void:
+		_crashes += 1
+		if OS.get_environment("PROBE_VERBOSE") != "":
+			print("PROBE crash %.1f m/s at (%.0f, %.0f), t %.1f" % [speed, _bus.global_position.x, _bus.global_position.z, _sim_time]))
 	GameEvents.obstacle_hit.connect(func(_kind: String, _loss: float) -> void: _knocks += 1)
 
 

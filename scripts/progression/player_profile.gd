@@ -104,11 +104,11 @@ func repair_choices(catalog: Catalog) -> void:
 	# A selected route the player cannot use yet falls back to one they can. The
 	# arcade is never the chosen route: it has its own Home button.
 	var chosen_route: String = selected.get(Catalog.ROUTES, "")
-	if not can_play_route(chosen_route, catalog) or catalog.arcade_route().get("id", "") == chosen_route:
+	if not can_play_route(chosen_route, catalog) or Catalog.is_arcade(catalog.find(Catalog.ROUTES, chosen_route)):
 		var route := catalog.default_route()
 		if not can_play_route(route, catalog):
 			for item: Dictionary in catalog.items(Catalog.ROUTES):
-				if can_play_route(item["id"], catalog) and item != catalog.arcade_route():
+				if can_play_route(item["id"], catalog) and not Catalog.is_arcade(item):
 					route = item["id"]
 					break
 		if route != "":
@@ -169,15 +169,16 @@ func has_completed_route(route_id: String) -> bool:
 
 
 ## A route the player owns and can start now.
-## The arcade opens at its driver level; before that its Home button shows the level.
-func arcade_unlocked(catalog: Catalog) -> bool:
-	var item := catalog.arcade_route()
+## A town's arcade opens at its driver level; before that its Home button shows
+## the level. No town means the first arcade (Puerto Marisol's).
+func arcade_unlocked(catalog: Catalog, town: String = "") -> bool:
+	var item := catalog.arcade_route(town)
 	return not item.is_empty() and DriverLevel.level_for(xp) >= int(item.get("level", 1))
 
 
-## The arcade has been raced at least once, so its "New!" badge can go.
-func arcade_tried(catalog: Catalog) -> bool:
-	var item := catalog.arcade_route()
+## That town's arcade has been raced at least once, so its "New!" badge can go.
+func arcade_tried(catalog: Catalog, town: String = "") -> bool:
+	var item := catalog.arcade_route(town)
 	return not item.is_empty() and best_scores.has(item["id"])
 
 

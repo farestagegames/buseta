@@ -46,12 +46,42 @@ func find_archived(id: String) -> Dictionary:
 	return {}
 
 
-## The arcade course (Carrera Express), reached from its own Home button, or {}.
-func arcade_route() -> Dictionary:
+## True for an arcade course (Carrera Express), which has its own Home button and
+## is never listed with the routes or kept as the chosen route.
+static func is_arcade(item: Dictionary) -> bool:
+	return str(item.get("mode", "")) == "arcade"
+
+
+## Every arcade course, one per town, in catalog order.
+func arcade_routes() -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
 	for item: Dictionary in items(ROUTES):
-		if str(item.get("mode", "")) == "arcade":
+		if is_arcade(item):
+			found.append(item)
+	return found
+
+
+## The arcade course of a town (its map's name), or {} if that town has none.
+## With no town, the first arcade in the catalog (Puerto Marisol's).
+func arcade_route(town: String = "") -> Dictionary:
+	for item: Dictionary in arcade_routes():
+		if town == "" or route_town(item) == town:
 			return item
 	return {}
+
+
+var _town_cache := {}
+
+
+## The name of the town (map) a route runs in, or "" if it has no route file.
+func route_town(item: Dictionary) -> String:
+	var file := str(item.get("file", ""))
+	if file == "":
+		return ""
+	if not _town_cache.has(file):
+		var map_path := str(MapLoader.read_json(file).get("map", ""))
+		_town_cache[file] = "" if map_path == "" else str(MapLoader.read_json(Country.pack.resolve(map_path)).get("name", ""))
+	return _town_cache[file]
 
 
 ## The route a new player starts on.

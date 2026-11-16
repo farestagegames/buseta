@@ -33,6 +33,7 @@ var shots := [
 	{"name": "11_cafeto_aereo", "route": "cafeto_c0", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "cafeto_real", "aerial": 90.0},
 	{"name": "12_cafeto_lomas", "route": "cafeto_c0", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "cafeto_lomas"},
 	{"name": "13_cafeto_colina_aereo", "route": "cafeto_c0", "bus": "buseta_8", "time": "manana", "rain": false, "view": "Far", "spot": "cafeto_colina", "aerial": 70.0},
+	{"name": "14_cafeto_carrera", "route": "arcade_cafeto", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "arcade"},
 ]
 
 
@@ -148,6 +149,12 @@ func _menus() -> void:
 	menu.show_tab(1)
 	await _seconds(0.6)
 	await _shot("10_rutas")
+	# Home with Alto Cafeto picked on the Routes tab: its own Carrera Express.
+	Profile.data.town = "Alto Cafeto"
+	menu.show_tab(0)
+	await _seconds(0.6)
+	await _shot("08b_inicio_cafeto")
+	Profile.data.town = ""
 	menu.queue_free()
 	await _frames(3)
 

@@ -279,7 +279,8 @@ func _home_tab() -> Control:
 ## Carrera Express in one tap, without changing the chosen route. Locked below its
 ## level, with the best checkpoints once raced and a "New!" badge until then.
 func _arcade_button() -> Button:
-	var item := Profile.catalog.arcade_route()
+	var town := Profile.chosen_town()
+	var item := Profile.catalog.arcade_route(town)
 	if item.is_empty():
 		return null
 	var button := _button("")
@@ -288,14 +289,17 @@ func _arcade_button() -> Button:
 	button.add_theme_font_size_override("font_size", 28)
 	button.add_theme_color_override("font_color", ACCENT)
 	var detail := ""
-	if not Profile.data.arcade_unlocked(Profile.catalog):
+	if not Profile.data.arcade_unlocked(Profile.catalog, town):
 		detail = tr("Opens at level %d") % int(item.get("level", 1))
 		button.disabled = true
-	elif Profile.data.arcade_tried(Profile.catalog):
+	elif Profile.data.arcade_tried(Profile.catalog, town):
 		detail = tr("Best: %d checkpoints") % int(Profile.data.best_scores.get(item["id"], 0))
+	# With an arcade in more than one town, the button names the one it races.
+	if Profile.catalog.arcade_routes().size() > 1 and town != "":
+		detail = tr(town) + (" · " + detail if detail != "" else "")
 	button.text = tr("Carrera Express") + ("\n" + detail if detail != "" else "")
 	button.pressed.connect(start_arcade)
-	if not button.disabled and not Profile.data.arcade_tried(Profile.catalog):
+	if not button.disabled and not Profile.data.arcade_tried(Profile.catalog, town):
 		var badge := _text("New!", 18, BACKGROUND)
 		badge.name = "NewBadge"
 		var back := PanelContainer.new()
@@ -320,10 +324,12 @@ func start_arcade() -> void:
 		get_tree().change_scene_to_file(SHIFT_SCENE)
 
 
-## Points the next shift at the arcade. False while it is still locked.
+## Points the next shift at the arcade of the town picked on the Routes tab.
+## False while it is still locked.
 static func prepare_arcade() -> bool:
-	var item := Profile.catalog.arcade_route()
-	if item.is_empty() or not Profile.data.arcade_unlocked(Profile.catalog):
+	var town := Profile.chosen_town()
+	var item := Profile.catalog.arcade_route(town)
+	if item.is_empty() or not Profile.data.arcade_unlocked(Profile.catalog, town):
 		return false
 	if not Profile.data.owns(Catalog.ROUTES, item["id"]):
 		(Profile.data.owned[Catalog.ROUTES] as Array).append(item["id"])
@@ -372,7 +378,7 @@ func _routes_tab() -> Control:
 	if Profile.difficulties().size() > 1:
 		list.get_child(0).add_child(_difficulty_card())
 	var routes := Profile.catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool:
-		return item != Profile.catalog.arcade_route()) # The arcade has its own button on Home.
+		return not Catalog.is_arcade(item)) # Each town's arcade has its own button on Home.
 	var towns := route_towns(routes)
 	var town_list := town_info_list(routes)
 	var chosen_town := Profile.chosen_town()

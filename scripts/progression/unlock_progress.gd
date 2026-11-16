@@ -15,7 +15,8 @@ static func next(profile: PlayerProfile, catalog: Catalog, pack: CountryPack) ->
 	var candidates: Array[Dictionary] = []
 	for kind: String in [Catalog.ROUTES, Catalog.BUSES, Catalog.LIVERIES, Catalog.DRIVERS, Catalog.DECORATIONS]:
 		for item: Dictionary in catalog.items(kind):
-			if item.get("route_only", false):
+			# Arcades open by level from their Home button; nothing to work towards.
+			if item.get("route_only", false) or Catalog.is_arcade(item):
 				continue
 			if profile.owns(kind, item["id"]):
 				continue

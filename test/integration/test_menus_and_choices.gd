@@ -394,6 +394,26 @@ func test_the_arcade_button_plays_the_arcade_without_changing_the_chosen_route()
 	assert_eq(Profile.shift_route()["id"], chosen, "Back at the menu, Start shift drives the chosen route")
 
 
+func test_the_home_arcade_button_races_the_chosen_town() -> void:
+	Profile.data.grant_free_items(Profile.catalog)
+	Profile.data.xp = 100000
+	Profile.data.town = "Alto Cafeto"
+	Profile.data.best_scores["arcade"] = 9
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	var button := _arcade_button(menu)
+	assert_string_contains(button.text, "Alto Cafeto", "Names the town it races")
+	assert_not_null(button.find_child("NewBadge", true, false), "Cafeto's is new though Marisol's was raced")
+	assert_true(MainMenu.prepare_arcade())
+	assert_eq(Profile.shift_route()["id"], "arcade_cafeto")
+	Profile.route_override = ""
+	Profile.data.town = "Puerto Marisol"
+	assert_true(MainMenu.prepare_arcade())
+	assert_eq(Profile.shift_route()["id"], "arcade")
+	Profile.route_override = ""
+
+
 func test_the_routes_tab_leaves_the_arcade_to_its_home_button() -> void:
 	Profile.data.grant_free_items(Profile.catalog)
 	var menu: MainMenu = MENU.instantiate()

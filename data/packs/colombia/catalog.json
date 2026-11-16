@@ -101,6 +101,15 @@
    "cost": 0,
    "level": 5,
    "description": "No end and no depot: roam the hills of Alto Cafeto picking up whoever flags you down, for as long as your passengers stay happy."
+  },
+  {
+   "id": "arcade_cafeto",
+   "name": "Arcade: Carrera Express Cafeto",
+   "file": "routes/arcade_cafeto.json",
+   "cost": 0,
+   "mode": "arcade",
+   "level": 5,
+   "description": "Race the clock up and down the hills of Alto Cafeto: drive through checkpoint arches for more time and hit the orange pads for a boost."
   }
  ],
  "archived_routes": [
