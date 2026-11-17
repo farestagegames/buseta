@@ -10,6 +10,8 @@ const SHIFT_SCENE := "res://scenes/main/city_shift.tscn"
 const GARAGE_TAB := 2
 const DRIVERS_TAB := 3
 const SETTINGS_TAB := 5
+## Paint dots on the bus card.
+const CARD_DOTS := 6
 const BACKGROUND := UiStyle.INK
 const CARD := UiStyle.CARD
 const ACCENT := UiStyle.ACCENT
@@ -398,16 +400,36 @@ func _show_chosen_bus() -> void:
 	var spec := CityShift.spec_for(bus, livery)
 	_stage.show_spec(spec, Profile.selected_item(Catalog.DECORATIONS))
 	_preview_bus = bus
-	var dots: Array[Color] = []
-	var chosen_dot := -1
+	_show_card(bus, livery, spec)
+
+
+## The bus card for a bus and paint, chosen or only tried on in the Garage.
+func _show_card(bus: Dictionary, livery: Dictionary, spec: BusSpec) -> void:
+	var dots := card_dots(str(livery.get("id", "")))
+	_bus_card.show_bus(str(bus["name"]), tr(bus_category(bus)), MenuBusCard.stats_for(spec), dots["colours"], dots["chosen"])
+
+
+## The card's paint dots: the owned paints, at most six, with the one shown ringed.
+## A paint tried on but not owned joins them, and one past the sixth takes the
+## last place, so the ring always shows.
+static func card_dots(livery_id: String) -> Dictionary:
+	var colours: Array[Color] = []
+	var chosen := -1
+	var chosen_colour := Color.WHITE
 	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
-		if not Profile.data.owns(Catalog.LIVERIES, item["id"]):
-			continue
-		if item["id"] == livery.get("id", ""):
-			chosen_dot = dots.size()
 		var body: Array = item["body"]
-		dots.append(Color(body[0], body[1], body[2]))
-	_bus_card.show_bus(str(bus["name"]), tr(bus_category(bus)), MenuBusCard.stats_for(spec), dots.slice(0, 6), chosen_dot)
+		var colour := Color(body[0], body[1], body[2])
+		if item["id"] == livery_id:
+			chosen_colour = colour
+			chosen = colours.size()
+			colours.append(colour)
+		elif Profile.data.owns(Catalog.LIVERIES, item["id"]):
+			colours.append(colour)
+	if chosen >= CARD_DOTS:
+		colours.remove_at(chosen)
+		colours.insert(CARD_DOTS - 1, chosen_colour)
+		chosen = CARD_DOTS - 1
+	return {"colours": colours.slice(0, CARD_DOTS), "chosen": chosen}
 
 
 ## A one-word kind of bus for the card's tag, from its size.
@@ -883,7 +905,9 @@ func try_on(kind: String, item: Dictionary) -> void:
 		_preview_livery = item
 	elif kind == Catalog.DECORATIONS:
 		_preview_decoration = item
-	_garage_preview.show_spec(CityShift.spec_for(_preview_bus, _preview_livery), _preview_decoration)
+	var spec := CityShift.spec_for(_preview_bus, _preview_livery)
+	_garage_preview.show_spec(spec, _preview_decoration)
+	_show_card(_preview_bus, _preview_livery, spec)
 	var decor_name := tr(_preview_decoration.get("name", "")) if not _preview_decoration.is_empty() else ""
 	if decor_name != "":
 		_preview_note.text = "%s, %s, %s" % [_preview_bus["name"], tr(_preview_livery["name"]), decor_name]

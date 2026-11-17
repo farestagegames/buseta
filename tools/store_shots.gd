@@ -151,6 +151,11 @@ func _menus() -> void:
 	menu.show_tab(2)
 	await _seconds(0.6)
 	await _shot("09_garaje")
+	# Trying on a bus and paint not owned: the card follows the stage.
+	menu.try_on(Catalog.BUSES, Profile.catalog.find(Catalog.BUSES, "articulado_18"))
+	menu.try_on(Catalog.LIVERIES, Profile.catalog.find(Catalog.LIVERIES, "carnaval"))
+	await _seconds(0.6)
+	await _shot("09b_garaje_probando")
 	menu.show_tab(1)
 	await _seconds(0.6)
 	await _shot("10_rutas")

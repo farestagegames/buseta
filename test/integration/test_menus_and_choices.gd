@@ -275,6 +275,37 @@ func test_garage_can_try_a_locked_bus() -> void:
 	assert_eq(menu._garage_preview.shown_spec().body_style, "chiva")
 
 
+func test_the_bus_card_follows_a_garage_try_on_and_returns_on_home() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(2)
+	await wait_frames(2)
+	var chiva := Profile.catalog.find(Catalog.BUSES, "chiva")
+	menu.try_on(Catalog.BUSES, chiva)
+	await wait_frames(1)
+	assert_eq(menu._bus_card.name_label.text, str(chiva["name"]).to_upper())
+	menu.try_on(Catalog.LIVERIES, Profile.catalog.find(Catalog.LIVERIES, "carnaval"))
+	await wait_frames(1)
+	assert_eq(menu._bus_card.name_label.text, str(chiva["name"]).to_upper(), "a paint keeps the tried bus")
+	menu.show_tab(0)
+	await wait_frames(1)
+	var chosen := Profile.selected_item(Catalog.BUSES)
+	assert_eq(menu._bus_card.name_label.text, str(chosen["name"]).to_upper())
+
+
+func test_the_card_dots_ring_a_paint_being_tried_on() -> void:
+	var dots := MainMenu.card_dots("carnaval")
+	var carnaval: Array = Profile.catalog.find(Catalog.LIVERIES, "carnaval")["body"]
+	assert_between(int(dots["chosen"]), 0, MainMenu.CARD_DOTS - 1)
+	assert_eq(dots["colours"][dots["chosen"]], Color(carnaval[0], carnaval[1], carnaval[2]))
+	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
+		Profile.data.owned[Catalog.LIVERIES].append(item["id"])
+	var last: Dictionary = Profile.catalog.items(Catalog.LIVERIES).back()
+	dots = MainMenu.card_dots(last["id"])
+	assert_eq(dots["colours"].size(), MainMenu.CARD_DOTS)
+	assert_eq(dots["chosen"], MainMenu.CARD_DOTS - 1, "a paint past the sixth takes the last place")
+
+
 func test_route_only_bus_is_not_on_sale_in_the_garage() -> void:
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)
