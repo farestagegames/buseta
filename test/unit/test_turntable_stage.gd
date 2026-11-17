@@ -131,3 +131,64 @@ func test_bump_runs_without_error() -> void:
 	await wait_seconds(0.25)
 	assert_not_null(stage.visual())
 	assert_almost_eq(stage.visual().position.y, 0.0, 0.05, "Bus visual should return to ground after bump")
+
+
+func test_cab_view_stops_the_spin_and_hides_the_driver() -> void:
+	var stage := TurntableStage.new()
+	stage.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	stage.size = Vector2(1280, 720)
+	add_child_autofree(stage)
+	stage.show_spec(stage.shown_spec(), {"id": "x", "kind": "dash_toy"})
+	stage.set_view(TurntableStage.CAB_VIEW)
+	assert_true(stage.in_cab())
+	assert_false(stage.visual().driver_shown(), "the driver would fill the close-up")
+	await wait_seconds(0.6)
+	assert_almost_eq(wrapf(stage.pivot.rotation.y, -PI, PI), 0.0, 0.01, "the turntable comes to rest")
+	var rest := stage.pivot.rotation.y
+	await wait_seconds(0.2)
+	assert_eq(stage.pivot.rotation.y, rest, "no idle spin in the cab")
+	var cam := stage.stage.get_camera_3d()
+	assert_almost_eq(cam.position.distance_to(stage.cab_camera_transform().origin), 0.0, 0.01)
+	assert_eq(cam.fov, TurntableStage.CAB_FOV)
+
+
+func test_cab_camera_sits_inside_the_bus_over_the_dash() -> void:
+	var stage := TurntableStage.new()
+	stage.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	stage.size = Vector2(1280, 720)
+	add_child_autofree(stage)
+	stage.show_spec(stage.shown_spec(), {"id": "x", "kind": "pennant"})
+	var spec := stage.shown_spec()
+	var eye := stage.cab_camera_transform().origin
+	assert_lt(absf(eye.x), spec.body_width / 2.0, "inside the sides")
+	assert_lt(eye.y, spec.body_height, "under the roof")
+	var visual := stage.visual()
+	var anchor_z := visual.position.z + visual.cockpit_anchor.position.z
+	assert_almost_eq(eye.z, anchor_z + 0.35, 0.01, "just behind the driver's seat")
+	assert_gt(stage.cab_camera_transform().basis.z.z, 0.0, "the camera's back faces the rear, so it looks to the front")
+	stage.show_spec(spec, {"id": "y", "kind": "seat_cover"})
+	assert_lt(stage.cab_camera_transform().basis.z.z, 0.0, "seat covers are seen looking back down the aisle")
+
+
+func test_cab_view_survives_a_new_bus_and_leaves_with_a_preset() -> void:
+	var stage := TurntableStage.new()
+	stage.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	stage.size = Vector2(1280, 720)
+	add_child_autofree(stage)
+	stage.set_view(TurntableStage.CAB_VIEW)
+	stage.show_spec(stage.shown_spec(), {"id": "x", "kind": "dash_toy"})
+	assert_true(stage.in_cab())
+	assert_false(stage.visual().driver_shown(), "a rebuilt bus keeps its driver hidden in the cab")
+	assert_eq(stage.cycle_view(), "home", "the camera button leaves the cab")
+	assert_true(stage.visual().driver_shown())
+	var press := InputEventMouseButton.new()
+	stage.set_view(TurntableStage.CAB_VIEW)
+	await wait_seconds(0.6)
+	var rest := stage.pivot.rotation.y
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	stage._gui_input(press)
+	var motion := InputEventMouseMotion.new()
+	motion.relative = Vector2(50.0, 0.0)
+	stage._gui_input(motion)
+	assert_eq(stage.pivot.rotation.y, rest, "no dragging in the cab")

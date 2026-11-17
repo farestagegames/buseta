@@ -293,6 +293,27 @@ func test_the_bus_card_follows_a_garage_try_on_and_returns_on_home() -> void:
 	assert_eq(menu._bus_card.name_label.text, str(chosen["name"]).to_upper())
 
 
+func test_trying_a_decoration_looks_into_the_cab_and_a_paint_looks_back_out() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(2)
+	await wait_frames(2)
+	var toy := Profile.catalog.find(Catalog.DECORATIONS, "dash_perrito")
+	menu.try_on(Catalog.DECORATIONS, toy)
+	await wait_frames(1)
+	assert_true(menu._stage.in_cab())
+	assert_true(menu._stage.visual().shows_decoration("dash_perrito"))
+	assert_string_contains(menu._preview_note.text, tr("Decorations go in the cab: you see them in cockpit view while driving"))
+	assert_false(Profile.data.owns(Catalog.DECORATIONS, "dash_perrito"), "trying is not buying")
+	menu.try_on(Catalog.LIVERIES, Profile.catalog.find(Catalog.LIVERIES, "carnaval"))
+	await wait_frames(1)
+	assert_eq(menu._stage.current_view(), "home")
+	menu.try_on(Catalog.DECORATIONS, toy)
+	menu.show_tab(0)
+	await wait_frames(1)
+	assert_eq(menu._stage.current_view(), "home", "Home never opens in the cab")
+
+
 func test_the_card_dots_ring_a_paint_being_tried_on() -> void:
 	var dots := MainMenu.card_dots("carnaval")
 	var carnaval: Array = Profile.catalog.find(Catalog.LIVERIES, "carnaval")["body"]

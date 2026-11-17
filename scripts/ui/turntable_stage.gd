@@ -40,6 +40,13 @@ const PRESETS: Dictionary = {
 
 const VIEW_ORDER: Array[String] = ["home", "top", "side"]
 
+## A close-up from inside the cab, where the cab decorations hang. Not in the
+## camera button's cycle: the Garage turns it on when a decoration is tried on.
+const CAB_VIEW := "cab"
+const CAB_FOV := 46.0
+## Seat covers are seen looking back down the aisle, the rest looking at the dash.
+const CAB_SEATS_FOV := 60.0
+
 const BUILDINGS: Array[Dictionary] = [
 	{"pos": Vector3(-28.0, 0.0, -17.0), "size": Vector3(7.0, 14.0, 6.0), "colour": Color(0.88, 0.74, 0.70)},
 	{"pos": Vector3(-20.0, 0.0, -16.0), "size": Vector3(6.0, 10.0, 5.5), "colour": Color(0.72, 0.82, 0.80)},
@@ -122,7 +129,11 @@ func show_spec(spec: BusSpec, decoration: Dictionary = {}) -> void:
 	_visual.decoration = decoration
 	_visual.position.z = spec.front_overhang + spec.wheelbase - spec.full_length() / 2.0
 	pivot.add_child(_visual)
-	bump()
+	if _current_view == CAB_VIEW:
+		_visual.show_driver(false)
+		_aim_cab_camera(false)
+	else:
+		bump()
 
 
 ## The bus specification currently shown on the turntable.
@@ -147,8 +158,13 @@ func current_view() -> String:
 
 ## Moves the camera to one of the presets ("home", "top", "side") over 0.5 s with cubic easing.
 func set_view(preset_name: String) -> void:
+	if preset_name == CAB_VIEW:
+		_enter_cab()
+		return
 	if not PRESETS.has(preset_name):
 		return
+	if _current_view == CAB_VIEW and _visual != null:
+		_visual.show_driver(true)
 	_current_view = preset_name
 	var cam := _get_camera()
 	if cam == null:
@@ -165,6 +181,63 @@ func set_view(preset_name: String) -> void:
 	_camera_tween.tween_property(cam, "position", preset["position"], VIEW_TWEEN_DURATION)
 	_camera_tween.tween_property(cam, "rotation", preset["rotation"], VIEW_TWEEN_DURATION)
 	_camera_tween.tween_property(cam, "fov", preset["fov"], VIEW_TWEEN_DURATION)
+
+
+## Whether the camera is in the cab looking at the decorations.
+func in_cab() -> bool:
+	return _current_view == CAB_VIEW
+
+
+## Stops the turntable facing away from the camera and moves the camera into the
+## cab, over the driver's seat, where the dash toy, mirror charm and pennant show.
+func _enter_cab() -> void:
+	_current_view = CAB_VIEW
+	_is_dragging = false
+	if _ease_tween != null and _ease_tween.is_valid():
+		_ease_tween.kill()
+	_is_easing = false
+	if _visual != null:
+		_visual.show_driver(false)
+	_aim_cab_camera(true)
+
+
+## Where the cab camera stands, in the stage's space with the turntable at rest.
+func cab_camera_transform() -> Transform3D:
+	if _visual == null or _visual.cockpit_anchor == null:
+		return Transform3D(Basis.from_euler(PRESETS["home"]["rotation"]), PRESETS["home"]["position"])
+	var anchor := _visual.cockpit_anchor.position
+	var target := _visual.decoration_focus()
+	var eye: Vector3
+	if str(_visual.decoration.get("kind", "")) == "seat_cover":
+		# From the windscreen, down the aisle to the seats.
+		eye = Vector3(-anchor.x * 0.2, 2.2, anchor.z - 0.9)
+	else:
+		# From behind the driver's seat, over by the aisle, clear of the wheel.
+		eye = anchor + Vector3(-anchor.x * 0.85, 0.05, 0.35)
+	var offset := _visual.position
+	offset.y = 0.0
+	return Transform3D.IDENTITY.translated(offset) * Transform3D.IDENTITY.translated(eye).looking_at(target, Vector3.UP)
+
+
+func _aim_cab_camera(animate: bool) -> void:
+	var cam := _get_camera()
+	if cam == null or pivot == null:
+		return
+	var to := cab_camera_transform()
+	var fov := CAB_SEATS_FOV if _visual != null and str(_visual.decoration.get("kind", "")) == "seat_cover" else CAB_FOV
+	var rest := pivot.rotation.y + wrapf(-pivot.rotation.y, -PI, PI)
+	if _camera_tween != null and _camera_tween.is_valid():
+		_camera_tween.kill()
+	if not animate or not is_inside_tree():
+		pivot.rotation.y = 0.0
+		cam.transform = to
+		cam.fov = fov
+		return
+	_camera_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_camera_tween.tween_property(pivot, "rotation:y", rest, VIEW_TWEEN_DURATION)
+	_camera_tween.tween_property(cam, "position", to.origin, VIEW_TWEEN_DURATION)
+	_camera_tween.tween_property(cam, "rotation", to.basis.get_euler(), VIEW_TWEEN_DURATION)
+	_camera_tween.tween_property(cam, "fov", fov, VIEW_TWEEN_DURATION)
 
 
 ## Cycles to the next camera view preset and returns its name.
@@ -195,12 +268,14 @@ func bump() -> void:
 func _process(dt: float) -> void:
 	if paused or pivot == null:
 		return
-	if not _is_dragging and not _is_easing:
+	if not _is_dragging and not _is_easing and _current_view != CAB_VIEW:
 		pivot.rotate_y(IDLE_SPIN * dt)
 
 
 func _gui_input(event: InputEvent) -> void:
-	if paused:
+	# Inside the cab the turntable stays still: turning it would swing the bus
+	# out from under the camera.
+	if paused or _current_view == CAB_VIEW:
 		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton

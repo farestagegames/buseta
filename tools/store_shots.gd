@@ -156,6 +156,13 @@ func _menus() -> void:
 	menu.try_on(Catalog.LIVERIES, Profile.catalog.find(Catalog.LIVERIES, "carnaval"))
 	await _seconds(0.6)
 	await _shot("09b_garaje_probando")
+	# A cab decoration: the stage looks in from the driver's seat.
+	menu.try_on(Catalog.DECORATIONS, Profile.catalog.find(Catalog.DECORATIONS, "dash_perrito"))
+	await _seconds(0.8)
+	await _shot("09c_garaje_adorno")
+	menu.try_on(Catalog.DECORATIONS, Profile.catalog.find(Catalog.DECORATIONS, "seat_palms"))
+	await _seconds(0.8)
+	await _shot("09d_garaje_fundas")
 	menu.show_tab(1)
 	await _seconds(0.6)
 	await _shot("10_rutas")

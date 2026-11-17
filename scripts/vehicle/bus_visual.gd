@@ -255,6 +255,18 @@ func _on_view_changed(view_name: String) -> void:
 	_driver.visible = view_name != "Cockpit"
 
 
+## Shows or hides the driver, hands and all, for a close-up of the cab.
+func show_driver(shown: bool) -> void:
+	if _driver != null:
+		_driver.visible = shown
+	for part: MeshInstance3D in _sleeves + _hands:
+		part.visible = shown
+
+
+func driver_shown() -> bool:
+	return _driver != null and _driver.visible
+
+
 func door_swing_angle() -> float:
 	return _door_front.rotation.y if _door_front != null else 0.0
 
@@ -1136,6 +1148,20 @@ func _build_decoration() -> void:
 	_decoration_mesh = MeshInstance3D.new()
 	_decoration_mesh.mesh = b.build(LowPolyBuilder.vertex_colour_material())
 	_body.add_child(_decoration_mesh)
+
+
+## Where the fitted decoration sits in the bus, for a camera to look at. Seat
+## covers point at the first row of seats; no decoration points at the dash.
+func decoration_focus() -> Vector3:
+	var side := float(spec.door_side)
+	match str(decoration.get("kind", "")):
+		"mirror_charm":
+			return Vector3(0.1 * side, _top_y - 0.7, _cab_z + 0.4)
+		"pennant":
+			return Vector3(-side * (_half_width - 0.2) + side * 0.1, _top_y - 0.2, _cab_z + 0.9)
+		"seat_cover":
+			return Vector3(0.0, 0.9, _door_far_z + 2.0)
+	return Vector3(spec.driver_seat_x + 0.22 * side, 1.25, _cab_z + 0.35)
 
 
 func decoration_mesh() -> MeshInstance3D:

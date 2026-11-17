@@ -194,6 +194,9 @@ func show_tab(index: int, tray: bool = false) -> void:
 	# tried on. Behind a full sheet it would cost the phone's GPU for nothing.
 	var stage_shows := index == 0 or index == GARAGE_TAB or tray
 	_stage.paused = not stage_shows
+	# The cab close-up belongs to the Garage's decorations.
+	if index != GARAGE_TAB and _stage.in_cab():
+		_stage.set_view("home")
 	_shift_stage(GARAGE_STAGE_SHIFT if index == GARAGE_TAB else 0.0)
 	# Home and the Garage float over the stage; the other tabs sit in one sheet.
 	if stage_shows:
@@ -1006,8 +1009,15 @@ func try_on(kind: String, item: Dictionary) -> void:
 	var spec := CityShift.spec_for(_preview_bus, _preview_livery)
 	_garage_preview.show_spec(spec, _preview_decoration)
 	_show_card(_preview_bus, _preview_livery, spec)
+	# Decorations sit inside the cab, so the stage looks in from the driver's seat.
+	if kind == Catalog.DECORATIONS:
+		_stage.set_view(TurntableStage.CAB_VIEW)
+	elif _stage.in_cab():
+		_stage.set_view("home")
 	var decor_name := tr(_preview_decoration.get("name", "")) if not _preview_decoration.is_empty() else ""
-	if decor_name != "":
+	if kind == Catalog.DECORATIONS:
+		_preview_note.text = "%s\n%s" % [tr(item.get("name", "")), tr("Decorations go in the cab: you see them in cockpit view while driving")]
+	elif decor_name != "":
 		_preview_note.text = "%s, %s, %s" % [_preview_bus["name"], tr(_preview_livery["name"]), decor_name]
 	else:
 		_preview_note.text = "%s, %s" % [_preview_bus["name"], tr(_preview_livery["name"])]
