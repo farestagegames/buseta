@@ -153,7 +153,7 @@ func _ready() -> void:
 	GameEvents.perfect_stop.connect(_on_perfect_stop)
 
 	police_notice = Label.new()
-	police_notice.text = "POLICE NEARBY"
+	police_notice.text = "POLICE CAN SEE YOU"
 	police_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	police_notice.add_theme_font_size_override("font_size", 18)
 	police_notice.add_theme_color_override("font_color", Color(0.55, 0.75, 1.0))

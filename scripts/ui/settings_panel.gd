@@ -7,6 +7,9 @@ signal tutorial_requested
 
 ## In a shift this is the pause menu. In the main menu it is just the settings.
 var in_shift: bool = false
+## The main menu's cartoon look: white outlined cards on the menu's cream sheet.
+## The pause menu keeps the dark style over the moving street.
+var cartoon: bool = false
 
 var _mode_buttons: Array[Button] = []
 var language_picker: OptionButton
@@ -26,6 +29,9 @@ var _cheat_taps := Cheats.new()
 
 
 func _ready() -> void:
+	if cartoon:
+		theme = MenuCartoon.theme()
+		add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 10)
 	var margin := MarginContainer.new()
@@ -35,7 +41,11 @@ func _ready() -> void:
 	add_child(margin)
 
 	var title := _label("Paused" if in_shift else "Settings", 32)
-	outer.add_child(title)
+	if cartoon:
+		outer.add_child(MenuCartoon.heading(title.text, 32))
+		title.queue_free()
+	else:
+		outer.add_child(title)
 	var scroll := TouchScroll.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	outer.add_child(scroll)
@@ -121,7 +131,7 @@ func _add_controls(box: Container) -> void:
 
 
 func _add_language(box: Container) -> void:
-	box.add_child(_label("Language", 22))
+	box.add_child(_section("Language"))
 	language_picker = OptionButton.new()
 	# Each language shows in its own script, whatever the game is set to.
 	language_picker.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -139,7 +149,7 @@ func _on_language_chosen(index: int) -> void:
 
 
 func _add_graphics(box: Container) -> void:
-	box.add_child(_label("Graphics quality", 22))
+	box.add_child(_section("Graphics quality"))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	var levels := [["Auto", GraphicsQuality.AUTO], ["Low", GraphicsQuality.Level.LOW],
@@ -257,6 +267,11 @@ func _label(text: String, font_size: int) -> Label:
 	label.text = text
 	label.add_theme_font_size_override("font_size", font_size)
 	return label
+
+
+## A section name: a yellow-barred heading on the cartoon sheet.
+func _section(text: String) -> Control:
+	return MenuCartoon.heading(text, 24) if cartoon else _label(text, 22)
 
 
 func _button(text: String) -> Button:

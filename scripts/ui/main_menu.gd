@@ -29,7 +29,7 @@ const TAB_ICONS := ["home", "routes", "garage", "driver", "trophy"]
 const TAB_COLOURS := [Color("#FF7A1A"), Color("#4D96FF"), Color("#6BCB77"), Color("#FF5C5C"), Color("#FFC733")]
 ## How far the stage slides left in the Garage, as a share of its width, so the
 ## bus stays in view beside the list.
-const GARAGE_STAGE_SHIFT := 0.24
+const GARAGE_STAGE_SHIFT := 0.18 # less than before: the home camera offset already moves the bus left
 ## How far a new tab's sheet slides up as it fades in, and for how long.
 const SLIDE_PIXELS := 24.0
 const SLIDE_SECONDS := 0.25
@@ -65,6 +65,12 @@ var _sheet_panel: PanelContainer
 ## Routes and Crew show a quick-pick tray over the stage instead of their full list.
 var _tray := false
 var _tab_ghost: Control
+## The page being built uses the cartoon card look (Garage, Achievements,
+## Settings) rather than the dark sheet the Routes and Crew lists still use.
+var _cartoon := false
+## Off in the test run, where shifts driven by one test would leave cards over
+## the next test's menu.
+static var unlock_cards := true
 
 
 func _ready() -> void:
@@ -113,6 +119,39 @@ func _ready() -> void:
 	_horn_preview.volume_db = AudioDirector.BUS_HORN_DB
 	add_child(_horn_preview)
 	show_tab(0)
+	if unlock_cards:
+		_show_next_unlock.call_deferred()
+
+
+## One card for each thing the last shift unlocked, in turn, until all are collected.
+func _show_next_unlock() -> void:
+	if Profile.pending_unlocks.is_empty() or find_child("UnlockPopup", false, false) != null:
+		return
+	var entry: Dictionary = Profile.pending_unlocks[0]
+	var popup := MenuUnlockPopup.new(entry, unlock_art(entry))
+	popup.collected.connect(func() -> void:
+		Profile.pending_unlocks.pop_front()
+		_show_next_unlock.call_deferred())
+	add_child(popup)
+
+
+## The picture on an unlock card: the paint itself, the driver's face, or an icon.
+func unlock_art(entry: Dictionary) -> Control:
+	var kind: String = entry.get("kind", "")
+	var item := Profile.catalog.find(kind, entry.get("id", "")) if kind in Catalog.KINDS else {}
+	if kind == Catalog.LIVERIES and not item.is_empty():
+		var was := _cartoon
+		_cartoon = true
+		var swatch := _swatch(item)
+		_cartoon = was
+		swatch.custom_minimum_size = Vector2(150.0, 96.0)
+		return swatch
+	if kind == Catalog.DRIVERS and not item.is_empty():
+		return DriverBadge.new(DriverLook.from_item(item))
+	var icon := MenuIcon.new()
+	icon.icon = {Catalog.ROUTES: "routes", Catalog.BUSES: "garage", UnlockNews.HORNS: "horn"}.get(kind, "star")
+	icon.colour = MenuCartoon.YELLOW
+	return icon
 
 
 ## The horn preview fades over its last moment, so a looping horn ends without a
@@ -148,8 +187,12 @@ func _on_settings_changed() -> void:
 			show_tab(_current_tab, _tray)
 
 
-## What a tab button opens: Routes and Crew start on their quick-pick tray.
+## What a tab button opens: Routes and Crew start on their quick-pick tray. Tapping
+## the tab already open goes back to Home.
 func open_tab(index: int) -> void:
+	if index == _current_tab and index != 0:
+		show_tab(0)
+		return
 	show_tab(index, index == 1 or index == DRIVERS_TAB)
 
 
@@ -170,6 +213,7 @@ func show_tab(index: int, tray: bool = false) -> void:
 		_content.remove_child(child)
 		child.queue_free()
 	var page: Control
+	_cartoon = not tray and (index == GARAGE_TAB or index >= 4)
 	if index == 0 or index == GARAGE_TAB or tray:
 		_show_chosen_bus()
 	match index:
@@ -187,6 +231,7 @@ func show_tab(index: int, tray: bool = false) -> void:
 			page = _career_tab()
 		_:
 			var settings := SettingsPanel.new()
+			settings.cartoon = true
 			settings.tutorial_requested.connect(func() -> void: show_tab(0))
 			page = settings
 	_content.add_child(page)
@@ -203,8 +248,9 @@ func show_tab(index: int, tray: bool = false) -> void:
 		_sheet_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 		_sheet_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
-		_sheet_panel.add_theme_stylebox_override("panel", sheet_box())
+		_sheet_panel.add_theme_stylebox_override("panel", MenuCartoon.sheet_box() if _cartoon else sheet_box())
 		_sheet_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_sheet_panel.theme = MenuCartoon.theme() if _cartoon else null
 	_bus_card.visible = stage_shows
 	for arrow in _arrows:
 		arrow.visible = index == 0
@@ -491,7 +537,7 @@ static func bus_category(bus: Dictionary) -> String:
 ## A tab's content in a dark rounded sheet over the stage.
 func _sheet(inner: Control) -> Control:
 	var sheet := PanelContainer.new()
-	sheet.add_theme_stylebox_override("panel", sheet_box())
+	sheet.add_theme_stylebox_override("panel", MenuCartoon.sheet_box() if _cartoon else sheet_box())
 	sheet.add_child(inner)
 	return sheet
 
@@ -887,27 +933,30 @@ func _garage_tab() -> Control:
 	sheet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sheet.size_flags_stretch_ratio = 1.25
 	page.add_child(sheet)
-	_preview_note = _wrapped("Tap a bus, paint or decoration to try it", 20, Color.WHITE)
+	_preview_note = _wrapped("Tap a bus, paint or decoration to try it", 20, MenuCartoon.INK)
 	_preview_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var note_back := _sheet(_preview_note)
+	var note_back := PanelContainer.new()
+	note_back.name = "PreviewNote"
+	note_back.add_theme_stylebox_override("panel", MenuHomeDrawer.card_box())
+	note_back.add_child(_preview_note)
 	note_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	side.add_child(note_back)
 	_preview_bus = Profile.selected_item(Catalog.BUSES)
 	_preview_livery = Profile.selected_item(Catalog.LIVERIES)
 	_preview_decoration = Profile.selected_item(Catalog.DECORATIONS)
 	var rows := list.get_child(0)
-	rows.add_child(_text("Buses", 26, ACCENT))
+	rows.add_child(_heading("Buses"))
 	for item: Dictionary in Profile.catalog.items(Catalog.BUSES):
 		if not item.get("route_only", false):
 			rows.add_child(_garage_row(Catalog.BUSES, item, item.get("description", "")))
-	rows.add_child(_text("Liveries", 26, ACCENT))
+	rows.add_child(_heading("Liveries"))
 	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
 		rows.add_child(_garage_row(Catalog.LIVERIES, item, ""))
 	if not Profile.catalog.items(Catalog.DECORATIONS).is_empty():
-		rows.add_child(_text("Cab decorations", 26, ACCENT))
+		rows.add_child(_heading("Cab decorations"))
 		for item: Dictionary in Profile.catalog.items(Catalog.DECORATIONS):
 			rows.add_child(_garage_row(Catalog.DECORATIONS, item, ""))
-	rows.add_child(_text("Horn", 26, ACCENT))
+	rows.add_child(_heading("Horn"))
 	Profile.data.settle_horns(Country.pack.horns())
 	rows.add_child(_horn_row({}))
 	for item: Dictionary in Country.pack.horns():
@@ -929,10 +978,10 @@ func _horn_row(item: Dictionary) -> Control:
 	var lines := VBoxContainer.new()
 	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if id == "":
-		lines.add_child(_text("The bus's own horn", 26, Color.WHITE))
-		lines.add_child(_wrapped("Each bus sounds the horn it came with", 19, MUTED))
+		lines.add_child(_text("The bus's own horn", 26, _ink()))
+		lines.add_child(_wrapped("Each bus sounds the horn it came with", 19, _soft()))
 	else:
-		lines.add_child(_text(item["name"], 26, Color.WHITE))
+		lines.add_child(_text(item["name"], 26, _ink()))
 	row.add_child(lines)
 	row.add_child(_horn_button(item))
 	card.add_child(row)
@@ -950,6 +999,7 @@ func _horn_button(item: Dictionary) -> Button:
 	if Profile.data.horn == id:
 		button.text = "Selected"
 		button.disabled = true
+		_paint_in_use(button)
 	elif id == "" or Profile.data.owns_horn(id):
 		button.text = "Select"
 		button.pressed.connect(_on_choose_horn.bind(id))
@@ -959,6 +1009,7 @@ func _horn_button(item: Dictionary) -> Button:
 	else:
 		button.text = tr("Buy %s") % Country.pack.money(int(item.get("cost", 0)))
 		button.disabled = Profile.data.coins < int(item.get("cost", 0))
+		_paint_buy(button)
 		button.pressed.connect(_on_buy_horn.bind(id))
 	return button
 
@@ -1082,13 +1133,13 @@ func _shop_row(kind: String, item: Dictionary, description: String) -> Control:
 		row.add_child(DriverBadge.new(DriverLook.from_item(item)))
 	var lines := VBoxContainer.new()
 	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lines.add_child(_text(item["name"], 26, Color.WHITE))
+	lines.add_child(_text(item["name"], 26, _ink()))
 	if description != "":
-		lines.add_child(_wrapped(description, 19, MUTED))
+		lines.add_child(_wrapped(description, 19, _soft()))
 	if kind == Catalog.ROUTES:
 		var goals := _route_goals(item)
 		if not goals.is_empty():
-			lines.add_child(_wrapped(_goals_text(goals), 17, MUTED))
+			lines.add_child(_wrapped(_goals_text(goals), 17, _soft()))
 	row.add_child(lines)
 	row.add_child(_shop_button(kind, item))
 	card.add_child(row)
@@ -1122,6 +1173,7 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 	if Profile.data.selected[kind] == id:
 		button.text = "Selected"
 		button.disabled = true
+		_paint_in_use(button)
 	elif kind == Catalog.ROUTES and route_level > level:
 		button.text = tr("Level %d") % route_level
 		button.disabled = true
@@ -1139,6 +1191,7 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 	else:
 		button.text = tr("Buy %s") % Country.pack.money(item["cost"])
 		button.disabled = Profile.data.coins < int(item["cost"])
+		_paint_buy(button)
 		button.pressed.connect(_on_buy.bind(kind, id))
 	return button
 
@@ -1170,6 +1223,7 @@ func _swatch(item: Dictionary) -> Control:
 		band.offset_top = -5.0
 		band.offset_bottom = 5.0
 		panel.add_child(band)
+		_outline(panel)
 		return panel
 	var colour: Array = item.get("colour", [0.5, 0.5, 0.5])
 	var accent: Array = item.get("accent", item.get("trim", colour))
@@ -1185,7 +1239,24 @@ func _swatch(item: Dictionary) -> Control:
 	band.offset_top = -7.0
 	band.offset_bottom = 7.0
 	panel.add_child(band)
+	_outline(panel)
 	return panel
+
+
+## A dark outline round a paint swatch on the cartoon cards.
+func _outline(swatch: Control) -> void:
+	if not _cartoon:
+		return
+	var frame := Panel.new()
+	var box := StyleBoxFlat.new()
+	box.draw_center = false
+	box.set_border_width_all(3)
+	box.border_color = MenuCartoon.INK
+	box.set_corner_radius_all(4)
+	frame.add_theme_stylebox_override("panel", box)
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	swatch.add_child(frame)
 
 
 func _career_tab() -> Control:
@@ -1193,43 +1264,102 @@ func _career_tab() -> Control:
 	var rows := list.get_child(0)
 	var stats := Profile.data.stats
 	var card := _card()
+	card.name = "CareerCard"
 	var lines := VBoxContainer.new()
-	lines.add_child(_text(tr("Level %d driver, %d XP") % [DriverLevel.level_for(Profile.data.xp), Profile.data.xp], 26, Color.WHITE))
-	lines.add_child(_text(tr("Shifts completed: %d") % stats["shifts"], 22, MUTED))
-	lines.add_child(_text(tr("Passengers carried: %d") % stats["passengers"], 22, MUTED))
-	lines.add_child(_text(tr("Best stars: %d") % stats["best_stars"], 22, MUTED))
-	lines.add_child(_text(tr("Shifts with no collisions: %d") % stats["clean_shifts"], 22, MUTED))
-	lines.add_child(_text(tr("Downpours driven through: %d") % stats["rain_shifts"], 22, MUTED))
+	lines.add_child(_text(tr("Level %d driver, %d XP") % [DriverLevel.level_for(Profile.data.xp), Profile.data.xp], 26, _ink()))
+	var facts := GridContainer.new()
+	facts.columns = 2
+	facts.add_theme_constant_override("h_separation", 28)
+	facts.add_child(_text(tr("Shifts completed: %d") % stats["shifts"], 22, _soft()))
+	facts.add_child(_text(tr("Passengers carried: %d") % stats["passengers"], 22, _soft()))
+	facts.add_child(_text(tr("Best stars: %d") % stats["best_stars"], 22, _soft()))
+	facts.add_child(_text(tr("Shifts with no collisions: %d") % stats["clean_shifts"], 22, _soft()))
+	facts.add_child(_text(tr("Downpours driven through: %d") % stats["rain_shifts"], 22, _soft()))
+	lines.add_child(facts)
 	card.add_child(lines)
 	rows.add_child(card)
-	rows.add_child(_text("Achievements", 26, ACCENT))
+	rows.add_child(_heading("Achievements"))
 	for entry: Dictionary in AchievementList.load_list():
 		var route := AchievementList.route_of(entry)
 		if route != "" and not Profile.data.owns(Catalog.ROUTES, route) and not Profile.data.achievements.has(entry["id"]):
 			continue
 		var earned := Profile.data.achievements.has(entry["id"])
 		var row := _card()
+		if earned:
+			row.add_theme_stylebox_override("panel", MenuCartoon.card_box(Color("#F1FAEF")))
+		var line := HBoxContainer.new()
+		line.add_theme_constant_override("separation", 14)
+		var badge := MenuIcon.new()
+		badge.icon = "trophy"
+		badge.colour = MenuCartoon.YELLOW if earned else Color("#C9CDD6")
+		badge.custom_minimum_size = Vector2(40.0, 40.0)
+		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		line.add_child(badge)
 		var text := VBoxContainer.new()
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		text.add_child(_text(entry["name"], 24, GOOD if earned else Color.WHITE))
-		text.add_child(_wrapped(entry["description"], 19, MUTED))
-		var line := HBoxContainer.new()
-		line.add_theme_constant_override("separation", 12)
+		text.add_child(_text(entry["name"], 24, _ink()))
+		text.add_child(_wrapped(entry["description"], 19, _soft()))
 		line.add_child(text)
 		var side := VBoxContainer.new()
 		side.alignment = BoxContainer.ALIGNMENT_CENTER
+		side.custom_minimum_size.x = 170.0
 		if earned:
-			side.add_child(_text("Earned", 20, GOOD))
+			side.add_child(_pill(tr("Earned"), MenuCartoon.GOOD, Color.WHITE))
 		else:
 			var target := int(entry["target"])
 			var done := mini(AchievementList.progress(Profile.data, entry), target)
-			side.add_child(_text(achievement_progress_text(str(entry.get("stat", "")), done, target), 20, MUTED))
+			var count := _text(achievement_progress_text(str(entry.get("stat", "")), done, target), 20, _soft())
+			count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			side.add_child(count)
+			side.add_child(_progress(done, target))
 			if AchievementList.reward_of(entry) > 0:
-				side.add_child(_text(Country.pack.money(AchievementList.reward_of(entry)), 20, ACCENT))
+				side.add_child(_pill(Country.pack.money(AchievementList.reward_of(entry)), MenuCartoon.YELLOW, MenuCartoon.INK))
 		line.add_child(side)
 		row.add_child(line)
 		rows.add_child(row)
 	return list
+
+
+## A small rounded tag, such as "Earned" or a reward.
+func _pill(value: String, fill: Color, colour: Color) -> Control:
+	var pill := PanelContainer.new()
+	pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.set_corner_radius_all(12)
+	box.set_border_width_all(2)
+	box.border_color = MenuCartoon.INK
+	box.content_margin_left = 12.0
+	box.content_margin_right = 12.0
+	box.content_margin_top = 2.0
+	box.content_margin_bottom = 2.0
+	pill.add_theme_stylebox_override("panel", box)
+	pill.add_child(_text(value, 20, colour))
+	return pill
+
+
+## A thin outlined bar for progress towards an achievement.
+func _progress(done: int, target: int) -> Control:
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.max_value = maxi(target, 1)
+	bar.value = done
+	bar.custom_minimum_size = Vector2(150.0, 14.0)
+	bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var back := StyleBoxFlat.new()
+	back.bg_color = MenuCartoon.PALE
+	back.set_corner_radius_all(7)
+	back.set_border_width_all(2)
+	back.border_color = MenuCartoon.INK
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = MenuCartoon.YELLOW
+	fill.set_corner_radius_all(7)
+	fill.set_border_width_all(2)
+	fill.border_color = MenuCartoon.INK
+	bar.add_theme_stylebox_override("background", back)
+	bar.add_theme_stylebox_override("fill", fill)
+	return bar
 
 
 func _list() -> TouchScroll:
@@ -1243,12 +1373,44 @@ func _list() -> TouchScroll:
 
 func _card() -> PanelContainer:
 	var card := PanelContainer.new()
+	if _cartoon:
+		card.add_theme_stylebox_override("panel", MenuCartoon.card_box())
+		return card
 	var style := StyleBoxFlat.new()
 	style.bg_color = CARD
 	style.set_corner_radius_all(14)
 	style.set_content_margin_all(14)
 	card.add_theme_stylebox_override("panel", style)
 	return card
+
+
+## Title text: dark on the cartoon cards, white on the dark sheet.
+func _ink() -> Color:
+	return MenuCartoon.INK if _cartoon else Color.WHITE
+
+
+func _soft() -> Color:
+	return MenuCartoon.MUTED if _cartoon else MUTED
+
+
+func _good() -> Color:
+	return MenuCartoon.GOOD if _cartoon else GOOD
+
+
+func _heading(value: String) -> Control:
+	return MenuCartoon.heading(value, 26) if _cartoon else _text(value, 26, ACCENT)
+
+
+## The item in use: green on the cartoon pages.
+func _paint_in_use(button: Button) -> void:
+	if _cartoon:
+		MenuCartoon.paint_button(button, MenuCartoon.GOOD, Color.WHITE)
+
+
+## Something to buy: yellow on the cartoon pages, unless it costs too much.
+func _paint_buy(button: Button) -> void:
+	if _cartoon and not button.disabled:
+		MenuCartoon.paint_button(button, MenuCartoon.YELLOW)
 
 
 func _button(label: String) -> Button:

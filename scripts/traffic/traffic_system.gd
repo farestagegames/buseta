@@ -492,6 +492,11 @@ func police_position() -> Vector2:
 	return flow.positions[police_index] if police_index >= 0 else Vector2(INF, INF)
 
 
+## Which way the patrol car faces on the ground, or zero with no patrol.
+func police_forward() -> Vector2:
+	return flow.forwards[police_index] if police_index >= 0 else Vector2.ZERO
+
+
 func _flash_police(dt: float) -> void:
 	if police_index < 0:
 		return

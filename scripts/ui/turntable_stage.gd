@@ -22,9 +22,13 @@ const PAVEMENT_GREY := Color(0.72, 0.74, 0.77)
 
 const PRESETS: Dictionary = {
 	"home": {
-		"position": Vector3(-1.6, 4.8, 15.5),
+		# Far enough back that a long bus spinning clears the cards beside it.
+		"position": Vector3(-1.9, 5.9, 19.0),
 		"rotation": Vector3(deg_to_rad(-10.0), deg_to_rad(-2.0), 0.0),
 		"fov": 42.0,
+		# Camera offset in metres: the bus shows a little left of centre and lower,
+		# clear of the Reto del día and Próximo desbloqueo cards on the right.
+		"offset": Vector2(1.6, 0.7),
 	},
 	"top": {
 		"position": Vector3(-0.8, 11.0, 14.0),
@@ -101,6 +105,9 @@ func _ready() -> void:
 	var cam := _get_camera()
 	if cam != null:
 		cam.rotation = home_preset["rotation"]
+		var offset: Vector2 = home_preset.get("offset", Vector2.ZERO)
+		cam.h_offset = offset.x
+		cam.v_offset = offset.y
 
 	_build_scenery()
 	show_spec(CityShift.chosen_spec(), CityShift.chosen_decoration())
@@ -174,6 +181,8 @@ func set_view(preset_name: String) -> void:
 		cam.position = preset["position"]
 		cam.rotation = preset["rotation"]
 		cam.fov = preset["fov"]
+		cam.h_offset = (preset.get("offset", Vector2.ZERO) as Vector2).x
+		cam.v_offset = (preset.get("offset", Vector2.ZERO) as Vector2).y
 		return
 	if _camera_tween != null and _camera_tween.is_valid():
 		_camera_tween.kill()
@@ -181,6 +190,9 @@ func set_view(preset_name: String) -> void:
 	_camera_tween.tween_property(cam, "position", preset["position"], VIEW_TWEEN_DURATION)
 	_camera_tween.tween_property(cam, "rotation", preset["rotation"], VIEW_TWEEN_DURATION)
 	_camera_tween.tween_property(cam, "fov", preset["fov"], VIEW_TWEEN_DURATION)
+	var offset: Vector2 = preset.get("offset", Vector2.ZERO)
+	_camera_tween.tween_property(cam, "h_offset", offset.x, VIEW_TWEEN_DURATION)
+	_camera_tween.tween_property(cam, "v_offset", offset.y, VIEW_TWEEN_DURATION)
 
 
 ## Whether the camera is in the cab looking at the decorations.
@@ -226,6 +238,8 @@ func _aim_cab_camera(animate: bool) -> void:
 	var to := cab_camera_transform()
 	var fov := CAB_SEATS_FOV if _visual != null and str(_visual.decoration.get("kind", "")) == "seat_cover" else CAB_FOV
 	var rest := pivot.rotation.y + wrapf(-pivot.rotation.y, -PI, PI)
+	cam.h_offset = 0.0
+	cam.v_offset = 0.0
 	if _camera_tween != null and _camera_tween.is_valid():
 		_camera_tween.kill()
 	if not animate or not is_inside_tree():

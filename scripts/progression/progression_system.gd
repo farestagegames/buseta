@@ -22,6 +22,7 @@ func _on_report(report: Dictionary) -> void:
 	if bool(report.get("completed", false)):
 		unlocked = Profile.data.complete_route(route_id, Profile.catalog)
 	rewards["unlocked_routes"] = unlocked
+	Profile.pending_unlocks.append_array(UnlockNews.from_rewards(Profile.catalog, Country.pack.horns(), rewards))
 	report["rewards"] = rewards
 	Profile.save()
 	GameEvents.shift_rewards_ready.emit(report)

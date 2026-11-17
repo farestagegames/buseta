@@ -56,6 +56,10 @@ func _ready() -> void:
 	unlock.pressed.connect(_apply.bind(func(profile: PlayerProfile) -> void:
 		Cheats.unlock_everything(profile, Profile.catalog, Country.pack.horns())))
 	column.add_child(unlock)
+	var reset := _button("Reset unlocks")
+	reset.pressed.connect(_apply.bind(func(profile: PlayerProfile) -> void:
+		Cheats.reset_unlocks(profile, Profile.catalog, Country.pack.horns())))
+	column.add_child(reset)
 	var close := _button("Close")
 	close.pressed.connect(queue_free)
 	column.add_child(close)

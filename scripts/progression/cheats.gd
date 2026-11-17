@@ -69,6 +69,28 @@ static func unlock_everything(profile: PlayerProfile, catalog: Catalog, pack_hor
 			profile.horns_owned.append(horn["id"])
 
 
+## Takes back everything bought or unlocked, as on a new save: only the catalog's
+## free items and the pack's free horns stay owned, finished routes are forgotten
+## and choices fall back to what is still owned. Coins, XP and stats stay, so the
+## level cheats can set them apart.
+static func reset_unlocks(profile: PlayerProfile, catalog: Catalog, pack_horns: Array = []) -> void:
+	var fresh := PlayerProfile.new()
+	profile.owned = fresh.owned
+	profile.horns_owned.clear()
+	profile.completed_routes.clear()
+	var route := catalog.default_route()
+	if route != "" and not profile.owns(Catalog.ROUTES, route):
+		(profile.owned[Catalog.ROUTES] as Array).append(route)
+	profile.grant_free_items(catalog)
+	profile.settle_horns(pack_horns)
+	if profile.horn != "" and not profile.owns_horn(profile.horn):
+		profile.horn = ""
+	for kind: String in profile.selected:
+		if not profile.owns(kind, str(profile.selected[kind])):
+			profile.selected[kind] = PlayerProfile.DEFAULTS.get(kind, "")
+	profile.repair_choices(catalog)
+
+
 ## Counts a tap. True on the tap that reveals the cheats.
 func tap(now: float) -> bool:
 	_taps = _taps + 1 if now - _last_tap <= TAP_WINDOW else 1

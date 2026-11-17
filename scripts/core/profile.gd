@@ -12,6 +12,9 @@ var ads := AdProvider.new()
 var _path: String = SAVE_PATH
 ## A route this run plays instead of the chosen one (the arcade), or "".
 var route_override: String = ""
+## Cards for what the last shift unlocked, shown on the menu until collected.
+## Not saved: a closed app forgets them, the items stay unlocked.
+var pending_unlocks: Array[Dictionary] = []
 
 
 func _ready() -> void:

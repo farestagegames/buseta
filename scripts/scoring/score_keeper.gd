@@ -33,6 +33,7 @@ var _in_downpour: bool = false
 var _faults_before_downpour: int = 0
 var _speeding_for: float = 0.0
 var _police_stopped: String = "" ## Why the police ended the run, or "".
+var _police_stops: int = 0 ## Times the police stopped the bus this shift (fines and the last stop).
 var _difficulty_id: String = ""
 var _goals: Array = []
 var _service: String = "bays"
@@ -216,11 +217,13 @@ func _on_request_ignored(people: int) -> void:
 
 
 func _on_police_fined(coins_lost: int, reason: String) -> void:
+	_police_stops += 1
 	score.add_fine(coins_lost)
 	GameEvents.penalty_shown.emit(tr("Police fine %s: %s") % [Country.pack.money(coins_lost), tr(reason)])
 
 
 func _on_police_ended_run(reason: String) -> void:
+	_police_stops += 1
 	_police_stopped = reason
 	GameEvents.penalty_shown.emit(tr("Stopped by the transit police: %s") % tr(reason))
 
@@ -254,6 +257,7 @@ func _on_shift_completed(summary: Dictionary) -> void:
 	report["time_of_day"] = _time_of_day
 	report["difficulty"] = _difficulty_id
 	report["police_stopped"] = _police_stopped
+	report["police_stops"] = _police_stops
 	report["gave_up"] = _gave_up
 	report["completed"] = bool(summary.get("completed", false))
 	report["downpour"] = int(score.counts["downpours"]) > 0

@@ -796,14 +796,19 @@ func test_a_police_patrol_turns_up_in_traffic_and_fines_a_fault_in_front_of_it()
 	await wait_physics_frames(3)
 	assert_true(police.patrol.is_watching())
 	assert_gte(traffic.police_index, 0, "A nearby car became the patrol")
-	# Bring the patrol right up to the bus, then run a red light in front of it.
+	# Put the bus on the road just ahead of the patrol car, where it can see it,
+	# then run a red light in front of it.
 	var spot := traffic.police_position()
-	GameEvents.bus_relocate_requested.emit(spot + Vector2(0.0, 30.0), 0.0)
+	GameEvents.bus_relocate_requested.emit(spot + traffic.police_forward() * 12.0, 0.0)
 	await wait_physics_frames(3)
-	assert_true(police.is_near())
+	assert_true(police.is_near(), "the patrol sees the bus ahead of it")
 	watch_signals(GameEvents)
 	GameEvents.red_light_run.emit()
 	assert_signal_emitted(GameEvents, "police_fined")
+	# Behind the patrol car it cannot see the bus.
+	GameEvents.bus_relocate_requested.emit(traffic.police_position() - traffic.police_forward() * 15.0, 0.0)
+	await wait_physics_frames(3)
+	assert_false(police.is_near(), "the patrol does not see the bus behind it")
 
 
 

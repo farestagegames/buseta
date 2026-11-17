@@ -368,12 +368,12 @@ func _prompt(stop: RouteStop, data: BusTelemetry, centre: Vector2) -> String:
 		return tr("Passengers getting off") if session.stage == StopSession.Stage.ALIGHTING else tr("Passengers boarding")
 	var offset := stop.offset_of(centre)
 	if stop.kind == RouteStop.Kind.HAIL and not stop.is_final and offset.x < -stop.along_tolerance() and -offset.x < HAIL_NOTICE_DISTANCE:
-		# Say where, so nobody stops short and waits for people who are not
-		# getting off yet.
+		# Only a nudge when stopped short of the marker; the marker itself shows
+		# where to stop (owner, 17 Nov: no "green marker" distance line).
 		var metres := ceili(-offset.x - stop.along_tolerance())
 		if absf(data.speed) < BusPhysicsModel.STOPPED_SPEED and metres <= PULL_FORWARD_NOTICE:
 			return tr("Pull forward %d m") % metres
-		return tr("Getting off at the green marker: %d m") % metres if ledger.wanting_off(runner.stop_index) > 0 else tr("Flagging you down at the green marker: %d m") % metres
+		return ""
 	if absf(offset.x) > 30.0:
 		return ""
 	if _aligned:

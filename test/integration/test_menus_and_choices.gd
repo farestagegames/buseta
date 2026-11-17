@@ -355,6 +355,22 @@ func test_routes_and_crew_buttons_open_a_quick_tray_over_the_stage() -> void:
 	assert_not_null(tray.find_child("Pick_" + chosen, true, false))
 
 
+func test_tapping_the_open_tab_again_goes_home() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	menu.open_tab(MainMenu.GARAGE_TAB)
+	await wait_frames(1)
+	assert_eq(menu._current_tab, MainMenu.GARAGE_TAB)
+	menu.open_tab(MainMenu.GARAGE_TAB)
+	await wait_frames(1)
+	assert_eq(menu._current_tab, 0, "a second tap on the Garage goes Home")
+	assert_not_null(menu.find_child("HomeDrawer", true, false))
+	menu.open_tab(0)
+	await wait_frames(1)
+	assert_eq(menu._current_tab, 0, "Home stays Home")
+
+
 func test_route_only_bus_is_not_on_sale_in_the_garage() -> void:
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)

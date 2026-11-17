@@ -21,6 +21,7 @@ const XP_SECONDS := 0.55
 const UNLOCK_SECONDS := 0.4
 const MAX_STARS := 3
 const MAX_SLOTS := 5 ## Arcade shows up to five stars.
+const FAILED_COLOUR := Color(1.0, 0.42, 0.36) ## The headline when the police end the run.
 
 var stars_shown: int = 0
 var menu_button: Button
@@ -242,8 +243,11 @@ func show_report(report: Dictionary) -> void:
 		_headline.text = tr("Arcade: %d checkpoints, %d m") % [int(report["arcade"]["checkpoints"]), roundi(float(report["arcade"]["distance"]))]
 	if report.get("gave_up", false):
 		_headline.text = tr("Your passengers have had enough: %d points in %d:%02d") % [report["score"], minutes, seconds]
-	if str(report.get("police_stopped", "")) != "":
-		_headline.text = tr("Stopped by the transit police: %d points in %d:%02d") % [report["score"], minutes, seconds]
+	_headline.add_theme_color_override("font_color", Color.WHITE)
+	var police_failed := str(report.get("police_stopped", "")) != ""
+	if police_failed:
+		_headline.text = tr("Route failed: stopped by the police %d times") % maxi(int(report.get("police_stops", 0)), 1)
+		_headline.add_theme_color_override("font_color", FAILED_COLOUR)
 
 	var categories: Dictionary = report.get("categories", {})
 	for key: String in _bars:
@@ -272,7 +276,7 @@ func show_report(report: Dictionary) -> void:
 	_build_unlock()
 
 	var all_stars := stars_shown >= _max_stars
-	if Profile.route_override != "":
+	if Profile.route_override != "" or police_failed:
 		again_button.text = tr("Play again")
 	else:
 		again_button.text = tr("Next route") if all_stars else tr("Retry for ★★★")

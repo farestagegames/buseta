@@ -123,3 +123,30 @@ func test_unlock_everything_owns_all_and_keeps_the_current_choices() -> void:
 		if catalog.requires(item) != "":
 			assert_true(catalog.requirement_met(item, profile), "%s requirement met" % item["id"])
 	assert_eq(profile.selected[Catalog.ROUTES], PlayerProfile.DEFAULT_ROUTE)
+
+
+func test_reset_unlocks_takes_back_everything_but_the_free_items() -> void:
+	var catalog := Catalog.new()
+	var horns := Country.pack.horns()
+	profile.coins = 5000
+	profile.xp = 900
+	Cheats.unlock_everything(profile, catalog, horns)
+	profile.completed_routes.append(catalog.default_route())
+	for kind: String in Catalog.KINDS:
+		var items := catalog.items(kind)
+		profile.selected[kind] = items[items.size() - 1]["id"]
+	profile.horn = horns[horns.size() - 1]["id"]
+	Cheats.reset_unlocks(profile, catalog, horns)
+	assert_eq(profile.coins, 5000, "coins stay")
+	assert_eq(profile.xp, 900, "XP stays")
+	assert_true(profile.completed_routes.is_empty(), "finished routes forgotten")
+	for kind: String in Catalog.KINDS:
+		for item: Dictionary in catalog.items(kind):
+			if int(item.get("cost", 0)) > 0:
+				assert_false(profile.owns(kind, item["id"]), "%s %s taken back" % [kind, item["id"]])
+		assert_true(profile.owns(kind, str(profile.selected[kind])) or kind == Catalog.ROUTES, "%s choice still owned" % kind)
+	assert_true(profile.owns(Catalog.ROUTES, catalog.default_route()), "default route owned")
+	for horn: Dictionary in horns:
+		if int(horn.get("cost", 0)) > 0:
+			assert_false(profile.owns_horn(horn["id"]), "horn %s taken back" % horn["id"])
+	assert_true(profile.horn == "" or profile.owns_horn(profile.horn), "horn choice still owned")

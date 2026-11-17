@@ -129,3 +129,13 @@ func test_difficulty_choice_survives_saving() -> void:
 	profile.difficulty = "hard"
 	assert_eq(PlayerProfile.from_dict(JSON.parse_string(JSON.stringify(profile.to_dict()))).difficulty, "hard")
 	assert_eq(PlayerProfile.from_dict({}).difficulty, "", "Old saves use the default")
+
+
+func test_the_score_keeper_counts_every_police_stop() -> void:
+	var keeper := ScoreKeeper.new()
+	keeper._on_police_fined(250, "speeding")
+	keeper._on_police_fined(500, "ran a red light")
+	keeper._on_police_ended_run("collision")
+	assert_eq(keeper._police_stops, 3, "two fines and the stop that ends the run")
+	assert_eq(keeper._police_stopped, "collision")
+	keeper.free()

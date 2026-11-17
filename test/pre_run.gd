@@ -15,3 +15,5 @@ func run() -> void:
 	GameSettings.language = "en"
 	CityShift.shift_seed = 7
 	CityShift.forced_rain = WeatherPlan.FORCE_DRY
+	# Cards for what a shift unlocked would cover later tests' menus.
+	MainMenu.unlock_cards = false

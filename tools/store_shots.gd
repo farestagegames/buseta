@@ -148,6 +148,14 @@ func _menus() -> void:
 	add_child(menu)
 	await _seconds(0.8)
 	await _shot("08_inicio")
+	# The card for something a shift unlocked, here a level-3 paint.
+	Profile.pending_unlocks = UnlockNews.between(Profile.catalog, Country.pack.horns(), 2, 3, [])
+	menu._show_next_unlock()
+	await _seconds(0.6)
+	await _shot("10g_desbloqueo")
+	Profile.pending_unlocks.clear()
+	for popup in menu.find_children("UnlockPopup", "", false, false):
+		popup.queue_free()
 	menu.show_tab(2)
 	await _seconds(0.6)
 	await _shot("09_garaje")

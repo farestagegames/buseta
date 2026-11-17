@@ -90,3 +90,18 @@ func test_sequence_finishes_under_six_seconds() -> void:
 		panel._process(step)
 		elapsed += step
 	assert_true(panel.is_finished(), "payout finishes within 6 s of game time")
+
+
+func test_a_police_stop_shows_a_failed_route_in_red() -> void:
+	var panel := ShiftEndPanel.new()
+	add_child_autofree(panel)
+	await wait_physics_frames(2)
+	var report := _report(0)
+	report["police_stopped"] = "speeding"
+	report["police_stops"] = 3
+	panel.show_report(report)
+	assert_eq(panel._headline.text, tr("Route failed: stopped by the police %d times") % 3)
+	assert_eq(panel._headline.get_theme_color("font_color"), ShiftEndPanel.FAILED_COLOUR)
+	assert_eq(panel.again_button.text, tr("Play again"))
+	panel.show_report(_report())
+	assert_eq(panel._headline.get_theme_color("font_color"), Color.WHITE, "a normal shift is white again")

@@ -265,3 +265,19 @@ func test_next_unlock_never_names_an_arcade() -> void:
 	profile.owned[Catalog.ROUTES] = []
 	var next := UnlockProgress.next(profile, catalog, Country.pack)
 	assert_false(str(next.get("id", "")).begins_with("arcade"), "Arcades open by level, not by unlock")
+
+
+## Alto Cafeto's clock is as tight as Puerto Marisol's (owner, 17 Nov: the
+## longer 80 s / 26 s clock was far too generous).
+func test_the_cafeto_clock_is_as_tight_as_the_coast() -> void:
+	var coast := _arcade_config()
+	var file := ""
+	for item: Dictionary in Catalog.new().arcade_routes():
+		if item["id"] == "arcade_cafeto":
+			file = item["file"]
+	assert_ne(file, "", "Alto Cafeto has an arcade")
+	var route: Dictionary = MapLoader.read_json(file)
+	var cafeto: Dictionary = route.get("arcade", {})
+	assert_lte(float(cafeto["start_seconds"]), float(coast["start_seconds"]) + 4.0)
+	assert_lte(float(cafeto["checkpoint_seconds"]), float(coast["checkpoint_seconds"]))
+	assert_lte(float(cafeto["checkpoint_floor"]), float(coast["checkpoint_floor"]))
