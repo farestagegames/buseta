@@ -63,7 +63,7 @@ func test_paused_disables_viewport_update_and_restores_it() -> void:
 	add_child_autofree(stage)
 
 	assert_false(stage.paused)
-	assert_eq(stage.stage.render_target_update_mode, SubViewport.UPDATE_WHEN_VISIBLE)
+	assert_eq(stage.stage.render_target_update_mode, TurntableStage.SHOWN_UPDATE)
 	assert_true(stage.is_processing())
 
 	stage.paused = true
@@ -73,7 +73,7 @@ func test_paused_disables_viewport_update_and_restores_it() -> void:
 
 	stage.paused = false
 	assert_false(stage.paused)
-	assert_eq(stage.stage.render_target_update_mode, SubViewport.UPDATE_WHEN_VISIBLE)
+	assert_eq(stage.stage.render_target_update_mode, TurntableStage.SHOWN_UPDATE)
 	assert_true(stage.is_processing())
 
 

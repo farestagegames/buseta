@@ -76,6 +76,8 @@ static var unlock_cards := true
 func _ready() -> void:
 	# Back at the menu, the next shift is the chosen route again.
 	Profile.route_override = ""
+	# A shift's graphics level scales the window's 3D; the menu needs it whole.
+	GraphicsDirector.restore_viewport(get_viewport())
 	var backing := ColorRect.new()
 	backing.color = BACKGROUND
 	backing.set_anchors_preset(Control.PRESET_FULL_RECT)

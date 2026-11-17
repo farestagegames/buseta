@@ -13,6 +13,9 @@ const DRAG_RADIANS_PER_PIXEL: float = 0.01
 const EASE_OUT_DURATION: float = 0.8
 const VIEW_TWEEN_DURATION: float = 0.5
 const BUMP_DURATION: float = 0.22
+## While it shows, the stage draws every frame rather than "when visible": on a
+## phone after a shift Home came up black, the stage never drawn (17 Nov).
+const SHOWN_UPDATE := SubViewport.UPDATE_ALWAYS
 
 const DUSK_BLUE := Color(0.38, 0.46, 0.60)
 const YELLOW_RING := Color(1.0, 0.78, 0.2)
@@ -69,7 +72,7 @@ var paused: bool = false:
 			return
 		paused = value
 		if stage != null:
-			stage.render_target_update_mode = SubViewport.UPDATE_DISABLED if paused else SubViewport.UPDATE_WHEN_VISIBLE
+			stage.render_target_update_mode = SubViewport.UPDATE_DISABLED if paused else SHOWN_UPDATE
 		set_process(not paused)
 		if paused:
 			if _ease_tween != null and _ease_tween.is_valid():
@@ -112,9 +115,8 @@ func _ready() -> void:
 	_build_scenery()
 	show_spec(CityShift.chosen_spec(), CityShift.chosen_decoration())
 
-	if paused:
-		stage.render_target_update_mode = SubViewport.UPDATE_DISABLED
-		set_process(false)
+	stage.render_target_update_mode = SubViewport.UPDATE_DISABLED if paused else SHOWN_UPDATE
+	set_process(not paused)
 
 
 func _exit_tree() -> void:

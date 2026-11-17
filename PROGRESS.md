@@ -75,6 +75,8 @@ Prompts in `delegation/opencode-prompts.md`, run in order by the owner with open
 
 **Update (17 Nov, late night):** tester feedback on 0.1.5: an alighting cue above PUERTAS ("Bajando: N" down to "Todos bajaron"), so the driver knows in cockpit view when the last rider is off; 2D only, no second mirror. Gate 997 tests, APK 38 MB; cockpit shots in `~/Claude/Games/buseta-gfx-shots/alighting-17nov/`. Not checked on a phone.
 
+**Resume here (17 Nov, black Home):** on `overnight`: Home after a shift came up black on the owner's phone; not reproduced on the Mac. Defensive fix: the drive's render scale and MSAA no longer outlive it on the window, and the menu stage draws every frame while shown (see DECISIONS). Shots in `~/Claude/Games/buseta-gfx-shots/home-black-2026-11-17/`. Not checked on a phone.
+
 **Resume here (17 Nov, restyle):** on `overnight`: Garaje and Logros (2f25fad) and Configuración (4118fae) now use the cartoon look through `MenuCartoon` (a Theme plus card, button and heading helpers); an "¡Desbloqueado!" card with a green Recoger button shows on the menu for each item or route a shift opened (b584122, `UnlockNews` + `MenuUnlockPopup`). Gate 1027 tests. Shots in `~/Claude/Games/buseta-gfx-shots/restyle-17nov/`. Rutas and Chofer full lists still use the old dark sheet. Not checked on a phone.
 
 **Resume here (17 Nov, police):** on `overnight`: a third police stop shows "Ruta fallida: la policía te paró 3 veces" in red; police fine only when the bus is in the patrol car's view cone and no building blocks the ray (`PoliceSight`); Alto Cafeto arcade clock tightened to 64/20/9 s; the "marca verde" distance prompt removed. Not checked on a phone: how often the cone catches drivers in real traffic.

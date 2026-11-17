@@ -14,6 +14,21 @@ func _ready() -> void:
 	apply()
 
 
+## The drive's render scale and MSAA are set on the window's own viewport, so they
+## would outlive the drive scene. Put back on the way out, for the menu.
+func _exit_tree() -> void:
+	restore_viewport(get_viewport())
+
+
+## Puts a viewport's 3D scale and MSAA back to the project's own settings.
+static func restore_viewport(viewport: Viewport) -> void:
+	if viewport == null:
+		return
+	viewport.scaling_3d_mode = ProjectSettings.get_setting("rendering/scaling_3d/mode", Viewport.SCALING_3D_MODE_BILINEAR)
+	viewport.scaling_3d_scale = ProjectSettings.get_setting("rendering/scaling_3d/scale", 1.0)
+	viewport.msaa_3d = ProjectSettings.get_setting("rendering/anti_aliasing/quality/msaa_3d", Viewport.MSAA_DISABLED)
+
+
 func apply() -> void:
 	if GameSettings.graphics_quality == _applied:
 		return
