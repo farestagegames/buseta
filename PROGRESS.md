@@ -71,6 +71,8 @@ Prompts in `delegation/opencode-prompts.md`, run in order by the owner with open
 | 19 | Owner feedback: Próximo desbloqueo stuck on "Dije de palma: listo" | Done | `fb30f91` the line now names the cheapest item still to earn; a ready item only once everything left is affordable |
 | 20 | Owner feedback: bus could drive far off the map and over water | Done | `MapGuard` (`scripts/world/map_guard.gd`): over water past the pavement, or 30 m from any road for 1.5 s, puts the bus back on the route with "De vuelta a la vía". Not felt on a phone |
 
+**Release (17 Nov):** version 0.1.6 / code 7, signed AAB at `build/city-bus-shift-release-v0.1.6.aab` (36 MB, cheats still on in release), not uploaded yet; notes in `store/release-notes-0.1.6.md`. Gate 1001 tests.
+
 **Update (17 Nov, late night):** tester feedback on 0.1.5: an alighting cue above PUERTAS ("Bajando: N" down to "Todos bajaron"), so the driver knows in cockpit view when the last rider is off; 2D only, no second mirror. Gate 997 tests, APK 38 MB; cockpit shots in `~/Claude/Games/buseta-gfx-shots/alighting-17nov/`. Not checked on a phone.
 
 **Resume here (17 Nov, later):** on `overnight`: cab decorations show in the Garage (2405230): a decoration tap moves the stage camera into the cab, looking at the decoration (seat covers down the aisle), with a note that they show in cockpit view while driving. Gate 1001 tests. Shots in `~/Claude/Games/buseta-gfx-shots/decor-17nov/` (the 1600x900 store_shots run hangs before the seat-cover shot, so that one is missing at that size). Not checked on a phone.
