@@ -213,7 +213,7 @@ func show_tab(index: int, tray: bool = false) -> void:
 		_content.remove_child(child)
 		child.queue_free()
 	var page: Control
-	_cartoon = not tray and (index == GARAGE_TAB or index >= 4)
+	_cartoon = not tray and (index == 1 or index == GARAGE_TAB or index >= 4)
 	if index == 0 or index == GARAGE_TAB or tray:
 		_show_chosen_bus()
 	match index:
@@ -777,15 +777,18 @@ func _town_row(town_list: Array[Dictionary], chosen_town: String) -> Control:
 		button.button_pressed = (town_name == chosen_town)
 		if is_locked:
 			button.tooltip_text = "🔒 %s" % (tr("Level %d") % lock_level)
-			var badge := _text("🔒 %s" % (tr("Level %d") % lock_level), 16, Color.WHITE)
+			var badge := _text("🔒 %s" % (tr("Level %d") % lock_level), 16, _ink() if _cartoon else Color.WHITE)
 			badge.name = "LockBadge"
 			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			var back := PanelContainer.new()
 			back.name = "LockBadgePanel"
 			back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			var style := StyleBoxFlat.new()
-			style.bg_color = Color(0.12, 0.14, 0.18, 0.92)
+			style.bg_color = MenuCartoon.PALE if _cartoon else Color(0.12, 0.14, 0.18, 0.92)
 			style.set_corner_radius_all(8)
+			if _cartoon:
+				style.set_border_width_all(2)
+				style.border_color = MenuCartoon.INK
 			style.content_margin_left = 8.0
 			style.content_margin_right = 8.0
 			style.content_margin_top = 2.0
@@ -857,7 +860,7 @@ func _time_card() -> Control:
 	var card := _card()
 	var lines := VBoxContainer.new()
 	lines.add_theme_constant_override("separation", 10)
-	lines.add_child(_text("Time of day", 24, ACCENT))
+	lines.add_child(_card_heading("Time of day"))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	var level := DriverLevel.level_for(Profile.data.xp)
@@ -874,7 +877,7 @@ func _time_card() -> Control:
 		row.add_child(button)
 	lines.add_child(row)
 	if Country.pack.data.has("weather"):
-		lines.add_child(_wrapped("Downpours are most likely in the afternoon", 19, MUTED))
+		lines.add_child(_wrapped("Downpours are most likely in the afternoon", 19, _soft()))
 	card.add_child(lines)
 	return card
 
@@ -883,7 +886,7 @@ func _difficulty_card() -> Control:
 	var card := _card()
 	var lines := VBoxContainer.new()
 	lines.add_theme_constant_override("separation", 10)
-	lines.add_child(_text("Difficulty", 24, ACCENT))
+	lines.add_child(_card_heading("Difficulty"))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	var chosen := Profile.chosen_difficulty()
@@ -898,7 +901,7 @@ func _difficulty_card() -> Control:
 			show_tab(_current_tab))
 		row.add_child(button)
 	lines.add_child(row)
-	lines.add_child(_wrapped(_difficulty_note(chosen), 19, MUTED))
+	lines.add_child(_wrapped(_difficulty_note(chosen), 19, _soft()))
 	card.add_child(lines)
 	return card
 
@@ -1395,6 +1398,11 @@ func _soft() -> Color:
 
 func _good() -> Color:
 	return MenuCartoon.GOOD if _cartoon else GOOD
+
+
+## A heading inside a card, such as "Time of day".
+func _card_heading(value: String) -> Control:
+	return MenuCartoon.heading(value, 24) if _cartoon else _text(value, 24, ACCENT)
 
 
 func _heading(value: String) -> Control:
