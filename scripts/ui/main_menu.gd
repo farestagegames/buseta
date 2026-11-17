@@ -213,7 +213,7 @@ func show_tab(index: int, tray: bool = false) -> void:
 		_content.remove_child(child)
 		child.queue_free()
 	var page: Control
-	_cartoon = not tray and (index == 1 or index == GARAGE_TAB or index >= 4)
+	_cartoon = not tray and index != 0
 	if index == 0 or index == GARAGE_TAB or tray:
 		_show_chosen_bus()
 	match index:
@@ -1092,9 +1092,12 @@ func _drivers_tab() -> Control:
 	_drivers_preview = DriverPreview.new()
 	_drivers_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side.add_child(_drivers_preview)
-	_drivers_note = _wrapped("", 20, MUTED)
+	_drivers_note = _wrapped("", 20, _soft())
 	_drivers_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	side.add_child(_drivers_note)
+	# The name sits in a white card under the bust.
+	var note_card := _card()
+	note_card.add_child(_drivers_note)
+	side.add_child(note_card)
 	show_driver_note(Profile.selected_item(Catalog.DRIVERS))
 	return page
 
