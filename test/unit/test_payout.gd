@@ -104,4 +104,4 @@ func test_a_police_stop_shows_a_failed_route_in_red() -> void:
 	assert_eq(panel._headline.get_theme_color("font_color"), ShiftEndPanel.FAILED_COLOUR)
 	assert_eq(panel.again_button.text, tr("Play again"))
 	panel.show_report(_report())
-	assert_eq(panel._headline.get_theme_color("font_color"), Color.WHITE, "a normal shift is white again")
+	assert_eq(panel._headline.get_theme_color("font_color"), MenuCartoon.INK, "a normal shift is dark ink again")

@@ -133,9 +133,42 @@ func _take(shot: Dictionary) -> void:
 		await _frames(4)
 		await _shot(shot["name"] + "_pausa")
 		hud._close_settings()
+	if OS.get_environment("REPORT") != "":
+		# REPORT=1 also saves the end-of-shift report, then the police-failed one.
+		var report_hud: DriveHud = scene.get_node("Hud")
+		report_hud._on_shift_report(_sample_report())
+		report_hud.shift_panel.skip()
+		await _frames(4)
+		await _shot(shot["name"] + "_informe")
+		var failed := _sample_report()
+		failed["police_stopped"] = "third"
+		failed["police_stops"] = 3
+		failed["stars"] = 1
+		report_hud.shift_panel.show_report(failed)
+		report_hud.shift_panel.skip()
+		await _frames(4)
+		await _shot(shot["name"] + "_informe_policia")
 	GameSettings.show_drive_controls = showed_controls
 	scene.queue_free()
 	await _frames(3)
+
+
+## A good shift's report, for the REPORT=1 shots.
+func _sample_report() -> Dictionary:
+	return {
+		"stars": 2, "time": 262.0, "score": 840, "coins": 1450, "carried": 23, "fares": 920,
+		"coin_breakdown": {"fares": 920, "tips": 210, "clean": 150, "on_time": 290, "fines": 120, "total": 1450},
+		"goals": [
+			{"text": "Finish under 5:00", "met": true},
+			{"text": "No collisions", "met": true},
+			{"text": "Every stop perfect", "met": false},
+		],
+		"categories": {"punctuality": 92.0, "accuracy": 78.0, "smoothness": 85.0, "rules": 64.0, "satisfaction": 88.0},
+		"counts": {"collisions": 0},
+		"details": "23 passengers carried", "tip": "", "fined_coins": 120,
+		"rewards": {"coins": 1450, "xp": 180, "xp_before": 820, "xp_after": 1000, "levelled_up": false,
+			"level": 4, "new_best": true, "daily_coins": 0, "achievements": []},
+	}
 
 
 func _menus() -> void:

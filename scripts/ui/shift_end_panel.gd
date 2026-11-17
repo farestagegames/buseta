@@ -21,7 +21,11 @@ const XP_SECONDS := 0.55
 const UNLOCK_SECONDS := 0.4
 const MAX_STARS := 3
 const MAX_SLOTS := 5 ## Arcade shows up to five stars.
-const FAILED_COLOUR := Color(1.0, 0.42, 0.36) ## The headline when the police end the run.
+const FAILED_COLOUR := Color("#D63A2F") ## The headline when the police end the run.
+const INK := MenuCartoon.INK
+const MUTED := MenuCartoon.MUTED
+const GOLD := MenuCartoon.ORANGE ## Headings and the total, readable on a white card.
+const FINES := Color("#D63A2F")
 
 var stars_shown: int = 0
 var menu_button: Button
@@ -64,28 +68,27 @@ var _level_sounded: bool = false
 
 
 func _ready() -> void:
-	var backing := StyleBoxFlat.new()
-	backing.bg_color = Color(0.09, 0.1, 0.13, 0.98)
-	backing.set_corner_radius_all(18)
-	add_theme_stylebox_override("panel", backing)
+	# The menu's cartoon look: a cream sheet holding two white outlined cards.
+	add_theme_stylebox_override("panel", MenuCartoon.sheet_box())
+	theme = MenuCartoon.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	gui_input.connect(_on_gui_input)
 	var margin := MarginContainer.new()
 	for side: String in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 18)
+		margin.add_theme_constant_override("margin_" + side, 4)
 	add_child(margin)
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 26)
 	margin.add_child(columns)
-	columns.add_child(_result_column())
-	columns.add_child(_breakdown_column())
+	columns.add_child(_in_card(_result_column(), 1.0))
+	columns.add_child(_in_card(_breakdown_column(), 1.25))
 
 
 func _result_column() -> Control:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 6)
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_headline = _centred(_label(21, Color.WHITE))
+	_headline = _centred(_label(21, INK))
 	_headline.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(_headline)
 
@@ -94,20 +97,20 @@ func _result_column() -> Control:
 	coins_grid.add_theme_constant_override("h_separation", 14)
 	coins_grid.add_theme_constant_override("v_separation", 1)
 	for id: String in COIN_LINE_ORDER:
-		var name_label := _label(18, Color(1, 1, 1, 0.85))
+		var name_label := _label(18, MUTED)
 		name_label.text = tr(COIN_LINE_LABELS[id])
 		coins_grid.add_child(name_label)
-		var value := _label(18, Color.WHITE)
+		var value := _label(18, INK)
 		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if id == "fines":
-			value.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4))
+			value.add_theme_color_override("font_color", FINES)
 		coins_grid.add_child(value)
 		_line_labels[id] = value
-	var total_name := _label(22, Color(0.98, 0.82, 0.3))
+	var total_name := _label(22, GOLD)
 	total_name.text = tr("Total")
 	coins_grid.add_child(total_name)
-	_total_label = _label(22, Color(0.98, 0.82, 0.3))
+	_total_label = _label(22, GOLD)
 	_total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_total_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	coins_grid.add_child(_total_label)
@@ -119,10 +122,12 @@ func _result_column() -> Control:
 	for j in MAX_SLOTS:
 		var slot := VBoxContainer.new()
 		slot.add_theme_constant_override("separation", 2)
-		var star := _centred(_label(30, Color(0.98, 0.72, 0.15)))
+		var star := _centred(_label(34, MenuCartoon.YELLOW))
+		star.add_theme_color_override("font_outline_color", INK)
+		star.add_theme_constant_override("outline_size", 6)
 		star.text = "★"
 		slot.add_child(star)
-		var goal := _centred(_label(13, Color(1, 1, 1, 0.8)))
+		var goal := _centred(_label(13, MUTED))
 		goal.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		goal.custom_minimum_size = Vector2(96.0, 0.0)
 		slot.add_child(goal)
@@ -133,29 +138,31 @@ func _result_column() -> Control:
 
 	var xp_row := VBoxContainer.new()
 	xp_row.add_theme_constant_override("separation", 2)
-	_level_text = _centred(_label(20, Color(0.98, 0.72, 0.15)))
+	_level_text = _centred(_label(20, GOLD))
 	xp_row.add_child(_level_text)
 	_xp_bar = ProgressBar.new()
 	_xp_bar.show_percentage = false
 	_xp_bar.custom_minimum_size.y = 14.0
 	_xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_bar(_xp_bar)
 	xp_row.add_child(_xp_bar)
-	_xp_text = _centred(_label(15, Color(1, 1, 1, 0.75)))
+	_xp_text = _centred(_label(15, MUTED))
 	xp_row.add_child(_xp_text)
 	column.add_child(xp_row)
 
 	var unlock_row := VBoxContainer.new()
 	unlock_row.add_theme_constant_override("separation", 2)
-	_unlock_header = _centred(_label(19, Color(0.98, 0.72, 0.15)))
+	_unlock_header = _centred(_label(19, GOLD))
 	_unlock_header.text = tr("Next unlock")
 	unlock_row.add_child(_unlock_header)
-	_unlock_label = _centred(_label(15, Color.WHITE))
+	_unlock_label = _centred(_label(15, INK))
 	_unlock_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	unlock_row.add_child(_unlock_label)
 	_unlock_bar = ProgressBar.new()
 	_unlock_bar.show_percentage = false
 	_unlock_bar.custom_minimum_size.y = 10.0
 	_unlock_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_bar(_unlock_bar)
 	unlock_row.add_child(_unlock_bar)
 	column.add_child(unlock_row)
 
@@ -174,6 +181,7 @@ func _result_column() -> Control:
 	again_button.pressed.connect(_on_main_action)
 	menu_button = _action("Menu")
 	menu_button.pressed.connect(func() -> void: get_tree().change_scene_to_file(CityShift.MENU_SCENE))
+	MenuCartoon.paint_button(again_button, MenuCartoon.YELLOW)
 	for button: Button in [again_button, menu_button]:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		actions.add_child(button)
@@ -191,7 +199,7 @@ func _breakdown_column() -> Control:
 	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 8)
 	for key: String in CATEGORY_NAMES:
-		var name_label := _label(21, Color.WHITE)
+		var name_label := _label(21, INK)
 		name_label.text = tr(CATEGORY_NAMES[key])
 		grid.add_child(name_label)
 		var bar := ProgressBar.new()
@@ -199,6 +207,10 @@ func _breakdown_column() -> Control:
 		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bar.custom_minimum_size.y = 30.0
 		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_style_bar(bar)
+		bar.add_theme_color_override("font_color", INK)
+		bar.add_theme_color_override("font_outline_color", Color.WHITE)
+		bar.add_theme_constant_override("outline_size", 4)
 		grid.add_child(bar)
 		_bars[key] = bar
 	column.add_child(grid)
@@ -208,10 +220,10 @@ func _breakdown_column() -> Control:
 	var lines := VBoxContainer.new()
 	lines.add_theme_constant_override("separation", 10)
 	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_rewards = _label(21, Color(0.55, 0.95, 0.65))
+	_rewards = _label(21, MenuCartoon.GOOD.darkened(0.15))
 	_rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lines.add_child(_rewards)
-	_details = _label(20, Color(1, 1, 1, 0.8))
+	_details = _label(20, MUTED)
 	_details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lines.add_child(_details)
 	scroll.add_child(lines)
@@ -243,7 +255,7 @@ func show_report(report: Dictionary) -> void:
 		_headline.text = tr("Arcade: %d checkpoints, %d m") % [int(report["arcade"]["checkpoints"]), roundi(float(report["arcade"]["distance"]))]
 	if report.get("gave_up", false):
 		_headline.text = tr("Your passengers have had enough: %d points in %d:%02d") % [report["score"], minutes, seconds]
-	_headline.add_theme_color_override("font_color", Color.WHITE)
+	_headline.add_theme_color_override("font_color", INK)
 	var police_failed := str(report.get("police_stopped", "")) != ""
 	if police_failed:
 		_headline.text = tr("Route failed: stopped by the police %d times") % maxi(int(report.get("police_stops", 0)), 1)
@@ -468,6 +480,30 @@ func _action(text: String) -> Button:
 	button.custom_minimum_size = Vector2(0.0, 72.0)
 	button.add_theme_font_size_override("font_size", 24)
 	return button
+
+
+## A white outlined card round one column, sharing the width by [param ratio].
+func _in_card(column: Control, ratio: float) -> Control:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", MenuCartoon.card_box())
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.size_flags_stretch_ratio = ratio
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
+	card.add_child(column)
+	return card
+
+
+## A pale outlined track with a yellow fill, like the Achievements bars.
+static func _style_bar(bar: ProgressBar) -> void:
+	var back := StyleBoxFlat.new()
+	back.bg_color = MenuCartoon.PALE
+	back.set_corner_radius_all(7)
+	back.set_border_width_all(2)
+	back.border_color = INK
+	var fill := back.duplicate() as StyleBoxFlat
+	fill.bg_color = MenuCartoon.YELLOW
+	bar.add_theme_stylebox_override("background", back)
+	bar.add_theme_stylebox_override("fill", fill)
 
 
 func _centred(label: Label) -> Label:
