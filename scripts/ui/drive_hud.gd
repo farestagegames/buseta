@@ -17,6 +17,12 @@ const GEAR_SIZE := Vector2(200.0, 72.0)
 ## The route's goals checklist, on the left under the pause and camera buttons.
 const GOALS_SIZE := Vector2(300.0, 64.0)
 const GOALS_TOP := EDGE + CORNER_BUTTON + 12.0
+## The top of the doors button, from the bottom edge.
+const ABOVE_PEDALS := -EDGE - 340.0 - GAP - 100.0
+const ALIGHTING_SIZE := Vector2(320.0, 40.0)
+const ALIGHTING_FONT := 28
+const GETTING_OFF_COLOUR := Color(1.0, 0.82, 0.3)
+const ALL_OFF_COLOUR := Color(0.45, 0.95, 0.5)
 
 var wheel: SteeringWheelControl
 var throttle_pedal: PedalControl
@@ -35,6 +41,10 @@ var penalty_toast: PenaltyToast
 var tutorial_panel: TutorialPanel
 var goals_hud: GoalsHud
 var stop_feedback: StopFeedback
+## "Getting off: 3" then "Everyone's off" above the doors button, for the
+## cockpit where the rear door can't be seen.
+var alighting_label: Label
+var alighting_cue := AlightingCue.new()
 var celebration_banner: CelebrationBanner
 
 var _controls: Control
@@ -111,6 +121,8 @@ func _ready() -> void:
 	stop_feedback = StopFeedback.new()
 	stop_feedback.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(stop_feedback)
+
+	_build_alighting_label()
 
 	celebration_banner = CelebrationBanner.new()
 	_root.add_child(celebration_banner)
@@ -264,7 +276,7 @@ func _build_buttons() -> void:
 	_indicator_left.pressed_down.connect(func() -> void: GameEvents.indicator_toggle_requested.emit(BusIndicators.TurnSide.LEFT))
 	_indicator_right.pressed_down.connect(func() -> void: GameEvents.indicator_toggle_requested.emit(BusIndicators.TurnSide.RIGHT))
 
-	var above_pedals := -EDGE - 340.0 - GAP - 100.0
+	var above_pedals := ABOVE_PEDALS
 	# Only near a stop or while the doors are open; it keeps its words, as the
 	# call to action at a stop.
 	_door_button = _action_button("DOORS", Vector2(1.0, 1.0), Vector2(-EDGE - 150.0, above_pedals), Vector2(150.0, 100.0))
@@ -281,6 +293,43 @@ func _build_buttons() -> void:
 		-EDGE - 230.0 - GAP - 96.0 - GAP - GEAR_SIZE.y), GEAR_SIZE)
 	gear_switch.gear_toggled.connect(GameEvents.gear_toggle_requested.emit)
 	_controls.add_child(gear_switch)
+
+
+func _build_alighting_label() -> void:
+	alighting_label = Label.new()
+	alighting_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	alighting_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	alighting_label.add_theme_font_size_override("font_size", ALIGHTING_FONT)
+	alighting_label.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.06))
+	alighting_label.add_theme_constant_override("outline_size", 8)
+	alighting_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	alighting_label.visible = false
+	_place(alighting_label, Vector2(1.0, 1.0), Vector2(-EDGE - ALIGHTING_SIZE.x, ABOVE_PEDALS - GAP / 2.0 - ALIGHTING_SIZE.y), ALIGHTING_SIZE)
+	alighting_label.pivot_offset = ALIGHTING_SIZE
+	_root.add_child(alighting_label)
+	GameEvents.stop_session_started.connect(func(_stop: int, alighting: int, _boarding: int) -> void:
+		alighting_cue.start(alighting)
+		_show_alighting())
+	GameEvents.passenger_alighted.connect(func(_stop: int) -> void:
+		alighting_cue.alighted()
+		_show_alighting())
+	GameEvents.stop_served.connect(func(_stop: int, _name: String, _behind: int) -> void:
+		alighting_cue.end()
+		_show_alighting())
+
+
+func _show_alighting() -> void:
+	alighting_label.visible = alighting_cue.is_shown()
+	if not alighting_label.visible:
+		return
+	if alighting_cue.state == AlightingCue.State.ALL_OFF:
+		alighting_label.text = tr("Everyone's off")
+		alighting_label.add_theme_color_override("font_color", ALL_OFF_COLOUR)
+	else:
+		alighting_label.text = tr("Getting off: %d") % alighting_cue.left
+		alighting_label.add_theme_color_override("font_color", GETTING_OFF_COLOUR)
+	alighting_label.scale = Vector2.ONE * 1.15
+	create_tween().tween_property(alighting_label, "scale", Vector2.ONE, 0.18)
 
 
 ## The radio and its station while paused, in a column beside the pause sheet.

@@ -420,5 +420,7 @@
  "Buseta": "Buseta",
  "Chiva": "Chiva",
  "All routes": "Todas las rutas",
- "All drivers": "Todos los choferes"
+ "All drivers": "Todos los choferes",
+ "Getting off: %d": "Bajando: %d",
+ "Everyone's off": "Todos bajaron"
 }
