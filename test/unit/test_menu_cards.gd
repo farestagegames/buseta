@@ -120,3 +120,28 @@ func test_menu_home_drawer_arcade_button_min_height() -> void:
 
 	assert_true(button.custom_minimum_size.y >= 48,
 		"ArcadeButton min height %d should be >= 48" % button.custom_minimum_size.y)
+
+func test_quick_tray_window_keeps_order_the_chosen_one_and_at_most_four() -> void:
+	assert_eq(MenuQuickTray.window(["a", "b"], "b"), ["a", "b"])
+	assert_eq(MenuQuickTray.window(["a", "b", "c", "d", "e", "f"], "b"), ["a", "b", "c", "d"])
+	assert_eq(MenuQuickTray.window(["a", "b", "c", "d", "e", "f"], "e"), ["b", "c", "d", "e"])
+	assert_eq(MenuQuickTray.window(["a", "b", "c", "d", "e"], "missing"), ["a", "b", "c", "d"])
+
+
+func test_quick_tray_cards_emit_their_id_and_the_more_card() -> void:
+	var tray := MenuQuickTray.new()
+	add_child_autofree(tray)
+	var card := tray.add_pick("x", "Ruta X", "Nueva", MenuIcon.new(), true)
+	var more := tray.add_more("Todas", "routes")
+	watch_signals(tray)
+	card.pressed.emit()
+	more.pressed.emit()
+	assert_signal_emitted_with_parameters(tray, "picked", ["x"])
+	assert_signal_emitted(tray, "more_pressed")
+	assert_gte(card.custom_minimum_size.y, 48.0, "a thumb-sized card")
+
+
+func test_the_tab_bar_blank_matches_turno_or_shrinks_to_fit() -> void:
+	assert_eq(MainMenu.centred_ghost_width(1500.0, 600.0, 300.0, 64.0), 300.0)
+	assert_eq(MainMenu.centred_ghost_width(1236.0, 640.0, 300.0, 64.0), 232.0)
+	assert_eq(MainMenu.centred_ghost_width(900.0, 640.0, 300.0, 64.0), 0.0)

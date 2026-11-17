@@ -163,6 +163,12 @@ func _menus() -> void:
 		menu.show_tab(tab[0])
 		await _seconds(0.6)
 		await _shot(tab[1])
+	# The quick-pick trays the Routes and Crew buttons open over the stage.
+	Profile.data.owned[Catalog.DRIVERS].append("fanny_mosquera")
+	for tray: Array in [[1, "10e_rutas_rapidas"], [3, "10f_chofer_rapido"]]:
+		menu.open_tab(tray[0])
+		await _seconds(0.6)
+		await _shot(tray[1])
 	# Home with Alto Cafeto picked on the Routes tab: its own Carrera Express.
 	Profile.data.town = "Alto Cafeto"
 	menu.show_tab(0)

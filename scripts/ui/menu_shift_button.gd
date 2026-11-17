@@ -14,7 +14,7 @@ const RADIUS := 18
 const OUTLINE_WIDTH := 3
 const SHADOW_SIZE := 6
 const SHADOW_OFFSET := Vector2(0, 4)
-const FONT_SIZE := 32
+const FONT_SIZE := 28
 const TEXT_OUTLINE := 6
 const ICON_SIZE := 30.0
 ## Space either side of the word and icon, and between the two.

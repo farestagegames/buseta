@@ -19,7 +19,7 @@ const BAR_SHADOW_SIZE := 6
 const BAR_SHADOW_OFFSET := Vector2(0, 4)
 const ACTIVE_RADIUS := 16
 const ACTIVE_OUTLINE_WIDTH := 3
-const BUTTON_MIN_SIZE := Vector2(120, 68)
+const BUTTON_MIN_SIZE := Vector2(112, 68)
 const ICON_SIZE := Vector2(30, 30)
 const LABEL_FONT_SIZE := 18
 ## Space between the bar's outline and the tabs, and inside each tab.

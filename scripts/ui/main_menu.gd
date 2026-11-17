@@ -62,6 +62,9 @@ var _arrows: Array[Button] = []
 var _volume_before_mute: float = 0.7
 var _slide: Tween
 var _sheet_panel: PanelContainer
+## Routes and Crew show a quick-pick tray over the stage instead of their full list.
+var _tray := false
+var _tab_ghost: Control
 
 
 func _ready() -> void:
@@ -142,26 +145,36 @@ func _on_settings_changed() -> void:
 		_rebuild_tab_bar()
 		_refresh_header()
 		if _current_tab != SETTINGS_TAB:
-			show_tab(_current_tab)
+			show_tab(_current_tab, _tray)
 
 
-func show_tab(index: int) -> void:
+## What a tab button opens: Routes and Crew start on their quick-pick tray.
+func open_tab(index: int) -> void:
+	show_tab(index, index == 1 or index == DRIVERS_TAB)
+
+
+## Shows a tab's full page, or with [param tray] the quick picks of Routes or Crew.
+func show_tab(index: int, tray: bool = false) -> void:
+	tray = tray and (index == 1 or index == DRIVERS_TAB)
 	# Redrawing the same tab, after buying or selecting, keeps the list where it was.
 	var offset := 0
 	var old_list := TouchScroll.first_in(_content)
-	var same := index == _current_tab
+	var same := index == _current_tab and tray == _tray
 	if same and old_list != null:
 		offset = old_list.scroll_vertical
 	_current_tab = index
+	_tray = tray
 	if index < TAB_LABELS.size():
 		_tab_bar.select(index, false)
 	for child in _content.get_children():
 		_content.remove_child(child)
 		child.queue_free()
 	var page: Control
-	if index == 0 or index == GARAGE_TAB:
+	if index == 0 or index == GARAGE_TAB or tray:
 		_show_chosen_bus()
 	match index:
+		_ when tray:
+			page = _quick_tray(index)
 		0:
 			page = _home_tab()
 		1:
@@ -179,7 +192,7 @@ func show_tab(index: int) -> void:
 	_content.add_child(page)
 	# The stage only renders while it shows: Home and the Garage, where the bus is
 	# tried on. Behind a full sheet it would cost the phone's GPU for nothing.
-	var stage_shows := index == 0 or index == GARAGE_TAB
+	var stage_shows := index == 0 or index == GARAGE_TAB or tray
 	_stage.paused = not stage_shows
 	_shift_stage(GARAGE_STAGE_SHIFT if index == GARAGE_TAB else 0.0)
 	# Home and the Garage float over the stage; the other tabs sit in one sheet.
@@ -242,7 +255,7 @@ func _header() -> Control:
 	_coins_label = _top_bar.coins_label
 	if Cheats.available():
 		_top_bar.title_label.gui_input.connect(_on_title_input)
-	_top_bar.driver_pressed.connect(show_tab.bind(DRIVERS_TAB))
+	_top_bar.driver_pressed.connect(open_tab.bind(DRIVERS_TAB))
 	_top_bar.icon_pressed.connect(_on_icon_pressed)
 	_top_bar.set_muted(GameSettings.sound_volume <= 0.0)
 	return _top_bar
@@ -288,7 +301,7 @@ func open_cheats() -> void:
 
 
 func _on_cheat_used() -> void:
-	show_tab(_current_tab)
+	show_tab(_current_tab, _tray)
 
 
 func _refresh_header() -> void:
@@ -302,12 +315,18 @@ func _refresh_header() -> void:
 func _bottom_row() -> Control:
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 16)
+	row.add_theme_constant_override("separation", 8)
+	# A blank as wide as TURNO on the left keeps the tab bar in the middle of the
+	# screen, lined up with the trays and the route chip above it.
+	_tab_ghost = Control.new()
+	_tab_ghost.name = "TabGhost"
+	_tab_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(_tab_ghost)
 	row.add_child(_spacer())
 	_tab_bar = MenuTabBar.new()
 	_tab_bar.name = "TabBar"
 	_tab_bar.size_flags_vertical = Control.SIZE_SHRINK_END
-	_tab_bar.tab_selected.connect(show_tab)
+	_tab_bar.tab_selected.connect(open_tab)
 	row.add_child(_tab_bar)
 	_rebuild_tab_bar()
 	row.add_child(_spacer())
@@ -317,7 +336,24 @@ func _bottom_row() -> Control:
 	_shift_button.pressed.connect(_start_shift)
 	_shift_button.set_pulsing(true)
 	row.add_child(_shift_button)
+	row.resized.connect(_centre_tab_bar)
+	_tab_bar.minimum_size_changed.connect(_centre_tab_bar)
+	_shift_button.minimum_size_changed.connect(_centre_tab_bar)
 	return row
+
+
+## Sizes the left blank to TURNO's width, or less when the screen is too narrow
+## for both, so the tab bar sits as near the middle as it can.
+func _centre_tab_bar() -> void:
+	var row := _tab_ghost.get_parent() as Control
+	var gaps := 4.0 * float(row.get_theme_constant("separation"))
+	_tab_ghost.custom_minimum_size.x = centred_ghost_width(row.size.x, _tab_bar.get_combined_minimum_size().x,
+		_shift_button.get_combined_minimum_size().x, gaps)
+
+
+## The blank's width: TURNO's own, cut down to what the row leaves free.
+static func centred_ghost_width(row_width: float, bar_width: float, shift_width: float, gaps: float) -> float:
+	return clampf(row_width - bar_width - shift_width - gaps, 0.0, shift_width)
 
 
 func _spacer() -> Control:
@@ -504,9 +540,71 @@ func _home_tab() -> Control:
 	chip.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE)
 	chip.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	chip.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	chip.pressed.connect(show_tab.bind(1))
+	chip.pressed.connect(open_tab.bind(1))
 	page.add_child(chip)
 	return page
+
+
+## The quick picks of Routes or Crew in a row over the stage, above the tab bar.
+func _quick_tray(index: int) -> Control:
+	var page := Control.new()
+	page.name = "QuickPage"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var tray := MenuQuickTray.new()
+	tray.name = "QuickTray"
+	if index == 1:
+		_fill_route_tray(tray)
+	else:
+		_fill_driver_tray(tray)
+	tray.more_pressed.connect(show_tab.bind(index))
+	tray.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE)
+	tray.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	tray.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	page.add_child(tray)
+	return page
+
+
+## The owned routes of the chosen town, best score on each.
+func _fill_route_tray(tray: MenuQuickTray) -> void:
+	var routes := Profile.catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool:
+		return not Catalog.is_arcade(item))
+	var towns := route_towns(routes)
+	var town := Profile.chosen_town()
+	var ids := []
+	for item: Dictionary in routes:
+		if Profile.data.owns(Catalog.ROUTES, item["id"]) and towns.get(item["id"], "") == town:
+			ids.append(item["id"])
+	var chosen: String = Profile.data.selected[Catalog.ROUTES]
+	for id: String in MenuQuickTray.window(ids, chosen):
+		var item := Profile.catalog.find(Catalog.ROUTES, id)
+		var best: int = Profile.data.best_scores.get(id, -1)
+		var detail := tr("Best score: %d") % best if best >= 0 else tr("Not driven yet")
+		var icon := MenuIcon.new()
+		icon.icon = "routes"
+		icon.colour = TAB_COLOURS[1]
+		tray.add_pick(id, tr(item["name"]), detail, icon, id == chosen)
+	tray.add_more(tr("All routes"), "routes")
+	tray.picked.connect(func(id: String) -> void:
+		Profile.select(Catalog.ROUTES, id)
+		show_tab(1, true))
+
+
+## The owned drivers, the one at the wheel marked.
+func _fill_driver_tray(tray: MenuQuickTray) -> void:
+	var ids := []
+	for item: Dictionary in Profile.catalog.items(Catalog.DRIVERS):
+		if Profile.data.owns(Catalog.DRIVERS, item["id"]):
+			ids.append(item["id"])
+	var chosen: String = Profile.data.selected[Catalog.DRIVERS]
+	for id: String in MenuQuickTray.window(ids, chosen):
+		var item := Profile.catalog.find(Catalog.DRIVERS, id)
+		var badge := DriverBadge.new(DriverLook.from_item(item), MenuQuickTray.ART)
+		tray.add_pick(id, MenuTopBar.short_name(str(item["name"])), tr("Selected") if id == chosen else tr("Select"), badge, id == chosen)
+	tray.add_more(tr("All drivers"), "driver")
+	tray.picked.connect(func(id: String) -> void:
+		Profile.select(Catalog.DRIVERS, id)
+		_refresh_header()
+		show_tab(DRIVERS_TAB, true))
 
 
 ## Carrera Express in one tap, without changing the chosen route. Locked below its

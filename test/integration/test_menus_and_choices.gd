@@ -306,6 +306,34 @@ func test_the_card_dots_ring_a_paint_being_tried_on() -> void:
 	assert_eq(dots["chosen"], MainMenu.CARD_DOTS - 1, "a paint past the sixth takes the last place")
 
 
+func test_routes_and_crew_buttons_open_a_quick_tray_over_the_stage() -> void:
+	Profile.data.owned[Catalog.ROUTES].append("starter_b")
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	menu.open_tab(1)
+	await wait_frames(1)
+	var tray: MenuQuickTray = menu.find_child("QuickTray", true, false)
+	assert_not_null(tray)
+	assert_false(menu._stage.paused, "the stage shows behind the tray")
+	var pick: Button = tray.find_child("Pick_starter_b", true, false)
+	assert_not_null(pick)
+	pick.pressed.emit()
+	await wait_frames(1)
+	assert_eq(Profile.data.selected[Catalog.ROUTES], "starter_b")
+	assert_not_null(menu.find_child("QuickTray", true, false), "picking keeps the tray")
+	(menu.find_child("MoreCard", true, false) as Button).pressed.emit()
+	await wait_frames(1)
+	assert_null(menu.find_child("QuickTray", true, false))
+	assert_not_null(TouchScroll.first_in(menu._content), "the full list opens")
+	assert_true(menu._stage.paused)
+	menu.open_tab(MainMenu.DRIVERS_TAB)
+	await wait_frames(1)
+	tray = menu.find_child("QuickTray", true, false)
+	var chosen: String = Profile.data.selected[Catalog.DRIVERS]
+	assert_not_null(tray.find_child("Pick_" + chosen, true, false))
+
+
 func test_route_only_bus_is_not_on_sale_in_the_garage() -> void:
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)
