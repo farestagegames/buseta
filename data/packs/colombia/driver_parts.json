@@ -1,0 +1,894 @@
+{
+ "slot_levels": [
+  10,
+  20,
+  30
+ ],
+ "name_tag": {
+  "cost": 500,
+  "first_level": 15,
+  "every": 5
+ },
+ "parts": [
+  {
+   "id": "skin_1",
+   "tab": "cara",
+   "field": "skin",
+   "value": [
+    0.32,
+    0.2,
+    0.13
+   ],
+   "name": "Skin tone 1"
+  },
+  {
+   "id": "skin_2",
+   "tab": "cara",
+   "field": "skin",
+   "value": [
+    0.42,
+    0.28,
+    0.18
+   ],
+   "name": "Skin tone 2"
+  },
+  {
+   "id": "skin_3",
+   "tab": "cara",
+   "field": "skin",
+   "value": [
+    0.52,
+    0.36,
+    0.24
+   ],
+   "name": "Skin tone 3"
+  },
+  {
+   "id": "skin_4",
+   "tab": "cara",
+   "field": "skin",
+   "value": [
+    0.6,
+    0.42,
+    0.29
+   ],
+   "name": "Skin tone 4"
+  },
+  {
+   "id": "skin_5",
+   "tab": "cara",
+   "field": "skin",
+   "value": [
+    0.7,
+    0.52,
+    0.38
+   ],
+   "name": "Skin tone 5"
+  },
+  {
+   "id": "skin_6",
+   "tab": "cara",
+   "field": "skin",
+   "value": [
+    0.8,
+    0.62,
+    0.48
+   ],
+   "name": "Skin tone 6"
+  },
+  {
+   "id": "skin_7",
+   "tab": "cara",
+   "field": "skin",
+   "value": [
+    0.88,
+    0.72,
+    0.6
+   ],
+   "name": "Skin tone 7"
+  },
+  {
+   "id": "skin_8",
+   "tab": "cara",
+   "field": "skin",
+   "value": [
+    0.94,
+    0.8,
+    0.7
+   ],
+   "name": "Skin tone 8"
+  },
+  {
+   "id": "hair_short",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "short",
+   "name": "Short"
+  },
+  {
+   "id": "hair_fade",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "fade",
+   "name": "Fade"
+  },
+  {
+   "id": "hair_bob",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "bob",
+   "name": "Bob"
+  },
+  {
+   "id": "hair_curly",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "curly",
+   "name": "Curly"
+  },
+  {
+   "id": "hair_bald",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "bald",
+   "name": "Bald"
+  },
+  {
+   "id": "hair_ponytail",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "ponytail",
+   "name": "Ponytail"
+  },
+  {
+   "id": "hair_hijab",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "hijab",
+   "name": "Hijab"
+  },
+  {
+   "id": "hair_afro",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "afro",
+   "name": "Afro",
+   "level": 11
+  },
+  {
+   "id": "hair_bun",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "bun",
+   "name": "Bun",
+   "level": 12
+  },
+  {
+   "id": "hair_plaits",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "plaits",
+   "name": "Two plaits",
+   "level": 13
+  },
+  {
+   "id": "hair_braids",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "braids",
+   "name": "Braids",
+   "level": 14
+  },
+  {
+   "id": "hair_long",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "long",
+   "name": "Long",
+   "cost": 300
+  },
+  {
+   "id": "hair_plait",
+   "tab": "pelo",
+   "field": "hair_style",
+   "value": "plait",
+   "name": "One plait",
+   "level": 16
+  },
+  {
+   "id": "haircol_black",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "name": "Black"
+  },
+  {
+   "id": "haircol_dark_brown",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.2,
+    0.12,
+    0.07
+   ],
+   "name": "Dark brown"
+  },
+  {
+   "id": "haircol_brown",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.36,
+    0.22,
+    0.12
+   ],
+   "name": "Brown"
+  },
+  {
+   "id": "haircol_blonde",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.78,
+    0.62,
+    0.34
+   ],
+   "name": "Blonde"
+  },
+  {
+   "id": "haircol_auburn",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.48,
+    0.18,
+    0.08
+   ],
+   "name": "Auburn",
+   "level": 12
+  },
+  {
+   "id": "haircol_grey",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.66,
+    0.66,
+    0.64
+   ],
+   "name": "Grey",
+   "level": 15
+  },
+  {
+   "id": "haircol_white",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.92,
+    0.92,
+    0.9
+   ],
+   "name": "White",
+   "level": 18
+  },
+  {
+   "id": "haircol_blue",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.15,
+    0.3,
+    0.75
+   ],
+   "name": "Blue",
+   "cost": 400
+  },
+  {
+   "id": "haircol_pink",
+   "tab": "pelo",
+   "field": "hair",
+   "value": [
+    0.9,
+    0.4,
+    0.6
+   ],
+   "name": "Pink",
+   "cost": 400
+  },
+  {
+   "id": "beard_none",
+   "tab": "cara",
+   "field": "beard",
+   "value": "",
+   "name": "No beard"
+  },
+  {
+   "id": "beard_moustache",
+   "tab": "cara",
+   "field": "beard",
+   "value": "moustache",
+   "name": "Moustache",
+   "level": 11
+  },
+  {
+   "id": "beard_thin",
+   "tab": "cara",
+   "field": "beard",
+   "value": "thin_moustache",
+   "name": "Thin moustache",
+   "level": 12
+  },
+  {
+   "id": "beard_goatee",
+   "tab": "cara",
+   "field": "beard",
+   "value": "goatee",
+   "name": "Goatee",
+   "level": 13
+  },
+  {
+   "id": "beard_full",
+   "tab": "cara",
+   "field": "beard",
+   "value": "full",
+   "name": "Full beard",
+   "level": 15
+  },
+  {
+   "id": "greying",
+   "tab": "pelo",
+   "field": "greying",
+   "value": true,
+   "name": "Grey temples",
+   "level": 17
+  },
+  {
+   "id": "outfit_polo",
+   "tab": "camisa",
+   "field": "outfit",
+   "value": "polo",
+   "name": "Polo"
+  },
+  {
+   "id": "outfit_guayabera",
+   "tab": "camisa",
+   "field": "outfit",
+   "value": "guayabera",
+   "name": "Guayabera",
+   "level": 12
+  },
+  {
+   "id": "cloth_white",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.95,
+    0.95,
+    0.93
+   ],
+   "name": "White"
+  },
+  {
+   "id": "cloth_navy",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.15,
+    0.2,
+    0.35
+   ],
+   "name": "Navy"
+  },
+  {
+   "id": "cloth_sky",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.4,
+    0.64,
+    0.86
+   ],
+   "name": "Sky blue"
+  },
+  {
+   "id": "cloth_red",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.82,
+    0.18,
+    0.15
+   ],
+   "name": "Red"
+  },
+  {
+   "id": "cloth_yellow",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.96,
+    0.8,
+    0.2
+   ],
+   "name": "Yellow"
+  },
+  {
+   "id": "cloth_green",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.2,
+    0.55,
+    0.3
+   ],
+   "name": "Green"
+  },
+  {
+   "id": "cloth_black",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.1,
+    0.1,
+    0.11
+   ],
+   "name": "Black",
+   "level": 11
+  },
+  {
+   "id": "cloth_orange",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.95,
+    0.5,
+    0.15
+   ],
+   "name": "Orange",
+   "level": 12
+  },
+  {
+   "id": "cloth_purple",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.45,
+    0.25,
+    0.6
+   ],
+   "name": "Purple",
+   "level": 14
+  },
+  {
+   "id": "cloth_teal",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.1,
+    0.55,
+    0.55
+   ],
+   "name": "Teal",
+   "level": 16
+  },
+  {
+   "id": "cloth_pink",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.92,
+    0.45,
+    0.62
+   ],
+   "name": "Pink",
+   "cost": 250
+  },
+  {
+   "id": "cloth_khaki",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.72,
+    0.64,
+    0.45
+   ],
+   "name": "Khaki",
+   "cost": 250
+  },
+  {
+   "id": "cloth_lime",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.6,
+    0.85,
+    0.25
+   ],
+   "name": "Lime",
+   "cost": 350
+  },
+  {
+   "id": "cloth_maroon",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.45,
+    0.1,
+    0.14
+   ],
+   "name": "Maroon",
+   "cost": 350
+  },
+  {
+   "id": "hat_none",
+   "tab": "sombrero",
+   "field": "hat",
+   "value": "",
+   "name": "No hat"
+  },
+  {
+   "id": "hat_cap",
+   "tab": "sombrero",
+   "field": "hat",
+   "value": "cap",
+   "name": "Cap",
+   "level": 11
+  },
+  {
+   "id": "hat_headwrap",
+   "tab": "sombrero",
+   "field": "hat",
+   "value": "headwrap",
+   "name": "Headwrap",
+   "level": 13
+  },
+  {
+   "id": "hat_hard_hat",
+   "tab": "sombrero",
+   "field": "hat",
+   "value": "hard_hat",
+   "name": "Hard hat",
+   "level": 14
+  },
+  {
+   "id": "hat_sun_hat",
+   "tab": "sombrero",
+   "field": "hat",
+   "value": "sun_hat",
+   "name": "Sun hat",
+   "cost": 300
+  },
+  {
+   "id": "hat_vueltiao",
+   "tab": "sombrero",
+   "field": "hat",
+   "value": "vueltiao",
+   "name": "Sombrero vueltiao",
+   "cost": 450
+  },
+  {
+   "id": "glasses",
+   "tab": "extras",
+   "field": "glasses",
+   "value": true,
+   "name": "Glasses",
+   "level": 12
+  },
+  {
+   "id": "earrings",
+   "tab": "extras",
+   "field": "earrings",
+   "value": true,
+   "name": "Earrings",
+   "level": 13
+  },
+  {
+   "id": "towel",
+   "tab": "extras",
+   "field": "towel",
+   "value": true,
+   "name": "Towel",
+   "cost": 250
+  },
+  {
+   "id": "cloth_route_blue",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.1,
+    0.35,
+    0.75
+   ],
+   "name": "Route blue",
+   "stars_route": "starter_a"
+  },
+  {
+   "id": "cloth_sea_green",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.1,
+    0.65,
+    0.6
+   ],
+   "name": "Sea green",
+   "stars_route": "starter_b"
+  },
+  {
+   "id": "cloth_malecon_red",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.85,
+    0.08,
+    0.12
+   ],
+   "name": "Malecón red",
+   "stars_route": "route_01"
+  },
+  {
+   "id": "cloth_mango",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.98,
+    0.65,
+    0.15
+   ],
+   "name": "Mango",
+   "stars_route": "route_02"
+  },
+  {
+   "id": "cloth_terminal_grey",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.5,
+    0.52,
+    0.55
+   ],
+   "name": "Terminal grey",
+   "stars_route": "route_03"
+  },
+  {
+   "id": "cloth_tour_gold",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.9,
+    0.72,
+    0.18
+   ],
+   "name": "Tour gold",
+   "stars_route": "route_04"
+  },
+  {
+   "id": "cloth_ola_blue",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.05,
+    0.45,
+    0.85
+   ],
+   "name": "La Ola blue",
+   "stars_route": "troncal"
+  },
+  {
+   "id": "cloth_coral",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.98,
+    0.45,
+    0.4
+   ],
+   "name": "Coral",
+   "stars_route": "libre"
+  },
+  {
+   "id": "cloth_racing_orange",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    1.0,
+    0.4,
+    0.0
+   ],
+   "name": "Racing orange",
+   "stars_route": "arcade"
+  },
+  {
+   "id": "cloth_coffee",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.4,
+    0.24,
+    0.14
+   ],
+   "name": "Coffee",
+   "stars_route": "cafeto_c0"
+  },
+  {
+   "id": "cloth_mirador_green",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.25,
+    0.5,
+    0.25
+   ],
+   "name": "Mirador green",
+   "stars_route": "cafeto_c1"
+  },
+  {
+   "id": "cloth_leather",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.5,
+    0.3,
+    0.15
+   ],
+   "name": "Leather",
+   "stars_route": "cafeto_c2"
+  },
+  {
+   "id": "cloth_cherry",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.7,
+    0.1,
+    0.15
+   ],
+   "name": "Coffee cherry",
+   "stars_route": "cafeto_libre"
+  },
+  {
+   "id": "cloth_mountain_blue",
+   "tab": "colour",
+   "field": "cloth",
+   "value": [
+    0.3,
+    0.45,
+    0.7
+   ],
+   "name": "Mountain blue",
+   "stars_route": "arcade_cafeto"
+  }
+ ],
+ "specials": [
+  {
+   "id": "gorra_ruta",
+   "route": "starter_a",
+   "field": "hat",
+   "value": "gorra_ruta",
+   "name": "Route cap",
+   "description": "A cap with a little bus badge on the front",
+   "copy_cost": 600
+  },
+  {
+   "id": "aviators",
+   "route": "starter_b",
+   "field": "eyewear",
+   "value": "aviators",
+   "name": "Aviator sunglasses",
+   "description": "Gold-rimmed shades for the seafront",
+   "copy_cost": 600
+  },
+  {
+   "id": "rojiblanca",
+   "route": "route_01",
+   "field": "outfit",
+   "value": "rojiblanca",
+   "name": "Red and white striped shirt",
+   "description": "Stripes for the home side, no crest needed",
+   "copy_cost": 600
+  },
+  {
+   "id": "gold_chain",
+   "route": "route_02",
+   "field": "neck",
+   "value": "gold_chain",
+   "name": "Gold chain",
+   "description": "Thick and shiny, worn over the shirt",
+   "copy_cost": 600
+  },
+  {
+   "id": "rosary",
+   "route": "route_03",
+   "field": "neck",
+   "value": "rosary",
+   "name": "Rosary",
+   "description": "Wooden beads for a safe trip",
+   "copy_cost": 600
+  },
+  {
+   "id": "vueltiao_tricolor",
+   "route": "route_04",
+   "field": "hat",
+   "value": "vueltiao_tricolor",
+   "name": "Tricolour vueltiao",
+   "description": "A vueltiao with a yellow, blue and red band",
+   "copy_cost": 600
+  },
+  {
+   "id": "chaleco",
+   "route": "troncal",
+   "field": "outfit",
+   "value": "chaleco",
+   "name": "Reflective vest",
+   "description": "Bright and safe, like the trunk-line crews",
+   "copy_cost": 600
+  },
+  {
+   "id": "floral",
+   "route": "libre",
+   "field": "outfit",
+   "value": "floral",
+   "name": "Flower shirt",
+   "description": "Big flowers for the endless coast road",
+   "copy_cost": 600
+  },
+  {
+   "id": "gloves",
+   "route": "arcade",
+   "field": "hands",
+   "value": "gloves",
+   "name": "Racing gloves",
+   "description": "Grip the wheel like a champion",
+   "copy_cost": 600
+  },
+  {
+   "id": "aguadeno",
+   "route": "cafeto_c0",
+   "field": "hat",
+   "value": "aguadeno",
+   "name": "Aguadeño hat",
+   "description": "A wide straw hat from the coffee towns",
+   "copy_cost": 600
+  },
+  {
+   "id": "ruana",
+   "route": "cafeto_c1",
+   "field": "outfit",
+   "value": "ruana",
+   "name": "Coffee grower's ruana",
+   "description": "A warm wool poncho for the mountain mornings",
+   "copy_cost": 600
+  },
+  {
+   "id": "carriel",
+   "route": "cafeto_c2",
+   "field": "shoulder",
+   "value": "carriel",
+   "name": "Carriel",
+   "description": "A leather shoulder bag with many pockets",
+   "copy_cost": 600
+  },
+  {
+   "id": "panuelo",
+   "route": "cafeto_libre",
+   "field": "neck",
+   "value": "panuelo",
+   "name": "Red neckerchief",
+   "description": "Tied at the neck, as the mule drivers wear it",
+   "copy_cost": 600
+  },
+  {
+   "id": "mirror_shades",
+   "route": "arcade_cafeto",
+   "field": "eyewear",
+   "value": "mirror_shades",
+   "name": "Mirror shades",
+   "description": "See the bends coming",
+   "copy_cost": 600
+  }
+ ]
+}

@@ -62,3 +62,26 @@ static func _add(cards: Array[Dictionary], seen: Dictionary, kind: String, item:
 		description = BLURBS[kind]
 	cards.append({"kind": kind, "id": str(item.get("id", "")), "name": str(item.get("name", "")),
 		"description": description, "level": level})
+
+
+## Cards for custom drivers between two levels: a new slot, a name tag and one
+## card naming the parts the levels unlocked. Nothing before the first slot opens.
+static func custom_between(parts: DriverParts, level_before: int, level_after: int) -> Array[Dictionary]:
+	var cards: Array[Dictionary] = []
+	if parts.is_empty() or level_after <= level_before or level_after < parts.first_slot_level():
+		return cards
+	for level: int in parts.slot_levels():
+		if level > level_before and level <= level_after:
+			cards.append({"kind": "custom_slot", "id": "slot_%d" % level, "name": "A custom driver slot",
+				"description": "Make your own driver from the Crew tray", "level": level})
+	for level: int in parts.name_tag_levels_between(level_before, level_after):
+		cards.append({"kind": "custom_name_tag", "id": "name_tag_%d" % level, "name": "Name tag",
+			"description": "Rename one of your drivers", "level": level})
+	var names: Array[String] = []
+	for p: Dictionary in parts.parts():
+		if int(p.get("cost", 0)) == 0 and reached(p, maxi(level_before, parts.first_slot_level()), level_after) and int(p.get("level", 0)) > 0:
+			names.append(str(p["name"]))
+	if not names.is_empty():
+		cards.append({"kind": "custom_parts", "id": "parts_%d" % level_after, "name": "New driver parts",
+			"description": ", ".join(names), "level": level_after, "names": names})
+	return cards

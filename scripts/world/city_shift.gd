@@ -84,7 +84,7 @@ static func spec_for(bus_item: Dictionary, livery: Dictionary) -> BusSpec:
 
 
 static func chosen_look() -> DriverLook:
-	return DriverLook.from_item(Profile.selected_item(Catalog.DRIVERS))
+	return DriverLook.from_item(Profile.driver_item())
 
 
 ## The cab decoration the player has fitted, or an empty dictionary if none.

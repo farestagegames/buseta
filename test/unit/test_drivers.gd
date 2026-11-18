@@ -39,6 +39,30 @@ func _every_option() -> Array[DriverLook]:
 		look.greying = true
 		look.earrings = true
 		looks.append(look)
+	for eyewear: String in DriverLook.EYEWEAR:
+		var look := DriverLook.new()
+		look.eyewear = eyewear
+		looks.append(look)
+	for neck: String in DriverLook.NECK:
+		var look := DriverLook.new()
+		look.neck = neck
+		looks.append(look)
+	for shoulder: String in DriverLook.SHOULDER:
+		var look := DriverLook.new()
+		look.shoulder = shoulder
+		looks.append(look)
+	for hands: String in DriverLook.HANDS:
+		var look := DriverLook.new()
+		look.hands = hands
+		looks.append(look)
+	var everything := DriverLook.new()
+	everything.hat = "vueltiao_tricolor"
+	everything.outfit = "chaleco"
+	everything.eyewear = "mirror_shades"
+	everything.neck = "rosary"
+	everything.shoulder = "carriel"
+	everything.hands = "gloves"
+	looks.append(everything)
 	return looks
 
 

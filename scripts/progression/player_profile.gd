@@ -50,6 +50,8 @@ var difficulty: String = ""
 var firsts: Array[String] = []
 ## The town (district) picked on the Routes tab, or "" to follow the selected route.
 var town: String = ""
+## The player's own drivers and their wardrobe (see CUSTOM_DRIVER.md).
+var custom := CustomDrivers.new()
 
 
 
@@ -164,6 +166,44 @@ func choose_time(time: TimeOfDay) -> bool:
 	return true
 
 
+## Custom drivers have opened: the first slot's level is reached.
+func custom_drivers_open(parts: DriverParts) -> bool:
+	return not parts.is_empty() and DriverLevel.level_for(xp) >= parts.first_slot_level()
+
+
+## Buys an ordinary driver part with coins. Its level, if any, must be reached.
+func buy_driver_part(parts: DriverParts, part_id: String) -> bool:
+	var p := parts.part(part_id)
+	var cost := int(p.get("cost", 0))
+	if cost <= 0 or custom.bought.has(part_id) or coins < cost or not custom_drivers_open(parts):
+		return false
+	if DriverLevel.level_for(xp) < int(p.get("level", 0)):
+		return false
+	coins -= cost
+	custom.bought.append(part_id)
+	return true
+
+
+## Buys another copy of a special item already earned on its route.
+func buy_special_copy(parts: DriverParts, special_id: String) -> bool:
+	var item := parts.special(special_id)
+	var cost := int(item.get("copy_cost", 0))
+	if item.is_empty() or cost <= 0 or custom.copies(special_id) <= 0 or coins < cost:
+		return false
+	coins -= cost
+	custom.add_special(special_id)
+	return true
+
+
+func buy_name_tag(parts: DriverParts) -> bool:
+	var cost := parts.name_tag_cost()
+	if not custom_drivers_open(parts) or coins < cost:
+		return false
+	coins -= cost
+	custom.name_tags += 1
+	return true
+
+
 func has_completed_route(route_id: String) -> bool:
 	return completed_routes.has(route_id)
 
@@ -233,7 +273,7 @@ func to_dict() -> Dictionary:
 		"last_daily": last_daily, "daily_streak": daily_streak, "settings": settings, "intro_done": intro_done,
 		"first_launch_done": first_launch_done,
 		"horns_owned": horns_owned, "horn": horn, "time_of_day": time_of_day, "difficulty": difficulty,
-		"firsts": firsts, "town": town,
+		"firsts": firsts, "town": town, "custom": custom.to_dict(),
 	}
 
 
@@ -316,6 +356,7 @@ static func from_dict(saved: Dictionary) -> PlayerProfile:
 				profile.firsts.append(id)
 	var saved_town: Variant = saved.get("town")
 	profile.town = saved_town if saved_town is String else ""
+	profile.custom = CustomDrivers.from_dict(saved.get("custom"))
 	var saved_version := int(_number(saved.get("version"), 0.0))
 	if saved_version < 2:
 		profile.stats["best_stars"] = RouteGoals.migrate_best_stars(int(profile.stats.get("best_stars", 0)))

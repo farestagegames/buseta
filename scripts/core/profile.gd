@@ -7,6 +7,8 @@ const SAVE_PATH := "user://save.json"
 
 var data := PlayerProfile.new()
 var catalog := Catalog.new()
+## What custom drivers can wear in this country (empty if it has none).
+var driver_parts := DriverParts.new()
 var ads := AdProvider.new()
 
 var _path: String = SAVE_PATH
@@ -28,6 +30,7 @@ func _ready() -> void:
 func load_from(path: String) -> void:
 	_path = path
 	catalog = Catalog.new()
+	driver_parts = DriverParts.for_pack(Country.pack)
 	var saved := SaveStore.read(path)
 	data = PlayerProfile.from_dict(saved)
 	# A fresh save follows the country's default route, not the class default.
@@ -41,6 +44,7 @@ func load_from(path: String) -> void:
 	_grant_completed_unlocks()
 	data.repair_choices(catalog)
 	data.settle_horns(Country.pack.horns())
+	data.custom.repair(driver_parts)
 	_apply_settings()
 
 
@@ -83,6 +87,51 @@ func selected_item(kind: String) -> Dictionary:
 	return items[0] if not items.is_empty() else {}
 
 
+## The driver at the wheel as a catalog-style entry: the chosen custom driver,
+## or the hired driver selected.
+func driver_item() -> Dictionary:
+	var custom := data.custom.chosen_driver()
+	return custom if not custom.is_empty() and custom_drivers_open() else selected_item(Catalog.DRIVERS)
+
+
+func custom_drivers_open() -> bool:
+	return data.custom_drivers_open(driver_parts)
+
+
+## Puts a custom driver at the wheel; picking a hired driver again undoes it.
+func choose_custom(slot: int) -> bool:
+	if not data.custom.has_driver(slot) or not custom_drivers_open():
+		return false
+	data.custom.chosen = slot
+	save()
+	return true
+
+
+## Routes driven to the end: finished routes, plus endless and arcade runs, which
+## have no end of their own, once they have a score.
+func finished_routes() -> Array[String]:
+	var finished: Array[String] = data.completed_routes.duplicate()
+	for item: Dictionary in catalog.items(Catalog.ROUTES):
+		var id: String = item["id"]
+		if not finished.has(id) and data.best_scores.has(id) and route_has_no_end(item):
+			finished.append(id)
+	return finished
+
+
+static func route_has_no_end(item: Dictionary) -> bool:
+	return Catalog.is_arcade(item) or str(MapLoader.read_json(item.get("file", "")).get("service", "")) == "endless"
+
+
+## Pays routes finished before custom drivers opened, once, the first time the
+## editor opens. The cards join the unlock queue.
+func open_driver_editor() -> Array[Dictionary]:
+	if data.custom.editor_seen or not custom_drivers_open():
+		return []
+	var cards := data.custom.back_pay(finished_routes(), data.best_stars, driver_parts)
+	save()
+	return cards
+
+
 func buy(kind: String, id: String) -> bool:
 	var item := catalog.find(kind, id)
 	if item.is_empty() or not data.buy(kind, item):
@@ -116,6 +165,8 @@ func select(kind: String, id: String) -> bool:
 		return false
 	if not data.select(kind, id):
 		return false
+	if kind == Catalog.DRIVERS:
+		data.custom.chosen = -1
 	if kind == Catalog.ROUTES:
 		var item := catalog.find(Catalog.ROUTES, id)
 		var t := town_for_route(item)
@@ -234,6 +285,8 @@ func _notification(what: int) -> void:
 
 func _on_pack_changed() -> void:
 	catalog = Catalog.new()
+	driver_parts = DriverParts.for_pack(Country.pack)
+	data.custom.repair(driver_parts)
 	_grant_completed_unlocks()
 	data.repair_choices(catalog)
 	data.settle_horns(Country.pack.horns())

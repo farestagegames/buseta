@@ -24,6 +24,9 @@ func _draw() -> void:
 	_draw_clothes()
 	_block(43.0, 66.0, 14.0, 12.0, look.skin)
 	_block(45.0, 76.0, 10.0, 6.0, look.skin)
+	_draw_neck()
+	if look.shoulder == "carriel":
+		_draw_carriel()
 	# A headwrap covers the hair completely.
 	var hair_shows := look.hat != "headwrap"
 	if hair_shows:
@@ -45,6 +48,7 @@ func _draw() -> void:
 			_block(left, 50.0, 12.0, 2.0, DARK)
 			_block(left, 41.0, 2.0, 11.0, DARK)
 			_block(left + 10.0, 41.0, 2.0, 11.0, DARK)
+	_draw_eyewear()
 	_draw_hat()
 	if look.towel:
 		_block(66.0, 74.0, 13.0, 4.0, DriverFigure.TOWEL)
@@ -53,7 +57,33 @@ func _draw() -> void:
 
 
 func _draw_clothes() -> void:
+	match look.outfit:
+		"rojiblanca":
+			_block(14.0, 76.0, 72.0, 24.0, DriverFigure.SHIRT_WHITE)
+			for i in 4:
+				_block(14.0 + float(i) * 18.0, 76.0, 9.0, 24.0, DriverFigure.SHIRT_RED)
+			return
+		"ruana":
+			_block(10.0, 74.0, 80.0, 26.0, look.uniform)
+			for top: float in [83.0, 90.0]:
+				_block(10.0, top, 80.0, 3.0, look.trim)
+			_block(10.0, 97.0, 80.0, 3.0, look.trim)
+			return
+		"floral":
+			_block(14.0, 76.0, 72.0, 24.0, look.uniform)
+			for spot: Rect2 in [Rect2(20, 79, 10, 10), Rect2(68, 80, 10, 10), Rect2(44, 89, 10, 9), Rect2(24, 91, 8, 8), Rect2(70, 92, 8, 8)]:
+				_block(spot.position.x, spot.position.y, spot.size.x, spot.size.y, look.trim)
+				_block(spot.position.x + spot.size.x * 0.3, spot.position.y + spot.size.y * 0.3, spot.size.x * 0.4, spot.size.y * 0.4, Color.WHITE)
+			_block(37.0, 76.0, 7.0, 4.0, look.uniform.lightened(0.3))
+			_block(56.0, 76.0, 7.0, 4.0, look.uniform.lightened(0.3))
+			return
 	_block(14.0, 76.0, 72.0, 24.0, look.uniform)
+	if look.outfit == "chaleco":
+		for left: float in [20.0, 58.0]:
+			_block(left, 78.0, 22.0, 22.0, DriverFigure.VEST)
+			for top: float in [86.0, 93.0]:
+				_block(left, top, 22.0, 3.0, DriverFigure.SILVER)
+		return
 	if look.outfit != "guayabera":
 		_block(35.0, 75.0, 9.0, 5.0, look.trim)
 		_block(56.0, 75.0, 9.0, 5.0, look.trim)
@@ -68,6 +98,53 @@ func _draw_clothes() -> void:
 		_block(left, 80.0, 2.0, 20.0, look.trim)
 	_block(27.0, 88.0, 12.0, 7.0, look.trim)
 	_block(61.0, 88.0, 12.0, 7.0, look.trim)
+
+
+func _draw_neck() -> void:
+	match look.neck:
+		"gold_chain":
+			_block(43.0, 74.0, 14.0, 2.0, HeadParts.GOLD)
+			for left: float in [44.0, 54.0]:
+				_block(left, 75.0, 2.0, 9.0, HeadParts.GOLD)
+			_block(47.0, 83.0, 6.0, 2.0, HeadParts.GOLD)
+			_block(48.0, 85.0, 4.0, 4.0, HeadParts.GOLD)
+		"rosary":
+			for i in 7:
+				var t := float(i) / 6.0
+				_block(40.0 + t * 20.0 - 1.5, 74.0 + 12.0 * sin(t * PI), 3.0, 3.0, DriverFigure.BEAD_BROWN)
+			var cross := DriverFigure.BEAD_BROWN.lightened(0.2)
+			_block(49.0, 87.0, 2.0, 8.0, cross)
+			_block(46.0, 89.0, 8.0, 2.0, cross)
+		"panuelo":
+			_block(40.0, 71.0, 20.0, 6.0, DriverFigure.NECKERCHIEF)
+			_block(42.0, 76.0, 16.0, 5.0, DriverFigure.NECKERCHIEF)
+			_block(45.0, 80.0, 10.0, 5.0, DriverFigure.NECKERCHIEF)
+			_block(48.0, 84.0, 4.0, 5.0, DriverFigure.NECKERCHIEF.darkened(0.15))
+			_block(47.0, 76.0, 6.0, 5.0, DriverFigure.NECKERCHIEF.darkened(0.15))
+
+
+## A strap across the chest to a leather bag at the hip.
+func _draw_carriel() -> void:
+	for i in 6:
+		_block(18.0 + float(i) * 8.5, 76.0 + float(i) * 3.5, 9.0, 6.0, DriverFigure.LEATHER_DARK)
+	_block(60.0, 87.0, 20.0, 13.0, DriverFigure.LEATHER)
+	_block(60.0, 87.0, 20.0, 5.0, DriverFigure.LEATHER_DARK)
+	_block(68.0, 91.0, 4.0, 3.0, HeadParts.GOLD)
+
+
+func _draw_eyewear() -> void:
+	match look.eyewear:
+		"aviators":
+			for left: float in [37.0, 51.0]:
+				_block(left, 41.0, 12.0, 12.0, HeadParts.GOLD)
+				_block(left + 1.5, 42.5, 9.0, 9.0, HeadParts.AVIATOR_LENS)
+			_block(49.0, 43.0, 2.0, 2.0, HeadParts.GOLD)
+		"mirror_shades":
+			_block(35.0, 41.0, 30.0, 12.0, HeadParts.SILVER)
+			for left: float in [37.0, 52.0]:
+				_block(left, 42.5, 11.0, 9.0, HeadParts.MIRROR_LENS)
+			_block(39.0, 43.5, 4.0, 2.0, Color.WHITE)
+			_block(54.0, 43.5, 4.0, 2.0, Color.WHITE)
 
 
 func _draw_hair_behind() -> void:
@@ -161,12 +238,28 @@ func _draw_beard() -> void:
 func _draw_hat() -> void:
 	var colour := look.hat_colour()
 	match look.hat:
-		"cap":
+		"cap", "gorra_ruta":
 			_block(35.0, 12.0, 30.0, 4.0, colour)
 			_block(31.0, 15.0, 38.0, 14.0, colour)
 			_block(48.0, 10.0, 4.0, 2.0, colour.darkened(0.3))
 			_block(29.0, 28.0, 42.0, 5.0, colour.darkened(0.2))
-		"vueltiao":
+			if look.hat == "gorra_ruta":
+				_block(45.0, 17.0, 10.0, 8.0, Color.WHITE)
+				_block(47.0, 19.0, 6.0, 3.0, look.trim)
+		"aguadeno":
+			_block(35.0, 9.0, 30.0, 19.0, HeadParts.STRAW_PALE)
+			_block(35.0, 19.0, 30.0, 5.0, HeadParts.STRAW_BLACK)
+			_block(12.0, 26.0, 76.0, 6.0, HeadParts.STRAW_PALE)
+			_block(12.0, 31.0, 76.0, 1.0, HeadParts.STRAW_PALE.darkened(0.15))
+		"hard_hat":
+			_block(33.0, 10.0, 34.0, 16.0, colour)
+			_block(46.0, 8.0, 8.0, 3.0, colour.lightened(0.15))
+			_block(27.0, 24.0, 46.0, 5.0, colour.darkened(0.1))
+		"sun_hat":
+			_block(33.0, 12.0, 34.0, 13.0, colour)
+			_block(33.0, 20.0, 34.0, 4.0, look.trim)
+			_block(10.0, 24.0, 80.0, 5.0, colour)
+		"vueltiao", "vueltiao_tricolor":
 			_block(35.0, 7.0, 30.0, 20.0, HeadParts.STRAW)
 			_block(35.0, 11.0, 30.0, 2.0, HeadParts.STRAW_BLACK)
 			_block(35.0, 19.0, 30.0, 2.0, HeadParts.STRAW_BLACK)
@@ -175,6 +268,10 @@ func _draw_hat() -> void:
 			_block(14.0, 25.0, 72.0, 6.0, HeadParts.STRAW)
 			_block(18.0, 27.0, 64.0, 1.5, HeadParts.STRAW_BLACK)
 			_block(14.0, 30.0, 72.0, 1.0, HeadParts.STRAW_BLACK)
+			if look.hat == "vueltiao_tricolor":
+				for i in 3:
+					var tone: Color = [HeadParts.FLAG_YELLOW, HeadParts.FLAG_BLUE, HeadParts.FLAG_RED][i]
+					_block(35.0 + float(i) * 10.0, 14.0, 10.0, 4.0, tone)
 		"headwrap":
 			# Rounded and rising, with a fold of the second fabric crossing the
 			# front and a knot at one side.

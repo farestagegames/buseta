@@ -6,10 +6,17 @@ extends RefCounted
 const HAIR_STYLES: Array[String] = HeadParts.HAIR_STYLES
 const BEARDS: Array[String] = HeadParts.BEARDS
 ## Hats a driver can wear at the wheel. A headwrap covers the hair.
-const HATS: Array[String] = ["", "cap", "vueltiao", "headwrap"]
+## The last three are special items a custom driver earns on a route.
+const HATS: Array[String] = ["", "cap", "vueltiao", "headwrap", "hard_hat", "sun_hat", "gorra_ruta", "vueltiao_tricolor", "aguadeno"]
 ## A short-sleeved polo shirt, or a guayabera with its pleats and pockets. Buseta
 ## drivers on the coast drive in their own shirts, not a jacket and tie.
-const OUTFITS: Array[String] = ["polo", "guayabera"]
+## The rest are special items a custom driver earns on a route.
+const OUTFITS: Array[String] = ["polo", "guayabera", "rojiblanca", "chaleco", "floral", "ruana"]
+## Special items, worn only by custom drivers. "" is none.
+const EYEWEAR: Array[String] = ["", "aviators", "mirror_shades"]
+const NECK: Array[String] = ["", "gold_chain", "rosary", "panuelo"]
+const SHOULDER: Array[String] = ["", "carriel"]
+const HANDS: Array[String] = ["", "gloves"]
 
 var driver_name: String = "Driver"
 var skin := Color(0.62, 0.44, 0.31)
@@ -25,6 +32,10 @@ var glasses: bool = false
 var greying: bool = false
 var earrings: bool = false
 var towel: bool = false ## A small towel over the shoulder, as many buseta drivers keep.
+var eyewear: String = "" ## Sunglasses, worn over any glasses.
+var neck: String = "" ## A chain, rosary or neckerchief.
+var shoulder: String = "" ## A bag over the shoulder.
+var hands: String = "" ## Gloves, seen on the wheel in the cockpit.
 
 
 ## Reads a catalog entry. Anything missing or unknown keeps its default.
@@ -45,6 +56,10 @@ static func from_item(item: Dictionary) -> DriverLook:
 	look.greying = _flag(item.get("greying"))
 	look.earrings = _flag(item.get("earrings"))
 	look.towel = _flag(item.get("towel"))
+	look.eyewear = _choice(item.get("eyewear"), EYEWEAR, "")
+	look.neck = _choice(item.get("neck"), NECK, "")
+	look.shoulder = _choice(item.get("shoulder"), SHOULDER, "")
+	look.hands = _choice(item.get("hands"), HANDS, "")
 	return look
 
 
@@ -53,7 +68,8 @@ static func from_item(item: Dictionary) -> DriverLook:
 static func check(item: Dictionary) -> Array[String]:
 	var problems: Array[String] = []
 	var title := "Driver %s" % str(item.get("id", "?"))
-	var choices := {"hair_style": HAIR_STYLES, "beard": BEARDS, "hat": HATS, "outfit": OUTFITS}
+	var choices := {"hair_style": HAIR_STYLES, "beard": BEARDS, "hat": HATS, "outfit": OUTFITS,
+		"eyewear": EYEWEAR, "neck": NECK, "shoulder": SHOULDER, "hands": HANDS}
 	for key: String in choices:
 		if item.has(key) and not (item[key] is String and (choices[key] as Array).has(item[key])):
 			problems.append("%s has an unknown %s: %s" % [title, key, str(item[key])])

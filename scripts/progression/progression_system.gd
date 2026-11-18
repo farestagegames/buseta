@@ -23,6 +23,20 @@ func _on_report(report: Dictionary) -> void:
 		unlocked = Profile.data.complete_route(route_id, Profile.catalog)
 	rewards["unlocked_routes"] = unlocked
 	Profile.pending_unlocks.append_array(UnlockNews.from_rewards(Profile.catalog, Country.pack.horns(), rewards))
+	_pay_custom_drivers(route, bool(report.get("completed", false)), rewards)
 	report["rewards"] = rewards
 	Profile.save()
 	GameEvents.shift_rewards_ready.emit(report)
+
+
+## Custom drivers: cards for new slots, name tags and parts the levels reached,
+## and the route's special item the first time it is finished at the slot level.
+func _pay_custom_drivers(route: Dictionary, completed: bool, rewards: Dictionary) -> void:
+	var parts := Profile.driver_parts
+	var before := DriverLevel.level_for(int(rewards.get("xp_before", 0)))
+	var after := DriverLevel.level_for(Profile.data.xp)
+	Profile.pending_unlocks.append_array(UnlockNews.custom_between(parts, before, after))
+	Profile.data.custom.settle_name_tags(parts, after)
+	if Profile.custom_drivers_open() and (completed or (Profile.data.best_scores.has(route["id"]) and Profile.route_has_no_end(route))):
+		var stars := int(Profile.data.best_stars.get(route["id"], 0))
+		Profile.pending_unlocks.append_array(Profile.data.custom.pay_route(route["id"], stars, parts))

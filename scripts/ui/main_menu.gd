@@ -10,6 +10,8 @@ const SHIFT_SCENE := "res://scenes/main/city_shift.tscn"
 const GARAGE_TAB := 2
 const DRIVERS_TAB := 3
 const SETTINGS_TAB := 5
+## The custom driver editor, opened from the CHOFER tray (not on the tab bar).
+const TAB_DRIVER_EDITOR := 6
 ## Paint dots on the bus card.
 const CARD_DOTS := 6
 const BACKGROUND := UiStyle.INK
@@ -40,6 +42,8 @@ const GARAGE_STAGE_SHIFT := 0.18 # less than before: the home camera offset alre
 const SLIDE_PIXELS := 24.0
 const SLIDE_SECONDS := 0.25
 const SIDE_CARD_WIDTH := 320.0
+## Tray ids of the custom driver slots, before the hired drivers' catalog ids.
+const CUSTOM_PREFIX := "custom_"
 
 var _content: Control
 var _coins_label: Label
@@ -76,6 +80,8 @@ var _home_bus: Dictionary = {}
 var _lock_card: PanelContainer
 ## The route or driver the quick tray's side card shows, and where its page starts.
 var _tray_shown := ""
+## The custom driver slot the editor is open on.
+var _editor_slot := 0
 var _tray_focus := ""
 var _tab_ghost: Control
 var _route_chip: MenuRouteChip
@@ -164,6 +170,12 @@ func unlock_art(entry: Dictionary) -> Control:
 		return swatch
 	if kind == Catalog.DRIVERS and not item.is_empty():
 		return DriverBadge.new(DriverLook.from_item(item))
+	if kind.begins_with("custom_"):
+		var look := DriverLook.from_item(Profile.driver_item())
+		var special := Profile.driver_parts.special(entry.get("id", ""))
+		if not special.is_empty():
+			look = DriverLook.from_item(Profile.driver_parts.starter_look().merged({special["field"]: special["value"]}, true))
+		return DriverBadge.new(look)
 	var icon := MenuIcon.new()
 	icon.icon = {Catalog.ROUTES: "routes", Catalog.BUSES: "garage", UnlockNews.HORNS: "horn"}.get(kind, "star")
 	icon.colour = MenuCartoon.YELLOW
@@ -245,6 +257,8 @@ func show_tab(index: int, tray: bool = false) -> void:
 			page = _drivers_tab()
 		4:
 			page = _career_tab()
+		TAB_DRIVER_EDITOR:
+			page = _driver_editor_page()
 		_:
 			var settings := SettingsPanel.new()
 			settings.cartoon = true
@@ -371,7 +385,7 @@ func _on_cheat_used() -> void:
 
 func _refresh_header() -> void:
 	var xp := Profile.data.xp
-	var driver := Profile.selected_item(Catalog.DRIVERS)
+	var driver := Profile.driver_item()
 	_top_bar.refresh(DriverLevel.level_for(xp), DriverLevel.progress(xp), Country.pack.money(Profile.data.coins),
 		str(driver.get("name", "")), CityShift.chosen_look())
 
@@ -719,6 +733,8 @@ func _quick_tray(index: int) -> Control:
 	var kind := Catalog.ROUTES if index == 1 else Catalog.DRIVERS
 	var ids := _tray_ids(kind)
 	var chosen: String = Profile.data.selected[kind]
+	if kind == Catalog.DRIVERS and Profile.data.custom.has_driver(Profile.data.custom.chosen) and Profile.custom_drivers_open():
+		chosen = CUSTOM_PREFIX + str(Profile.data.custom.chosen)
 	if not ids.has(_tray_shown):
 		_tray_shown = chosen
 	if not ids.has(_tray_focus):
@@ -727,6 +743,9 @@ func _quick_tray(index: int) -> Control:
 	if not picks.is_empty() and picks[0] != ids[0]:
 		tray.add_step(-1)
 	for id: String in picks:
+		if id.begins_with(CUSTOM_PREFIX):
+			_add_custom_pick(tray, int(id.trim_prefix(CUSTOM_PREFIX)), id == chosen, id == _tray_shown)
+			continue
 		var item := Profile.catalog.find(kind, id)
 		var art: Control
 		if kind == Catalog.DRIVERS:
@@ -746,7 +765,12 @@ func _quick_tray(index: int) -> Control:
 		tray.more_pressed.connect(show_tab.bind(index))
 	tray.picked.connect(func(id: String) -> void:
 		_tray_shown = id
-		if Profile.data.owns(kind, id) and Profile.data.selected[kind] != id:
+		if id.begins_with(CUSTOM_PREFIX):
+			var slot := int(id.trim_prefix(CUSTOM_PREFIX))
+			if Profile.data.custom.has_driver(slot) and Profile.data.custom.chosen != slot:
+				Profile.choose_custom(slot)
+				_refresh_header()
+		elif Profile.data.owns(kind, id) and Profile.data.selected[kind] != id:
 			Profile.select(kind, id)
 			_refresh_header()
 		show_tab(index, true))
@@ -758,8 +782,69 @@ func _quick_tray(index: int) -> Control:
 	tray.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	tray.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	page.add_child(tray)
-	page.add_child(_tray_side_card(kind, Profile.catalog.find(kind, _tray_shown)))
+	if _tray_shown.begins_with(CUSTOM_PREFIX):
+		page.add_child(_custom_side_card(int(_tray_shown.trim_prefix(CUSTOM_PREFIX))))
+	else:
+		page.add_child(_tray_side_card(kind, Profile.catalog.find(kind, _tray_shown)))
 	return page
+
+
+## A custom slot's tray card: the driver, "Crear chofer" for an open empty slot,
+## or a padlock and the level it opens at.
+func _add_custom_pick(tray: MenuQuickTray, slot: int, chosen: bool, shown: bool) -> void:
+	var custom := Profile.data.custom
+	var level := DriverLevel.level_for(Profile.data.xp)
+	var id := CUSTOM_PREFIX + str(slot)
+	if custom.has_driver(slot):
+		var look := DriverLook.from_item(custom.driver(slot))
+		tray.add_pick(id, MenuTopBar.short_name(look.driver_name), tr("Selected") if chosen else tr("Select"),
+			DriverBadge.new(look, MenuQuickTray.ART), chosen, shown)
+		return
+	var icon := MenuIcon.new()
+	var open := custom.slot_open(slot, Profile.driver_parts, level)
+	icon.icon = "star" if open else "lock"
+	icon.colour = TAB_COLOURS[2] if open else MenuHomeDrawer.MUTED
+	var detail := tr("Create") if open else tr("Level %d") % Profile.driver_parts.slot_levels()[slot]
+	tray.add_pick(id, tr("Create driver"), detail, icon, false, shown)
+
+
+## The side card for a custom slot: the driver with Edit, or how to make one.
+func _custom_side_card(slot: int) -> Control:
+	var custom := Profile.data.custom
+	var open := custom.slot_open(slot, Profile.driver_parts, DriverLevel.level_for(Profile.data.xp))
+	var item := {"name": tr("Create driver"), "description": tr("Your own driver, dressed your way. Looks only.")}
+	if custom.has_driver(slot):
+		item = custom.driver(slot)
+	elif not open:
+		item["description"] = tr("Opens at level %d") % Profile.driver_parts.slot_levels()[slot]
+	var card := _tray_side_card(Catalog.DRIVERS, {"id": CUSTOM_PREFIX + str(slot), "name": str(item["name"]),
+		"bio": item.get("description", tr("Your own driver. Looks only.")), "custom": item})
+	var button := card.find_child("ShopButton", true, false) as Button
+	if button != null:
+		for connection: Dictionary in button.pressed.get_connections():
+			button.pressed.disconnect(connection["callable"])
+		button.text = tr("Edit") if custom.has_driver(slot) else tr("Create driver")
+		button.disabled = not open
+		button.pressed.connect(open_driver_editor.bind(slot))
+	return card
+
+
+## The editor page for the slot in _editor_slot. Back returns to the CHOFER tray.
+func _driver_editor_page() -> Control:
+	var editor := DriverEditor.new(_editor_slot)
+	editor.closed.connect(func() -> void:
+		_tray_shown = CUSTOM_PREFIX + str(_editor_slot)
+		show_tab(DRIVERS_TAB, true))
+	editor.changed.connect(_refresh_header)
+	return editor
+
+
+## Opens the custom driver editor on a slot.
+func open_driver_editor(slot: int) -> void:
+	for card: Dictionary in Profile.open_driver_editor():
+		Profile.pending_unlocks.append(card)
+	_editor_slot = slot
+	show_tab(TAB_DRIVER_EDITOR)
 
 
 ## Every driver, or every route of the chosen town but its arcade, in catalog order.
@@ -768,6 +853,9 @@ func _tray_ids(kind: String) -> Array:
 	var items := Profile.catalog.items(kind)
 	var towns := route_towns(items) if kind == Catalog.ROUTES else {}
 	var town := Profile.chosen_town() if kind == Catalog.ROUTES else ""
+	if kind == Catalog.DRIVERS:
+		for slot in Profile.driver_parts.slot_levels().size():
+			ids.append(CUSTOM_PREFIX + str(slot))
 	for item: Dictionary in items:
 		if kind == Catalog.ROUTES and (Catalog.is_arcade(item) or towns.get(item["id"], "") != town):
 			continue
@@ -802,7 +890,7 @@ func _tray_side_card(kind: String, item: Dictionary) -> Control:
 	lines.add_theme_constant_override("separation", GAP)
 	card.add_child(lines)
 	if kind == Catalog.DRIVERS:
-		var badge := DriverBadge.new(DriverLook.from_item(item), 96.0)
+		var badge := DriverBadge.new(DriverLook.from_item(item.get("custom", item)), 96.0)
 		badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		lines.add_child(badge)
 	var title := _wrapped(tr(item["name"]), 22, MenuHomeDrawer.INK)
@@ -820,6 +908,7 @@ func _tray_side_card(kind: String, item: Dictionary) -> Control:
 		line.max_lines_visible = 3
 		lines.add_child(line)
 	var button := _cartoon_shop_button(kind, item)
+	button.name = "ShopButton"
 	button.custom_minimum_size = Vector2(0.0, 56.0)
 	button.add_theme_font_size_override("font_size", 22)
 	lines.add_child(button)

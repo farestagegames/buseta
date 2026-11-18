@@ -20,6 +20,15 @@ const GREY := Color(0.8, 0.8, 0.79)
 ## A sombrero vueltiao is woven from pale cane with black bands.
 const STRAW := Color(0.93, 0.88, 0.72)
 const STRAW_BLACK := Color(0.1, 0.08, 0.07)
+## The wide pale straw hat of the coffee towns.
+const STRAW_PALE := Color(0.96, 0.93, 0.82)
+## The flag's three bands, for a tricolour hat band.
+const FLAG_YELLOW := Color(0.99, 0.82, 0.1)
+const FLAG_BLUE := Color(0.05, 0.22, 0.6)
+const FLAG_RED := Color(0.8, 0.1, 0.14)
+const AVIATOR_LENS := Color(0.14, 0.11, 0.08)
+const MIRROR_LENS := Color(0.55, 0.7, 0.88)
+const SILVER := Color(0.82, 0.84, 0.88)
 
 
 ## The head and its eyes.
@@ -140,6 +149,29 @@ static func add_glasses(b: LowPolyBuilder, head: Vector3) -> void:
 	b.box(head + Vector3(0.0, 0.04, FACE - 0.008), Vector3(0.05, 0.012, 0.006), DARK)
 
 
+## Sunglasses, worn over any glasses. A shade in front of the lens keeps them clear of it.
+static func add_eyewear(b: LowPolyBuilder, head: Vector3, kind: String) -> void:
+	var z := FACE - 0.012
+	match kind:
+		"aviators":
+			# Two drop-shaped lenses in thin gold rims, joined by a bridge.
+			for side: float in [-0.055, 0.055]:
+				b.box(head + Vector3(side, 0.03, z), Vector3(0.078, 0.06, 0.004), GOLD)
+				b.box(head + Vector3(side, 0.026, z - 0.002), Vector3(0.066, 0.046, 0.004), AVIATOR_LENS)
+				b.box(head + Vector3(side * 1.05, 0.0, z - 0.002), Vector3(0.05, 0.02, 0.004), AVIATOR_LENS)
+			b.box(head + Vector3(0.0, 0.05, z), Vector3(0.05, 0.012, 0.005), GOLD)
+			for side: float in [-1.0, 1.0]:
+				b.box(head + Vector3(side * 0.108, 0.04, FACE + 0.06), Vector3(0.008, 0.012, 0.13), GOLD)
+		"mirror_shades":
+			# One wide reflective slab in a silver frame, with a bright glint.
+			b.box(head + Vector3(0.0, 0.03, z), Vector3(0.19, 0.065, 0.004), SILVER)
+			for side: float in [-0.055, 0.055]:
+				b.box(head + Vector3(side, 0.03, z - 0.002), Vector3(0.08, 0.05, 0.004), MIRROR_LENS)
+				b.box(head + Vector3(side - 0.02, 0.043, z - 0.004), Vector3(0.025, 0.012, 0.003), Color.WHITE)
+			for side: float in [-1.0, 1.0]:
+				b.box(head + Vector3(side * 0.108, 0.04, FACE + 0.06), Vector3(0.008, 0.014, 0.13), SILVER)
+
+
 static func add_earrings(b: LowPolyBuilder, head: Vector3) -> void:
 	for side: float in [-1.0, 1.0]:
 		b.box(head + Vector3(side * 0.11, -0.045, 0.0), Vector3(0.018, 0.045, 0.018), GOLD)
@@ -157,6 +189,29 @@ static func add_hat(b: LowPolyBuilder, head: Vector3, hat: String, colour: Color
 			b.box(head + Vector3(0.0, 0.118, -0.18), Vector3(0.21, 0.018, 0.12), colour.darkened(0.2))
 		"vueltiao":
 			_add_vueltiao(b, head)
+		"vueltiao_tricolor":
+			_add_vueltiao(b, head)
+			# Three flag-coloured bands round the crown, between the black ones.
+			var centre := head + Vector3(0.0, 0.0, 0.01)
+			for i in 3:
+				var tone: Color = [FLAG_YELLOW, FLAG_BLUE, FLAG_RED][i]
+				_add_octagon(b, centre + Vector3(0.0, 0.1815 + float(i) * 0.009, 0.0), 0.272, 0.009, tone)
+		"gorra_ruta":
+			# A cap of the bus company, with a small bus badge on the front of the crown.
+			b.box(head + Vector3(0.0, 0.15, 0.01), Vector3(0.25, 0.08, 0.27), colour)
+			b.box(head + Vector3(0.0, 0.2, 0.015), Vector3(0.2, 0.025, 0.22), colour)
+			b.box(head + Vector3(0.0, 0.218, 0.015), Vector3(0.03, 0.012, 0.03), colour.darkened(0.3))
+			b.box(head + Vector3(0.0, 0.118, -0.18), Vector3(0.21, 0.018, 0.12), colour.darkened(0.2))
+			b.box(head + Vector3(0.0, 0.155, -0.127), Vector3(0.07, 0.05, 0.008), Color.WHITE)
+			b.box(head + Vector3(0.0, 0.16, -0.132), Vector3(0.055, 0.024, 0.006), band)
+			for side: float in [-0.018, 0.018]:
+				b.box(head + Vector3(side, 0.141, -0.132), Vector3(0.012, 0.01, 0.006), STRAW_BLACK)
+		"aguadeno":
+			# A wide pale straw hat with a flat brim and a black band round the crown.
+			b.box(head + Vector3(0.0, 0.125, 0.01), Vector3(0.42, 0.018, 0.42), STRAW_PALE)
+			b.box(head + Vector3(0.0, 0.19, 0.01), Vector3(0.25, 0.115, 0.27), STRAW_PALE)
+			b.box(head + Vector3(0.0, 0.252, 0.01), Vector3(0.21, 0.015, 0.23), STRAW_PALE.darkened(0.08))
+			b.box(head + Vector3(0.0, 0.158, 0.01), Vector3(0.256, 0.03, 0.276), STRAW_BLACK)
 		"headwrap":
 			# A turbante: snug over the forehead, rising up and back in a rounded
 			# crown, with a fold of the second fabric and a knot at one side.
