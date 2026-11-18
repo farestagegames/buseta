@@ -10,6 +10,10 @@ const GOOD := Color("#3FA34D")
 const ORANGE := Color("#E0650A")
 const SHADOW := Color(0.0, 0.0, 0.0, 0.2)
 const WIDTH := 300.0
+## One spacing for the whole menu (tester Claudio, 17 Nov): GAP between cards,
+## rows and the things in a row, PAD inside every card, sheet and pill.
+const GAP := 12
+const PAD := 14
 
 var daily_title: Label
 var daily_text: Label
@@ -19,7 +23,7 @@ var next_text: Label
 
 func _init() -> void:
 	custom_minimum_size.x = WIDTH
-	add_theme_constant_override("separation", 10)
+	add_theme_constant_override("separation", GAP)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var daily := _info_card("DailyCard", "star")
 	daily_title = _label(16, MUTED)
@@ -39,7 +43,7 @@ func _init() -> void:
 
 
 ## The white card box used by every piece of the new menu.
-static func card_box(fill: Color = CARD_BG, radius: int = 18, margin: int = 14) -> StyleBoxFlat:
+static func card_box(fill: Color = CARD_BG, radius: int = 18, margin: int = PAD) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
 	box.set_corner_radius_all(radius)
@@ -87,7 +91,7 @@ func _info_card(node_name: String, icon_name: String) -> PanelContainer:
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_theme_stylebox_override("panel", card_box())
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", GAP)
 	card.add_child(row)
 	var icon := MenuIcon.new()
 	icon.icon = icon_name

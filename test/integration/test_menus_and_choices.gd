@@ -303,7 +303,7 @@ func test_trying_a_decoration_looks_into_the_cab_and_a_paint_looks_back_out() ->
 	await wait_frames(1)
 	assert_true(menu._stage.in_cab())
 	assert_true(menu._stage.visual().shows_decoration("dash_perrito"))
-	assert_string_contains(menu._preview_note.text, tr("Decorations go in the cab: you see them in cockpit view while driving"))
+	assert_string_contains(menu._preview_note.text, tr("Seen in cockpit view"))
 	assert_false(Profile.data.owns(Catalog.DECORATIONS, "dash_perrito"), "trying is not buying")
 	menu.try_on(Catalog.LIVERIES, Profile.catalog.find(Catalog.LIVERIES, "carnaval"))
 	await wait_frames(1)

@@ -20,7 +20,7 @@ const STEP_WIDTH := 52.0
 
 
 func _init() -> void:
-	add_theme_constant_override("separation", 10)
+	add_theme_constant_override("separation", MenuHomeDrawer.GAP)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	alignment = BoxContainer.ALIGNMENT_CENTER
 

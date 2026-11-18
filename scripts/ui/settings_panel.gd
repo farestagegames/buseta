@@ -32,10 +32,11 @@ func _ready() -> void:
 		theme = MenuCartoon.theme()
 		add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 10)
+	outer.add_theme_constant_override("separation", MenuHomeDrawer.GAP)
 	var margin := MarginContainer.new()
+	# In the menu the cream sheet already pads the page.
 	for side: String in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 20)
+		margin.add_theme_constant_override("margin_" + side, 0 if cartoon else 20)
 	margin.add_child(outer)
 	add_child(margin)
 
@@ -49,7 +50,7 @@ func _ready() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	outer.add_child(scroll)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
+	box.add_theme_constant_override("separation", MenuHomeDrawer.GAP if cartoon else 8)
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(box)
 
@@ -73,7 +74,7 @@ func _ready() -> void:
 
 func _add_controls(box: Container) -> void:
 	var modes := HBoxContainer.new()
-	modes.add_theme_constant_override("separation", 10)
+	modes.add_theme_constant_override("separation", MenuHomeDrawer.GAP)
 	for entry: Array in [["Wheel", SteeringMapper.Mode.WHEEL], ["Tilt", SteeringMapper.Mode.TILT], ["Buttons", SteeringMapper.Mode.BUTTONS]]:
 		var mode: SteeringMapper.Mode = entry[1]
 		var button := _button(entry[0])
@@ -139,7 +140,7 @@ func _on_language_chosen(index: int) -> void:
 func _add_graphics(box: Container) -> void:
 	box.add_child(_section("Graphics quality"))
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", MenuHomeDrawer.GAP)
 	var levels := [["Auto", GraphicsQuality.AUTO], ["Low", GraphicsQuality.Level.LOW],
 		["Medium", GraphicsQuality.Level.MEDIUM], ["High", GraphicsQuality.Level.HIGH]]
 	for entry: Array in levels:

@@ -138,7 +138,6 @@
  "Done today": "Cumplido hoy",
  "Downpour survived: +%s": "Aguacero superado: +%s",
  "Downpour: brake early": "Aguacero: frena con tiempo",
- "Downpours are most likely in the afternoon": "Los aguaceros caen más que todo por la tarde",
  "Downpours driven through: %d": "Aguaceros manejados: %d",
  "Drive 10 shifts on the La Ola line": "Maneja 10 turnos en la troncal La Ola",
  "Drive 5 shifts in La Chiva": "Maneja 5 turnos en La Chiva",
@@ -149,7 +148,6 @@
  "Driver": "Conductor",
  "Drivers": "Conductores",
  "Drove through a downpour": "Manejaste en pleno aguacero",
- "Each bus sounds the horn it came with": "Cada bus suena con el pito que trae",
  "Earn 3 stars on a shift": "Saca 3 estrellas en un turno",
  "Earn 3 stars on the La Ola line": "Saca 3 estrellas en la troncal La Ola",
  "Earn 4 stars on the La Ola line": "Saca 4 estrellas en la troncal La Ola",
@@ -331,7 +329,7 @@
  "Sunset": "Atardecer",
  "TIME %d": "TIEMPO %d",
  "Tap VIEW to change the camera.": "Toca VISTA para cambiar la cámara.",
- "Decorations go in the cab: you see them in cockpit view while driving": "Los adornos van en la cabina: los ves en la vista de cabina mientras manejas",
+ "Seen in cockpit view": "Se ve en la vista de cabina",
  "Tap a bus, paint or horn to try it": "Toca un bus, una pintura o un pito para probarlo",
  "That's it! Keep to the timetable, obey the lights and watch your speed. Good luck!": "¡Eso es todo! Cumple el horario, respeta los semáforos y ojo con la velocidad. ¡Buen viaje!",
  "The big 12 metre busetón. Heavy, slow to turn and full of passengers.": "El busetón de 12 metros. Pesado, lento para voltear y lleno de pasajeros.",
@@ -429,7 +427,6 @@
  "All drivers": "Todos los choferes",
  "More options": "Más opciones",
  "Bus locked": "Bus bloqueado",
- "Tap a paint or decoration to try it": "Toca una pintura o un adorno para probarla",
  "Getting off: %d": "Bajando: %d",
  "Everyone's off": "Todos bajaron"
 }

@@ -16,18 +16,20 @@ const PALE := Color("#EEF0F4")
 ## The sheet behind a page's cards, a shade warmer than the cards.
 const SHEET_BG := Color("#F4EFE4")
 const OUTLINE := 3
+const GAP := MenuHomeDrawer.GAP
+const PAD := MenuHomeDrawer.PAD
 
 static var _theme: Theme
 
 
 ## A page's backing sheet: cream, outlined, rounder than its cards.
 static func sheet_box() -> StyleBoxFlat:
-	return MenuHomeDrawer.card_box(SHEET_BG, 24, 14)
+	return MenuHomeDrawer.card_box(SHEET_BG, 24, PAD)
 
 
 ## A row card inside a sheet.
 static func card_box(fill: Color = CARD_BG) -> StyleBoxFlat:
-	var box := MenuHomeDrawer.card_box(fill, 16, 12)
+	var box := MenuHomeDrawer.card_box(fill, 16, PAD)
 	box.shadow_size = 4
 	box.shadow_offset = Vector2(0.0, 3.0)
 	return box

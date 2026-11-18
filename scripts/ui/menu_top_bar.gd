@@ -22,7 +22,7 @@ const SHADOW_SIZE := 6
 const SHADOW_OFFSET := Vector2(0, 4)
 const PILL_HEIGHT := 52.0
 ## Inner margins of every pill, measured from the outer edge (the outline is inside).
-const PILL_PAD_X := 14.0
+const PILL_PAD_X := float(MenuHomeDrawer.PAD)
 const PILL_PAD_Y := 6.0
 const DRIVER_MIN_WIDTH := 160.0
 const ICON_BUTTON_SIZE := Vector2(52.0, 52.0)
@@ -55,7 +55,7 @@ var _bounces: Dictionary = {}
 
 
 func _init() -> void:
-	add_theme_constant_override("separation", 12)
+	add_theme_constant_override("separation", MenuHomeDrawer.GAP)
 	custom_minimum_size.y = PILL_HEIGHT
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	add_child(_build_level_pill())

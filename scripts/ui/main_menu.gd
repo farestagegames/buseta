@@ -19,6 +19,10 @@ const GOOD := UiStyle.GOOD
 const MUTED := UiStyle.MUTED
 ## Space between the screen edge and the menu, in view pixels.
 const EDGE := 22
+## The menu's one spacing: GAP between cards and rows, PAD inside them.
+const GAP := MenuHomeDrawer.GAP
+const PAD := MenuHomeDrawer.PAD
+const ARROW_WIDTH := 56.0
 ## The dark sheet a tab opens over the stage.
 const SHEET := Color(0.09, 0.1, 0.13, 0.94)
 const SHEET_OUTLINE := Color("#22242D")
@@ -102,7 +106,7 @@ func _ready() -> void:
 	fit_to_screen(UiStyle.screen_insets(get_viewport_rect().size))
 	var column := VBoxContainer.new()
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_theme_constant_override("separation", 12)
+	column.add_theme_constant_override("separation", GAP)
 	_frame.add_child(column)
 	column.add_child(_header())
 	var middle := Control.new()
@@ -373,7 +377,7 @@ func _refresh_header() -> void:
 func _bottom_row() -> Control:
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", GAP)
 	# A blank as wide as TURNO on the left keeps the tab bar in the middle of the
 	# screen, lined up with the trays and the route chip above it.
 	_tab_ghost = Control.new()
@@ -440,7 +444,7 @@ func _arrow(side: int) -> Button:
 	var button := Button.new()
 	button.name = "NextBus" if side > 0 else "PreviousBus"
 	button.focus_mode = Control.FOCUS_NONE
-	button.custom_minimum_size = Vector2(56.0, 80.0)
+	button.custom_minimum_size = Vector2(ARROW_WIDTH, 80.0)
 	var box := MenuHomeDrawer.card_box(Color("#FFC733"), 16, 6)
 	button.add_theme_stylebox_override("normal", box)
 	button.add_theme_stylebox_override("hover", box)
@@ -598,7 +602,7 @@ static func sheet_box() -> StyleBoxFlat:
 	box.shadow_color = Color(0.0, 0.0, 0.0, 0.3)
 	box.shadow_size = 8
 	box.shadow_offset = Vector2(0.0, 4.0)
-	box.set_content_margin_all(16)
+	box.set_content_margin_all(PAD)
 	return box
 
 
@@ -610,7 +614,7 @@ func _home_tab() -> Control:
 	drawer.name = "HomeDrawer"
 	drawer.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE)
 	drawer.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	drawer.offset_right = -72.0 # clear of the side arrow
+	drawer.offset_right = -(ARROW_WIDTH + GAP) # clear of the side arrow
 	drawer.offset_left = drawer.offset_right - MenuHomeDrawer.WIDTH
 	page.add_child(drawer)
 	var arcade := _arcade_button()
@@ -649,7 +653,7 @@ func _make_lock_card() -> PanelContainer:
 	_lock_card.theme = MenuCartoon.theme()
 	_lock_card.add_theme_stylebox_override("panel", MenuHomeDrawer.card_box())
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
+	row.add_theme_constant_override("separation", GAP)
 	var icon := MenuIcon.new()
 	icon.icon = "lock"
 	icon.colour = MenuHomeDrawer.INK
@@ -762,7 +766,7 @@ func _tray_side_card(kind: String, item: Dictionary) -> Control:
 	card.add_theme_stylebox_override("panel", MenuHomeDrawer.card_box())
 	card.custom_minimum_size.x = SIDE_CARD_WIDTH
 	var lines := VBoxContainer.new()
-	lines.add_theme_constant_override("separation", 8)
+	lines.add_theme_constant_override("separation", GAP)
 	card.add_child(lines)
 	if kind == Catalog.DRIVERS:
 		var badge := DriverBadge.new(DriverLook.from_item(item), 96.0)
@@ -774,7 +778,7 @@ func _tray_side_card(kind: String, item: Dictionary) -> Control:
 	if kind == Catalog.ROUTES:
 		var map := RouteMapView.new()
 		map.name = "RouteMap"
-		map.custom_minimum_size = Vector2(SIDE_CARD_WIDTH - 28.0, 190.0)
+		map.custom_minimum_size = Vector2(SIDE_CARD_WIDTH - 2.0 * PAD, 190.0)
 		map.show_route(item)
 		lines.add_child(map)
 	var about := str(item.get("bio", item.get("description", "")))
@@ -788,8 +792,9 @@ func _tray_side_card(kind: String, item: Dictionary) -> Control:
 	lines.add_child(button)
 	card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE)
 	card.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	card.offset_right = -EDGE
-	card.offset_left = card.offset_right - SIDE_CARD_WIDTH
+	# Lined up with the top bar's right edge, like the Home cards with the arrow.
+	card.offset_right = 0.0
+	card.offset_left = -SIDE_CARD_WIDTH
 	return card
 
 
@@ -891,14 +896,14 @@ func _routes_tab() -> Control:
 		var town: String = towns.get(item["id"], "")
 		if town_list.size() > 1 and town != chosen_town:
 			continue
-		list.get_child(0).add_child(_shop_row(Catalog.ROUTES, item, item.get("description", "")))
+		list.get_child(0).add_child(_shop_row(Catalog.ROUTES, item, ""))
 	return list
 
 
 func _town_row(town_list: Array[Dictionary], chosen_town: String) -> Control:
 	var row := HBoxContainer.new()
 	row.name = "TownSelector"
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", GAP)
 	var player_level := DriverLevel.level_for(Profile.data.xp)
 	for town: Dictionary in town_list:
 		var town_name: String = town["name"]
@@ -994,10 +999,10 @@ static func route_towns(routes: Array) -> Dictionary:
 func _time_card() -> Control:
 	var card := _card()
 	var lines := VBoxContainer.new()
-	lines.add_theme_constant_override("separation", 10)
+	lines.add_theme_constant_override("separation", GAP)
 	lines.add_child(_card_heading("Time of day"))
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", GAP)
 	var level := DriverLevel.level_for(Profile.data.xp)
 	var chosen := Profile.chosen_time()
 	for time in Profile.times_of_day():
@@ -1011,8 +1016,6 @@ func _time_card() -> Control:
 		button.pressed.connect(_on_choose_time.bind(time))
 		row.add_child(button)
 	lines.add_child(row)
-	if Country.pack.data.has("weather"):
-		lines.add_child(_wrapped("Downpours are most likely in the afternoon", 19, _soft()))
 	card.add_child(lines)
 	return card
 
@@ -1020,10 +1023,10 @@ func _time_card() -> Control:
 func _difficulty_card() -> Control:
 	var card := _card()
 	var lines := VBoxContainer.new()
-	lines.add_theme_constant_override("separation", 10)
+	lines.add_theme_constant_override("separation", GAP)
 	lines.add_child(_card_heading("Difficulty"))
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", GAP)
 	var chosen := Profile.chosen_difficulty()
 	for difficulty in Profile.difficulties():
 		var button := _button(tr(difficulty.name))
@@ -1059,7 +1062,7 @@ func _garage_tab() -> Control:
 	# The bus on the stage is the preview: the list sits in a sheet on the right.
 	var page := HBoxContainer.new()
 	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	page.add_theme_constant_override("separation", 16)
+	page.add_theme_constant_override("separation", GAP)
 	var side := VBoxContainer.new()
 	side.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1071,7 +1074,7 @@ func _garage_tab() -> Control:
 	sheet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sheet.size_flags_stretch_ratio = 1.25
 	page.add_child(sheet)
-	_preview_note = _wrapped("Tap a paint or decoration to try it", 20, MenuCartoon.INK)
+	_preview_note = _wrapped("%s, %s" % [Profile.selected_item(Catalog.BUSES)["name"], tr(Profile.selected_item(Catalog.LIVERIES)["name"])], 20, MenuCartoon.INK)
 	_preview_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var note_back := PanelContainer.new()
 	note_back.name = "PreviewNote"
@@ -1105,7 +1108,7 @@ func _horn_row(item: Dictionary) -> Control:
 	var id: String = item.get("id", "")
 	var card := _card()
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
+	row.add_theme_constant_override("separation", GAP)
 	var listen := _button("▶")
 	listen.custom_minimum_size = Vector2(90.0, 72.0)
 	listen.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -1115,7 +1118,6 @@ func _horn_row(item: Dictionary) -> Control:
 	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if id == "":
 		lines.add_child(_text("The bus's own horn", 26, _ink()))
-		lines.add_child(_wrapped("Each bus sounds the horn it came with", 19, _soft()))
 	else:
 		lines.add_child(_text(item["name"], 26, _ink()))
 	row.add_child(lines)
@@ -1203,7 +1205,7 @@ func try_on(kind: String, item: Dictionary) -> void:
 		_stage.set_view("home")
 	var decor_name := tr(_preview_decoration.get("name", "")) if not _preview_decoration.is_empty() else ""
 	if kind == Catalog.DECORATIONS:
-		_preview_note.text = "%s\n%s" % [tr(item.get("name", "")), tr("Decorations go in the cab: you see them in cockpit view while driving")]
+		_preview_note.text = "%s\n%s" % [tr(item.get("name", "")), tr("Seen in cockpit view")]
 	elif decor_name != "":
 		_preview_note.text = "%s, %s, %s" % [_preview_bus["name"], tr(_preview_livery["name"]), decor_name]
 	else:
@@ -1212,7 +1214,7 @@ func try_on(kind: String, item: Dictionary) -> void:
 
 func _drivers_tab() -> Control:
 	var page := HBoxContainer.new()
-	page.add_theme_constant_override("separation", 16)
+	page.add_theme_constant_override("separation", GAP)
 	var list := _list()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.size_flags_stretch_ratio = 2.0
@@ -1237,7 +1239,7 @@ func _drivers_tab() -> Control:
 
 ## Tapping a driver row shows them in the preview, owned or not, without buying.
 func _driver_row(item: Dictionary) -> Control:
-	var row := _shop_row(Catalog.DRIVERS, item, item["bio"])
+	var row := _shop_row(Catalog.DRIVERS, item, "")
 	TouchScroll.on_tap(row, try_on_driver.bind(item))
 	return row
 
@@ -1265,7 +1267,7 @@ func show_driver_note(item: Dictionary) -> void:
 func _shop_row(kind: String, item: Dictionary, description: String) -> Control:
 	var card := _card()
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
+	row.add_theme_constant_override("separation", GAP)
 	if item.has("body") or item.has("colour"):
 		row.add_child(_swatch(item))
 	if kind == Catalog.DRIVERS:
@@ -1439,7 +1441,7 @@ func _career_tab() -> Control:
 		if earned:
 			row.add_theme_stylebox_override("panel", MenuCartoon.card_box(Color("#F1FAEF")))
 		var line := HBoxContainer.new()
-		line.add_theme_constant_override("separation", 14)
+		line.add_theme_constant_override("separation", GAP)
 		var badge := MenuIcon.new()
 		badge.icon = "trophy"
 		badge.colour = MenuCartoon.YELLOW if earned else Color("#C9CDD6")
@@ -1516,7 +1518,7 @@ func _progress(done: int, target: int) -> Control:
 func _list() -> TouchScroll:
 	var scroll := TouchScroll.new()
 	var rows := VBoxContainer.new()
-	rows.add_theme_constant_override("separation", 10)
+	rows.add_theme_constant_override("separation", GAP)
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(rows)
 	return scroll
@@ -1530,7 +1532,7 @@ func _card() -> PanelContainer:
 	var style := StyleBoxFlat.new()
 	style.bg_color = CARD
 	style.set_corner_radius_all(14)
-	style.set_content_margin_all(14)
+	style.set_content_margin_all(PAD)
 	card.add_theme_stylebox_override("panel", style)
 	return card
 

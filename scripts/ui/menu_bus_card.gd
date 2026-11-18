@@ -31,9 +31,9 @@ const BAR_RADIUS := 5
 const DOT_SIZE := 16
 const DOT_RING_WIDTH := 2
 ## Inner margins, so the name, icons and bars keep clear of the outline.
-const PAD_X := 18.0
-const PAD_TOP := 14.0
-const PAD_BOTTOM := 16.0
+const PAD_X := float(MenuHomeDrawer.PAD)
+const PAD_TOP := float(MenuHomeDrawer.PAD)
+const PAD_BOTTOM := float(MenuHomeDrawer.PAD)
 
 ## Speed stat: map max_drive_accel (m/s²) to 0..1. Range observed in buses: 1.3..1.85.
 const SPEED_MIN := 1.0
@@ -77,7 +77,7 @@ func _init() -> void:
 	# Main vertical layout
 	var vbox := VBoxContainer.new()
 	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", MenuHomeDrawer.GAP)
 	add_child(vbox)
 
 	# Top row: tag on left, name next to it, dots on right

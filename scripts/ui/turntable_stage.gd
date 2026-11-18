@@ -25,13 +25,15 @@ const PAVEMENT_GREY := Color(0.72, 0.74, 0.77)
 
 const PRESETS: Dictionary = {
 	"home": {
-		# Far enough back that a long bus spinning clears the cards beside it.
-		"position": Vector3(-1.9, 5.9, 19.0),
-		"rotation": Vector3(deg_to_rad(-10.0), deg_to_rad(-2.0), 0.0),
+		# Straight down the arm at the island, so the bus stands in the middle of the
+		# screen (tester Claudio, 17 Nov), far enough back that a long bus spinning
+		# passes under the bus card and the Home cards at the top corners.
+		"position": Vector3(0.0, 8.6, 24.0),
+		"rotation": Vector3(deg_to_rad(-10.0), 0.0, 0.0),
 		"fov": 42.0,
-		# Camera offset in metres: the bus shows a little left of centre and lower,
-		# clear of the Reto del día and Próximo desbloqueo cards on the right.
-		"offset": Vector2(1.6, 0.7),
+		# No camera offset: the height alone puts the bus a little below the
+		# middle, under the corner cards.
+		"offset": Vector2.ZERO,
 	},
 	"top": {
 		"position": Vector3(-0.8, 11.0, 14.0),
