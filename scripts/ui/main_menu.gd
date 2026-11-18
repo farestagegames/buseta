@@ -23,6 +23,8 @@ const EDGE := 22
 const GAP := MenuHomeDrawer.GAP
 const PAD := MenuHomeDrawer.PAD
 const ARROW_WIDTH := 56.0
+## Height kept free for the route chip under the Home time card.
+const ROUTE_CHIP_ROOM := 64.0
 ## The dark sheet a tab opens over the stage.
 const SHEET := Color(0.09, 0.1, 0.13, 0.94)
 const SHEET_OUTLINE := Color("#22242D")
@@ -76,6 +78,7 @@ var _lock_card: PanelContainer
 var _tray_shown := ""
 var _tray_focus := ""
 var _tab_ghost: Control
+var _route_chip: MenuRouteChip
 ## The page being built uses the cartoon card look (Garage, Achievements,
 ## Settings) rather than the dark sheet the Routes and Crew lists still use.
 var _cartoon := false
@@ -632,18 +635,48 @@ func _home_tab() -> Control:
 	drawer.set_daily(tr("Daily challenge"), tr(challenge["text"]), detail, done)
 	drawer.set_next_unlock(next_unlock_text(Profile.next_unlock()))
 
-	var route := Profile.selected_item(Catalog.ROUTES)
 	var chip := MenuRouteChip.new()
 	chip.name = "RouteChip"
-	var best: int = Profile.data.best_scores.get(route["id"], -1)
-	chip.show_route(tr(route["name"]), tr(Profile.chosen_time().name), tr("Best score: %d") % best if best >= 0 else tr("Not driven yet"))
+	_route_chip = chip
+	_show_route_chip()
 	chip.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE)
 	chip.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	chip.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	chip.pressed.connect(open_tab.bind(1))
 	page.add_child(chip)
 	page.add_child(_make_lock_card())
+	page.add_child(_time_picker())
 	return page
+
+
+func _show_route_chip() -> void:
+	var route := Profile.selected_item(Catalog.ROUTES)
+	var best: int = Profile.data.best_scores.get(route["id"], -1)
+	_route_chip.show_route(tr(route["name"]), tr(Profile.chosen_time().name), tr("Best score: %d") % best if best >= 0 else tr("Not driven yet"))
+
+
+## Mañana, tarde and noche in the bottom-left corner of the stage: a pick is saved
+## for the next shift and relights the stage (tester Claudio, 17 Nov).
+func _time_picker() -> MenuTimePicker:
+	var picker := MenuTimePicker.new()
+	picker.name = "TimePicker"
+	picker.setup(Profile.times_of_day(), Profile.chosen_time().id, DriverLevel.level_for(Profile.data.xp))
+	picker.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE)
+	picker.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	# Above the route chip's row, so a narrow screen does not overlap them.
+	picker.offset_top -= ROUTE_CHIP_ROOM
+	picker.offset_bottom -= ROUTE_CHIP_ROOM
+	picker.chosen.connect(choose_time_on_stage)
+	return picker
+
+
+## Saves the time for the next shift and lights the stage the same way.
+func choose_time_on_stage(time: TimeOfDay) -> void:
+	if not Profile.choose_time(time):
+		return
+	_stage.set_time_of_day(Profile.chosen_time())
+	if is_instance_valid(_route_chip):
+		_show_route_chip()
 
 
 ## The padlock card under a locked bus: "Bus bloqueado" and its level or Buy.
@@ -778,7 +811,7 @@ func _tray_side_card(kind: String, item: Dictionary) -> Control:
 	if kind == Catalog.ROUTES:
 		var map := RouteMapView.new()
 		map.name = "RouteMap"
-		map.custom_minimum_size = Vector2(SIDE_CARD_WIDTH - 2.0 * PAD, 190.0)
+		map.custom_minimum_size = Vector2(SIDE_CARD_WIDTH - 2.0 * PAD, 160.0)
 		map.show_route(item)
 		lines.add_child(map)
 	var about := str(item.get("bio", item.get("description", "")))
@@ -1055,6 +1088,7 @@ func _difficulty_note(difficulty: Difficulty) -> String:
 
 func _on_choose_time(time: TimeOfDay) -> void:
 	Profile.choose_time(time)
+	_stage.set_time_of_day(Profile.chosen_time())
 	show_tab(_current_tab)
 
 

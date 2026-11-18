@@ -192,3 +192,37 @@ func test_cab_view_survives_a_new_bus_and_leaves_with_a_preset() -> void:
 	motion.relative = Vector2(50.0, 0.0)
 	stage._gui_input(motion)
 	assert_eq(stage.pivot.rotation.y, rest, "no dragging in the cab")
+
+
+func _made_stage() -> TurntableStage:
+	var stage := TurntableStage.new()
+	stage.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	stage.size = Vector2(1280, 720)
+	add_child_autofree(stage)
+	return stage
+
+
+func test_roundabout_scenery_stays_within_the_mesh_budget() -> void:
+	var stage := _made_stage()
+	assert_lt(stage.scenery_mesh_count(), 60)
+	assert_gt(stage.scenery_mesh_count(), 8)
+	assert_eq(stage.world_environment().background_mode, Environment.BG_SKY)
+
+
+func test_night_lights_the_lamps_and_windows_and_dims_the_sun() -> void:
+	var stage := _made_stage()
+	var times := Profile.times_of_day()
+	var night := TimeOfDay.find(times, "noche")
+	var morning := TimeOfDay.find(times, "manana")
+	assert_not_null(night)
+	assert_not_null(morning)
+	stage.set_time_of_day(morning)
+	assert_false(stage.lights_on())
+	assert_false(stage.night_light().visible)
+	var morning_sun := stage.sun_light().light_energy
+	stage.set_time_of_day(night)
+	assert_eq(stage.shown_time, night)
+	assert_true(stage.lights_on())
+	assert_true(stage.night_light().visible)
+	assert_lt(stage.sun_light().light_energy, morning_sun, "night is dimmer than morning")
+	assert_false(stage.sun_light().shadow_enabled)

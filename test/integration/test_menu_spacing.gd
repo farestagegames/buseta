@@ -64,3 +64,27 @@ func test_full_pages_keep_names_and_goals_but_drop_descriptions() -> void:
 	shown = _labels(menu._content)
 	assert_does_not_have(shown, "Each bus sounds the horn it came with")
 	assert_has(shown, "The bus's own horn")
+
+
+func test_home_time_picker_saves_the_time_and_relights_the_stage() -> void:
+	Profile.data.xp = 100000 # every time open
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	var picker := menu.find_child("TimePicker", true, false) as MenuTimePicker
+	assert_not_null(picker, "Home has the mañana / tarde / noche card")
+	var night := TimeOfDay.find(Profile.times_of_day(), "noche")
+	menu.choose_time_on_stage(night)
+	assert_eq(Profile.chosen_time().id, "noche", "saved for the next shift")
+	assert_eq(menu._stage.shown_time.id, "noche", "the stage is lit for night")
+	assert_true(menu._stage.lights_on())
+	var morning := TimeOfDay.find(Profile.times_of_day(), "manana")
+	(picker.buttons["manana"] as Button).pressed.emit()
+	assert_eq(Profile.chosen_time().id, morning.id)
+	assert_false(menu._stage.lights_on())
+
+
+func test_a_locked_time_cannot_be_picked_on_home() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	var picker := menu.find_child("TimePicker", true, false) as MenuTimePicker
+	assert_true((picker.buttons["noche"] as Button).disabled, "a new driver has not reached night")

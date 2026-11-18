@@ -176,6 +176,12 @@ func _menus() -> void:
 	add_child(menu)
 	await _seconds(0.8)
 	await _shot("08_inicio")
+	# The stage at sunset and at night, picked on the Home time card.
+	for entry: Array in [["atardecer", "08d_inicio_tarde"], ["noche", "08e_inicio_noche"]]:
+		menu._stage.set_time_of_day(TimeOfDay.find(Profile.times_of_day(), entry[0]))
+		await _seconds(0.4)
+		await _shot(entry[1])
+	menu._stage.set_time_of_day(Profile.chosen_time())
 	# A bus not owned yet, reached with the arrows: padlock card and its price.
 	for i in MainMenu.arrow_buses().size():
 		menu.cycle_bus(1)
