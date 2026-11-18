@@ -303,14 +303,16 @@ func _frame_for_tray(tray: bool) -> void:
 		_stage.set_view("home")
 
 
-## Slides the stage sideways by a share of the screen width.
+## Moves the bus left by a share of the screen width. The stage grows leftwards
+## by twice that rather than sliding, so its middle moves by the share while its
+## right edge stays on the screen's and no empty strip shows there.
 func _shift_stage(share: float) -> void:
-	var target := -share * get_viewport_rect().size.x
-	if is_equal_approx(_stage.offset_left, target):
+	var target := -2.0 * share * get_viewport_rect().size.x
+	if is_equal_approx(_stage.offset_left, target) and is_zero_approx(_stage.offset_right):
 		return
 	var tween := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(_stage, "offset_left", target, SLIDE_SECONDS)
-	tween.tween_property(_stage, "offset_right", target, SLIDE_SECONDS)
+	tween.tween_property(_stage, "offset_right", 0.0, SLIDE_SECONDS)
 
 
 ## A new tab's page rises a little and fades in.
