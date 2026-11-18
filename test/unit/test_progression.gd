@@ -265,17 +265,13 @@ func test_settings_round_trip_and_ignore_bad_values() -> void:
 	GameSettings.apply_saved(saved)
 
 
-func test_hidden_driving_controls_survive_saving() -> void:
+func test_old_hidden_driving_controls_setting_is_ignored() -> void:
+	# The "show controls" setting is gone (tester Claudio, 17 Nov): an old save
+	# with it off loads and is not written back.
 	var saved := GameSettings.to_dict()
-	assert_true(bool(saved["show_drive_controls"]), "Shown by default")
-	GameSettings.show_drive_controls = false
-	var stored: Dictionary = JSON.parse_string(JSON.stringify(GameSettings.to_dict()))
-	GameSettings.apply_saved(saved)
-	assert_true(GameSettings.show_drive_controls)
-	GameSettings.apply_saved(stored)
-	assert_false(GameSettings.show_drive_controls, "Read back from the save")
-	GameSettings.apply_saved({})
-	assert_false(GameSettings.show_drive_controls, "A save without the key keeps the value")
+	assert_false(saved.has("show_drive_controls"))
+	GameSettings.apply_saved({"show_drive_controls": false})
+	assert_false(GameSettings.to_dict().has("show_drive_controls"))
 	GameSettings.apply_saved(saved)
 
 

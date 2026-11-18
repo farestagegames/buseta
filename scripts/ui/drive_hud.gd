@@ -48,12 +48,6 @@ var alighting_cue := AlightingCue.new()
 var celebration_banner: CelebrationBanner
 
 var _controls: Control
-## Set by the tutorial so the controls it points at show whatever the setting.
-var force_drive_controls: bool = false:
-	set(value):
-		force_drive_controls = value
-		if is_node_ready():
-			_apply_mode()
 var _tilt_hint: Label
 var _view_button: TouchButton
 var _pause_button: TouchButton
@@ -399,26 +393,16 @@ func _place_minimap() -> void:
 func _apply_mode() -> void:
 	_indicator_left.visible = GameSettings.show_indicator_buttons
 	_indicator_right.visible = GameSettings.show_indicator_buttons
-	# The movement controls can be hidden in Settings (keyboard or gamepad
-	# drivers); the tutorial always shows them, since it points at them.
-	var drive := drive_controls_shown()
+	# The wheel, pedals and D/R always show: a setting to hide them left phone
+	# drivers unable to drive (tester Claudio, 17 Nov).
 	var mode := GameSettings.steering_mode
-	wheel.visible = drive and mode == SteeringMapper.Mode.WHEEL
-	left_button.visible = drive and mode == SteeringMapper.Mode.BUTTONS
-	right_button.visible = drive and mode == SteeringMapper.Mode.BUTTONS
-	_tilt_hint.visible = drive and mode == SteeringMapper.Mode.TILT
-	throttle_pedal.visible = drive
-	brake_pedal.visible = drive
-	gear_switch.visible = drive
-	if not drive:
-		# Nothing stays pressed under a control that went away.
-		GameEvents.ui_pedals_changed.emit(0.0, 0.0)
-		GameEvents.ui_steer_buttons_changed.emit(false, false)
-
-
-## Whether the wheel, pedals and D/R are on screen.
-func drive_controls_shown() -> bool:
-	return GameSettings.show_drive_controls or force_drive_controls
+	wheel.visible = mode == SteeringMapper.Mode.WHEEL
+	left_button.visible = mode == SteeringMapper.Mode.BUTTONS
+	right_button.visible = mode == SteeringMapper.Mode.BUTTONS
+	_tilt_hint.visible = mode == SteeringMapper.Mode.TILT
+	throttle_pedal.visible = true
+	brake_pedal.visible = true
+	gear_switch.visible = true
 
 
 ## Pauses the shift, including the timetable.

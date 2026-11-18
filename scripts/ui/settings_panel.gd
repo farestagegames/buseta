@@ -16,7 +16,6 @@ var language_picker: OptionButton
 var cheat_row: Control
 ## Shows the on-screen indicator buttons while driving.
 var indicator_toggle: CheckButton
-var drive_controls_toggle: CheckButton
 ## Ends the shift and shows the report. Only on the endless route.
 var end_shift_button: Button
 var _quality_buttons: Dictionary = {}
@@ -106,17 +105,6 @@ func _add_controls(box: Container) -> void:
 	indicators.toggled.connect(func(on: bool) -> void: GameSettings.show_indicator_buttons = on)
 	box.add_child(indicators)
 	indicator_toggle = indicators
-
-	# Off for keyboard or gamepad drivers, or for more screen: pause, camera,
-	# PUERTAS and PITO stay.
-	var drive := CheckButton.new()
-	drive.text = "Show driving controls"
-	drive.add_theme_font_size_override("font_size", 22)
-	drive.custom_minimum_size.y = 60
-	drive.button_pressed = GameSettings.show_drive_controls
-	drive.toggled.connect(func(on: bool) -> void: GameSettings.show_drive_controls = on)
-	box.add_child(drive)
-	drive_controls_toggle = drive
 
 	_volume_label = _label("", 22)
 	box.add_child(_volume_label)
