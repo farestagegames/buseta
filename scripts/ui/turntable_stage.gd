@@ -54,6 +54,14 @@ const PRESETS: Dictionary = {
 		# middle, under the corner cards.
 		"offset": Vector2.ZERO,
 	},
+	# Home's camera tilted down, so on the Rutas and Chofer trays the bus stands
+	# above the row of quick-pick cards instead of behind them (owner, 18 Nov).
+	"tray": {
+		"position": Vector3(0.0, 8.6, 24.0),
+		"rotation": Vector3(deg_to_rad(-17.0), 0.0, 0.0),
+		"fov": 42.0,
+		"offset": Vector2.ZERO,
+	},
 	"top": {
 		"position": Vector3(-0.8, 11.0, 14.0),
 		"rotation": Vector3(deg_to_rad(-38.0), 0.0, 0.0),
@@ -281,7 +289,7 @@ func _aim_cab_camera(animate: bool) -> void:
 
 ## Cycles to the next camera view preset and returns its name.
 func cycle_view() -> String:
-	var idx := VIEW_ORDER.find(_current_view)
+	var idx := VIEW_ORDER.find("home" if _current_view == "tray" else _current_view)
 	var next_idx := (idx + 1) % VIEW_ORDER.size()
 	var next_name := VIEW_ORDER[next_idx]
 	set_view(next_name)

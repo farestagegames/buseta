@@ -273,6 +273,7 @@ func show_tab(index: int, tray: bool = false) -> void:
 	if index != GARAGE_TAB and _stage.in_cab():
 		_stage.set_view("home")
 	_shift_stage(GARAGE_STAGE_SHIFT if index == GARAGE_TAB else 0.0)
+	_frame_for_tray(tray)
 	# Home and the Garage float over the stage; the other tabs sit in one sheet.
 	if stage_shows:
 		_sheet_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -290,6 +291,16 @@ func show_tab(index: int, tray: bool = false) -> void:
 	if list != null:
 		list.restore_offset(offset)
 	_refresh_header()
+
+
+## On a quick-pick tray the camera tilts down so the bus clears the cards; off
+## it, Home's framing comes back. A view the player picked stays as it is.
+func _frame_for_tray(tray: bool) -> void:
+	var view := _stage.current_view()
+	if tray and view == "home":
+		_stage.set_view("tray")
+	elif not tray and view == "tray":
+		_stage.set_view("home")
 
 
 ## Slides the stage sideways by a share of the screen width.
