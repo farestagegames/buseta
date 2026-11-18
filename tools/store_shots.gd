@@ -34,8 +34,6 @@ var shots := [
 	{"name": "12_cafeto_lomas", "route": "cafeto_c0", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "cafeto_lomas"},
 	{"name": "13_cafeto_colina_aereo", "route": "cafeto_c0", "bus": "buseta_8", "time": "manana", "rain": false, "view": "Far", "spot": "cafeto_colina", "aerial": 70.0},
 	{"name": "14_cafeto_carrera", "route": "arcade_cafeto", "bus": "buseta_8", "time": "mediodia", "rain": false, "view": "Far", "spot": "arcade"},
-	# "hide_controls" drives with the on-screen wheel, pedals and D/R hidden.
-	{"name": "15_sin_controles", "route": "route_01", "bus": "buseta_8", "time": "manana", "rain": false, "view": "Close", "spot": "malecon", "hide_controls": true},
 ]
 
 
@@ -79,8 +77,6 @@ func _take(shot: Dictionary) -> void:
 	_own(Catalog.BUSES, shot["bus"])
 	CityShift.forced_time = shot["time"]
 	CityShift.forced_rain = WeatherPlan.FORCE_RAIN if shot["rain"] else WeatherPlan.FORCE_DRY
-	var showed_controls := GameSettings.show_drive_controls
-	GameSettings.show_drive_controls = not shot.get("hide_controls", false)
 	var scene: CityShift = load(SCENE).instantiate()
 	add_child(scene)
 	await _seconds(1.0)
@@ -148,7 +144,6 @@ func _take(shot: Dictionary) -> void:
 		report_hud.shift_panel.skip()
 		await _frames(4)
 		await _shot(shot["name"] + "_informe_policia")
-	GameSettings.show_drive_controls = showed_controls
 	scene.queue_free()
 	await _frames(3)
 
@@ -181,6 +176,14 @@ func _menus() -> void:
 	add_child(menu)
 	await _seconds(0.8)
 	await _shot("08_inicio")
+	# A bus not owned yet, reached with the arrows: padlock card and its price.
+	for i in MainMenu.arrow_buses().size():
+		menu.cycle_bus(1)
+		if menu.showing_locked_bus():
+			break
+	await _seconds(0.6)
+	await _shot("08c_inicio_bus_bloqueado")
+	menu.show_tab(0)
 	# The card for something a shift unlocked, here a level-3 paint.
 	Profile.pending_unlocks = UnlockNews.between(Profile.catalog, Country.pack.horns(), 2, 3, [])
 	menu._show_next_unlock()
@@ -189,21 +192,24 @@ func _menus() -> void:
 	Profile.pending_unlocks.clear()
 	for popup in menu.find_children("UnlockPopup", "", false, false):
 		popup.queue_free()
-	menu.show_tab(2)
-	await _seconds(0.6)
-	await _shot("09_garaje")
-	# Trying on a bus and paint not owned: the card follows the stage.
-	menu.try_on(Catalog.BUSES, Profile.catalog.find(Catalog.BUSES, "articulado_18"))
-	menu.try_on(Catalog.LIVERIES, Profile.catalog.find(Catalog.LIVERIES, "carnaval"))
-	await _seconds(0.6)
-	await _shot("09b_garaje_probando")
-	# A cab decoration: the stage looks in from the driver's seat.
-	menu.try_on(Catalog.DECORATIONS, Profile.catalog.find(Catalog.DECORATIONS, "dash_perrito"))
-	await _seconds(0.8)
-	await _shot("09c_garaje_adorno")
-	menu.try_on(Catalog.DECORATIONS, Profile.catalog.find(Catalog.DECORATIONS, "seat_palms"))
-	await _seconds(0.8)
-	await _shot("09d_garaje_fundas")
+	# NO_GARAGE=1 skips the Garage shots (the cab views can be slow to draw).
+	if OS.get_environment("NO_GARAGE") == "":
+		menu.show_tab(2)
+		await _seconds(0.6)
+		await _shot("09_garaje")
+		# Trying on a bus and paint not owned: the card follows the stage.
+		menu.try_on(Catalog.BUSES, Profile.catalog.find(Catalog.BUSES, "articulado_18"))
+		menu.try_on(Catalog.LIVERIES, Profile.catalog.find(Catalog.LIVERIES, "carnaval"))
+		await _seconds(0.6)
+		await _shot("09b_garaje_probando")
+		# A cab decoration: the stage looks in from the driver's seat.
+		menu.try_on(Catalog.DECORATIONS, Profile.catalog.find(Catalog.DECORATIONS, "dash_perrito"))
+		await _seconds(0.8)
+		await _shot("09c_garaje_adorno")
+		menu.try_on(Catalog.DECORATIONS, Profile.catalog.find(Catalog.DECORATIONS, "seat_palms"))
+		await _seconds(0.8)
+		await _shot("09d_garaje_fundas")
+
 	menu.show_tab(1)
 	await _seconds(0.6)
 	await _shot("10_rutas")
@@ -217,6 +223,15 @@ func _menus() -> void:
 		menu.open_tab(tray[0])
 		await _seconds(0.6)
 		await _shot(tray[1])
+	# A driver and a route not owned yet, tapped in the tray: the side card.
+	menu._tray_shown = "ramiro_mestra"
+	menu.show_tab(3, true)
+	await _seconds(0.6)
+	await _shot("10h_chofer_bloqueado")
+	menu._tray_shown = "route_03"
+	menu.show_tab(1, true)
+	await _seconds(0.6)
+	await _shot("10i_ruta_bloqueada")
 	# Home with Alto Cafeto picked on the Routes tab: its own Carrera Express.
 	Profile.data.town = "Alto Cafeto"
 	menu.show_tab(0)

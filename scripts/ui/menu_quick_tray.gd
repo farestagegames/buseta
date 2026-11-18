@@ -6,6 +6,8 @@ extends HBoxContainer
 
 signal picked(id: String)
 signal more_pressed
+## A page arrow at either end: -1 back, 1 on.
+signal stepped(side: int)
 
 const CARD_SIZE := Vector2(150.0, 128.0)
 const ART := 32.0
@@ -13,6 +15,8 @@ const MAX_PICKS := 4
 const RING := Color("#FFC733")
 const PILL := Color("#EEF0F4")
 const PILL_CHOSEN := Color("#FFE9A8")
+const SHOWN_RING := Color("#4D96FF")
+const STEP_WIDTH := 52.0
 
 
 func _init() -> void:
@@ -30,8 +34,13 @@ static func window(ids: Array, chosen: String) -> Array:
 
 
 ## A card for one pick: an icon or portrait, a name and a short detail pill.
-func add_pick(id: String, title: String, detail: String, art: Control, chosen: bool) -> Button:
+## [param shown] lifts the card a little: it is the one on the side card.
+func add_pick(id: String, title: String, detail: String, art: Control, chosen: bool, shown: bool = false) -> Button:
 	var card := _card("Pick_" + id, chosen)
+	if shown and not chosen:
+		var box := card.get_theme_stylebox("normal") as StyleBoxFlat
+		box.border_color = SHOWN_RING
+		box.set_border_width_all(4)
 	var lines := card.get_meta("lines") as VBoxContainer
 	art.custom_minimum_size = Vector2(ART, ART)
 	art.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -57,6 +66,30 @@ func add_more(title: String, icon_name: String) -> Button:
 	lines.add_child(icon)
 	lines.add_child(_title(title))
 	card.pressed.connect(func() -> void: more_pressed.emit())
+	add_child(card)
+	return card
+
+
+## A narrow yellow arrow card that pages the tray.
+func add_step(side: int) -> Button:
+	var card := Button.new()
+	card.name = "StepNext" if side > 0 else "StepBack"
+	card.focus_mode = Control.FOCUS_NONE
+	card.custom_minimum_size = Vector2(STEP_WIDTH, CARD_SIZE.y)
+	var box := MenuHomeDrawer.card_box(RING, 16, 6)
+	card.add_theme_stylebox_override("normal", box)
+	card.add_theme_stylebox_override("hover", box)
+	card.add_theme_stylebox_override("pressed", MenuHomeDrawer.card_box(Color("#E8AE1C"), 16, 6))
+	card.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	var icon := MenuIcon.new()
+	icon.icon = "arrow_right" if side > 0 else "arrow_left"
+	icon.colour = MenuHomeDrawer.INK
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icon.offset_left = 6.0
+	icon.offset_right = -6.0
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(icon)
+	card.pressed.connect(func() -> void: stepped.emit(side))
 	add_child(card)
 	return card
 

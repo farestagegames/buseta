@@ -353,6 +353,37 @@ func test_routes_and_crew_buttons_open_a_quick_tray_over_the_stage() -> void:
 	tray = menu.find_child("QuickTray", true, false)
 	var chosen: String = Profile.data.selected[Catalog.DRIVERS]
 	assert_not_null(tray.find_child("Pick_" + chosen, true, false))
+	assert_null(tray.find_child("MoreCard", true, false), "no full driver list card")
+	assert_not_null(menu.find_child("TraySideCard", true, false), "the driver shows on the right")
+
+
+func test_a_locked_driver_or_route_shows_on_the_side_card_without_buying() -> void:
+	Profile.data.coins = 0
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	menu.open_tab(MainMenu.DRIVERS_TAB)
+	await wait_frames(1)
+	var chosen: String = Profile.data.selected[Catalog.DRIVERS]
+	var locked := ""
+	for item: Dictionary in Profile.catalog.items(Catalog.DRIVERS):
+		if not Profile.data.owns(Catalog.DRIVERS, item["id"]):
+			locked = item["id"]
+			break
+	var tray: MenuQuickTray = menu.find_child("QuickTray", true, false)
+	while tray.find_child("Pick_" + locked, true, false) == null:
+		(tray.find_child("StepNext", true, false) as Button).pressed.emit()
+		await wait_frames(1)
+		tray = menu.find_child("QuickTray", true, false)
+	(tray.find_child("Pick_" + locked, true, false) as Button).pressed.emit()
+	await wait_frames(1)
+	assert_eq(Profile.data.selected[Catalog.DRIVERS], chosen, "a locked driver is not chosen")
+	var side: Control = menu.find_child("TraySideCard", true, false)
+	var name: String = Profile.catalog.find(Catalog.DRIVERS, locked)["name"]
+	assert_not_null(side.find_children("*", "Label", true, false).filter(func(l: Label) -> bool: return l.text == name).front(), "named on the side card")
+	menu.open_tab(1)
+	await wait_frames(1)
+	assert_not_null(menu.find_child("RouteMap", true, false), "routes show their map")
 
 
 func test_the_arrows_show_a_locked_bus_with_a_padlock() -> void:

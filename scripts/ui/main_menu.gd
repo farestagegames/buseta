@@ -33,6 +33,7 @@ const GARAGE_STAGE_SHIFT := 0.18 # less than before: the home camera offset alre
 ## How far a new tab's sheet slides up as it fades in, and for how long.
 const SLIDE_PIXELS := 24.0
 const SLIDE_SECONDS := 0.25
+const SIDE_CARD_WIDTH := 320.0
 
 var _content: Control
 var _coins_label: Label
@@ -67,6 +68,9 @@ var _tray := false
 ## The bus the Home arrows show: the chosen one, or a locked one with a padlock.
 var _home_bus: Dictionary = {}
 var _lock_card: PanelContainer
+## The route or driver the quick tray's side card shows, and where its page starts.
+var _tray_shown := ""
+var _tray_focus := ""
 var _tab_ghost: Control
 ## The page being built uses the cartoon card look (Garage, Achievements,
 ## Settings) rather than the dark sheet the Routes and Crew lists still use.
@@ -509,7 +513,7 @@ func _show_locked_bus(bus: Dictionary) -> void:
 		var old := row.get_child(row.get_child_count() - 1)
 		row.remove_child(old)
 		old.queue_free()
-		row.add_child(_shop_button(Catalog.BUSES, bus))
+		row.add_child(_cartoon_shop_button(Catalog.BUSES, bus))
 		_lock_card.visible = true
 
 
@@ -666,70 +670,129 @@ func _make_lock_card() -> PanelContainer:
 	return _lock_card
 
 
-## The quick picks of Routes or Crew in a row over the stage, above the tab bar.
+## The quick picks of Routes or Crew in a row over the stage, above the tab bar,
+## and a card on the right with the one tapped: its route map or driver, a line
+## about it and Select, Buy or its level (tester Claudio, 17 Nov).
 func _quick_tray(index: int) -> Control:
 	var page := Control.new()
 	page.name = "QuickPage"
 	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tray := MenuQuickTray.new()
 	tray.name = "QuickTray"
-	if index == 1:
-		_fill_route_tray(tray)
-	else:
-		_fill_driver_tray(tray)
-	tray.more_pressed.connect(show_tab.bind(index))
+	var kind := Catalog.ROUTES if index == 1 else Catalog.DRIVERS
+	var ids := _tray_ids(kind)
+	var chosen: String = Profile.data.selected[kind]
+	if not ids.has(_tray_shown):
+		_tray_shown = chosen
+	if not ids.has(_tray_focus):
+		_tray_focus = _tray_shown
+	var picks := MenuQuickTray.window(ids, _tray_focus)
+	if not picks.is_empty() and picks[0] != ids[0]:
+		tray.add_step(-1)
+	for id: String in picks:
+		var item := Profile.catalog.find(kind, id)
+		var art: Control
+		if kind == Catalog.DRIVERS:
+			art = DriverBadge.new(DriverLook.from_item(item), MenuQuickTray.ART)
+		else:
+			var icon := MenuIcon.new()
+			icon.icon = "routes" if Profile.data.owns(kind, id) else "lock"
+			icon.colour = TAB_COLOURS[1] if Profile.data.owns(kind, id) else MenuHomeDrawer.MUTED
+			art = icon
+		var title := MenuTopBar.short_name(str(item["name"])) if kind == Catalog.DRIVERS else tr(item["name"])
+		tray.add_pick(id, title, _pick_detail(kind, item), art, id == chosen, id == _tray_shown)
+	if not picks.is_empty() and picks[picks.size() - 1] != ids[ids.size() - 1]:
+		tray.add_step(1)
+	# Town, time of day and difficulty still live on the full Routes page.
+	if kind == Catalog.ROUTES:
+		tray.add_more(tr("More options"), "routes")
+		tray.more_pressed.connect(show_tab.bind(index))
+	tray.picked.connect(func(id: String) -> void:
+		_tray_shown = id
+		if Profile.data.owns(kind, id) and Profile.data.selected[kind] != id:
+			Profile.select(kind, id)
+			_refresh_header()
+		show_tab(index, true))
+	tray.stepped.connect(func(side: int) -> void:
+		var at := ids.find(picks[0] if side < 0 else picks[picks.size() - 1])
+		_tray_focus = ids[clampi(at + side * MenuQuickTray.MAX_PICKS, 0, ids.size() - 1)]
+		show_tab(index, true))
 	tray.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE)
 	tray.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	tray.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	page.add_child(tray)
+	page.add_child(_tray_side_card(kind, Profile.catalog.find(kind, _tray_shown)))
 	return page
 
 
-## The owned routes of the chosen town, best score on each.
-func _fill_route_tray(tray: MenuQuickTray) -> void:
-	var routes := Profile.catalog.items(Catalog.ROUTES).filter(func(item: Dictionary) -> bool:
-		return not Catalog.is_arcade(item))
-	var towns := route_towns(routes)
-	var town := Profile.chosen_town()
+## Every driver, or every route of the chosen town but its arcade, in catalog order.
+func _tray_ids(kind: String) -> Array:
 	var ids := []
-	for item: Dictionary in routes:
-		if Profile.data.owns(Catalog.ROUTES, item["id"]) and towns.get(item["id"], "") == town:
-			ids.append(item["id"])
-	var chosen: String = Profile.data.selected[Catalog.ROUTES]
-	for id: String in MenuQuickTray.window(ids, chosen):
-		var item := Profile.catalog.find(Catalog.ROUTES, id)
-		var best: int = Profile.data.best_scores.get(id, -1)
-		var detail := tr("Best score: %d") % best if best >= 0 else tr("Not driven yet")
-		var icon := MenuIcon.new()
-		icon.icon = "routes"
-		icon.colour = TAB_COLOURS[1]
-		tray.add_pick(id, tr(item["name"]), detail, icon, id == chosen)
-	tray.add_more(tr("All routes"), "routes")
-	tray.picked.connect(func(id: String) -> void:
-		Profile.select(Catalog.ROUTES, id)
-		show_tab(1, true))
+	var items := Profile.catalog.items(kind)
+	var towns := route_towns(items) if kind == Catalog.ROUTES else {}
+	var town := Profile.chosen_town() if kind == Catalog.ROUTES else ""
+	for item: Dictionary in items:
+		if kind == Catalog.ROUTES and (Catalog.is_arcade(item) or towns.get(item["id"], "") != town):
+			continue
+		ids.append(item["id"])
+	return ids
 
 
-## The owned drivers, the one at the wheel marked.
-func _fill_driver_tray(tray: MenuQuickTray) -> void:
-	var ids := []
-	for item: Dictionary in Profile.catalog.items(Catalog.DRIVERS):
-		if Profile.data.owns(Catalog.DRIVERS, item["id"]):
-			ids.append(item["id"])
-	var chosen: String = Profile.data.selected[Catalog.DRIVERS]
-	for id: String in MenuQuickTray.window(ids, chosen):
-		var item := Profile.catalog.find(Catalog.DRIVERS, id)
-		var badge := DriverBadge.new(DriverLook.from_item(item), MenuQuickTray.ART)
-		tray.add_pick(id, MenuTopBar.short_name(str(item["name"])), tr("Selected") if id == chosen else tr("Select"), badge, id == chosen)
-	tray.add_more(tr("All drivers"), "driver")
-	tray.picked.connect(func(id: String) -> void:
-		Profile.select(Catalog.DRIVERS, id)
-		_refresh_header()
-		show_tab(DRIVERS_TAB, true))
+## The pill under a tray card: in use, Select, best score, or what it costs.
+func _pick_detail(kind: String, item: Dictionary) -> String:
+	var id: String = item["id"]
+	if Profile.data.owns(kind, id):
+		if kind == Catalog.ROUTES:
+			var best: int = Profile.data.best_scores.get(id, -1)
+			return tr("Best score: %d") % best if best >= 0 else tr("Not driven yet")
+		return tr("Selected") if Profile.data.selected[kind] == id else tr("Select")
+	var level := int(item.get("level", 1))
+	if kind == Catalog.ROUTES:
+		level = maxi(level, Profile.town_lock_level(Profile.town_for_route(item)))
+	if level > DriverLevel.level_for(Profile.data.xp):
+		return tr("Level %d") % level
+	return Country.pack.money(int(item.get("cost", 0)))
 
 
-## Carrera Express in one tap, without changing the chosen route. Locked below its
-## level, with the best checkpoints once raced and a "New!" badge until then.
+## The card on the right, under the top bar, for the route or driver tapped.
+func _tray_side_card(kind: String, item: Dictionary) -> Control:
+	var card := PanelContainer.new()
+	card.name = "TraySideCard"
+	card.theme = MenuCartoon.theme()
+	card.add_theme_stylebox_override("panel", MenuHomeDrawer.card_box())
+	card.custom_minimum_size.x = SIDE_CARD_WIDTH
+	var lines := VBoxContainer.new()
+	lines.add_theme_constant_override("separation", 8)
+	card.add_child(lines)
+	if kind == Catalog.DRIVERS:
+		var badge := DriverBadge.new(DriverLook.from_item(item), 96.0)
+		badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		lines.add_child(badge)
+	var title := _wrapped(tr(item["name"]), 22, MenuHomeDrawer.INK)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lines.add_child(title)
+	if kind == Catalog.ROUTES:
+		var map := RouteMapView.new()
+		map.name = "RouteMap"
+		map.custom_minimum_size = Vector2(SIDE_CARD_WIDTH - 28.0, 190.0)
+		map.show_route(item)
+		lines.add_child(map)
+	var about := str(item.get("bio", item.get("description", "")))
+	if about != "":
+		var line := _wrapped(tr(about), 16, MenuHomeDrawer.MUTED)
+		line.max_lines_visible = 3
+		lines.add_child(line)
+	var button := _cartoon_shop_button(kind, item)
+	button.custom_minimum_size = Vector2(0.0, 56.0)
+	button.add_theme_font_size_override("font_size", 22)
+	lines.add_child(button)
+	card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE)
+	card.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	card.offset_right = -EDGE
+	card.offset_left = card.offset_right - SIDE_CARD_WIDTH
+	return card
+
+
 func _arcade_button() -> Button:
 	var town := Profile.chosen_town()
 	var item := Profile.catalog.arcade_route(town)
@@ -1269,6 +1332,16 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 		button.disabled = Profile.data.coins < int(item["cost"])
 		_paint_buy(button)
 		button.pressed.connect(_on_buy.bind(kind, id))
+	return button
+
+
+## A shop button painted in the cartoon look on a page that is not, such as
+## Home's padlock card and the quick tray's side card.
+func _cartoon_shop_button(kind: String, item: Dictionary) -> Button:
+	var was := _cartoon
+	_cartoon = true
+	var button := _shop_button(kind, item)
+	_cartoon = was
 	return button
 
 

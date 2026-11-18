@@ -139,6 +139,9 @@ func test_quick_tray_cards_emit_their_id_and_the_more_card() -> void:
 	assert_signal_emitted_with_parameters(tray, "picked", ["x"])
 	assert_signal_emitted(tray, "more_pressed")
 	assert_gte(card.custom_minimum_size.y, 48.0, "a thumb-sized card")
+	var step := tray.add_step(1)
+	step.pressed.emit()
+	assert_signal_emitted_with_parameters(tray, "stepped", [1])
 
 
 func test_the_tab_bar_blank_matches_turno_or_shrinks_to_fit() -> void:
