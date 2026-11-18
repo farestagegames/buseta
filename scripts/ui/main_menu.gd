@@ -64,6 +64,9 @@ var _slide: Tween
 var _sheet_panel: PanelContainer
 ## Routes and Crew show a quick-pick tray over the stage instead of their full list.
 var _tray := false
+## The bus the Home arrows show: the chosen one, or a locked one with a padlock.
+var _home_bus: Dictionary = {}
+var _lock_card: PanelContainer
 var _tab_ghost: Control
 ## The page being built uses the cartoon card look (Garage, Achievements,
 ## Settings) rather than the dark sheet the Routes and Crew lists still use.
@@ -464,20 +467,55 @@ static func owned_buses() -> Array[Dictionary]:
 	return buses
 
 
-## Selects the next (or previous) owned bus and shows it on the stage.
+## Every bus the Home arrows go through, owned or not, in catalog order.
+static func arrow_buses() -> Array[Dictionary]:
+	var buses: Array[Dictionary] = []
+	for item: Dictionary in Profile.catalog.items(Catalog.BUSES):
+		if not item.get("route_only", false):
+			buses.append(item)
+	return buses
+
+
+## Shows the next (or previous) bus. An owned one is selected; a locked one shows
+## with a padlock card and its level or price, and the chosen bus stays chosen.
 func cycle_bus(step: int) -> void:
-	var buses := owned_buses()
+	var buses := arrow_buses()
 	if buses.size() < 2:
 		_stage.bump()
 		return
-	var chosen: String = Profile.data.selected[Catalog.BUSES]
+	var shown: String = _home_bus.get("id", Profile.data.selected[Catalog.BUSES])
 	var at := 0
 	for i in buses.size():
-		if buses[i]["id"] == chosen:
+		if buses[i]["id"] == shown:
 			at = i
-	Profile.select(Catalog.BUSES, buses[posmod(at + step, buses.size())]["id"])
-	_show_chosen_bus()
+	var next := buses[posmod(at + step, buses.size())]
+	if Profile.data.owns(Catalog.BUSES, next["id"]):
+		Profile.select(Catalog.BUSES, next["id"])
+		_show_chosen_bus()
+	else:
+		_show_locked_bus(next)
 	_stage.bump()
+
+
+## A bus not owned yet on the stage, with the padlock card.
+func _show_locked_bus(bus: Dictionary) -> void:
+	var livery := Profile.selected_item(Catalog.LIVERIES)
+	var spec := CityShift.spec_for(bus, livery)
+	_stage.show_spec(spec, {})
+	_home_bus = bus
+	_show_card(bus, livery, spec)
+	if is_instance_valid(_lock_card):
+		var row := _lock_card.get_child(0)
+		var old := row.get_child(row.get_child_count() - 1)
+		row.remove_child(old)
+		old.queue_free()
+		row.add_child(_shop_button(Catalog.BUSES, bus))
+		_lock_card.visible = true
+
+
+## Whether Home shows a bus the player does not own yet.
+func showing_locked_bus() -> bool:
+	return is_instance_valid(_lock_card) and _lock_card.visible
 
 
 ## The chosen bus on the stage and on the card.
@@ -487,6 +525,9 @@ func _show_chosen_bus() -> void:
 	var spec := CityShift.spec_for(bus, livery)
 	_stage.show_spec(spec, Profile.selected_item(Catalog.DECORATIONS))
 	_preview_bus = bus
+	_home_bus = bus
+	if is_instance_valid(_lock_card):
+		_lock_card.visible = false
 	_show_card(bus, livery, spec)
 
 
@@ -593,7 +634,36 @@ func _home_tab() -> Control:
 	chip.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	chip.pressed.connect(open_tab.bind(1))
 	page.add_child(chip)
+	page.add_child(_make_lock_card())
 	return page
+
+
+## The padlock card under a locked bus: "Bus bloqueado" and its level or Buy.
+func _make_lock_card() -> PanelContainer:
+	_lock_card = PanelContainer.new()
+	_lock_card.name = "LockCard"
+	_lock_card.theme = MenuCartoon.theme()
+	_lock_card.add_theme_stylebox_override("panel", MenuHomeDrawer.card_box())
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	var icon := MenuIcon.new()
+	icon.icon = "lock"
+	icon.colour = MenuHomeDrawer.INK
+	icon.custom_minimum_size = Vector2(40.0, 40.0)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(icon)
+	var label := _text(tr("Bus locked"), 22, MenuHomeDrawer.INK)
+	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(label)
+	row.add_child(Control.new()) # the button goes here
+	_lock_card.add_child(row)
+	_lock_card.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE)
+	_lock_card.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_lock_card.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_lock_card.offset_top -= 110.0
+	_lock_card.offset_bottom -= 110.0
+	_lock_card.visible = false
+	return _lock_card
 
 
 ## The quick picks of Routes or Crew in a row over the stage, above the tab bar.
@@ -938,7 +1008,7 @@ func _garage_tab() -> Control:
 	sheet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sheet.size_flags_stretch_ratio = 1.25
 	page.add_child(sheet)
-	_preview_note = _wrapped("Tap a bus, paint or decoration to try it", 20, MenuCartoon.INK)
+	_preview_note = _wrapped("Tap a paint or decoration to try it", 20, MenuCartoon.INK)
 	_preview_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var note_back := PanelContainer.new()
 	note_back.name = "PreviewNote"
@@ -950,10 +1020,8 @@ func _garage_tab() -> Control:
 	_preview_livery = Profile.selected_item(Catalog.LIVERIES)
 	_preview_decoration = Profile.selected_item(Catalog.DECORATIONS)
 	var rows := list.get_child(0)
-	rows.add_child(_heading("Buses"))
-	for item: Dictionary in Profile.catalog.items(Catalog.BUSES):
-		if not item.get("route_only", false):
-			rows.add_child(_garage_row(Catalog.BUSES, item, item.get("description", "")))
+	# Buses are picked with the Home arrows, locked ones bought there (tester
+	# Claudio, 17 Nov): the Garage holds paints, decorations and horns.
 	rows.add_child(_heading("Liveries"))
 	for item: Dictionary in Profile.catalog.items(Catalog.LIVERIES):
 		rows.add_child(_garage_row(Catalog.LIVERIES, item, ""))
@@ -1206,13 +1274,15 @@ func _shop_button(kind: String, item: Dictionary) -> Button:
 
 func _on_select(kind: String, id: String) -> void:
 	Profile.select(kind, id)
-	show_tab(_current_tab)
+	_refresh_header()
+	show_tab(_current_tab, _tray)
 
 
 func _on_buy(kind: String, id: String) -> void:
 	if Profile.buy(kind, id):
 		Profile.select(kind, id)
-	show_tab(_current_tab)
+	_refresh_header()
+	show_tab(_current_tab, _tray)
 
 
 func _swatch(item: Dictionary) -> Control:

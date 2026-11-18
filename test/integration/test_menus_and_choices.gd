@@ -355,6 +355,31 @@ func test_routes_and_crew_buttons_open_a_quick_tray_over_the_stage() -> void:
 	assert_not_null(tray.find_child("Pick_" + chosen, true, false))
 
 
+func test_the_arrows_show_a_locked_bus_with_a_padlock() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	var before: String = Profile.data.selected[Catalog.BUSES]
+	assert_false(menu.showing_locked_bus())
+	var seen_lock := false
+	for i in MainMenu.arrow_buses().size():
+		menu.cycle_bus(1)
+		if menu.showing_locked_bus():
+			seen_lock = true
+			assert_false(Profile.data.owns(Catalog.BUSES, menu._home_bus["id"]))
+	assert_true(seen_lock, "a new save has locked buses")
+	assert_eq(Profile.data.selected[Catalog.BUSES], before, "a locked bus is never chosen")
+
+
+func test_the_garage_has_no_bus_list() -> void:
+	var menu: MainMenu = MENU.instantiate()
+	add_child_autofree(menu)
+	menu.show_tab(MainMenu.GARAGE_TAB)
+	await wait_frames(2)
+	for label: Label in menu._content.find_children("*", "Label", true, false):
+		assert_ne(label.text, "Caimán B10", "buses are picked with the Home arrows")
+
+
 func test_tapping_the_open_tab_again_goes_home() -> void:
 	var menu: MainMenu = MENU.instantiate()
 	add_child_autofree(menu)
